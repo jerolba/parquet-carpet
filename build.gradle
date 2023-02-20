@@ -1,0 +1,12 @@
+plugins {
+    id "com.github.hierynomus.license" version "0.16.1"
+}
+
+allprojects {
+    apply plugin: 'license'
+    license {
+        header rootProject.file("config/HEADER")
+        exclude "**/*.properties"
+        exclude "**/*.txt"
+    }
+}
