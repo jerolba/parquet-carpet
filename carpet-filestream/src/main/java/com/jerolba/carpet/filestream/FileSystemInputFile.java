@@ -26,8 +26,8 @@ import org.apache.parquet.io.SeekableInputStream;
 /**
  *
  * In comparison to the default implementation provided by Apache Parquet
- * {@link HadoopInputFile}, this implementation is specific to reading Parquet
- * files from the file system, whereas Apache Parquet provides a more generic
+ * HadoopInputFile, this implementation is specific to reading Parquet files
+ * from the file system, whereas Apache Parquet provides a more generic
  * implementation that allows reading Parquet files from any data source, not
  * just the file system.
  *

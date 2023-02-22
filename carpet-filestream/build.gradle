@@ -2,7 +2,6 @@ plugins {
     id 'java'
     id 'java-library'    
     id 'jacoco'
-    id 'checkstyle'
     id 'maven-publish'
     id 'signing'
 }
