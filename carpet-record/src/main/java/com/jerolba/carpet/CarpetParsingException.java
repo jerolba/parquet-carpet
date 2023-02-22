@@ -15,11 +15,11 @@
  */
 package com.jerolba.carpet;
 
-public class RecordTypeConversionException extends CarpetParsingException {
+public class CarpetParsingException extends RuntimeException {
 
-    private static final long serialVersionUID = -7642331989854617064L;
+    private static final long serialVersionUID = -3573699864785844391L;
 
-    public RecordTypeConversionException(String message) {
+    public CarpetParsingException(String message) {
         super(message);
     }
 
