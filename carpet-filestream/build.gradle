@@ -27,9 +27,13 @@ test {
 
 jacocoTestReport {
     reports {
-        xml.required = true
-        html.required = true
-    }
+         html {
+            enabled true
+         }
+         xml {
+            enabled true
+         }
+     }
 }
 
 task sourceJar(type: Jar) {
