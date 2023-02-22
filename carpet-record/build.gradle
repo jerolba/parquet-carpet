@@ -108,6 +108,13 @@ test {
     useJUnitPlatform()
 }
 
+jacocoTestReport {
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
 task sourceJar(type: Jar) {
     archiveClassifier = "sources"
     from sourceSets.main.allJava
