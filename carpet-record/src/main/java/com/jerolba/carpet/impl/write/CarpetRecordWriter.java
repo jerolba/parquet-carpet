@@ -106,8 +106,8 @@ public class CarpetRecordWriter {
             return new DoubleFieldWriter(f);
         } else if (typeName.equals("float") || typeName.equals("java.lang.Float")) {
             return new FloatFieldWriter(f);
-        } else if (typeName.equals("short") || typeName.equals("java.lang.Short") ||
-                typeName.equals("byte") || typeName.equals("java.lang.Byte")) {
+        } else if (typeName.equals("short") || typeName.equals("java.lang.Short")
+                || typeName.equals("byte") || typeName.equals("java.lang.Byte")) {
             return new IntegerCompatibleFieldWriter(f);
         } else if (type.isEnum()) {
             return new EnumFieldWriter(f, type);
@@ -123,7 +123,7 @@ public class CarpetRecordWriter {
 
     private class IntegerFieldWriter extends FieldWriter {
 
-        public IntegerFieldWriter(RecordField recordField) {
+        IntegerFieldWriter(RecordField recordField) {
             super(recordField);
         }
 
@@ -140,7 +140,7 @@ public class CarpetRecordWriter {
 
     private class IntegerCompatibleFieldWriter extends FieldWriter {
 
-        public IntegerCompatibleFieldWriter(RecordField recordField) {
+        IntegerCompatibleFieldWriter(RecordField recordField) {
             super(recordField);
         }
 
@@ -157,7 +157,7 @@ public class CarpetRecordWriter {
 
     private class LongFieldWriter extends FieldWriter {
 
-        public LongFieldWriter(RecordField recordField) {
+        LongFieldWriter(RecordField recordField) {
             super(recordField);
         }
 
@@ -174,7 +174,7 @@ public class CarpetRecordWriter {
 
     private class BooleanFieldWriter extends FieldWriter {
 
-        public BooleanFieldWriter(RecordField recordField) {
+        BooleanFieldWriter(RecordField recordField) {
             super(recordField);
         }
 
@@ -191,7 +191,7 @@ public class CarpetRecordWriter {
 
     private class FloatFieldWriter extends FieldWriter {
 
-        public FloatFieldWriter(RecordField recordField) {
+        FloatFieldWriter(RecordField recordField) {
             super(recordField);
         }
 
@@ -208,7 +208,7 @@ public class CarpetRecordWriter {
 
     private class DoubleFieldWriter extends FieldWriter {
 
-        public DoubleFieldWriter(RecordField recordField) {
+        DoubleFieldWriter(RecordField recordField) {
             super(recordField);
         }
 
@@ -225,7 +225,7 @@ public class CarpetRecordWriter {
 
     private class StringFieldWriter extends FieldWriter {
 
-        public StringFieldWriter(RecordField recordField) {
+        StringFieldWriter(RecordField recordField) {
             super(recordField);
         }
 
@@ -244,7 +244,7 @@ public class CarpetRecordWriter {
 
         private final EnumsValues values;
 
-        public EnumFieldWriter(RecordField recordField, Class<?> enumClass) {
+        EnumFieldWriter(RecordField recordField, Class<?> enumClass) {
             super(recordField);
             values = new EnumsValues(enumClass);
         }
@@ -265,7 +265,7 @@ public class CarpetRecordWriter {
 
         private final CarpetRecordWriter writer;
 
-        public RecordFieldWriter(RecordField recordField, CarpetRecordWriter writer) {
+        RecordFieldWriter(RecordField recordField, CarpetRecordWriter writer) {
             super(recordField);
             this.writer = writer;
         }

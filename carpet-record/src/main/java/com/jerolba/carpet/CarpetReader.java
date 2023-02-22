@@ -103,7 +103,7 @@ public class CarpetReader<T> {
         private final CarpetGroupConverter root;
         private T value;
 
-        public CarpetMaterializer(Class<T> readClass, MessageType requestedSchema) {
+        CarpetMaterializer(Class<T> readClass, MessageType requestedSchema) {
             this.root = new CarpetGroupConverter(requestedSchema, readClass, record -> this.value = (T) record);
         }
 

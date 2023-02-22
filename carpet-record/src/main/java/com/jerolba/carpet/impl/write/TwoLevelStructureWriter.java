@@ -73,7 +73,7 @@ public class TwoLevelStructureWriter {
 
         private final BiConsumer<RecordConsumer, Object> innerStructureWriter;
 
-        public TwoLevelCollectionRecordFieldWriter(RecordField recordField,
+        TwoLevelCollectionRecordFieldWriter(RecordField recordField,
                 BiConsumer<RecordConsumer, Object> innerStructureWriter) {
             super(recordField);
             this.innerStructureWriter = innerStructureWriter;

@@ -32,7 +32,7 @@ class CarpetListConverter extends GroupConverter {
     private final Converter converter;
     private final ListHolder listHolder;
 
-    public CarpetListConverter(GroupType requestedSchema, ParameterizedCollection parameterized,
+    CarpetListConverter(GroupType requestedSchema, ParameterizedCollection parameterized,
             Consumer<Object> groupConsumer) {
         this.groupConsumer = groupConsumer;
         this.listHolder = new ListHolder();

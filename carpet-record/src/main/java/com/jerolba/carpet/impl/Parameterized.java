@@ -57,12 +57,8 @@ public class Parameterized {
     private static boolean typeIsAssignableFrom(Type type, Class<?> toAssign) {
         if (type instanceof ParameterizedType paramType) {
             Type collectionActualType = paramType.getRawType();
-            if ((collectionActualType instanceof Class<?> finalType)) {
-                if (toAssign.isAssignableFrom(finalType)) {
-                    return true;
-                } else {
-                    return false;
-                }
+            if (collectionActualType instanceof Class<?> finalType) {
+                return toAssign.isAssignableFrom(finalType);
             } else {
                 return false;
             }

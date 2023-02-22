@@ -63,7 +63,7 @@ public class OneLevelStructureWriter {
 
         private final BiConsumer<RecordConsumer, Object> consumer;
 
-        public OneLevelCollectionFieldWriter(RecordField recordField, BiConsumer<RecordConsumer, Object> consumer) {
+        OneLevelCollectionFieldWriter(RecordField recordField, BiConsumer<RecordConsumer, Object> consumer) {
             super(recordField);
             this.consumer = consumer;
         }

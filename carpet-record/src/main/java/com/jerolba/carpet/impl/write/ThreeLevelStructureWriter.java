@@ -75,7 +75,7 @@ public class ThreeLevelStructureWriter {
 
         private final BiConsumer<RecordConsumer, Object> innerStructureWriter;
 
-        public ThreeLevelCollectionRecordFieldWriter(RecordField recordField,
+        ThreeLevelCollectionRecordFieldWriter(RecordField recordField,
                 BiConsumer<RecordConsumer, Object> innerStructureWriter) {
             super(recordField);
             this.innerStructureWriter = innerStructureWriter;
@@ -99,7 +99,6 @@ public class ThreeLevelStructureWriter {
         Collection<?> coll = (Collection<?>) value;
         for (var v : coll) {
             recordConsumer.startGroup();
-            // TODO: review null?
             if (v != null) {
                 recordConsumer.startField("element", 0);
                 innerStructureWriter.accept(recordConsumer, v);

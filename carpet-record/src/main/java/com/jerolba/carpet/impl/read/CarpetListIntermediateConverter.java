@@ -37,12 +37,10 @@ class CarpetListIntermediateConverter extends GroupConverter {
     private final ListHolder listHolder;
     private Object elementValue;
 
-    public CarpetListIntermediateConverter(Type rootListType, ParameterizedCollection parameterized,
-            ListHolder listHolder) {
-        var requestedSchema = rootListType.asGroupType();
-        System.out.println(requestedSchema);
+    CarpetListIntermediateConverter(Type rootListType, ParameterizedCollection parameterized, ListHolder listHolder) {
         this.listHolder = listHolder;
 
+        var requestedSchema = rootListType.asGroupType();
         List<Type> fields = requestedSchema.getFields();
         if (fields.size() > 1) {
             throw new RecordTypeConversionException(

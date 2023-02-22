@@ -27,7 +27,7 @@ class GroupFieldsMapper {
     private final Map<String, Integer> fieldIndex = new HashMap<>();
     private final Map<String, RecordComponent> fieldType = new HashMap<>();
 
-    public GroupFieldsMapper(Class<?> recordClass) {
+    GroupFieldsMapper(Class<?> recordClass) {
         this.recordClass = recordClass;
         RecordComponent[] components = recordClass.getRecordComponents();
         int cont = 0;

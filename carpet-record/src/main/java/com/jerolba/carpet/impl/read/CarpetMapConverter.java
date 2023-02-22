@@ -32,7 +32,7 @@ class CarpetMapConverter extends GroupConverter {
     private final Converter converter;
     private final MapHolder mapHolder;
 
-    public CarpetMapConverter(GroupType requestedSchema, ParameterizedMap parameterized,
+    CarpetMapConverter(GroupType requestedSchema, ParameterizedMap parameterized,
             Consumer<Object> groupConsumer) {
         this.groupConsumer = groupConsumer;
         this.mapHolder = new MapHolder();

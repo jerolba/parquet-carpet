@@ -74,7 +74,7 @@ public class CarpetWriter<T> {
         private final CarpetWriteConfiguration carpetConfiguration;
         private CarpetMessageWriter<T> carpetWriter;
 
-        public CarpetWriterSupport(Class<T> recordClass, Map<String, String> extraMetaData,
+        CarpetWriterSupport(Class<T> recordClass, Map<String, String> extraMetaData,
                 CarpetWriteConfiguration carpetConfiguration) {
             this.recordClass = recordClass;
             this.extraMetaData = extraMetaData;

@@ -82,7 +82,7 @@ public class MapStructureWriter {
         private final BiConsumer<RecordConsumer, Object> innerKeyStructureWriter;
         private final BiConsumer<RecordConsumer, Object> innerValueStructureWriter;
 
-        public MapRecordFieldWriter(RecordField recordField, BiConsumer<RecordConsumer, Object> innerStructureWriter,
+        MapRecordFieldWriter(RecordField recordField, BiConsumer<RecordConsumer, Object> innerStructureWriter,
                 BiConsumer<RecordConsumer, Object> innerValueStructureWriter) {
             super(recordField);
             this.innerKeyStructureWriter = innerStructureWriter;

@@ -38,9 +38,7 @@ class CarpetMapIntermediateConverter extends GroupConverter {
     private Object elementValue;
     private Object elementKey;
 
-    public CarpetMapIntermediateConverter(ParameterizedMap parameterized, GroupType requestedSchema,
-            MapHolder mapHolder) {
-        System.out.println(requestedSchema);
+    CarpetMapIntermediateConverter(ParameterizedMap parameterized, GroupType requestedSchema, MapHolder mapHolder) {
         this.mapHolder = mapHolder;
 
         List<Type> fields = requestedSchema.getFields();

@@ -27,7 +27,7 @@ class ColumnPath {
     private final List<Column> path;
     private final Column head;
 
-    public ColumnPath() {
+    ColumnPath() {
         this.path = new ArrayList<>();
         this.head = null;
     }

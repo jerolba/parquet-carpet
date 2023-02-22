@@ -47,8 +47,8 @@ public class SimpleCollectionItemConsumerFactory {
         if (typeName.equals("float") || typeName.equals("java.lang.Float")) {
             return (consumer, v) -> consumer.addFloat((Float) v);
         }
-        if (typeName.equals("short") || typeName.equals("java.lang.Short") ||
-                typeName.equals("byte") || typeName.equals("java.lang.Byte")) {
+        if (typeName.equals("short") || typeName.equals("java.lang.Short")
+                || typeName.equals("byte") || typeName.equals("java.lang.Byte")) {
             return (consumer, v) -> consumer.addInteger(((Number) v).intValue());
         }
         if (type.isEnum()) {
