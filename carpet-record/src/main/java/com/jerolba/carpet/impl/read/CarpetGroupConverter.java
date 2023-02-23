@@ -43,7 +43,6 @@ public class CarpetGroupConverter extends GroupConverter {
     public CarpetGroupConverter(GroupType requestedSchema, Class<?> groupClass, Consumer<Object> groupConsumer) {
         this.groupConsumer = groupConsumer;
         this.constructor = new ConstructorParams(groupClass);
-        System.out.println(requestedSchema);
 
         GroupFieldsMapper mapper = new GroupFieldsMapper(groupClass);
 

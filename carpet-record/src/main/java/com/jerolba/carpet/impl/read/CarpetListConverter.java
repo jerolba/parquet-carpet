@@ -36,7 +36,6 @@ class CarpetListConverter extends GroupConverter {
             Consumer<Object> groupConsumer) {
         this.groupConsumer = groupConsumer;
         this.listHolder = new ListHolder();
-        System.out.println(requestedSchema);
 
         Type listChild = requestedSchema.getFields().get(0);
         boolean threeLevel = SchemaValidation.isThreeLevel(listChild);

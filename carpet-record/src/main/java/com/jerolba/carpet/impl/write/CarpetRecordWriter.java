@@ -68,8 +68,7 @@ public class CarpetRecordWriter {
                     ParameterizedMap mapClass = getParameterizedMap(attr);
                     writer = createMapWriter(mapClass, f);
                 } else {
-                    System.out.println(typeName + " can not be serialized");
-                    // throw new RuntimeException(typeName + " can not be serialized");
+                    throw new RuntimeException(typeName + " can not be serialized");
                 }
             }
             fieldWriters.add(writer);

@@ -36,7 +36,6 @@ class CarpetMapConverter extends GroupConverter {
             Consumer<Object> groupConsumer) {
         this.groupConsumer = groupConsumer;
         this.mapHolder = new MapHolder();
-        System.out.println(requestedSchema);
 
         List<Type> fields = requestedSchema.getFields();
         if (fields.size() > 1) {

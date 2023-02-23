@@ -42,11 +42,10 @@ import org.apache.parquet.schema.PrimitiveType;
 import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
 import org.apache.parquet.schema.Type;
 import org.apache.parquet.schema.Type.Repetition;
+import org.apache.parquet.schema.Types;
 
 import com.jerolba.carpet.CarpetWriteConfiguration;
 import com.jerolba.carpet.RecordTypeConversionException;
-
-import org.apache.parquet.schema.Types;
 
 public class JavaRecord2Schema {
 
@@ -127,42 +126,32 @@ public class JavaRecord2Schema {
         if (parametized.isMap()) {
             return createMapType(fieldName, parametized.getParametizedAsMap(), visited, REPEATED);
         }
-        Class<?> type = parametized.getActualType();
-        return buildTypeElement(type, visited, REPEATED, fieldName);
+        return buildTypeElement(parametized.getActualType(), visited, REPEATED, fieldName);
     }
 
     private Type createCollectionTwoLevel(String fieldName, ParameterizedCollection parametized, Set<Class<?>> visited,
             Repetition repetition) {
-        Type nested = createCollectionNestedTwoLevel(parametized, visited);
+        // Two level collections elements are not nullables
+        Type nested = createNestedCollection(parametized, visited, REPEATED);
         return ConversionPatterns.listType(repetition, fieldName, nested);
-    }
-
-    private Type createCollectionNestedTwoLevel(ParameterizedCollection parametized, Set<Class<?>> visited) {
-        if (parametized.isCollection()) {
-            return createCollectionType("element", parametized.getParametizedAsCollection(), visited, null, REPEATED);
-        }
-        if (parametized.isMap()) {
-            return createMapType("element", parametized.getParametizedAsMap(), visited, REPEATED);
-        }
-        Class<?> type = parametized.getActualType();
-        return buildTypeElement(type, visited, REPEATED, "element");
     }
 
     private Type createCollectionThreeLevel(String fieldName, ParameterizedCollection parametized,
             Set<Class<?>> visited, Repetition repetition) {
-        Type nested = createCollectionNestedThreeLevel(parametized, visited);
+        // Three level collections elements are nullables
+        Type nested = createNestedCollection(parametized, visited, OPTIONAL);
         return ConversionPatterns.listOfElements(repetition, fieldName, nested);
     }
 
-    private Type createCollectionNestedThreeLevel(ParameterizedCollection parametized, Set<Class<?>> visited) {
+    private Type createNestedCollection(ParameterizedCollection parametized, Set<Class<?>> visited,
+            Repetition repetition) {
         if (parametized.isCollection()) {
-            return createCollectionType("element", parametized.getParametizedAsCollection(), visited, null, OPTIONAL);
+            return createCollectionType("element", parametized.getParametizedAsCollection(), visited, null, repetition);
         }
         if (parametized.isMap()) {
-            return createMapType("element", parametized.getParametizedAsMap(), visited, OPTIONAL);
+            return createMapType("element", parametized.getParametizedAsMap(), visited, repetition);
         }
-        Class<?> type = parametized.getActualType();
-        return buildTypeElement(type, visited, OPTIONAL, "element");
+        return buildTypeElement(parametized.getActualType(), visited, repetition, "element");
     }
 
     private Type createMapType(String fieldName, ParameterizedMap parametized, Set<Class<?>> visited,

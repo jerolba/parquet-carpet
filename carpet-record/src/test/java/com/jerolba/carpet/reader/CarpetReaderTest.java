@@ -1618,8 +1618,6 @@ class CarpetReaderTest {
         writerTest.write(lst);
         var reader = writerTest.getCarpetReader();
 
-        System.out.println(reader.read());
-        System.out.println(reader.read());
     }
 
     private static FieldAssembler<Schema> schemaType(String type) {
