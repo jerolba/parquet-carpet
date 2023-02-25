@@ -158,12 +158,7 @@ test {
 
 jacocoTestReport {
     reports {
-         html {
-            enabled true
-         }
-         xml {
-            enabled true
-         }
+         xml.enabled true
      }
 }
 
