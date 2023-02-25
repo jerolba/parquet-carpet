@@ -31,6 +31,7 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.parquet.schema.ConversionPatterns;
 import org.apache.parquet.schema.GroupType;
 import org.apache.parquet.schema.MessageType;
 import org.apache.parquet.schema.PrimitiveType;
@@ -2069,7 +2070,36 @@ class SchemaFilterTest {
         }
 
         @Test
-        void listIsIncompatibleWithPrimitive() {
+        void oneLevelsListIsIncompatibleWithPrimitive() {
+            Type fieldName = Types.primitive(BINARY, OPTIONAL).as(stringType()).named("name");
+            Type fieldId = Types.primitive(BINARY, OPTIONAL).as(stringType()).named("id");
+            Type fieldAge = new PrimitiveType(REPEATED, PrimitiveTypeName.INT32, "ages");
+            GroupType groupType = new MessageType("foo", fieldName, fieldId, fieldAge);
+
+            record Main(String id, String name, Integer ages) {
+            }
+
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+            assertThrows(RecordTypeConversionException.class, () -> filter.project(Main.class));
+        }
+
+        @Test
+        void twoLevelsListIsIncompatibleWithPrimitive() {
+            Type fieldName = Types.primitive(BINARY, OPTIONAL).as(stringType()).named("name");
+            Type fieldId = Types.primitive(BINARY, OPTIONAL).as(stringType()).named("id");
+            Type fieldAge = new PrimitiveType(REPEATED, PrimitiveTypeName.INT32, "element");
+            GroupType listType = ConversionPatterns.listType(OPTIONAL, "ages", fieldAge);
+            GroupType groupType = new MessageType("foo", fieldName, fieldId, listType);
+
+            record Main(String id, String name, Integer ages) {
+            }
+
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+            assertThrows(RecordTypeConversionException.class, () -> filter.project(Main.class));
+        }
+
+        @Test
+        void threeLevelsListIsIncompatibleWithPrimitive() {
             Type fieldName = Types.primitive(BINARY, OPTIONAL).as(stringType()).named("name");
             Type fieldId = Types.primitive(BINARY, OPTIONAL).as(stringType()).named("id");
             Type fieldAge = new PrimitiveType(REQUIRED, PrimitiveTypeName.INT32, "element");

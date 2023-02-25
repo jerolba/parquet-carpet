@@ -21,4 +21,7 @@ jobs:
       uses: gradle/gradle-build-action@v2
       
     - name: Run build with Gradle Wrapper
-      run: ./gradlew build
+      run: ./gradlew build jacocoTestReport
+
+    - name: Upload coverage reports to Codecov with GitHub Action
+      uses: codecov/codecov-action@v3      

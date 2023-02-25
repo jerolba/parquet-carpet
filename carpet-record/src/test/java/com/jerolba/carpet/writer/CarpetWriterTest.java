@@ -800,4 +800,52 @@ class CarpetWriterTest {
 
     }
 
+    @Nested
+    class RecordVisibility {
+
+        public record PublicDeclaredRecord(String id, int value) {
+        }
+
+        @Test
+        void publicDeclaredRecord() throws IOException {
+            var rec1 = new PublicDeclaredRecord("Madrid", 10);
+            var rec2 = new PublicDeclaredRecord("Barcelona", 20);
+            var writerTest = new ParquetWriterTest<>(PublicDeclaredRecord.class);
+            writerTest.write(rec1, rec2);
+
+            var avroReader = writerTest.getAvroGenericRecordReader();
+            assertEquals(rec1.id, avroReader.read().get("id").toString());
+            assertEquals(rec2.id, avroReader.read().get("id").toString());
+        }
+
+        private record PrivateDeclaredRecord(String id, int value) {
+        }
+
+        @Test
+        void privateDeclaredRecord() throws IOException {
+            var rec1 = new PrivateDeclaredRecord("Madrid", 10);
+            var rec2 = new PrivateDeclaredRecord("Barcelona", 20);
+            var writerTest = new ParquetWriterTest<>(PrivateDeclaredRecord.class);
+            writerTest.write(rec1, rec2);
+
+            var avroReader = writerTest.getAvroGenericRecordReader();
+            assertEquals(rec1.id, avroReader.read().get("id").toString());
+            assertEquals(rec2.id, avroReader.read().get("id").toString());
+        }
+
+        @Test
+        void methodDeclaredRecord() throws IOException {
+            record MethodDeclaredRecord(String id, int value) {
+            }
+
+            var rec1 = new MethodDeclaredRecord("Madrid", 10);
+            var rec2 = new MethodDeclaredRecord("Barcelona", 20);
+            var writerTest = new ParquetWriterTest<>(MethodDeclaredRecord.class);
+            writerTest.write(rec1, rec2);
+
+            var avroReader = writerTest.getAvroGenericRecordReader();
+            assertEquals(rec1.id, avroReader.read().get("id").toString());
+            assertEquals(rec2.id, avroReader.read().get("id").toString());
+        }
+    }
 }
