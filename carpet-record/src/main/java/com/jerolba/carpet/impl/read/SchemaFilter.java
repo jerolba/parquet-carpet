@@ -38,7 +38,6 @@ import org.apache.parquet.schema.PrimitiveType;
 import org.apache.parquet.schema.Type;
 import org.apache.parquet.schema.Type.Repetition;
 
-import com.jerolba.carpet.CarpetMissingFieldException;
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.impl.ParameterizedCollection;
 import com.jerolba.carpet.impl.ParameterizedMap;
@@ -73,10 +72,7 @@ public class SchemaFilter {
             ColumnPath column = path.add(readClass, recordComponent.getName(), name);
             Type parquetType = fieldsByName.get(name);
             if (parquetType == null) {
-                if (!validation.isIgnoreUnknown()) {
-                    throw new CarpetMissingFieldException("Field '" + name + "' not found in class '"
-                            + column.getClassName() + "' mapping column '" + column.path() + "'");
-                }
+                validation.validateMissingColumn(name, column);
                 continue;
             }
 

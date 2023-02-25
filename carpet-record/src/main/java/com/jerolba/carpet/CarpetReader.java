@@ -39,17 +39,26 @@ public class CarpetReader<T> {
     public static class Builder<T> extends ParquetReader.Builder<T> {
 
         private final Class<T> readClass;
-        // TODO: inject values via config reader. Which default values?
-        private boolean ignoreUnknown = false;
+        private boolean failOnMissingColumn = true;
         private boolean strictNumericType = false;
+        private boolean failOnNullForPrimitives = false;
 
         private Builder(InputFile file, Class<T> readClass) {
             super(file);
             this.readClass = readClass;
         }
 
-        public Builder<T> ignoreUnknown(boolean ignoreUnknown) {
-            this.ignoreUnknown = ignoreUnknown;
+        /**
+         * Feature that determines whether encountering of missed parquet column should
+         * result in a failure (by throwing a RecordTypeConversionException) or not.
+         *
+         * Feature is disabled by default.
+         *
+         * @param failOnMissingColumn
+         * @return Carpet Reader Builder
+         */
+        public Builder<T> failOnMissingColumn(boolean failOnMissingColumn) {
+            this.failOnMissingColumn = failOnMissingColumn;
             return this;
         }
 
@@ -58,9 +67,28 @@ public class CarpetReader<T> {
             return this;
         }
 
+        /**
+         * Feature that determines whether encountering null is an error when
+         * deserializing into Java primitive types (like 'int' or 'double'). If it is, a
+         * RecordTypeConversionException is thrown to indicate this; if not, default
+         * value is used (0 for 'int', 0.0 for double, same defaulting as what JVM
+         * uses).
+         *
+         * Feature is disabled by default.
+         *
+         * @param failOnNullForPrimitives
+         * @return Carpet Reader Builder
+         */
+        public Builder<T> failOnNullForPrimitives(boolean failOnNullForPrimitives) {
+            this.failOnNullForPrimitives = failOnNullForPrimitives;
+            return this;
+        }
+
         @Override
         protected ReadSupport<T> getReadSupport() {
-            CarpetReadConfiguration configuration = new CarpetReadConfiguration(ignoreUnknown, strictNumericType);
+            CarpetReadConfiguration configuration = new CarpetReadConfiguration(failOnMissingColumn,
+                    strictNumericType,
+                    failOnNullForPrimitives);
             CarpetReadSupport<T> readSupport = new CarpetReadSupport<>(readClass, configuration);
             return readSupport;
         }
@@ -88,8 +116,9 @@ public class CarpetReader<T> {
                 Map<String, String> keyValueMetaData,
                 MessageType fileSchema) {
 
-            var validation = new SchemaValidation(carpetConfiguration.isIgnoreUnknown(),
-                    carpetConfiguration.isStrictNumericType());
+            var validation = new SchemaValidation(carpetConfiguration.isFailOnMissingColumn(),
+                    carpetConfiguration.isStrictNumericType(),
+                    carpetConfiguration.isFailOnNullForPrimitives());
             SchemaFilter projectedSchema = new SchemaFilter(validation, fileSchema);
             MessageType projection = projectedSchema.project(readClass);
             Map<String, String> metadata = new LinkedHashMap<>();

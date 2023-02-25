@@ -29,14 +29,11 @@ import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.apache.parquet.io.InputFile;
 import org.apache.parquet.io.OutputFile;
 
+import com.jerolba.carpet.CarpetReader.Builder;
 import com.jerolba.carpet.filestream.FileSystemInputFile;
 import com.jerolba.carpet.filestream.FileSystemOutputFile;
 
 public class ParquetReaderTest {
-
-    public enum Flag {
-        STRICT_NUMERIC_TYPE, IGNORE_UNKNOWN;
-    }
 
     private final Schema schema;
     private String path;
@@ -66,10 +63,21 @@ public class ParquetReaderTest {
         }
     }
 
-    public <T> ParquetReader<T> carpetReader(Class<T> type) throws IOException {
+    public <T> ParquetReader<T> getCarpetReader(Class<T> readType, ReadFlag... flags) throws IOException {
         InputFile inputFile = new FileSystemInputFile(new File(path));
-        ParquetReader<T> carpetReader = CarpetReader.builder(inputFile, type).build();
-        return carpetReader;
+        Builder<T> builder = CarpetReader.builder(inputFile, readType);
+        for (ReadFlag f : flags) {
+            if (f.equals(ReadFlag.DONT_FAIL_ON_MISSING_COLUMN)) {
+                builder = builder.failOnMissingColumn(false);
+            }
+            if (f.equals(ReadFlag.FAIL_ON_NULL_FOR_PRIMITIVES)) {
+                builder = builder.failOnNullForPrimitives(true);
+            }
+            if (f.equals(ReadFlag.STRICT_NUMERIC_TYPE)) {
+                builder = builder.strictNumericType(true);
+            }
+        }
+        return builder.build();
     }
 
     @FunctionalInterface

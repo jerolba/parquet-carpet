@@ -15,7 +15,7 @@
  */
 package com.jerolba.carpet.reader;
 
-import static com.jerolba.carpet.ParquetWriterTest.Flag.STRICT_NUMERIC_TYPE;
+import static com.jerolba.carpet.ReadFlag.STRICT_NUMERIC_TYPE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 

@@ -38,10 +38,6 @@ import com.jerolba.carpet.filestream.OutputStreamOutputFile;
 
 public class ParquetWriterTest<T> {
 
-    public enum Flag {
-        STRICT_NUMERIC_TYPE, IGNORE_UNKNOWN;
-    }
-
     private final Class<T> type;
     private String path;
     private AnnotatedLevels level = AnnotatedLevels.THREE;
@@ -96,13 +92,16 @@ public class ParquetWriterTest<T> {
         return getCarpetReader(type);
     }
 
-    public <T> ParquetReader<T> getCarpetReader(Class<T> readType, Flag... flags) throws IOException {
+    public <T> ParquetReader<T> getCarpetReader(Class<T> readType, ReadFlag... flags) throws IOException {
         Builder<T> builder = CarpetReader.builder(new FileSystemInputFile(new File(path)), readType);
-        for (Flag f : flags) {
-            if (f.equals(Flag.IGNORE_UNKNOWN)) {
-                builder = builder.ignoreUnknown(true);
+        for (ReadFlag f : flags) {
+            if (f.equals(ReadFlag.DONT_FAIL_ON_MISSING_COLUMN)) {
+                builder = builder.failOnMissingColumn(false);
             }
-            if (f.equals(Flag.STRICT_NUMERIC_TYPE)) {
+            if (f.equals(ReadFlag.FAIL_ON_NULL_FOR_PRIMITIVES)) {
+                builder = builder.failOnNullForPrimitives(true);
+            }
+            if (f.equals(ReadFlag.STRICT_NUMERIC_TYPE)) {
                 builder = builder.strictNumericType(true);
             }
         }

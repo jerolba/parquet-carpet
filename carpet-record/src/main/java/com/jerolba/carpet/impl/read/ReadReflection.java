@@ -26,11 +26,13 @@ public class ReadReflection {
     public static class ConstructorParams {
 
         private final Constructor<?> constructor;
+        private final Object[] defaultParamsValues;
         public final Object[] c;
 
         public ConstructorParams(Class<?> recordClass) {
             constructor = findConstructor(recordClass);
             RecordComponent[] components = recordClass.getRecordComponents();
+            defaultParamsValues = createDefaultConstructorParams(components);
             c = new Object[components.length];
         }
 
@@ -43,21 +45,50 @@ public class ReadReflection {
             }
         }
 
-    }
-
-    private static Constructor<?> findConstructor(Class<?> recordClass) {
-        Object[] componentsTypes = Stream.of(recordClass.getRecordComponents())
-                .map(RecordComponent::getType)
-                .toArray();
-        Constructor<?>[] declaredConstructors = recordClass.getDeclaredConstructors();
-        for (var c : declaredConstructors) {
-            Class<?>[] parameterTypes = c.getParameterTypes();
-            if (Arrays.equals(componentsTypes, parameterTypes, (c1, c2) -> c1.equals(c2) ? 0 : 1)) {
-                c.setAccessible(true);
-                return c;
-            }
+        public void resetParams() {
+            System.arraycopy(defaultParamsValues, 0, c, 0, defaultParamsValues.length);
         }
-        throw new RuntimeException(recordClass.getName() + " record has an invalid constructor");
+
+        private Object[] createDefaultConstructorParams(RecordComponent[] components) {
+            Object[] defaultParams = new Object[components.length];
+            for (int i = 0; i < components.length; i++) {
+                defaultParams[i] = null;
+                Class<?> type = components[i].getType();
+                if (type.isPrimitive()) {
+                    defaultParams[i] = getMissingParquetAttr(type);
+                }
+            }
+            return defaultParams;
+        }
+
+        private static Object getMissingParquetAttr(Class<?> type) {
+            return switch (type.getName()) {
+            case "byte" -> (byte) 0;
+            case "short" -> (short) 0;
+            case "int" -> 0;
+            case "long" -> 0L;
+            case "double" -> 0.0;
+            case "float" -> 0.0F;
+            case "boolean" -> false;
+            default -> null;
+            };
+        }
+
+        private static Constructor<?> findConstructor(Class<?> recordClass) {
+            Object[] componentsTypes = Stream.of(recordClass.getRecordComponents())
+                    .map(RecordComponent::getType)
+                    .toArray();
+            Constructor<?>[] declaredConstructors = recordClass.getDeclaredConstructors();
+            for (var c : declaredConstructors) {
+                Class<?>[] parameterTypes = c.getParameterTypes();
+                if (Arrays.equals(componentsTypes, parameterTypes, (c1, c2) -> c1.equals(c2) ? 0 : 1)) {
+                    c.setAccessible(true);
+                    return c;
+                }
+            }
+            throw new RuntimeException(recordClass.getName() + " record has an invalid constructor");
+        }
+
     }
 
 }

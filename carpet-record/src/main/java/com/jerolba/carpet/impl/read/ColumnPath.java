@@ -15,9 +15,10 @@
  */
 package com.jerolba.carpet.impl.read;
 
+import static java.util.stream.Collectors.joining;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 class ColumnPath {
 
@@ -49,7 +50,15 @@ class ColumnPath {
     }
 
     public String path() {
-        return path.stream().map(c -> c.column).collect(Collectors.joining("."));
+        return path.stream().map(c -> c.column).collect(joining("."));
+    }
+
+    public String getColumnName() {
+        return head.column;
+    }
+
+    public String getFieldName() {
+        return head.field;
     }
 
 }

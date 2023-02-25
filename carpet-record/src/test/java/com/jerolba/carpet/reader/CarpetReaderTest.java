@@ -33,8 +33,10 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import com.jerolba.carpet.AnnotatedLevels;
+import com.jerolba.carpet.CarpetMissingColumnException;
 import com.jerolba.carpet.ParquetReaderTest;
 import com.jerolba.carpet.ParquetWriterTest;
+import com.jerolba.carpet.ReadFlag;
 import com.jerolba.carpet.RecordTypeConversionException;
 
 class CarpetReaderTest {
@@ -63,7 +65,7 @@ class CarpetReaderTest {
             record IntPrimitive(int value) {
             }
 
-            try (var carpetReader = readerTest.carpetReader(IntPrimitive.class)) {
+            try (var carpetReader = readerTest.getCarpetReader(IntPrimitive.class)) {
                 assertEquals(new IntPrimitive(1), carpetReader.read());
                 assertEquals(new IntPrimitive(2), carpetReader.read());
             }
@@ -86,7 +88,7 @@ class CarpetReaderTest {
             record LongPrimitive(long value) {
             }
 
-            try (var carpetReader = readerTest.carpetReader(LongPrimitive.class)) {
+            try (var carpetReader = readerTest.getCarpetReader(LongPrimitive.class)) {
                 assertEquals(new LongPrimitive(191919191919L), carpetReader.read());
                 assertEquals(new LongPrimitive(292929292929L), carpetReader.read());
             }
@@ -109,7 +111,7 @@ class CarpetReaderTest {
             record DoublePrimitive(double value) {
             }
 
-            try (var carpetReader = readerTest.carpetReader(DoublePrimitive.class)) {
+            try (var carpetReader = readerTest.getCarpetReader(DoublePrimitive.class)) {
                 assertEquals(new DoublePrimitive(1.9), carpetReader.read());
                 assertEquals(new DoublePrimitive(2.9), carpetReader.read());
             }
@@ -132,7 +134,7 @@ class CarpetReaderTest {
             record FloatPrimitive(float value) {
             }
 
-            try (var carpetReader = readerTest.carpetReader(FloatPrimitive.class)) {
+            try (var carpetReader = readerTest.getCarpetReader(FloatPrimitive.class)) {
                 assertEquals(new FloatPrimitive(1.9f), carpetReader.read());
                 assertEquals(new FloatPrimitive(2.9f), carpetReader.read());
             }
@@ -155,7 +157,7 @@ class CarpetReaderTest {
             record ShortPrimitive(short value) {
             }
 
-            try (var carpetReader = readerTest.carpetReader(ShortPrimitive.class)) {
+            try (var carpetReader = readerTest.getCarpetReader(ShortPrimitive.class)) {
                 assertEquals(new ShortPrimitive((short) 1), carpetReader.read());
                 assertEquals(new ShortPrimitive((short) 2), carpetReader.read());
             }
@@ -178,7 +180,7 @@ class CarpetReaderTest {
             record BytePrimitive(byte value) {
             }
 
-            try (var carpetReader = readerTest.carpetReader(BytePrimitive.class)) {
+            try (var carpetReader = readerTest.getCarpetReader(BytePrimitive.class)) {
                 assertEquals(new BytePrimitive((byte) 1), carpetReader.read());
                 assertEquals(new BytePrimitive((byte) 2), carpetReader.read());
             }
@@ -201,7 +203,7 @@ class CarpetReaderTest {
             record BooleanPrimitive(boolean value) {
             }
 
-            try (var carpetReader = readerTest.carpetReader(BooleanPrimitive.class)) {
+            try (var carpetReader = readerTest.getCarpetReader(BooleanPrimitive.class)) {
                 assertEquals(new BooleanPrimitive(true), carpetReader.read());
                 assertEquals(new BooleanPrimitive(false), carpetReader.read());
             }
@@ -224,7 +226,7 @@ class CarpetReaderTest {
             record IntegerObject(Integer value) {
             }
 
-            try (var carpetReader = readerTest.carpetReader(IntegerObject.class)) {
+            try (var carpetReader = readerTest.getCarpetReader(IntegerObject.class)) {
                 assertEquals(new IntegerObject(1), carpetReader.read());
                 assertEquals(new IntegerObject(2), carpetReader.read());
             }
@@ -247,7 +249,7 @@ class CarpetReaderTest {
             record LongObject(Long value) {
             }
 
-            try (var carpetReader = readerTest.carpetReader(LongObject.class)) {
+            try (var carpetReader = readerTest.getCarpetReader(LongObject.class)) {
                 assertEquals(new LongObject(191919191919L), carpetReader.read());
                 assertEquals(new LongObject(292929292929L), carpetReader.read());
             }
@@ -270,7 +272,7 @@ class CarpetReaderTest {
             record DoubleObject(Double value) {
             }
 
-            try (var carpetReader = readerTest.carpetReader(DoubleObject.class)) {
+            try (var carpetReader = readerTest.getCarpetReader(DoubleObject.class)) {
                 assertEquals(new DoubleObject(1.9), carpetReader.read());
                 assertEquals(new DoubleObject(2.9), carpetReader.read());
             }
@@ -293,7 +295,7 @@ class CarpetReaderTest {
             record FloatObject(Float value) {
             }
 
-            try (var carpetReader = readerTest.carpetReader(FloatObject.class)) {
+            try (var carpetReader = readerTest.getCarpetReader(FloatObject.class)) {
                 assertEquals(new FloatObject(1.9f), carpetReader.read());
                 assertEquals(new FloatObject(2.9f), carpetReader.read());
             }
@@ -316,7 +318,7 @@ class CarpetReaderTest {
             record ShortObject(Short value) {
             }
 
-            try (var carpetReader = readerTest.carpetReader(ShortObject.class)) {
+            try (var carpetReader = readerTest.getCarpetReader(ShortObject.class)) {
                 assertEquals(new ShortObject((short) 1), carpetReader.read());
                 assertEquals(new ShortObject((short) 2), carpetReader.read());
             }
@@ -339,7 +341,7 @@ class CarpetReaderTest {
             record ByteObject(Byte value) {
             }
 
-            try (var carpetReader = readerTest.carpetReader(ByteObject.class)) {
+            try (var carpetReader = readerTest.getCarpetReader(ByteObject.class)) {
                 assertEquals(new ByteObject((byte) 1), carpetReader.read());
                 assertEquals(new ByteObject((byte) 2), carpetReader.read());
             }
@@ -362,7 +364,7 @@ class CarpetReaderTest {
             record BooleanObject(Boolean value) {
             }
 
-            try (var carpetReader = readerTest.carpetReader(BooleanObject.class)) {
+            try (var carpetReader = readerTest.getCarpetReader(BooleanObject.class)) {
                 assertEquals(new BooleanObject(true), carpetReader.read());
                 assertEquals(new BooleanObject(false), carpetReader.read());
             }
@@ -385,7 +387,7 @@ class CarpetReaderTest {
             record StringObject(String value) {
             }
 
-            try (var carpetReader = readerTest.carpetReader(StringObject.class)) {
+            try (var carpetReader = readerTest.getCarpetReader(StringObject.class)) {
                 assertEquals(new StringObject("Madrid"), carpetReader.read());
                 assertEquals(new StringObject("Zaragoza"), carpetReader.read());
             }
@@ -410,7 +412,7 @@ class CarpetReaderTest {
             record EnumObject(Category value) {
             }
 
-            try (var carpetReader = readerTest.carpetReader(EnumObject.class)) {
+            try (var carpetReader = readerTest.getCarpetReader(EnumObject.class)) {
                 assertEquals(new EnumObject(Category.one), carpetReader.read());
                 assertEquals(new EnumObject(Category.two), carpetReader.read());
             }
@@ -433,7 +435,7 @@ class CarpetReaderTest {
             record IntegerNullObject(Integer value) {
             }
 
-            try (var carpetReader = readerTest.carpetReader(IntegerNullObject.class)) {
+            try (var carpetReader = readerTest.getCarpetReader(IntegerNullObject.class)) {
                 assertEquals(new IntegerNullObject(1), carpetReader.read());
                 assertEquals(new IntegerNullObject(null), carpetReader.read());
             }
@@ -456,7 +458,7 @@ class CarpetReaderTest {
             record LongNullObject(Long value) {
             }
 
-            try (var carpetReader = readerTest.carpetReader(LongNullObject.class)) {
+            try (var carpetReader = readerTest.getCarpetReader(LongNullObject.class)) {
                 assertEquals(new LongNullObject(191919191919L), carpetReader.read());
                 assertEquals(new LongNullObject(null), carpetReader.read());
             }
@@ -479,7 +481,7 @@ class CarpetReaderTest {
             record DoubleNullObject(Double value) {
             }
 
-            try (var carpetReader = readerTest.carpetReader(DoubleNullObject.class)) {
+            try (var carpetReader = readerTest.getCarpetReader(DoubleNullObject.class)) {
                 assertEquals(new DoubleNullObject(1.9), carpetReader.read());
                 assertEquals(new DoubleNullObject(null), carpetReader.read());
             }
@@ -502,7 +504,7 @@ class CarpetReaderTest {
             record FloatNullObject(Float value) {
             }
 
-            try (var carpetReader = readerTest.carpetReader(FloatNullObject.class)) {
+            try (var carpetReader = readerTest.getCarpetReader(FloatNullObject.class)) {
                 assertEquals(new FloatNullObject(1.9f), carpetReader.read());
                 assertEquals(new FloatNullObject(null), carpetReader.read());
             }
@@ -525,7 +527,7 @@ class CarpetReaderTest {
             record ShortNullObject(Short value) {
             }
 
-            try (var carpetReader = readerTest.carpetReader(ShortNullObject.class)) {
+            try (var carpetReader = readerTest.getCarpetReader(ShortNullObject.class)) {
                 assertEquals(new ShortNullObject((short) 1), carpetReader.read());
                 assertEquals(new ShortNullObject(null), carpetReader.read());
             }
@@ -548,7 +550,7 @@ class CarpetReaderTest {
             record ByteNullObject(Byte value) {
             }
 
-            try (var carpetReader = readerTest.carpetReader(ByteNullObject.class)) {
+            try (var carpetReader = readerTest.getCarpetReader(ByteNullObject.class)) {
                 assertEquals(new ByteNullObject((byte) 1), carpetReader.read());
                 assertEquals(new ByteNullObject(null), carpetReader.read());
             }
@@ -571,7 +573,7 @@ class CarpetReaderTest {
             record BooleanNullObject(Boolean value) {
             }
 
-            try (var carpetReader = readerTest.carpetReader(BooleanNullObject.class)) {
+            try (var carpetReader = readerTest.getCarpetReader(BooleanNullObject.class)) {
                 assertEquals(new BooleanNullObject(true), carpetReader.read());
                 assertEquals(new BooleanNullObject(null), carpetReader.read());
             }
@@ -594,7 +596,7 @@ class CarpetReaderTest {
             record StringNullObject(String value) {
             }
 
-            try (var carpetReader = readerTest.carpetReader(StringNullObject.class)) {
+            try (var carpetReader = readerTest.getCarpetReader(StringNullObject.class)) {
                 assertEquals(new StringNullObject("Madrid"), carpetReader.read());
                 assertEquals(new StringNullObject(null), carpetReader.read());
             }
@@ -619,7 +621,7 @@ class CarpetReaderTest {
             record EnumNullObject(Category value) {
             }
 
-            try (var carpetReader = readerTest.carpetReader(EnumNullObject.class)) {
+            try (var carpetReader = readerTest.getCarpetReader(EnumNullObject.class)) {
                 assertEquals(new EnumNullObject(Category.one), carpetReader.read());
                 assertEquals(new EnumNullObject(null), carpetReader.read());
             }
@@ -673,7 +675,7 @@ class CarpetReaderTest {
         var rec1 = new SimpleType("foo", 19191929L, 230202020L, 1, 2, (short) 4, (short) 5, (byte) 123, (byte) 19);
         var rec2 = new SimpleType(null, 22342342L, null, 3, null, (short) 6, null, (byte) 7, null);
 
-        try (var carpetReader = readerTest.carpetReader(SimpleType.class)) {
+        try (var carpetReader = readerTest.getCarpetReader(SimpleType.class)) {
             assertEquals(rec1, carpetReader.read());
             assertEquals(rec2, carpetReader.read());
         }
@@ -713,7 +715,7 @@ class CarpetReaderTest {
         var rec1 = new DecimalTypes("foo", 1.2, 2.4, 3.5f, 6.7f);
         var rec2 = new DecimalTypes("bar", 6744.2, null, 292.1f, null);
 
-        try (var carpetReader = readerTest.carpetReader(DecimalTypes.class)) {
+        try (var carpetReader = readerTest.getCarpetReader(DecimalTypes.class)) {
             assertEquals(rec1, carpetReader.read());
             assertEquals(rec2, carpetReader.read());
         }
@@ -746,7 +748,7 @@ class CarpetReaderTest {
         var rec1 = new BooleanTypes("foo", true, false);
         var rec2 = new BooleanTypes("bar", false, null);
 
-        try (var carpetReader = readerTest.carpetReader(BooleanTypes.class)) {
+        try (var carpetReader = readerTest.getCarpetReader(BooleanTypes.class)) {
             assertEquals(rec1, carpetReader.read());
             assertEquals(rec2, carpetReader.read());
         }
@@ -774,7 +776,7 @@ class CarpetReaderTest {
         record EnumType(String name, Category category) {
         }
 
-        try (var carpetReader = readerTest.carpetReader(EnumType.class)) {
+        try (var carpetReader = readerTest.getCarpetReader(EnumType.class)) {
             assertEquals(new EnumType("foo", Category.one), carpetReader.read());
             assertEquals(new EnumType("bar", null), carpetReader.read());
         }
@@ -811,7 +813,7 @@ class CarpetReaderTest {
         record Projection1(String id, int value, double amount) {
         }
 
-        try (var carpetReader = readerTest.carpetReader(Projection1.class)) {
+        try (var carpetReader = readerTest.getCarpetReader(Projection1.class)) {
             assertEquals(new Projection1("foo", 1, 10.2), carpetReader.read());
             assertEquals(new Projection1("boo", 2, 22.3), carpetReader.read());
         }
@@ -819,9 +821,152 @@ class CarpetReaderTest {
         record Projection2(String id, boolean active, String category) {
         }
 
-        try (var carpetReader = readerTest.carpetReader(Projection2.class)) {
+        try (var carpetReader = readerTest.getCarpetReader(Projection2.class)) {
             assertEquals(new Projection2("foo", true, "SMALL"), carpetReader.read());
             assertEquals(new Projection2("boo", false, "BIG"), carpetReader.read());
+        }
+    }
+
+    @Nested
+    class NullabilityOnPrimitiveFields {
+
+        record NotNullableFields(String id, int size, double value, float temperature, boolean active) {
+        }
+
+        private final Schema schema = schemaType("NotNullableFields")
+                .requiredString("id")
+                .optionalInt("size")
+                .optionalDouble("value")
+                .optionalFloat("temperature")
+                .optionalBoolean("active")
+                .endRecord();
+
+        @Test
+        void supportsOptionalColumnsOnPrimitiveFields() throws IOException {
+            var readerTest = new ParquetReaderTest(schema);
+            readerTest.writer(writer -> {
+                Record record = new Record(schema);
+                record.put("id", "foo");
+                record.put("size", 1);
+                record.put("value", 2.0);
+                record.put("temperature", 3.0f);
+                record.put("active", true);
+                writer.write(record);
+            });
+
+            try (var carpetReader = readerTest.getCarpetReader(NotNullableFields.class)) {
+                assertEquals(new NotNullableFields("foo", 1, 2.0, 3.0f, true), carpetReader.read());
+            }
+        }
+
+        @Test
+        void primitiveFieldsAreFilledWithDefaultValue() throws IOException {
+
+            var readerTest = new ParquetReaderTest(schema);
+            readerTest.writer(writer -> {
+                Record record = new Record(schema);
+                record.put("id", "foo");
+                record.put("size", null);
+                record.put("value", null);
+                record.put("temperature", null);
+                record.put("active", null);
+                writer.write(record);
+            });
+
+            try (var carpetReader = readerTest.getCarpetReader(NotNullableFields.class)) {
+                assertEquals(new NotNullableFields("foo", 0, 0.0, 0.0f, false), carpetReader.read());
+            }
+        }
+
+        @Test
+        void failOnFullForPrimitivesFlag() throws IOException {
+            var readerTest = new ParquetReaderTest(schema);
+            readerTest.writer(writer -> {
+                Record record = new Record(schema);
+                record.put("id", "foo");
+                record.put("size", null);
+                record.put("value", null);
+                record.put("temperature", null);
+                record.put("active", null);
+                writer.write(record);
+            });
+
+            try (var carpetReader = readerTest.getCarpetReader(NotNullableFields.class,
+                    ReadFlag.FAIL_ON_NULL_FOR_PRIMITIVES)) {
+                assertThrows(RecordTypeConversionException.class, () -> carpetReader.read());
+            }
+        }
+
+    }
+
+    @Nested
+    class MissingColumns {
+
+        private final Schema schema = schemaType("NotNullableFields")
+                .requiredString("id")
+                .optionalInt("size")
+                .optionalBoolean("active")
+                .endRecord();
+
+        @Test
+        void failOnMissingColumnsByDefault() throws IOException {
+            var readerTest = new ParquetReaderTest(schema);
+            readerTest.writer(writer -> {
+                Record record = new Record(schema);
+                record.put("id", "foo");
+                record.put("size", 1);
+                record.put("active", true);
+                writer.write(record);
+            });
+
+            record WithMissingColumns(String id, int size, int missing1, double missing2) {
+            }
+
+            try (var carpetReader = readerTest.getCarpetReader(WithMissingColumns.class)) {
+                assertThrows(CarpetMissingColumnException.class, () -> carpetReader.read());
+            }
+        }
+
+        @Test
+        void missingColumnsOnPrimitivesAreFilledWithDefaultTypeValue() throws IOException {
+            var readerTest = new ParquetReaderTest(schema);
+            readerTest.writer(writer -> {
+                Record record = new Record(schema);
+                record.put("id", "foo");
+                record.put("size", 1);
+                record.put("active", true);
+                writer.write(record);
+            });
+
+            record WithMissingColumns(String id, int size,
+                    int missing1, double missing2, float missing3, boolean missing4) {
+            }
+
+            try (var carpetReader = readerTest.getCarpetReader(WithMissingColumns.class,
+                    ReadFlag.DONT_FAIL_ON_MISSING_COLUMN)) {
+                assertEquals(new WithMissingColumns("foo", 1, 0, 0.0, 0.0f, false), carpetReader.read());
+            }
+        }
+
+        @Test
+        void missingColumnsOnObjectsAreFilledWithNull() throws IOException {
+            var readerTest = new ParquetReaderTest(schema);
+            readerTest.writer(writer -> {
+                Record record = new Record(schema);
+                record.put("id", "foo");
+                record.put("size", 1);
+                record.put("active", true);
+                writer.write(record);
+            });
+
+            record WithMissingColumns(String id, int size,
+                    Integer missing1, Double missing2, Float missing3, Boolean missing4) {
+            }
+
+            try (var carpetReader = readerTest.getCarpetReader(WithMissingColumns.class,
+                    ReadFlag.DONT_FAIL_ON_MISSING_COLUMN)) {
+                assertEquals(new WithMissingColumns("foo", 1, null, null, null, null), carpetReader.read());
+            }
         }
     }
 
@@ -856,7 +1001,7 @@ class CarpetReaderTest {
 
         var rec1 = new NestedRecord("foo", new Nested("Madrid", 10));
         var rec2 = new NestedRecord("bar", null);
-        try (var carpetReader = readerTest.carpetReader(NestedRecord.class)) {
+        try (var carpetReader = readerTest.getCarpetReader(NestedRecord.class)) {
             assertEquals(rec1, carpetReader.read());
             assertEquals(rec2, carpetReader.read());
         }
@@ -896,7 +1041,7 @@ class CarpetReaderTest {
         record ProjectedNestedRecord(String name, ProjectedNested nested) {
         }
 
-        try (var carpetReader = readerTest.carpetReader(ProjectedNestedRecord.class)) {
+        try (var carpetReader = readerTest.getCarpetReader(ProjectedNestedRecord.class)) {
             var expectedRec1 = new ProjectedNestedRecord("foo", new ProjectedNested("Madrid", 10));
             var expectedRec2 = new ProjectedNestedRecord("bar", null);
             assertEquals(expectedRec1, carpetReader.read());
@@ -909,7 +1054,7 @@ class CarpetReaderTest {
         record ProjectedNestedRecord2(boolean active, ProjectedNested2 nested) {
         }
 
-        try (var carpetReader = readerTest.carpetReader(ProjectedNestedRecord2.class)) {
+        try (var carpetReader = readerTest.getCarpetReader(ProjectedNestedRecord2.class)) {
             var expectedRec1 = new ProjectedNestedRecord2(true, new ProjectedNested2(10, 20.0));
             var expectedRec2 = new ProjectedNestedRecord2(false, null);
             assertEquals(expectedRec1, carpetReader.read());

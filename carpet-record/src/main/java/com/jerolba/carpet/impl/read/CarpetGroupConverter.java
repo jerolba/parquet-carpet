@@ -22,7 +22,6 @@ import static com.jerolba.carpet.impl.read.SingleLevelConverterFactory.createSin
 import static org.apache.parquet.schema.LogicalTypeAnnotation.listType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.mapType;
 
-import java.util.Arrays;
 import java.util.function.Consumer;
 
 import org.apache.parquet.io.api.Converter;
@@ -93,7 +92,7 @@ public class CarpetGroupConverter extends GroupConverter {
 
     @Override
     public void start() {
-        Arrays.fill(constructor.c, null);
+        constructor.resetParams();
     }
 
     @Override

@@ -17,20 +17,27 @@ package com.jerolba.carpet;
 
 public class CarpetReadConfiguration {
 
-    private final boolean ignoreUnknown;
+    private final boolean failOnMissingColumn;
     private final boolean strictNumericType;
+    private final boolean failOnNullForPrimitives;
 
-    public CarpetReadConfiguration(boolean ignoreUnknown, boolean strictNumericType) {
-        this.ignoreUnknown = ignoreUnknown;
+    public CarpetReadConfiguration(boolean failOnMissingColumn, boolean strictNumericType,
+            boolean failOnNullForPrimitives) {
+        this.failOnMissingColumn = failOnMissingColumn;
         this.strictNumericType = strictNumericType;
+        this.failOnNullForPrimitives = failOnNullForPrimitives;
     }
 
-    public boolean isIgnoreUnknown() {
-        return ignoreUnknown;
+    public boolean isFailOnMissingColumn() {
+        return failOnMissingColumn;
     }
 
     public boolean isStrictNumericType() {
         return strictNumericType;
+    }
+
+    public boolean isFailOnNullForPrimitives() {
+        return failOnNullForPrimitives;
     }
 
 }

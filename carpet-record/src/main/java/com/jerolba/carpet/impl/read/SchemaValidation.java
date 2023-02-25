@@ -27,20 +27,28 @@ import org.apache.parquet.schema.PrimitiveType;
 import org.apache.parquet.schema.Type;
 import org.apache.parquet.schema.Type.Repetition;
 
+import com.jerolba.carpet.CarpetMissingColumnException;
 import com.jerolba.carpet.RecordTypeConversionException;
 
 public class SchemaValidation {
 
-    private final boolean isStrictNumericType;
-    private final boolean isIgnoreUnknown;
+    private final boolean strictNumericType;
+    private final boolean failOnMissingColumn;
+    private final boolean failOnNullForPrimitives;
 
-    public SchemaValidation(boolean isIgnoreUnknown, boolean isStrictNumericType) {
-        this.isIgnoreUnknown = isIgnoreUnknown;
-        this.isStrictNumericType = isStrictNumericType;
+    public SchemaValidation(boolean failOnMissingColumn, boolean strictNumericType,
+            boolean failOnNullForPrimitives) {
+        this.failOnMissingColumn = failOnMissingColumn;
+        this.strictNumericType = strictNumericType;
+        this.failOnNullForPrimitives = failOnNullForPrimitives;
     }
 
-    public boolean isIgnoreUnknown() {
-        return isIgnoreUnknown;
+    public boolean validateMissingColumn(String name, ColumnPath column) {
+        if (failOnMissingColumn) {
+            throw new CarpetMissingColumnException("Field '" + column.getFieldName() + "' not found in class '"
+                    + column.getClassName() + "' mapping column '" + column.path() + "'");
+        }
+        return true;
     }
 
     public boolean validatePrimitiveCompatibility(PrimitiveType primitiveType, Class<?> type) {
@@ -64,11 +72,14 @@ public class SchemaValidation {
     }
 
     public boolean validateNullability(Type parquetType, RecordComponent recordComponent) {
-        boolean isNotNull = isNotNull(recordComponent);
-        if (isNotNull && parquetType.getRepetition() == Repetition.OPTIONAL) {
-            Class<?> type = recordComponent.getType();
-            throw new RecordTypeConversionException(
-                    parquetType.getName() + " (" + type.getName() + ") can not be null");
+        if (failOnNullForPrimitives) {
+            boolean isNotNull = isNotNull(recordComponent);
+            if (isNotNull && parquetType.getRepetition() == Repetition.OPTIONAL) {
+                Class<?> type = recordComponent.getType();
+                throw new RecordTypeConversionException(
+                        "\"" + parquetType.getName() + "\" (" + type.getName() + ") on class \""
+                                + recordComponent.getDeclaringRecord().getName() + "\" can not be null");
+            }
         }
         return true;
     }
@@ -84,7 +95,7 @@ public class SchemaValidation {
         if (typeName.equals("double") || typeName.equals("java.lang.Double")) {
             return true;
         }
-        if (!isStrictNumericType) {
+        if (!strictNumericType) {
             if (typeName.equals("short") || typeName.equals("java.lang.Short")) {
                 return true;
             }
@@ -100,7 +111,7 @@ public class SchemaValidation {
         if (typeName.equals("long") || typeName.equals("java.lang.Long")) {
             return true;
         }
-        if (!isStrictNumericType) {
+        if (!strictNumericType) {
             if (typeName.equals("double") || typeName.equals("java.lang.Double")) {
                 return false;
             }
@@ -125,7 +136,7 @@ public class SchemaValidation {
         if (typeName.equals("float") || typeName.equals("java.lang.Float")) {
             return true;
         }
-        if (!isStrictNumericType) {
+        if (!strictNumericType) {
         }
         return throwInvalidConversionException(primitiveType, type);
     }
@@ -135,7 +146,7 @@ public class SchemaValidation {
         if (typeName.equals("double") || typeName.equals("java.lang.Double")) {
             return true;
         }
-        if (!isStrictNumericType) {
+        if (!strictNumericType) {
             if (typeName.equals("float") || typeName.equals("java.lang.Float")) {
                 return true;
             }
@@ -248,4 +259,5 @@ public class SchemaValidation {
         }
         return true;
     }
+
 }
