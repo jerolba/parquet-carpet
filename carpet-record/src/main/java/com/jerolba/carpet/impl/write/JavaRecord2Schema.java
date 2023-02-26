@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jerolba.carpet.impl;
+package com.jerolba.carpet.impl.write;
 
 import static com.jerolba.carpet.impl.AliasField.getFieldName;
 import static com.jerolba.carpet.impl.NotNullField.isNotNull;
@@ -44,8 +44,9 @@ import org.apache.parquet.schema.Type;
 import org.apache.parquet.schema.Type.Repetition;
 import org.apache.parquet.schema.Types;
 
-import com.jerolba.carpet.CarpetWriteConfiguration;
 import com.jerolba.carpet.RecordTypeConversionException;
+import com.jerolba.carpet.impl.ParameterizedCollection;
+import com.jerolba.carpet.impl.ParameterizedMap;
 
 public class JavaRecord2Schema {
 

@@ -20,8 +20,6 @@ import java.util.function.BiConsumer;
 import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.io.api.RecordConsumer;
 
-import com.jerolba.carpet.CarpetWriteConfiguration;
-
 public class SimpleCollectionItemConsumerFactory {
 
     public static BiConsumer<RecordConsumer, Object> buildSimpleElementConsumer(Class<?> type,

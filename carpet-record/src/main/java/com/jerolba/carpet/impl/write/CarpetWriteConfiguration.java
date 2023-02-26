@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jerolba.carpet;
+package com.jerolba.carpet.impl.write;
+
+import com.jerolba.carpet.AnnotatedLevels;
 
 public class CarpetWriteConfiguration {
 

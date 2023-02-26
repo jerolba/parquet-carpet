@@ -18,6 +18,7 @@ package com.jerolba.carpet;
 import org.apache.parquet.io.api.RecordConsumer;
 
 import com.jerolba.carpet.impl.write.CarpetRecordWriter;
+import com.jerolba.carpet.impl.write.CarpetWriteConfiguration;
 
 class CarpetMessageWriter<T> {
 

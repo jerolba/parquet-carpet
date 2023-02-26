@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jerolba.carpet.impl;
+package com.jerolba.carpet.writer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -26,10 +26,11 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import com.jerolba.carpet.AnnotatedLevels;
-import com.jerolba.carpet.CarpetWriteConfiguration;
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.annotation.Alias;
 import com.jerolba.carpet.annotation.NotNull;
+import com.jerolba.carpet.impl.write.CarpetWriteConfiguration;
+import com.jerolba.carpet.impl.write.JavaRecord2Schema;
 
 class JavaRecord2SchemaTest {
 
