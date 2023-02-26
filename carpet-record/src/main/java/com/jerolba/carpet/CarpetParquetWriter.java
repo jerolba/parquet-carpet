@@ -27,7 +27,7 @@ import org.apache.parquet.schema.MessageType;
 
 import com.jerolba.carpet.impl.JavaRecord2Schema;
 
-public class CarpetWriter<T> {
+public class CarpetParquetWriter {
 
     public static <T> Builder<T> builder(OutputFile file, Class<T> recordClass) {
         return new Builder<>(file, recordClass);

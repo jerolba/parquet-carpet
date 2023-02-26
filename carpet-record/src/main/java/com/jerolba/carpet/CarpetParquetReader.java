@@ -30,7 +30,7 @@ import com.jerolba.carpet.impl.read.CarpetGroupConverter;
 import com.jerolba.carpet.impl.read.SchemaFilter;
 import com.jerolba.carpet.impl.read.SchemaValidation;
 
-public class CarpetReader<T> {
+public class CarpetParquetReader {
 
     public static <T> Builder<T> builder(InputFile file, Class<T> readClass) {
         return new Builder<>(file, readClass);

@@ -32,7 +32,7 @@ import org.apache.parquet.hadoop.ParquetWriter;
 import org.apache.parquet.hadoop.metadata.FileMetaData;
 import org.apache.parquet.schema.MessageType;
 
-import com.jerolba.carpet.CarpetReader.Builder;
+import com.jerolba.carpet.CarpetParquetReader.Builder;
 import com.jerolba.carpet.filestream.FileSystemInputFile;
 import com.jerolba.carpet.filestream.OutputStreamOutputFile;
 
@@ -72,7 +72,7 @@ public class ParquetWriterTest<T> {
 
     public void write(Collection<T> values) throws IOException {
         OutputStreamOutputFile output = new OutputStreamOutputFile(new FileOutputStream(path));
-        try (ParquetWriter<T> writer = CarpetWriter.builder(output, type)
+        try (ParquetWriter<T> writer = CarpetParquetWriter.builder(output, type)
                 .levelStructure(level)
                 .enableValidation()
                 .build()) {
@@ -93,7 +93,7 @@ public class ParquetWriterTest<T> {
     }
 
     public <T> ParquetReader<T> getCarpetReader(Class<T> readType, ReadFlag... flags) throws IOException {
-        Builder<T> builder = CarpetReader.builder(new FileSystemInputFile(new File(path)), readType);
+        Builder<T> builder = CarpetParquetReader.builder(new FileSystemInputFile(new File(path)), readType);
         for (ReadFlag f : flags) {
             if (f.equals(ReadFlag.DONT_FAIL_ON_MISSING_COLUMN)) {
                 builder = builder.failOnMissingColumn(false);
