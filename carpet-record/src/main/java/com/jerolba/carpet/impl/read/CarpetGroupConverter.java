@@ -62,11 +62,11 @@ public class CarpetGroupConverter extends GroupConverter {
             } else {
                 GroupType asGroupType = schemaField.asGroupType();
                 LogicalTypeAnnotation logicalType = asGroupType.getLogicalTypeAnnotation();
-                if (logicalType == listType()) {
+                if (listType().equals(logicalType)) {
                     var parameterized = getParameterizedCollection(recordComponent);
                     converters[cont] = new CarpetListConverter(asGroupType, parameterized,
                             value -> constructor.c[index] = value);
-                } else if (logicalType == mapType()) {
+                } else if (mapType().equals(logicalType)) {
                     var parameterized = getParameterizedMap(recordComponent);
                     converters[cont] = new CarpetMapConverter(asGroupType, parameterized,
                             value -> constructor.c[index] = value);

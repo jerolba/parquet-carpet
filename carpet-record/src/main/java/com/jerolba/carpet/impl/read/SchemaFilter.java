@@ -264,14 +264,14 @@ public class SchemaFilter {
         Type value = keyValueType.getFields().get(1);
         if (parameterized.valueIsCollection() || parameterized.valueIsMap()) {
             LogicalTypeAnnotation typeAnnotation = value.getLogicalTypeAnnotation();
-            if (typeAnnotation == listType()) {
+            if (listType().equals(typeAnnotation)) {
                 if (!parameterized.valueIsCollection()) {
                     throw new RecordTypeConversionException("Field " + name + " of " + column.getClassName()
                             + " is not a collection");
                 }
                 var parameterizedChild = parameterized.getValueTypeAsCollection();
                 value = analyzeMultipleLevelStructure(column, name, parameterizedChild, value.asGroupType());
-            } else if (typeAnnotation == mapType()) {
+            } else if (mapType().equals(typeAnnotation)) {
                 if (!parameterized.valueIsMap()) {
                     throw new RecordTypeConversionException("Field " + name + " of " + column.getClassName()
                             + " is not a map");

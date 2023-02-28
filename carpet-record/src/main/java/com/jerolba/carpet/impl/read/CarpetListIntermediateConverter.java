@@ -76,14 +76,15 @@ class CarpetListIntermediateConverter extends GroupConverter {
             return buildPrimitiveGenericConverters(listElement, parameterized.getActualType(), consumer);
         }
         LogicalTypeAnnotation logicalType = listElement.getLogicalTypeAnnotation();
-        if (logicalType == listType() && parameterized.isCollection()) {
-            var parameterizedList = parameterized.getParametizedAsCollection();
-            return new CarpetListConverter(listElement.asGroupType(), parameterizedList, consumer);
-        }
-        if (logicalType == mapType() && parameterized.isMap()) {
-            var parameterizedMap = parameterized.getParametizedAsMap();
-            return new CarpetMapConverter(listElement.asGroupType(), parameterizedMap, consumer);
-
+        if (logicalType != null) {
+            if (listType().equals(logicalType) && parameterized.isCollection()) {
+                var parameterizedList = parameterized.getParametizedAsCollection();
+                return new CarpetListConverter(listElement.asGroupType(), parameterizedList, consumer);
+            }
+            if (mapType().equals(logicalType) && parameterized.isMap()) {
+                var parameterizedMap = parameterized.getParametizedAsMap();
+                return new CarpetMapConverter(listElement.asGroupType(), parameterizedMap, consumer);
+            }
         }
         GroupType groupType = listElement.asGroupType();
         Class<?> listType = parameterized.getActualType();

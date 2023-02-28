@@ -15,7 +15,7 @@
  */
 package com.jerolba.carpet;
 
-public class CarpetReadConfiguration {
+class CarpetReadConfiguration {
 
     private final boolean failOnMissingColumn;
     private final boolean strictNumericType;

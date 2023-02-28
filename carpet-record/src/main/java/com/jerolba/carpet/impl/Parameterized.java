@@ -59,8 +59,6 @@ public class Parameterized {
             Type collectionActualType = paramType.getRawType();
             if (collectionActualType instanceof Class<?> finalType) {
                 return toAssign.isAssignableFrom(finalType);
-            } else {
-                return false;
             }
         }
         return false;
