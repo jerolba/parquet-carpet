@@ -28,14 +28,13 @@ import org.apache.parquet.schema.Type;
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.impl.read.converter.BooleanGenericConverter;
 import com.jerolba.carpet.impl.read.converter.EnumGenericConverter;
-import com.jerolba.carpet.impl.read.converter.FromDecimalToDoubleGenericConverter;
-import com.jerolba.carpet.impl.read.converter.FromDecimalToFloatGenericConverter;
+import com.jerolba.carpet.impl.read.converter.ToFloatGenericConverter;
 import com.jerolba.carpet.impl.read.converter.FromIntToByteGenericConverter;
-import com.jerolba.carpet.impl.read.converter.FromIntToDoubleGenericConverter;
 import com.jerolba.carpet.impl.read.converter.FromIntToIntegerGenericConverter;
 import com.jerolba.carpet.impl.read.converter.FromIntToLongGenericConverter;
 import com.jerolba.carpet.impl.read.converter.FromIntToShortGenericConverter;
 import com.jerolba.carpet.impl.read.converter.StringGenericConverter;
+import com.jerolba.carpet.impl.read.converter.ToDoubleGenericConverter;
 
 class PrimitiveGenericConverterFactory {
 
@@ -68,7 +67,10 @@ class PrimitiveGenericConverterFactory {
             return new FromIntToByteGenericConverter(listConsumer);
         }
         if (typeName.equals("double") || typeName.equals("java.lang.Double")) {
-            return new FromIntToDoubleGenericConverter(listConsumer);
+            return new ToDoubleGenericConverter(listConsumer);
+        }
+        if (typeName.equals("float") || typeName.equals("java.lang.Float")) {
+            return new ToFloatGenericConverter(listConsumer);
         }
         throw new RecordTypeConversionException(
                 typeName + " not compatible with " + type.getName() + " collection");
@@ -77,10 +79,10 @@ class PrimitiveGenericConverterFactory {
     public static Converter genericBuildFromDecimalConverter(Consumer<Object> listConsumer, Class<?> type) {
         String typeName = type.getName();
         if (typeName.equals("float") || typeName.equals("java.lang.Float")) {
-            return new FromDecimalToFloatGenericConverter(listConsumer);
+            return new ToFloatGenericConverter(listConsumer);
         }
         if (typeName.equals("double") || typeName.equals("java.lang.Double")) {
-            return new FromDecimalToDoubleGenericConverter(listConsumer);
+            return new ToDoubleGenericConverter(listConsumer);
         }
         throw new RecordTypeConversionException(
                 typeName + " not compatible with " + type.getName() + " collection");

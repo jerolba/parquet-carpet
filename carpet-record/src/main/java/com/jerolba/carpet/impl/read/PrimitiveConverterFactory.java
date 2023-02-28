@@ -29,14 +29,13 @@ import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.impl.read.ReadReflection.ConstructorParams;
 import com.jerolba.carpet.impl.read.converter.BooleanConverter;
 import com.jerolba.carpet.impl.read.converter.EnumConverter;
-import com.jerolba.carpet.impl.read.converter.FromDecimalToDoubleConverter;
-import com.jerolba.carpet.impl.read.converter.FromDecimalToFloatConverter;
 import com.jerolba.carpet.impl.read.converter.FromIntToByteConverter;
-import com.jerolba.carpet.impl.read.converter.FromIntToDoubleConverter;
 import com.jerolba.carpet.impl.read.converter.FromIntToIntegerConverter;
 import com.jerolba.carpet.impl.read.converter.FromIntToLongConverter;
 import com.jerolba.carpet.impl.read.converter.FromIntToShortConverter;
 import com.jerolba.carpet.impl.read.converter.StringConverter;
+import com.jerolba.carpet.impl.read.converter.ToDoubleConverter;
+import com.jerolba.carpet.impl.read.converter.ToFloatConverter;
 
 class PrimitiveConverterFactory {
 
@@ -72,7 +71,10 @@ class PrimitiveConverterFactory {
             return new FromIntToByteConverter(constructor, index);
         }
         if (typeName.equals("double") || typeName.equals("java.lang.Double")) {
-            return new FromIntToDoubleConverter(constructor, index);
+            return new ToDoubleConverter(constructor, index);
+        }
+        if (typeName.equals("float") || typeName.equals("java.lang.Float")) {
+            return new ToFloatConverter(constructor, index);
         }
         throw new RecordTypeConversionException(
                 typeName + " not compatible with " + recordComponent.getName() + " field");
@@ -83,10 +85,10 @@ class PrimitiveConverterFactory {
         Class<?> type = recordComponent.getType();
         String typeName = type.getName();
         if (typeName.equals("float") || typeName.equals("java.lang.Float")) {
-            return new FromDecimalToFloatConverter(constructor, index);
+            return new ToFloatConverter(constructor, index);
         }
         if (typeName.equals("double") || typeName.equals("java.lang.Double")) {
-            return new FromDecimalToDoubleConverter(constructor, index);
+            return new ToDoubleConverter(constructor, index);
         }
         throw new RecordTypeConversionException(
                 typeName + " not compatible with " + recordComponent.getName() + " field");

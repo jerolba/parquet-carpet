@@ -96,6 +96,9 @@ public class SchemaValidation {
             return true;
         }
         if (!strictNumericType) {
+            if (typeName.equals("float") || typeName.equals("java.lang.Float")) {
+                return true;
+            }
             if (typeName.equals("short") || typeName.equals("java.lang.Short")) {
                 return true;
             }
@@ -113,6 +116,9 @@ public class SchemaValidation {
         }
         if (!strictNumericType) {
             if (typeName.equals("double") || typeName.equals("java.lang.Double")) {
+                return false;
+            }
+            if (typeName.equals("float") || typeName.equals("java.lang.Float")) {
                 return false;
             }
             if (typeName.equals("int") || typeName.equals("java.lang.Integer")) {

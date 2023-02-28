@@ -15,26 +15,38 @@
  */
 package com.jerolba.carpet.impl.read.converter;
 
-import java.util.function.Consumer;
-
 import org.apache.parquet.io.api.PrimitiveConverter;
 
-public class FromDecimalToDoubleGenericConverter extends PrimitiveConverter {
+import com.jerolba.carpet.impl.read.ReadReflection.ConstructorParams;
 
-    private final Consumer<Object> listConsumer;
+public class ToDoubleConverter extends PrimitiveConverter {
 
-    public FromDecimalToDoubleGenericConverter(Consumer<Object> listConsumer) {
-        this.listConsumer = listConsumer;
-    }
+    private final ConstructorParams constructor;
+    private final int idx;
 
-    @Override
-    public void addDouble(double value) {
-        listConsumer.accept(value);
+    public ToDoubleConverter(ConstructorParams constructor, int idx) {
+        this.constructor = constructor;
+        this.idx = idx;
     }
 
     @Override
     public void addFloat(float value) {
-        listConsumer.accept((double) value);
+        constructor.c[idx] = (double) value;
+    }
+
+    @Override
+    public void addDouble(double value) {
+        constructor.c[idx] = value;
+    }
+
+    @Override
+    public void addInt(int value) {
+        constructor.c[idx] = (double) value;
+    }
+
+    @Override
+    public void addLong(long value) {
+        constructor.c[idx] = (double) value;
     }
 
 }

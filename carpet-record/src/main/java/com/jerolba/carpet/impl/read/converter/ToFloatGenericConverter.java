@@ -19,22 +19,32 @@ import java.util.function.Consumer;
 
 import org.apache.parquet.io.api.PrimitiveConverter;
 
-public class FromIntToDoubleGenericConverter extends PrimitiveConverter {
+public class ToFloatGenericConverter extends PrimitiveConverter {
 
     private final Consumer<Object> listConsumer;
 
-    public FromIntToDoubleGenericConverter(Consumer<Object> listConsumer) {
+    public ToFloatGenericConverter(Consumer<Object> listConsumer) {
         this.listConsumer = listConsumer;
     }
 
     @Override
+    public void addDouble(double value) {
+        listConsumer.accept((float) value);
+    }
+
+    @Override
+    public void addFloat(float value) {
+        listConsumer.accept(value);
+    }
+
+    @Override
     public void addLong(long value) {
-        listConsumer.accept((double) value);
+        listConsumer.accept((float) value);
     }
 
     @Override
     public void addInt(int value) {
-        listConsumer.accept((double) value);
+        listConsumer.accept((float) value);
     }
 
 }

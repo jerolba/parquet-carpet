@@ -15,169 +15,705 @@
  */
 package com.jerolba.carpet.reader;
 
-import static com.jerolba.carpet.ReadFlag.STRICT_NUMERIC_TYPE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
+import java.util.List;
 
+import org.apache.avro.Schema;
+import org.apache.avro.Schema.Type;
+import org.apache.avro.SchemaBuilder;
+import org.apache.avro.SchemaBuilder.FieldAssembler;
+import org.apache.avro.generic.GenericData.Record;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import com.jerolba.carpet.ParquetWriterTest;
-import com.jerolba.carpet.RecordTypeConversionException;
+import com.jerolba.carpet.ParquetReaderTest;
+import com.jerolba.carpet.reader.CarpetReaderTest.Category;
 
 class CarpetReaderConversionTest {
 
-    @Test
-    void toDouble() throws IOException {
+    @Nested
+    class FieldConversion {
 
-        record ToDouble(String name, double fromDouble, Double fromDoubleObj, float fromFloat, Float fromFloatObj) {
+        @Nested
+        class ToDouble {
+
+            record ToDoubleConversion(double primitive, Double object) {
+            }
+
+            @Test
+            void fromDoubleToDouble() throws IOException {
+                var readerTest = fromDouble("FromDoubleToDoubleConversion");
+                try (var carpetReader = readerTest.getCarpetReader(ToDoubleConversion.class)) {
+                    assertEquals(new ToDoubleConversion(1.0, 2.0), carpetReader.read());
+                    assertEquals(new ToDoubleConversion(3.0, null), carpetReader.read());
+                }
+            }
+
+            @Test
+            void fromFloatToDouble() throws IOException {
+                var readerTest = fromFloat("FromFloatToDoubleConversion");
+                try (var carpetReader = readerTest.getCarpetReader(ToDoubleConversion.class)) {
+                    assertEquals(new ToDoubleConversion(1.0, 2.0), carpetReader.read());
+                    assertEquals(new ToDoubleConversion(3.0, null), carpetReader.read());
+                }
+            }
+
+            @Test
+            void fromIntegerToDouble() throws IOException {
+                var readerTest = fromInteger("FromIntegerToDoubleConversion");
+                try (var carpetReader = readerTest.getCarpetReader(ToDoubleConversion.class)) {
+                    assertEquals(new ToDoubleConversion(1.0, 2.0), carpetReader.read());
+                    assertEquals(new ToDoubleConversion(3.0, null), carpetReader.read());
+                }
+            }
+
+            @Test
+            void fromLongToDouble() throws IOException {
+                var readerTest = fromLong("FromLongToDoubleConversion");
+                try (var carpetReader = readerTest.getCarpetReader(ToDoubleConversion.class)) {
+                    assertEquals(new ToDoubleConversion(1.0, 2.0), carpetReader.read());
+                    assertEquals(new ToDoubleConversion(3.0, null), carpetReader.read());
+                }
+            }
+
         }
-        var rec1 = new ToDouble("Apple", 1.0, 2.0, 3.0f, 4.0f);
-        var rec2 = new ToDouble("Sony", 1.0, null, 3.0f, null);
-        var writerTest = new ParquetWriterTest<>(ToDouble.class);
-        writerTest.write(rec1, rec2);
 
-        record ToDoubleRead(String name, double fromDouble, Double fromDoubleObj,
-                double fromFloat, Double fromFloatObj) {
+        @Nested
+        class ToFloat {
+
+            record ToFloatConversion(float primitive, Float object) {
+            }
+
+            @Test
+            void fromDoubleToFloat() throws IOException {
+                var readerTest = fromDouble("FromDoubleToFloatConversion");
+                try (var carpetReader = readerTest.getCarpetReader(ToFloatConversion.class)) {
+                    assertEquals(new ToFloatConversion(1.0f, 2.0f), carpetReader.read());
+                    assertEquals(new ToFloatConversion(3.0f, null), carpetReader.read());
+                }
+            }
+
+            @Test
+            void fromFloatToFloat() throws IOException {
+                var readerTest = fromFloat("FromFloatToFloatConversion");
+                try (var carpetReader = readerTest.getCarpetReader(ToFloatConversion.class)) {
+                    assertEquals(new ToFloatConversion(1.0f, 2.0f), carpetReader.read());
+                    assertEquals(new ToFloatConversion(3.0f, null), carpetReader.read());
+                }
+            }
+
+            @Test
+            void fromIntegerToFloat() throws IOException {
+                var readerTest = fromInteger("FromIntegerToFloatConversion");
+                try (var carpetReader = readerTest.getCarpetReader(ToFloatConversion.class)) {
+                    assertEquals(new ToFloatConversion(1.0f, 2.0f), carpetReader.read());
+                    assertEquals(new ToFloatConversion(3.0f, null), carpetReader.read());
+                }
+            }
+
+            @Test
+            void fromLongToFloat() throws IOException {
+                var readerTest = fromLong("FromLongToFloatConversion");
+                try (var carpetReader = readerTest.getCarpetReader(ToFloatConversion.class)) {
+                    assertEquals(new ToFloatConversion(1.0f, 2.0f), carpetReader.read());
+                    assertEquals(new ToFloatConversion(3.0f, null), carpetReader.read());
+                }
+            }
         }
 
-        var recExpected1 = new ToDoubleRead("Apple", 1.0, 2.0, 3.0, 4.0);
-        var recExpected2 = new ToDoubleRead("Sony", 1.0, null, 3.0, null);
-        var reader = writerTest.getCarpetReader(ToDoubleRead.class);
-        assertEquals(recExpected1, reader.read());
-        assertEquals(recExpected2, reader.read());
+        @Nested
+        class ToLong {
+
+            record ToLongConversion(long primitive, Long object) {
+            }
+
+            @Test
+            void fromIntegerToLong() throws IOException {
+                var readerTest = fromInteger("FromIntegerToLongConversion");
+                try (var carpetReader = readerTest.getCarpetReader(ToLongConversion.class)) {
+                    assertEquals(new ToLongConversion(1L, 2L), carpetReader.read());
+                    assertEquals(new ToLongConversion(3L, null), carpetReader.read());
+                }
+            }
+
+            @Test
+            void fromLongToLong() throws IOException {
+                var readerTest = fromLong("FromLongToLongConversion");
+                try (var carpetReader = readerTest.getCarpetReader(ToLongConversion.class)) {
+                    assertEquals(new ToLongConversion(1L, 2L), carpetReader.read());
+                    assertEquals(new ToLongConversion(3L, null), carpetReader.read());
+                }
+            }
+
+        }
+
+        @Nested
+        class ToInteger {
+
+            record ToIntegerConversion(int primitive, Integer object) {
+            }
+
+            @Test
+            void fromIntegerToInteger() throws IOException {
+                var readerTest = fromInteger("FromIntegerToIntegerConversion");
+                try (var carpetReader = readerTest.getCarpetReader(ToIntegerConversion.class)) {
+                    assertEquals(new ToIntegerConversion(1, 2), carpetReader.read());
+                    assertEquals(new ToIntegerConversion(3, null), carpetReader.read());
+                }
+            }
+
+            @Test
+            void fromLongToInteger() throws IOException {
+                var readerTest = fromLong("FromLongToIntegerConversion");
+                try (var carpetReader = readerTest.getCarpetReader(ToIntegerConversion.class)) {
+                    assertEquals(new ToIntegerConversion(1, 2), carpetReader.read());
+                    assertEquals(new ToIntegerConversion(3, null), carpetReader.read());
+                }
+            }
+
+        }
+
+        @Nested
+        class ToShort {
+
+            record ToShortConversion(short primitive, Short object) {
+            }
+
+            @Test
+            void fromIntegerToShort() throws IOException {
+                var readerTest = fromInteger("FromIntegerToShortConversion");
+                try (var carpetReader = readerTest.getCarpetReader(ToShortConversion.class)) {
+                    assertEquals(new ToShortConversion((short) 1, (short) 2), carpetReader.read());
+                    assertEquals(new ToShortConversion((short) 3, null), carpetReader.read());
+                }
+            }
+
+            @Test
+            void fromLongToShort() throws IOException {
+                var readerTest = fromLong("FromLongToShortConversion");
+                try (var carpetReader = readerTest.getCarpetReader(ToShortConversion.class)) {
+                    assertEquals(new ToShortConversion((short) 1, (short) 2), carpetReader.read());
+                    assertEquals(new ToShortConversion((short) 3, null), carpetReader.read());
+                }
+            }
+
+        }
+
+        @Nested
+        class ToByte {
+
+            record ToByteConversion(byte primitive, Byte object) {
+            }
+
+            @Test
+            void fromIntegerToByte() throws IOException {
+                var readerTest = fromInteger("FromIntegerToByteConversion");
+
+                try (var carpetReader = readerTest.getCarpetReader(ToByteConversion.class)) {
+                    assertEquals(new ToByteConversion((byte) 1, (byte) 2), carpetReader.read());
+                    assertEquals(new ToByteConversion((byte) 3, null), carpetReader.read());
+                }
+            }
+
+            @Test
+            void fromLongToByte() throws IOException {
+                var readerTest = fromLong("FromLongToByteConversion");
+                try (var carpetReader = readerTest.getCarpetReader(ToByteConversion.class)) {
+                    assertEquals(new ToByteConversion((byte) 1, (byte) 2), carpetReader.read());
+                    assertEquals(new ToByteConversion((byte) 3, null), carpetReader.read());
+                }
+            }
+
+        }
+
+        private ParquetReaderTest fromDouble(String name) throws IOException {
+            Schema schema = schemaType(name)
+                    .requiredDouble("primitive")
+                    .optionalDouble("object")
+                    .endRecord();
+
+            var readerTest = new ParquetReaderTest(schema);
+            readerTest.writer(writer -> {
+                Record record = new Record(schema);
+                record.put("primitive", 1.0);
+                record.put("object", 2.0);
+                writer.write(record);
+                record = new Record(schema);
+                record.put("primitive", 3.0);
+                record.put("object", null);
+                writer.write(record);
+            });
+            return readerTest;
+        }
+
+        private ParquetReaderTest fromFloat(String name) throws IOException {
+            Schema schema = schemaType(name)
+                    .requiredFloat("primitive")
+                    .optionalFloat("object")
+                    .endRecord();
+
+            var readerTest = new ParquetReaderTest(schema);
+            readerTest.writer(writer -> {
+                Record record = new Record(schema);
+                record.put("primitive", 1.0f);
+                record.put("object", 2.0f);
+                writer.write(record);
+                record = new Record(schema);
+                record.put("primitive", 3.0f);
+                record.put("object", null);
+                writer.write(record);
+            });
+            return readerTest;
+        }
+
+        private ParquetReaderTest fromInteger(String name) throws IOException {
+            Schema schema = schemaType(name)
+                    .requiredInt("primitive")
+                    .optionalInt("object")
+                    .endRecord();
+
+            var readerTest = new ParquetReaderTest(schema);
+            readerTest.writer(writer -> {
+                Record record = new Record(schema);
+                record.put("primitive", 1);
+                record.put("object", 2);
+                writer.write(record);
+                record = new Record(schema);
+                record.put("primitive", 3);
+                record.put("object", null);
+                writer.write(record);
+            });
+            return readerTest;
+        }
+
+        private ParquetReaderTest fromLong(String name) throws IOException {
+            Schema schema = schemaType(name)
+                    .requiredLong("primitive")
+                    .optionalLong("object")
+                    .endRecord();
+
+            var readerTest = new ParquetReaderTest(schema);
+            readerTest.writer(writer -> {
+                Record record = new Record(schema);
+                record.put("primitive", 1L);
+                record.put("object", 2L);
+                writer.write(record);
+                record = new Record(schema);
+                record.put("primitive", 3L);
+                record.put("object", null);
+                writer.write(record);
+            });
+            return readerTest;
+        }
     }
 
-    @Test
-    void fromNaturalToDouble() throws IOException {
+    @Nested
+    class ConversionInCollection {
 
-        record ToDouble(String name, int fromInteger, Integer fromIntegerObj, long fromLong, Long fromLongObj) {
+        @Nested
+        class ToIntegerList {
+
+            record IntList(List<Integer> value) {
+            }
+
+            @Test
+            void fromIntToIntList() throws IOException {
+                Schema schema = SchemaBuilder.builder().record("IntList").fields()
+                        .name("value").type().array().items(Schema.create(Type.INT)).noDefault()
+                        .endRecord();
+
+                var readerTest = new ParquetReaderTest(schema);
+                readerTest.writer(writer -> {
+                    Record record = new Record(schema);
+                    record.put("value", List.of(1, 2, 3));
+                    writer.write(record);
+                });
+
+                try (var carpetReader = readerTest.getCarpetReader(IntList.class)) {
+                    assertEquals(new IntList(List.of(1, 2, 3)), carpetReader.read());
+                }
+            }
+
+            @Test
+            void fromLongToIntList() throws IOException {
+                Schema schema = SchemaBuilder.builder().record("LongList").fields()
+                        .name("value").type().array().items(Schema.create(Type.LONG)).noDefault()
+                        .endRecord();
+
+                var readerTest = new ParquetReaderTest(schema);
+                readerTest.writer(writer -> {
+                    Record record = new Record(schema);
+                    record.put("value", List.of(1L, 2L, 3L));
+                    writer.write(record);
+                });
+
+                try (var carpetReader = readerTest.getCarpetReader(IntList.class)) {
+                    assertEquals(new IntList(List.of(1, 2, 3)), carpetReader.read());
+                }
+            }
         }
-        var rec1 = new ToDouble("Apple", 1, 2, 3L, 4L);
-        var rec2 = new ToDouble("Sony", 5, null, 6L, null);
-        var writerTest = new ParquetWriterTest<>(ToDouble.class);
-        writerTest.write(rec1, rec2);
 
-        record ToDoubleRead(String name, double fromInteger, Double fromIntegerObj,
-                double fromLong, Double fromLongObj) {
+        @Nested
+        class ToLongList {
+
+            record LongList(List<Long> value) {
+            }
+
+            @Test
+            void fromLongToLongList() throws IOException {
+                Schema schema = SchemaBuilder.builder().record("LongList").fields()
+                        .name("value").type().array().items(Schema.create(Type.LONG)).noDefault()
+                        .endRecord();
+
+                var readerTest = new ParquetReaderTest(schema);
+                readerTest.writer(writer -> {
+                    Record record = new Record(schema);
+                    record.put("value", List.of(1L, 2L, 3L));
+                    writer.write(record);
+                });
+
+                try (var carpetReader = readerTest.getCarpetReader(LongList.class)) {
+                    assertEquals(new LongList(List.of(1L, 2L, 3L)), carpetReader.read());
+                }
+            }
+
+            @Test
+            void fromIntToLongList() throws IOException {
+                Schema schema = SchemaBuilder.builder().record("IntegerList").fields()
+                        .name("value").type().array().items(Schema.create(Type.INT)).noDefault()
+                        .endRecord();
+
+                var readerTest = new ParquetReaderTest(schema);
+                readerTest.writer(writer -> {
+                    Record record = new Record(schema);
+                    record.put("value", List.of(1, 2, 3));
+                    writer.write(record);
+                });
+
+                try (var carpetReader = readerTest.getCarpetReader(LongList.class)) {
+                    assertEquals(new LongList(List.of(1L, 2L, 3L)), carpetReader.read());
+                }
+            }
         }
 
-        var recExpected1 = new ToDoubleRead("Apple", 1.0, 2.0, 3.0, 4.0);
-        var recExpected2 = new ToDoubleRead("Sony", 5.0, null, 6.0, null);
-        var reader = writerTest.getCarpetReader(ToDoubleRead.class);
-        assertEquals(recExpected1, reader.read());
-        assertEquals(recExpected2, reader.read());
+        @Nested
+        class ToDoubleList {
+
+            record DoubleList(List<Double> value) {
+            }
+
+            @Test
+            void fromDoubleToDoubleList() throws IOException {
+                Schema schema = SchemaBuilder.builder().record("DoubleList").fields()
+                        .name("value").type().array().items(Schema.create(Type.DOUBLE)).noDefault()
+                        .endRecord();
+
+                var readerTest = new ParquetReaderTest(schema);
+                readerTest.writer(writer -> {
+                    Record record = new Record(schema);
+                    record.put("value", List.of(1.9, 2.9, 3.9));
+                    writer.write(record);
+                });
+
+                try (var carpetReader = readerTest.getCarpetReader(DoubleList.class)) {
+                    assertEquals(new DoubleList(List.of(1.9, 2.9, 3.9)), carpetReader.read());
+                }
+            }
+
+            @Test
+            void fromFloatToDoubleList() throws IOException {
+                Schema schema = SchemaBuilder.builder().record("FloatList").fields()
+                        .name("value").type().array().items(Schema.create(Type.FLOAT)).noDefault()
+                        .endRecord();
+
+                var readerTest = new ParquetReaderTest(schema);
+                readerTest.writer(writer -> {
+                    Record record = new Record(schema);
+                    record.put("value", List.of(1.9f, 2.9f, 3.9f));
+                    writer.write(record);
+                });
+
+                try (var carpetReader = readerTest.getCarpetReader(DoubleList.class)) {
+                    DoubleList list = carpetReader.read();
+                    assertEquals(1.9f, list.value.get(0), 0.0001);
+                    assertEquals(2.9f, list.value.get(1), 0.0001);
+                    assertEquals(3.9f, list.value.get(2), 0.0001);
+                }
+            }
+
+            @Test
+            void fromIntegerToDoubleList() throws IOException {
+                Schema schema = SchemaBuilder.builder().record("IntegerList").fields()
+                        .name("value").type().array().items(Schema.create(Type.INT)).noDefault()
+                        .endRecord();
+
+                var readerTest = new ParquetReaderTest(schema);
+                readerTest.writer(writer -> {
+                    Record record = new Record(schema);
+                    record.put("value", List.of(1, 2, 3));
+                    writer.write(record);
+                });
+
+                try (var carpetReader = readerTest.getCarpetReader(DoubleList.class)) {
+                    assertEquals(new DoubleList(List.of(1.0, 2.0, 3.0)), carpetReader.read());
+                }
+            }
+
+            @Test
+            void fromLongToDoubleList() throws IOException {
+                Schema schema = SchemaBuilder.builder().record("LongList").fields()
+                        .name("value").type().array().items(Schema.create(Type.LONG)).noDefault()
+                        .endRecord();
+
+                var readerTest = new ParquetReaderTest(schema);
+                readerTest.writer(writer -> {
+                    Record record = new Record(schema);
+                    record.put("value", List.of(1L, 2L, 3L));
+                    writer.write(record);
+                });
+
+                try (var carpetReader = readerTest.getCarpetReader(DoubleList.class)) {
+                    assertEquals(new DoubleList(List.of(1.0, 2.0, 3.0)), carpetReader.read());
+                }
+            }
+
+        }
+
+        @Nested
+        class ToFloatList {
+
+            record FloatList(List<Float> value) {
+            }
+
+            @Test
+            void fromFloatToFloatList() throws IOException {
+                Schema schema = SchemaBuilder.builder().record("FloatList").fields()
+                        .name("value").type().array().items(Schema.create(Type.FLOAT)).noDefault()
+                        .endRecord();
+
+                var readerTest = new ParquetReaderTest(schema);
+                readerTest.writer(writer -> {
+                    Record record = new Record(schema);
+                    record.put("value", List.of(1.9f, 2.9f, 3.9f));
+                    writer.write(record);
+                });
+
+                try (var carpetReader = readerTest.getCarpetReader(FloatList.class)) {
+                    assertEquals(new FloatList(List.of(1.9f, 2.9f, 3.9f)), carpetReader.read());
+                }
+            }
+
+            @Test
+            void fromDoubleToFloatList() throws IOException {
+                Schema schema = SchemaBuilder.builder().record("DoubleList").fields()
+                        .name("value").type().array().items(Schema.create(Type.DOUBLE)).noDefault()
+                        .endRecord();
+
+                var readerTest = new ParquetReaderTest(schema);
+                readerTest.writer(writer -> {
+                    Record record = new Record(schema);
+                    record.put("value", List.of(1.9, 2.9, 3.9));
+                    writer.write(record);
+                });
+
+                try (var carpetReader = readerTest.getCarpetReader(FloatList.class)) {
+                    assertEquals(new FloatList(List.of(1.9f, 2.9f, 3.9f)), carpetReader.read());
+                }
+            }
+
+            @Test
+            void fromIntegerToFloatList() throws IOException {
+                Schema schema = SchemaBuilder.builder().record("IntegerList").fields()
+                        .name("value").type().array().items(Schema.create(Type.INT)).noDefault()
+                        .endRecord();
+
+                var readerTest = new ParquetReaderTest(schema);
+                readerTest.writer(writer -> {
+                    Record record = new Record(schema);
+                    record.put("value", List.of(1, 2, 3));
+                    writer.write(record);
+                });
+
+                try (var carpetReader = readerTest.getCarpetReader(FloatList.class)) {
+                    assertEquals(new FloatList(List.of(1.0f, 2.0f, 3.0f)), carpetReader.read());
+                }
+            }
+
+            @Test
+            void fromLongToFloatList() throws IOException {
+                Schema schema = SchemaBuilder.builder().record("LongList").fields()
+                        .name("value").type().array().items(Schema.create(Type.LONG)).noDefault()
+                        .endRecord();
+
+                var readerTest = new ParquetReaderTest(schema);
+                readerTest.writer(writer -> {
+                    Record record = new Record(schema);
+                    record.put("value", List.of(1L, 2L, 3L));
+                    writer.write(record);
+                });
+
+                try (var carpetReader = readerTest.getCarpetReader(FloatList.class)) {
+                    assertEquals(new FloatList(List.of(1.0f, 2.0f, 3.0f)), carpetReader.read());
+                }
+            }
+
+        }
+
+        @Nested
+        class ToShortList {
+
+            record ShortList(List<Short> value) {
+            }
+
+            @Test
+            void fromIntegerToShortList() throws IOException {
+                Schema schema = SchemaBuilder.builder().record("IntList").fields()
+                        .name("value").type().array().items(Schema.create(Type.INT)).noDefault()
+                        .endRecord();
+
+                var readerTest = new ParquetReaderTest(schema);
+                readerTest.writer(writer -> {
+                    Record record = new Record(schema);
+                    record.put("value", List.of(1, 2, 3));
+                    writer.write(record);
+                });
+
+                try (var carpetReader = readerTest.getCarpetReader(ShortList.class)) {
+                    assertEquals(new ShortList(List.of((short) 1, (short) 2, (short) 3)), carpetReader.read());
+                }
+            }
+
+            @Test
+            void fromLongToShortList() throws IOException {
+                Schema schema = SchemaBuilder.builder().record("LongList").fields()
+                        .name("value").type().array().items(Schema.create(Type.LONG)).noDefault()
+                        .endRecord();
+
+                var readerTest = new ParquetReaderTest(schema);
+                readerTest.writer(writer -> {
+                    Record record = new Record(schema);
+                    record.put("value", List.of(1L, 2L, 3L));
+                    writer.write(record);
+                });
+
+                try (var carpetReader = readerTest.getCarpetReader(ShortList.class)) {
+                    assertEquals(new ShortList(List.of((short) 1, (short) 2, (short) 3)), carpetReader.read());
+                }
+            }
+        }
+
+        @Nested
+        class ToByteList {
+
+            record ByteList(List<Byte> value) {
+            }
+
+            @Test
+            void fromIntegerToByteList() throws IOException {
+                Schema schema = SchemaBuilder.builder().record("IntList").fields()
+                        .name("value").type().array().items(Schema.create(Type.INT)).noDefault()
+                        .endRecord();
+
+                var readerTest = new ParquetReaderTest(schema);
+                readerTest.writer(writer -> {
+                    Record record = new Record(schema);
+                    record.put("value", List.of(1, 2, 3));
+                    writer.write(record);
+                });
+
+                try (var carpetReader = readerTest.getCarpetReader(ByteList.class)) {
+                    assertEquals(new ByteList(List.of((byte) 1, (byte) 2, (byte) 3)), carpetReader.read());
+                }
+            }
+
+            @Test
+            void fromLongToByteList() throws IOException {
+                Schema schema = SchemaBuilder.builder().record("LongList").fields()
+                        .name("value").type().array().items(Schema.create(Type.LONG)).noDefault()
+                        .endRecord();
+
+                var readerTest = new ParquetReaderTest(schema);
+                readerTest.writer(writer -> {
+                    Record record = new Record(schema);
+                    record.put("value", List.of(1L, 2L, 3L));
+                    writer.write(record);
+                });
+
+                try (var carpetReader = readerTest.getCarpetReader(ByteList.class)) {
+                    assertEquals(new ByteList(List.of((byte) 1, (byte) 2, (byte) 3)), carpetReader.read());
+                }
+            }
+        }
+
+        @Test
+        void booleanList() throws IOException {
+            Schema schema = SchemaBuilder.builder().record("BooleanList").fields()
+                    .name("value").type().array().items(Schema.create(Type.BOOLEAN)).noDefault()
+                    .endRecord();
+
+            var readerTest = new ParquetReaderTest(schema);
+            readerTest.writer(writer -> {
+                Record record = new Record(schema);
+                record.put("value", List.of(true, false, true));
+                writer.write(record);
+            });
+
+            record BooleanList(List<Boolean> value) {
+            }
+
+            try (var carpetReader = readerTest.getCarpetReader(BooleanList.class)) {
+                assertEquals(new BooleanList(List.of(true, false, true)), carpetReader.read());
+            }
+        }
+
+        @Test
+        void stringList() throws IOException {
+            Schema schema = SchemaBuilder.builder().record("StringList").fields()
+                    .name("value").type().array().items(Schema.create(Type.STRING)).noDefault()
+                    .endRecord();
+
+            var readerTest = new ParquetReaderTest(schema);
+            readerTest.writer(writer -> {
+                Record record = new Record(schema);
+                record.put("value", List.of("foo", "bar"));
+                writer.write(record);
+            });
+
+            record StringList(List<String> value) {
+            }
+
+            try (var carpetReader = readerTest.getCarpetReader(StringList.class)) {
+                assertEquals(new StringList(List.of("foo", "bar")), carpetReader.read());
+            }
+        }
+
+        @Test
+        void enumList() throws IOException {
+            Schema enumType = Schema.createEnum("Cetegory", null, null, List.of("one", "two", "three"));
+            Schema schema = SchemaBuilder.builder().record("StringList").fields()
+                    .name("value").type().array().items(enumType).noDefault()
+                    .endRecord();
+
+            var readerTest = new ParquetReaderTest(schema);
+            readerTest.writer(writer -> {
+                Record record = new Record(schema);
+                record.put("value", List.of("one", "two"));
+                writer.write(record);
+            });
+
+            record EnumList(List<Category> value) {
+            }
+
+            try (var carpetReader = readerTest.getCarpetReader(EnumList.class)) {
+                assertEquals(new EnumList(List.of(Category.one, Category.two)), carpetReader.read());
+            }
+        }
+
     }
 
-    @Test
-    void toFloat() throws IOException {
-        record ToFloat(String name, double fromDouble, Double fromDoubleObj, float fromFloat, Float fromFloatObj) {
-        }
-        var rec1 = new ToFloat("Apple", 1.0, 2.0, 3.0f, 4.0f);
-        var rec2 = new ToFloat("Sony", 1.0, null, 3.0f, null);
-        var writerTest = new ParquetWriterTest<>(ToFloat.class);
-        writerTest.write(rec1, rec2);
-
-        record ToFloatRead(String name, float fromDouble, Float fromDoubleObj, float fromFloat,
-                Float fromFloatObj) {
-        }
-
-        var recExpected1 = new ToFloatRead("Apple", 1.0f, 2.0f, 3.0f, 4.0f);
-        var recExpected2 = new ToFloatRead("Sony", 1.0f, null, 3.0f, null);
-        var reader = writerTest.getCarpetReader(ToFloatRead.class);
-        assertEquals(recExpected1, reader.read());
-        assertEquals(recExpected2, reader.read());
-
-        var readerStrict = writerTest.getCarpetReader(ToFloatRead.class, STRICT_NUMERIC_TYPE);
-        assertThrows(RecordTypeConversionException.class, () -> readerStrict.read());
+    private static FieldAssembler<Schema> schemaType(String type) {
+        return SchemaBuilder.builder().record(type).fields();
     }
-
-    @Test
-    void toLong() throws IOException {
-        record ToLong(String name, long fromLong, Long fromLongObj, int fromInteger, Integer fromIntegerObj) {
-        }
-        var rec1 = new ToLong("Apple", 1L, 2L, 3, 4);
-        var rec2 = new ToLong("Sony", 5, null, 6, null);
-        var writerTest = new ParquetWriterTest<>(ToLong.class);
-        writerTest.write(rec1, rec2);
-
-        record ToLongRead(String name, long fromLong, Long fromLongObj, long fromInteger, Long fromIntegerObj) {
-        }
-
-        var recExpected1 = new ToLongRead("Apple", 1L, 2L, 3L, 4L);
-        var recExpected2 = new ToLongRead("Sony", 5L, null, 6L, null);
-        var reader = writerTest.getCarpetReader(ToLongRead.class);
-        assertEquals(recExpected1, reader.read());
-        assertEquals(recExpected2, reader.read());
-    }
-
-    @Test
-    void toInteger() throws IOException {
-        record ToInteger(String name, long fromLong, Long fromLongObj, int fromInteger, Integer fromIntegerObj) {
-        }
-        var rec1 = new ToInteger("Apple", 1L, 2L, 3, 4);
-        var rec2 = new ToInteger("Sony", 5, null, 6, null);
-        var writerTest = new ParquetWriterTest<>(ToInteger.class);
-        writerTest.write(rec1, rec2);
-
-        record ToIntegerRead(String name, int fromLong, Integer fromLongObj, int fromInteger,
-                Integer fromIntegerObj) {
-        }
-
-        var recExpected1 = new ToIntegerRead("Apple", 1, 2, 3, 4);
-        var recExpected2 = new ToIntegerRead("Sony", 5, null, 6, null);
-        var reader = writerTest.getCarpetReader(ToIntegerRead.class);
-        assertEquals(recExpected1, reader.read());
-        assertEquals(recExpected2, reader.read());
-
-        var readerStrict = writerTest.getCarpetReader(ToIntegerRead.class, STRICT_NUMERIC_TYPE);
-        assertThrows(RecordTypeConversionException.class, () -> readerStrict.read());
-    }
-
-    @Test
-    void toShort() throws IOException {
-        record ToShort(String name, long fromLong, Long fromLongObj, int fromInteger, Integer fromIntegerObj) {
-        }
-        var rec1 = new ToShort("Apple", 1L, 2L, 3, 4);
-        var rec2 = new ToShort("Sony", 5, null, 6, null);
-        var writerTest = new ParquetWriterTest<>(ToShort.class);
-        writerTest.write(rec1, rec2);
-
-        record ToShortRead(String name, short fromLong, Short fromLongObj, short fromInteger,
-                Short fromIntegerObj) {
-        }
-
-        var recExpected1 = new ToShortRead("Apple", (short) 1, (short) 2, (short) 3, (short) 4);
-        var recExpected2 = new ToShortRead("Sony", (short) 5, null, (short) 6, null);
-        var reader = writerTest.getCarpetReader(ToShortRead.class);
-        assertEquals(recExpected1, reader.read());
-        assertEquals(recExpected2, reader.read());
-
-        var readerStrict = writerTest.getCarpetReader(ToShortRead.class, STRICT_NUMERIC_TYPE);
-        assertThrows(RecordTypeConversionException.class, () -> readerStrict.read());
-    }
-
-    @Test
-    void toByte() throws IOException {
-        record ToByte(String name, long fromLong, Long fromLongObj, int fromInteger, Integer fromIntegerObj) {
-        }
-        var rec1 = new ToByte("Apple", 1L, 2L, 3, 4);
-        var rec2 = new ToByte("Sony", 5, null, 6, null);
-        var writerTest = new ParquetWriterTest<>(ToByte.class);
-        writerTest.write(rec1, rec2);
-
-        record ToByteRead(String name, byte fromLong, Byte fromLongObj, byte fromInteger, Byte fromIntegerObj) {
-        }
-
-        var recExpected1 = new ToByteRead("Apple", (byte) 1, (byte) 2, (byte) 3, (byte) 4);
-        var recExpected2 = new ToByteRead("Sony", (byte) 5, null, (byte) 6, null);
-        var reader = writerTest.getCarpetReader(ToByteRead.class);
-        assertEquals(recExpected1, reader.read());
-        assertEquals(recExpected2, reader.read());
-
-        var readerStrict = writerTest.getCarpetReader(ToByteRead.class, STRICT_NUMERIC_TYPE);
-        assertThrows(RecordTypeConversionException.class, () -> readerStrict.read());
-    }
-
 }
