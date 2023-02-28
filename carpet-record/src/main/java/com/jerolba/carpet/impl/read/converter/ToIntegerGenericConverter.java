@@ -19,11 +19,11 @@ import java.util.function.Consumer;
 
 import org.apache.parquet.io.api.PrimitiveConverter;
 
-public class FromIntToIntegerGenericConverter extends PrimitiveConverter {
+public class ToIntegerGenericConverter extends PrimitiveConverter {
 
     private final Consumer<Object> listConsumer;
 
-    public FromIntToIntegerGenericConverter(Consumer<Object> listConsumer) {
+    public ToIntegerGenericConverter(Consumer<Object> listConsumer) {
         this.listConsumer = listConsumer;
     }
 

@@ -29,10 +29,10 @@ import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.impl.read.ReadReflection.ConstructorParams;
 import com.jerolba.carpet.impl.read.converter.BooleanConverter;
 import com.jerolba.carpet.impl.read.converter.EnumConverter;
-import com.jerolba.carpet.impl.read.converter.FromIntToByteConverter;
-import com.jerolba.carpet.impl.read.converter.FromIntToIntegerConverter;
-import com.jerolba.carpet.impl.read.converter.FromIntToLongConverter;
-import com.jerolba.carpet.impl.read.converter.FromIntToShortConverter;
+import com.jerolba.carpet.impl.read.converter.ToByteConverter;
+import com.jerolba.carpet.impl.read.converter.ToIntegerConverter;
+import com.jerolba.carpet.impl.read.converter.ToLongConverter;
+import com.jerolba.carpet.impl.read.converter.ToShortConverter;
 import com.jerolba.carpet.impl.read.converter.StringConverter;
 import com.jerolba.carpet.impl.read.converter.ToDoubleConverter;
 import com.jerolba.carpet.impl.read.converter.ToFloatConverter;
@@ -59,16 +59,16 @@ class PrimitiveConverterFactory {
         Class<?> type = recordComponent.getType();
         String typeName = type.getName();
         if (typeName.equals("int") || typeName.equals("java.lang.Integer")) {
-            return new FromIntToIntegerConverter(constructor, index);
+            return new ToIntegerConverter(constructor, index);
         }
         if (typeName.equals("long") || typeName.equals("java.lang.Long")) {
-            return new FromIntToLongConverter(constructor, index);
+            return new ToLongConverter(constructor, index);
         }
         if (typeName.equals("short") || typeName.equals("java.lang.Short")) {
-            return new FromIntToShortConverter(constructor, index);
+            return new ToShortConverter(constructor, index);
         }
         if (typeName.equals("byte") || typeName.equals("java.lang.Byte")) {
-            return new FromIntToByteConverter(constructor, index);
+            return new ToByteConverter(constructor, index);
         }
         if (typeName.equals("double") || typeName.equals("java.lang.Double")) {
             return new ToDoubleConverter(constructor, index);

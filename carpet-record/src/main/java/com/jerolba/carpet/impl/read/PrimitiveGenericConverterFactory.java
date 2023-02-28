@@ -29,10 +29,10 @@ import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.impl.read.converter.BooleanGenericConverter;
 import com.jerolba.carpet.impl.read.converter.EnumGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToFloatGenericConverter;
-import com.jerolba.carpet.impl.read.converter.FromIntToByteGenericConverter;
-import com.jerolba.carpet.impl.read.converter.FromIntToIntegerGenericConverter;
-import com.jerolba.carpet.impl.read.converter.FromIntToLongGenericConverter;
-import com.jerolba.carpet.impl.read.converter.FromIntToShortGenericConverter;
+import com.jerolba.carpet.impl.read.converter.ToByteGenericConverter;
+import com.jerolba.carpet.impl.read.converter.ToIntegerGenericConverter;
+import com.jerolba.carpet.impl.read.converter.ToLongGenericConverter;
+import com.jerolba.carpet.impl.read.converter.ToShortGenericConverter;
 import com.jerolba.carpet.impl.read.converter.StringGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToDoubleGenericConverter;
 
@@ -55,16 +55,16 @@ class PrimitiveGenericConverterFactory {
     public static Converter genericBuildFromIntConverter(Consumer<Object> listConsumer, Class<?> type) {
         String typeName = type.getName();
         if (typeName.equals("int") || typeName.equals("java.lang.Integer")) {
-            return new FromIntToIntegerGenericConverter(listConsumer);
+            return new ToIntegerGenericConverter(listConsumer);
         }
         if (typeName.equals("long") || typeName.equals("java.lang.Long")) {
-            return new FromIntToLongGenericConverter(listConsumer);
+            return new ToLongGenericConverter(listConsumer);
         }
         if (typeName.equals("short") || typeName.equals("java.lang.Short")) {
-            return new FromIntToShortGenericConverter(listConsumer);
+            return new ToShortGenericConverter(listConsumer);
         }
         if (typeName.equals("byte") || typeName.equals("java.lang.Byte")) {
-            return new FromIntToByteGenericConverter(listConsumer);
+            return new ToByteGenericConverter(listConsumer);
         }
         if (typeName.equals("double") || typeName.equals("java.lang.Double")) {
             return new ToDoubleGenericConverter(listConsumer);

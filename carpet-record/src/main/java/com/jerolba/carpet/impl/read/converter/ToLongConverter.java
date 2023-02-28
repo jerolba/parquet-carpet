@@ -15,26 +15,28 @@
  */
 package com.jerolba.carpet.impl.read.converter;
 
-import java.util.function.Consumer;
-
 import org.apache.parquet.io.api.PrimitiveConverter;
 
-public class FromIntToByteGenericConverter extends PrimitiveConverter {
+import com.jerolba.carpet.impl.read.ReadReflection.ConstructorParams;
 
-    private final Consumer<Object> listConsumer;
+public class ToLongConverter extends PrimitiveConverter {
 
-    public FromIntToByteGenericConverter(Consumer<Object> listConsumer) {
-        this.listConsumer = listConsumer;
-    }
+    private final ConstructorParams constructor;
+    private final int idx;
 
-    @Override
-    public void addLong(long value) {
-        listConsumer.accept((byte) value);
+    public ToLongConverter(ConstructorParams constructor, int idx) {
+        this.constructor = constructor;
+        this.idx = idx;
     }
 
     @Override
     public void addInt(int value) {
-        listConsumer.accept((byte) value);
+        constructor.c[idx] = (long) value;
+    }
+
+    @Override
+    public void addLong(long value) {
+        constructor.c[idx] = value;
     }
 
 }
