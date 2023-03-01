@@ -52,7 +52,7 @@ public class CarpetParquetReader {
          * Feature that determines whether encountering of missed parquet column should
          * result in a failure (by throwing a RecordTypeConversionException) or not.
          *
-         * Feature is disabled by default.
+         * Feature is enabled by default.
          *
          * @param failOnMissingColumn
          * @return Carpet Reader Builder
