@@ -28,13 +28,13 @@ import org.apache.parquet.schema.Type;
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.impl.read.converter.BooleanGenericConverter;
 import com.jerolba.carpet.impl.read.converter.EnumGenericConverter;
-import com.jerolba.carpet.impl.read.converter.ToFloatGenericConverter;
+import com.jerolba.carpet.impl.read.converter.StringGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToByteGenericConverter;
+import com.jerolba.carpet.impl.read.converter.ToDoubleGenericConverter;
+import com.jerolba.carpet.impl.read.converter.ToFloatGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToIntegerGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToLongGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToShortGenericConverter;
-import com.jerolba.carpet.impl.read.converter.StringGenericConverter;
-import com.jerolba.carpet.impl.read.converter.ToDoubleGenericConverter;
 
 class PrimitiveGenericConverterFactory {
 
@@ -104,6 +104,9 @@ class PrimitiveGenericConverterFactory {
         if (logicalType.equals(stringType())) {
             if (typeName.equals("java.lang.String")) {
                 return new StringGenericConverter(listConsumer);
+            }
+            if (type.isEnum()) {
+                return new EnumGenericConverter(listConsumer, type);
             }
             throw new RecordTypeConversionException(typeName + " not compatible with String field");
         }

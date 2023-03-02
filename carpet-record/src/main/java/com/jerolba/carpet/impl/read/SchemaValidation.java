@@ -171,7 +171,7 @@ public class SchemaValidation {
     private boolean validBinarySource(PrimitiveType primitiveType, Class<?> type) {
         String typeName = type.getName();
         LogicalTypeAnnotation logicalType = primitiveType.getLogicalTypeAnnotation();
-        if (logicalType.equals(stringType()) && typeName.equals("java.lang.String")) {
+        if (logicalType.equals(stringType()) && (typeName.equals("java.lang.String") || type.isEnum())) {
             return true;
         }
         if (logicalType.equals(enumType()) && (typeName.equals("java.lang.String") || type.isEnum())) {

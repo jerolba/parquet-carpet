@@ -29,13 +29,13 @@ import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.impl.read.ReadReflection.ConstructorParams;
 import com.jerolba.carpet.impl.read.converter.BooleanConverter;
 import com.jerolba.carpet.impl.read.converter.EnumConverter;
+import com.jerolba.carpet.impl.read.converter.StringConverter;
 import com.jerolba.carpet.impl.read.converter.ToByteConverter;
+import com.jerolba.carpet.impl.read.converter.ToDoubleConverter;
+import com.jerolba.carpet.impl.read.converter.ToFloatConverter;
 import com.jerolba.carpet.impl.read.converter.ToIntegerConverter;
 import com.jerolba.carpet.impl.read.converter.ToLongConverter;
 import com.jerolba.carpet.impl.read.converter.ToShortConverter;
-import com.jerolba.carpet.impl.read.converter.StringConverter;
-import com.jerolba.carpet.impl.read.converter.ToDoubleConverter;
-import com.jerolba.carpet.impl.read.converter.ToFloatConverter;
 
 class PrimitiveConverterFactory {
 
@@ -113,6 +113,9 @@ class PrimitiveConverterFactory {
         if (logicalType.equals(stringType())) {
             if (typeName.equals("java.lang.String")) {
                 return new StringConverter(constructor, index);
+            }
+            if (type.isEnum()) {
+                return new EnumConverter(constructor, index, recordComponent.getType());
             }
             throw new RecordTypeConversionException(typeName + " not compatible with String field");
         }

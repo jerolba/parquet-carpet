@@ -227,6 +227,108 @@ class CarpetReaderConversionTest {
 
         }
 
+        @Nested
+        class ToString {
+
+            record ToStringConversion(String value) {
+            }
+
+            @Test
+            void fromStringToString() throws IOException {
+                Schema schema = schemaType("FromStringToString")
+                        .optionalString("value")
+                        .endRecord();
+
+                var readerTest = new ParquetReaderTest(schema);
+                readerTest.writer(writer -> {
+                    Record record = new Record(schema);
+                    record.put("value", "one");
+                    writer.write(record);
+                    record = new Record(schema);
+                    record.put("value", null);
+                    writer.write(record);
+                });
+                try (var carpetReader = readerTest.getCarpetReader(ToStringConversion.class)) {
+                    assertEquals(new ToStringConversion("one"), carpetReader.read());
+                    assertEquals(new ToStringConversion(null), carpetReader.read());
+                }
+            }
+
+            @Test
+            void fromEnumToString() throws IOException {
+                Schema schema = SchemaBuilder.builder().record("FromEnumToString").fields()
+                        .name("value").type().nullable().enumeration("Category")
+                        .symbols("one", "two", "three").noDefault()
+                        .endRecord();
+
+                var readerTest = new ParquetReaderTest(schema);
+                readerTest.writer(writer -> {
+                    Record record = new Record(schema);
+                    record.put("value", "one");
+                    writer.write(record);
+                    record = new Record(schema);
+                    record.put("value", null);
+                    writer.write(record);
+                });
+                try (var carpetReader = readerTest.getCarpetReader(ToStringConversion.class)) {
+                    assertEquals(new ToStringConversion("one"), carpetReader.read());
+                    assertEquals(new ToStringConversion(null), carpetReader.read());
+                }
+            }
+
+        }
+
+        @Nested
+        class ToEnum {
+
+            record ToEnumConversion(Category value) {
+            }
+
+            @Test
+            void fromStringToEnum() throws IOException {
+                Schema schema = schemaType("FromStringToEnum")
+                        .optionalString("value")
+                        .endRecord();
+
+                var readerTest = new ParquetReaderTest(schema);
+                readerTest.writer(writer -> {
+                    Record record = new Record(schema);
+                    record.put("value", "one");
+                    writer.write(record);
+                    record = new Record(schema);
+                    record.put("value", null);
+                    writer.write(record);
+                });
+                try (var carpetReader = readerTest.getCarpetReader(ToEnumConversion.class)) {
+                    assertEquals(new ToEnumConversion(Category.one), carpetReader.read());
+                    assertEquals(new ToEnumConversion(null), carpetReader.read());
+                }
+            }
+
+            @Test
+            void fromEnumToEnum() throws IOException {
+                Schema schema = SchemaBuilder.builder().record("FromEnumToEnum").fields()
+                        .name("value").type().nullable().enumeration("Category")
+                        .symbols("one", "two", "three").noDefault()
+                        .endRecord();
+
+                var readerTest = new ParquetReaderTest(schema);
+                readerTest.writer(writer -> {
+                    Record record = new Record(schema);
+                    record.put("value", "one");
+                    writer.write(record);
+                    record = new Record(schema);
+                    record.put("value", null);
+                    writer.write(record);
+                });
+                try (var carpetReader = readerTest.getCarpetReader(ToEnumConversion.class)) {
+                    assertEquals(new ToEnumConversion(Category.one), carpetReader.read());
+                    assertEquals(new ToEnumConversion(null), carpetReader.read());
+                }
+            }
+
+        }
+
         private ParquetReaderTest fromDouble(String name) throws IOException {
             Schema schema = schemaType(name)
                     .requiredDouble("primitive")
@@ -507,47 +609,94 @@ class CarpetReaderConversionTest {
             }
         }
 
-        @Test
-        void stringList() throws IOException {
-            Schema schema = SchemaBuilder.builder().record("StringList").fields()
-                    .name("value").type().array().items(Schema.create(Type.STRING)).noDefault()
-                    .endRecord();
-
-            var readerTest = new ParquetReaderTest(schema);
-            readerTest.writer(writer -> {
-                Record record = new Record(schema);
-                record.put("value", List.of("foo", "bar"));
-                writer.write(record);
-            });
+        @Nested
+        class ToStringList {
 
             record StringList(List<String> value) {
             }
 
-            try (var carpetReader = readerTest.getCarpetReader(StringList.class)) {
-                assertEquals(new StringList(List.of("foo", "bar")), carpetReader.read());
+            @Test
+            void fromStringToStringList() throws IOException {
+                Schema schema = SchemaBuilder.builder().record("FromStringToStringList").fields()
+                        .name("value").type().array().items(Schema.create(Type.STRING)).noDefault()
+                        .endRecord();
+
+                var readerTest = new ParquetReaderTest(schema);
+                readerTest.writer(writer -> {
+                    Record record = new Record(schema);
+                    record.put("value", List.of("foo", "bar"));
+                    writer.write(record);
+                });
+
+                try (var carpetReader = readerTest.getCarpetReader(StringList.class)) {
+                    assertEquals(new StringList(List.of("foo", "bar")), carpetReader.read());
+                }
             }
+
+            @Test
+            void fromEnumToStringList() throws IOException {
+                Schema enumType = Schema.createEnum("Cetegory", null, null, List.of("one", "two", "three"));
+                Schema schema = SchemaBuilder.builder().record("FromEnumToStringList").fields()
+                        .name("value").type().array().items(enumType).noDefault()
+                        .endRecord();
+
+                var readerTest = new ParquetReaderTest(schema);
+                readerTest.writer(writer -> {
+                    Record record = new Record(schema);
+                    record.put("value", List.of("foo", "bar"));
+                    writer.write(record);
+                });
+
+                try (var carpetReader = readerTest.getCarpetReader(StringList.class)) {
+                    assertEquals(new StringList(List.of("foo", "bar")), carpetReader.read());
+                }
+            }
+
         }
 
-        @Test
-        void enumList() throws IOException {
-            Schema enumType = Schema.createEnum("Cetegory", null, null, List.of("one", "two", "three"));
-            Schema schema = SchemaBuilder.builder().record("StringList").fields()
-                    .name("value").type().array().items(enumType).noDefault()
-                    .endRecord();
-
-            var readerTest = new ParquetReaderTest(schema);
-            readerTest.writer(writer -> {
-                Record record = new Record(schema);
-                record.put("value", List.of("one", "two"));
-                writer.write(record);
-            });
+        @Nested
+        class ToEnumList {
 
             record EnumList(List<Category> value) {
             }
 
-            try (var carpetReader = readerTest.getCarpetReader(EnumList.class)) {
-                assertEquals(new EnumList(List.of(Category.one, Category.two)), carpetReader.read());
+            @Test
+            void fromEnumToEnumList() throws IOException {
+                Schema enumType = Schema.createEnum("Cetegory", null, null, List.of("one", "two", "three"));
+                Schema schema = SchemaBuilder.builder().record("StringList").fields()
+                        .name("value").type().array().items(enumType).noDefault()
+                        .endRecord();
+
+                var readerTest = new ParquetReaderTest(schema);
+                readerTest.writer(writer -> {
+                    Record record = new Record(schema);
+                    record.put("value", List.of("one", "two"));
+                    writer.write(record);
+                });
+
+                try (var carpetReader = readerTest.getCarpetReader(EnumList.class)) {
+                    assertEquals(new EnumList(List.of(Category.one, Category.two)), carpetReader.read());
+                }
             }
+
+            @Test
+            void fromStringToEnumList() throws IOException {
+                Schema schema = SchemaBuilder.builder().record("FromStringToEnumList").fields()
+                        .name("value").type().array().items(Schema.create(Type.STRING)).noDefault()
+                        .endRecord();
+
+                var readerTest = new ParquetReaderTest(schema);
+                readerTest.writer(writer -> {
+                    Record record = new Record(schema);
+                    record.put("value", List.of("one", "two"));
+                    writer.write(record);
+                });
+
+                try (var carpetReader = readerTest.getCarpetReader(EnumList.class)) {
+                    assertEquals(new EnumList(List.of(Category.one, Category.two)), carpetReader.read());
+                }
+            }
+
         }
 
         private ParquetReaderTest fromIntList(String name, Integer... values) throws IOException {

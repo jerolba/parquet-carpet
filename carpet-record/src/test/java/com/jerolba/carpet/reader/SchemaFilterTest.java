@@ -449,6 +449,18 @@ class SchemaFilterTest {
             assertEquals(groupType, filterStrict.project(CastToString.class));
         }
 
+        @Test
+        void stringCastToEnumIsSupported() {
+            Type field = Types.primitive(BINARY, REQUIRED).as(stringType()).named("value");
+            GroupType groupType = new MessageType("foo", field);
+
+            record CastToEnum(Category value) {
+            }
+
+            SchemaFilter filterStrict = new SchemaFilter(defaultReadConfig, groupType);
+            assertEquals(groupType, filterStrict.project(CastToEnum.class));
+        }
+
     }
 
     @Nested
