@@ -39,7 +39,6 @@ class CarpetListConverter extends GroupConverter {
 
         Type listChild = requestedSchema.getFields().get(0);
         boolean threeLevel = SchemaValidation.isThreeLevel(listChild);
-        // Implement some logic to see if we have 2 or 3 level structures
         if (threeLevel) {
             converter = new CarpetListIntermediateConverter(listChild, parameterized, listHolder);
         } else {

@@ -36,19 +36,24 @@ import com.jerolba.carpet.filestream.FileSystemOutputFile;
 public class ParquetReaderTest {
 
     private final Schema schema;
-    private String path;
+    private final String path;
 
     public ParquetReaderTest(Schema schema) {
-        String fileName = schema.getName() + ".parquet";
-        this.path = "/tmp/" + fileName;
+        this.path = getTestFilePath(schema.getName());
+        this.schema = schema;
+    }
+
+    public static String getTestFilePath(String name) {
+        String fileName = name + ".parquet";
+        var path = "/tmp/" + fileName;
         try {
             java.nio.file.Path targetPath = Files.createTempFile("parquet", fileName);
-            this.path = targetPath.toFile().getAbsolutePath();
+            path = targetPath.toFile().getAbsolutePath();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        this.schema = schema;
         new File(path).delete();
+        return path;
     }
 
     public void writer(WriterConsumer writerConsumer) throws IOException {
