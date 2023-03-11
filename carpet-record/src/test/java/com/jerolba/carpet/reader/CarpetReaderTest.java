@@ -19,25 +19,36 @@ import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
+import org.apache.avro.LogicalTypes;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
 import org.apache.avro.SchemaBuilder.FieldAssembler;
 import org.apache.avro.generic.GenericData.Record;
+import org.apache.parquet.avro.AvroParquetWriter;
+import org.apache.parquet.avro.AvroWriteSupport;
+import org.apache.parquet.hadoop.ParquetWriter;
+import org.apache.parquet.io.InputFile;
+import org.apache.parquet.io.OutputFile;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import com.jerolba.carpet.AnnotatedLevels;
 import com.jerolba.carpet.CarpetMissingColumnException;
+import com.jerolba.carpet.CarpetParquetReader;
 import com.jerolba.carpet.ParquetReaderTest;
 import com.jerolba.carpet.ParquetWriterTest;
 import com.jerolba.carpet.ReadFlag;
 import com.jerolba.carpet.RecordTypeConversionException;
+import com.jerolba.carpet.filestream.FileSystemInputFile;
+import com.jerolba.carpet.filestream.FileSystemOutputFile;
 
 class CarpetReaderTest {
 
@@ -415,6 +426,39 @@ class CarpetReaderTest {
             try (var carpetReader = readerTest.getCarpetReader(EnumObject.class)) {
                 assertEquals(new EnumObject(Category.one), carpetReader.read());
                 assertEquals(new EnumObject(Category.two), carpetReader.read());
+            }
+        }
+
+        @Test
+        void uuidObject() throws IOException {
+            Schema uuid = LogicalTypes.uuid().addToSchema(Schema.create(Schema.Type.STRING));
+            Schema schema = SchemaBuilder.builder().record("UUID").fields()
+                    .name("value").type(uuid).noDefault()
+                    .endRecord();
+
+            File file = new File(ParquetReaderTest.getTestFilePath("uuid"));
+            var uuid1 = UUID.randomUUID();
+            var uuid2 = UUID.randomUUID();
+            OutputFile output = new FileSystemOutputFile(file);
+            try (ParquetWriter<Record> writer = AvroParquetWriter.<Record>builder(output)
+                    .config(AvroWriteSupport.WRITE_PARQUET_UUID, "true")
+                    .withSchema(schema)
+                    .build()) {
+                Record record = new Record(schema);
+                record.put("value", uuid1);
+                writer.write(record);
+                record = new Record(schema);
+                record.put("value", uuid2);
+                writer.write(record);
+            }
+
+            record UuidType(UUID value) {
+            }
+
+            InputFile inputFile = new FileSystemInputFile(file);
+            try (var carpetReader = CarpetParquetReader.builder(inputFile, UuidType.class).build()) {
+                assertEquals(new UuidType(uuid1), carpetReader.read());
+                assertEquals(new UuidType(uuid2), carpetReader.read());
             }
         }
 

@@ -15,11 +15,14 @@
  */
 package com.jerolba.carpet.writer;
 
+import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.UUID;
 
 import org.apache.avro.generic.GenericRecord;
 import org.junit.jupiter.api.Nested;
@@ -29,6 +32,10 @@ import com.jerolba.carpet.ParquetWriterTest;
 import com.jerolba.carpet.RecordTypeConversionException;
 
 class CarpetWriterTest {
+
+    enum Category {
+        one, two, three;
+    }
 
     @Nested
     class SimpleTypes {
@@ -336,10 +343,6 @@ class CarpetWriterTest {
         @Test
         void enumObject() throws IOException {
 
-            enum Category {
-                one, two, three;
-            }
-
             record EnumObject(Category value) {
             }
 
@@ -351,6 +354,26 @@ class CarpetWriterTest {
             var avroReader = writerTest.getAvroGenericRecordReader();
             assertEquals(rec1.value.name(), avroReader.read().get("value").toString());
             assertEquals(rec2.value.name(), avroReader.read().get("value").toString());
+
+            var carpetReader = writerTest.getCarpetReader();
+            assertEquals(rec1, carpetReader.read());
+            assertEquals(rec2, carpetReader.read());
+        }
+
+        @Test
+        void uuidObject() throws IOException {
+
+            record UuidObject(UUID value) {
+            }
+
+            var rec1 = new UuidObject(UUID.randomUUID());
+            var rec2 = new UuidObject(UUID.randomUUID());
+            var writerTest = new ParquetWriterTest<>(UuidObject.class);
+            writerTest.write(rec1, rec2);
+
+            var avroReader = writerTest.getAvroGenericRecordReader();
+            assertEquals(rec1.value.toString(), avroReader.read().get("value").toString());
+            assertEquals(rec2.value.toString(), avroReader.read().get("value").toString());
 
             var carpetReader = writerTest.getCarpetReader();
             assertEquals(rec1, carpetReader.read());
@@ -520,10 +543,6 @@ class CarpetWriterTest {
         @Test
         void enumNullObject() throws IOException {
 
-            enum Category {
-                one, two, three;
-            }
-
             record EnumNullObject(Category value) {
             }
 
@@ -540,6 +559,191 @@ class CarpetWriterTest {
             assertEquals(rec1, carpetReader.read());
             assertEquals(rec2, carpetReader.read());
         }
+
+        @Test
+        void uuidNullObject() throws IOException {
+
+            record UuidNullObject(UUID value) {
+            }
+
+            var rec1 = new UuidNullObject(UUID.randomUUID());
+            var rec2 = new UuidNullObject(null);
+            var writerTest = new ParquetWriterTest<>(UuidNullObject.class);
+            writerTest.write(rec1, rec2);
+
+            var avroReader = writerTest.getAvroGenericRecordReader();
+            assertEquals(rec1.value.toString(), avroReader.read().get("value").toString());
+            assertEquals(null, avroReader.read().get("value"));
+
+            var carpetReader = writerTest.getCarpetReader();
+            assertEquals(rec1, carpetReader.read());
+            assertEquals(rec2, carpetReader.read());
+        }
+    }
+
+    @Nested
+    class InListTypes {
+
+        @Test
+        void integerList() throws IOException {
+
+            record IntegerList(List<Integer> values) {
+            }
+
+            var rec1 = new IntegerList(asList(1, null, 3));
+            var rec2 = new IntegerList(null);
+            var writerTest = new ParquetWriterTest<>(IntegerList.class);
+            writerTest.write(rec1, rec2);
+
+            var carpetReader = writerTest.getCarpetReader();
+            assertEquals(rec1, carpetReader.read());
+            assertEquals(rec2, carpetReader.read());
+        }
+
+        @Test
+        void longList() throws IOException {
+
+            record LongList(List<Long> values) {
+            }
+
+            var rec1 = new LongList(asList(191919191919L, null, 28282L));
+            var rec2 = new LongList(null);
+            var writerTest = new ParquetWriterTest<>(LongList.class);
+            writerTest.write(rec1, rec2);
+
+            var carpetReader = writerTest.getCarpetReader();
+            assertEquals(rec1, carpetReader.read());
+            assertEquals(rec2, carpetReader.read());
+        }
+
+        @Test
+        void doubleList() throws IOException {
+
+            record DoubleList(List<Double> values) {
+            }
+
+            var rec1 = new DoubleList(asList(1.9, null, 2.9));
+            var rec2 = new DoubleList(null);
+            var writerTest = new ParquetWriterTest<>(DoubleList.class);
+            writerTest.write(rec1, rec2);
+
+            var carpetReader = writerTest.getCarpetReader();
+            assertEquals(rec1, carpetReader.read());
+            assertEquals(rec2, carpetReader.read());
+        }
+
+        @Test
+        void floatList() throws IOException {
+
+            record FloatList(List<Float> values) {
+            }
+
+            var rec1 = new FloatList(asList(1.9f, null, 2.9f));
+            var rec2 = new FloatList(null);
+            var writerTest = new ParquetWriterTest<>(FloatList.class);
+            writerTest.write(rec1, rec2);
+
+            var carpetReader = writerTest.getCarpetReader();
+            assertEquals(rec1, carpetReader.read());
+            assertEquals(rec2, carpetReader.read());
+        }
+
+        @Test
+        void shortList() throws IOException {
+
+            record ShortList(List<Short> values) {
+            }
+
+            var rec1 = new ShortList(asList((short) 1, null, (short) 3));
+            var rec2 = new ShortList(null);
+            var writerTest = new ParquetWriterTest<>(ShortList.class);
+            writerTest.write(rec1, rec2);
+
+            var carpetReader = writerTest.getCarpetReader();
+            assertEquals(rec1, carpetReader.read());
+            assertEquals(rec2, carpetReader.read());
+        }
+
+        @Test
+        void byteList() throws IOException {
+
+            record ByteList(List<Byte> values) {
+            }
+
+            var rec1 = new ByteList(asList((byte) 1, null, (byte) 3));
+            var rec2 = new ByteList(null);
+            var writerTest = new ParquetWriterTest<>(ByteList.class);
+            writerTest.write(rec1, rec2);
+
+            var carpetReader = writerTest.getCarpetReader();
+            assertEquals(rec1, carpetReader.read());
+            assertEquals(rec2, carpetReader.read());
+        }
+
+        @Test
+        void booleanList() throws IOException {
+
+            record BooleanList(List<Boolean> values) {
+            }
+
+            var rec1 = new BooleanList(asList(true, null, false));
+            var rec2 = new BooleanList(null);
+            var writerTest = new ParquetWriterTest<>(BooleanList.class);
+            writerTest.write(rec1, rec2);
+
+            var carpetReader = writerTest.getCarpetReader();
+            assertEquals(rec1, carpetReader.read());
+            assertEquals(rec2, carpetReader.read());
+        }
+
+        @Test
+        void stringList() throws IOException {
+
+            record StringList(List<String> values) {
+            }
+
+            var rec1 = new StringList(asList("Madrid", null, "Zaragoza"));
+            var rec2 = new StringList(null);
+            var writerTest = new ParquetWriterTest<>(StringList.class);
+            writerTest.write(rec1, rec2);
+
+            var carpetReader = writerTest.getCarpetReader();
+            assertEquals(rec1, carpetReader.read());
+            assertEquals(rec2, carpetReader.read());
+        }
+
+        @Test
+        void enumList() throws IOException {
+
+            record EnumList(List<Category> values) {
+            }
+
+            var rec1 = new EnumList(asList(Category.one, null, Category.two));
+            var rec2 = new EnumList(null);
+            var writerTest = new ParquetWriterTest<>(EnumList.class);
+            writerTest.write(rec1, rec2);
+
+            var carpetReader = writerTest.getCarpetReader();
+            assertEquals(rec1, carpetReader.read());
+            assertEquals(rec2, carpetReader.read());
+        }
+
+        @Test
+        void uuidList() throws IOException {
+
+            record UuidList(List<UUID> values) {
+            }
+
+            var rec1 = new UuidList(asList(UUID.randomUUID(), null, UUID.randomUUID()));
+            var rec2 = new UuidList(null);
+            var writerTest = new ParquetWriterTest<>(UuidList.class);
+            writerTest.write(rec1, rec2);
+
+            var carpetReader = writerTest.getCarpetReader();
+            assertEquals(rec1, carpetReader.read());
+            assertEquals(rec2, carpetReader.read());
+        }
+
     }
 
     @Test
@@ -560,10 +764,6 @@ class CarpetWriterTest {
 
     @Test
     void classWithMultipleFields() throws IOException {
-
-        enum Category {
-            one, two, three;
-        }
 
         record ClassWithMultipleFields(String name, Category category,
                 int p1, Integer f1, long p2, Long f2, double p3, Double f3, float p4, Float f4,
@@ -602,10 +802,6 @@ class CarpetWriterTest {
 
     @Test
     void classWithMultipleNullFields() throws IOException {
-
-        enum Category {
-            one, two, three;
-        }
 
         record classWithMultipleNullFields(String name, Category category,
                 int p1, Integer f1, long p2, Long f2, double p3, Double f3, float p4, Float f4,

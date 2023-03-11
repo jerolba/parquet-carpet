@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.apache.parquet.schema.MessageType;
 import org.junit.jupiter.api.Nested;
@@ -237,6 +238,41 @@ class JavaRecord2SchemaTest {
                       required int64 id;
                       optional binary name (STRING);
                       required binary state (ENUM);
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+    }
+
+    @Nested
+    class UuidTypes {
+
+        @Test
+        void withUuid() {
+            record WithUuid(UUID id, String name) {
+            }
+
+            MessageType schema = defaultConfigSchema.createSchema(WithUuid.class);
+            String expected = """
+                    message WithUuid {
+                      optional fixed_len_byte_array(16) id (UUID);
+                      optional binary name (STRING);
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void withNotNullEnum() {
+            record WithNotNullUuid(@NotNull UUID id, String name) {
+            }
+
+            MessageType schema = defaultConfigSchema.createSchema(WithNotNullUuid.class);
+            String expected = """
+                    message WithNotNullUuid {
+                      required fixed_len_byte_array(16) id (UUID);
+                      optional binary name (STRING);
                     }
                     """;
             assertEquals(expected, schema.toString());

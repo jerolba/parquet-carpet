@@ -18,6 +18,7 @@ package com.jerolba.carpet.impl.write;
 import static com.jerolba.carpet.impl.AliasField.getFieldName;
 import static com.jerolba.carpet.impl.Parameterized.getParameterizedCollection;
 import static com.jerolba.carpet.impl.Parameterized.getParameterizedMap;
+import static com.jerolba.carpet.impl.write.UuidWrite.uuidToBinary;
 
 import java.lang.reflect.RecordComponent;
 import java.util.ArrayList;
@@ -109,6 +110,8 @@ public class CarpetRecordWriter {
             return new IntegerCompatibleFieldWriter(f);
         } else if (type.isEnum()) {
             return new EnumFieldWriter(f, type);
+        } else if (typeName.equals("java.util.UUID")) {
+            return new UuidFieldWriter(f);
         }
         return null;
     }
@@ -253,6 +256,24 @@ public class CarpetRecordWriter {
             if (value != null) {
                 recordConsumer.startField(recordField.fieldName(), recordField.idx());
                 recordConsumer.addBinary(values.getValue(value));
+                recordConsumer.endField(recordField.fieldName(), recordField.idx());
+            }
+        }
+
+    }
+
+    private class UuidFieldWriter extends FieldWriter {
+
+        UuidFieldWriter(RecordField recordField) {
+            super(recordField);
+        }
+
+        @Override
+        public void writeField(Object object) {
+            var value = accesor.apply(object);
+            if (value != null) {
+                recordConsumer.startField(recordField.fieldName(), recordField.idx());
+                recordConsumer.addBinary(uuidToBinary(value));
                 recordConsumer.endField(recordField.fieldName(), recordField.idx());
             }
         }

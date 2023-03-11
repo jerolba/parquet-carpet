@@ -17,6 +17,7 @@ package com.jerolba.carpet.impl.read;
 
 import static org.apache.parquet.schema.LogicalTypeAnnotation.enumType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.stringType;
+import static org.apache.parquet.schema.LogicalTypeAnnotation.uuidType;
 
 import java.util.function.Consumer;
 
@@ -35,6 +36,8 @@ import com.jerolba.carpet.impl.read.converter.ToFloatGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToIntegerGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToLongGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToShortGenericConverter;
+import com.jerolba.carpet.impl.read.converter.UuidToStringGenericConverter;
+import com.jerolba.carpet.impl.read.converter.UuidToUuidGenericConverter;
 
 class PrimitiveGenericConverterFactory {
 
@@ -46,8 +49,8 @@ class PrimitiveGenericConverterFactory {
         case FLOAT, DOUBLE -> genericBuildFromDecimalConverter(listConsumer, genericType);
         case BOOLEAN -> genericBuildFromBooleanConverter(listConsumer, genericType);
         case BINARY -> genericBuildFromBinaryConverter(listConsumer, genericType, parquetField);
-        case INT96, FIXED_LEN_BYTE_ARRAY -> throw new RecordTypeConversionException(
-                type + " deserialization not supported");
+        case FIXED_LEN_BYTE_ARRAY -> genericBuildFromByteArrayConverter(listConsumer, genericType, parquetField);
+        case INT96 -> throw new RecordTypeConversionException(type + " deserialization not supported");
         default -> throw new RecordTypeConversionException(type + " deserialization not supported");
         };
     }
@@ -72,8 +75,7 @@ class PrimitiveGenericConverterFactory {
         if (typeName.equals("float") || typeName.equals("java.lang.Float")) {
             return new ToFloatGenericConverter(listConsumer);
         }
-        throw new RecordTypeConversionException(
-                typeName + " not compatible with " + type.getName() + " collection");
+        throw new RecordTypeConversionException(typeName + " not compatible with " + type.getName() + " collection");
     }
 
     public static Converter genericBuildFromDecimalConverter(Consumer<Object> listConsumer, Class<?> type) {
@@ -84,8 +86,7 @@ class PrimitiveGenericConverterFactory {
         if (typeName.equals("double") || typeName.equals("java.lang.Double")) {
             return new ToDoubleGenericConverter(listConsumer);
         }
-        throw new RecordTypeConversionException(
-                typeName + " not compatible with " + type.getName() + " collection");
+        throw new RecordTypeConversionException(typeName + " not compatible with " + type.getName() + " collection");
     }
 
     public static Converter genericBuildFromBooleanConverter(Consumer<Object> listConsumer, Class<?> type) {
@@ -93,8 +94,7 @@ class PrimitiveGenericConverterFactory {
         if (typeName.equals("boolean") || typeName.equals("java.lang.Boolean")) {
             return new BooleanGenericConverter(listConsumer);
         }
-        throw new RecordTypeConversionException(
-                typeName + " not compatible with " + type.getName() + " collection");
+        throw new RecordTypeConversionException(typeName + " not compatible with " + type.getName() + " collection");
     }
 
     public static Converter genericBuildFromBinaryConverter(Consumer<Object> listConsumer, Class<?> type,
@@ -117,8 +117,24 @@ class PrimitiveGenericConverterFactory {
             return new EnumGenericConverter(listConsumer, type);
 
         }
-        throw new RecordTypeConversionException(
-                typeName + " not compatible with " + schemaType.getName() + " field");
+        throw new RecordTypeConversionException(typeName + " not compatible with " + schemaType.getName() + " field");
+    }
+
+    public static Converter genericBuildFromByteArrayConverter(Consumer<Object> listConsumer, Class<?> type,
+            Type schemaType) {
+        LogicalTypeAnnotation logicalType = schemaType.getLogicalTypeAnnotation();
+        if (!logicalType.equals(uuidType())) {
+            throw new RecordTypeConversionException(schemaType + " deserialization not supported");
+        }
+
+        String typeName = type.getName();
+        if (typeName.equals("java.lang.String")) {
+            return new UuidToStringGenericConverter(listConsumer);
+        }
+        if (typeName.equals("java.util.UUID")) {
+            return new UuidToUuidGenericConverter(listConsumer);
+        }
+        throw new RecordTypeConversionException(typeName + " not compatible with " + schemaType.getName() + " field");
     }
 
 }

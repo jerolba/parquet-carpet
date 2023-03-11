@@ -15,6 +15,8 @@
  */
 package com.jerolba.carpet.impl.write;
 
+import static com.jerolba.carpet.impl.write.UuidWrite.uuidToBinary;
+
 import java.util.function.BiConsumer;
 
 import org.apache.parquet.io.api.Binary;
@@ -52,6 +54,9 @@ public class SimpleCollectionItemConsumerFactory {
         if (type.isEnum()) {
             EnumsValues enumValues = new EnumsValues(type);
             return (consumer, v) -> consumer.addBinary(enumValues.getValue(v));
+        }
+        if (typeName.equals("java.util.UUID")) {
+            return (consumer, v) -> consumer.addBinary(uuidToBinary(v));
         }
         if (type.isRecord()) {
             CarpetRecordWriter recordWriter = new CarpetRecordWriter(recordConsumer, type, carpetConfiguration);

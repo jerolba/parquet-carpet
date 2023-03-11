@@ -19,7 +19,9 @@ import static org.apache.parquet.schema.ConversionPatterns.listOfElements;
 import static org.apache.parquet.schema.ConversionPatterns.listType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.enumType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.stringType;
+import static org.apache.parquet.schema.LogicalTypeAnnotation.uuidType;
 import static org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName.BINARY;
+import static org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY;
 import static org.apache.parquet.schema.Type.Repetition.OPTIONAL;
 import static org.apache.parquet.schema.Type.Repetition.REPEATED;
 import static org.apache.parquet.schema.Type.Repetition.REQUIRED;
@@ -30,9 +32,11 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.apache.parquet.schema.ConversionPatterns;
 import org.apache.parquet.schema.GroupType;
+import org.apache.parquet.schema.LogicalTypeAnnotation.UUIDLogicalTypeAnnotation;
 import org.apache.parquet.schema.MessageType;
 import org.apache.parquet.schema.PrimitiveType;
 import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
@@ -395,6 +399,63 @@ class SchemaFilterTest {
             assertEquals(groupType, filterFailOnNotNullable.project(NullableString.class));
         }
 
+    }
+
+    @Nested
+    class FieldUuidConversion {
+
+        @Test
+        void fieldRequired() {
+            Type field = Types.primitive(FIXED_LEN_BYTE_ARRAY, REQUIRED).as(uuidType())
+                    .length(UUIDLogicalTypeAnnotation.BYTES)
+                    .named("value");
+            GroupType groupType = new MessageType("foo", field);
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+
+            record NotNullUuid(@NotNull UUID value) {
+            }
+            assertEquals(groupType, filter.project(NotNullUuid.class));
+
+            record NullableUuid(UUID value) {
+            }
+            assertEquals(groupType, filter.project(NullableUuid.class));
+        }
+
+        @Test
+        void fieldOptional() {
+            Type field = Types.primitive(FIXED_LEN_BYTE_ARRAY, OPTIONAL).as(uuidType())
+                    .length(UUIDLogicalTypeAnnotation.BYTES)
+                    .named("value");
+            GroupType groupType = new MessageType("foo", field);
+            SchemaFilter filterDefault = new SchemaFilter(defaultReadConfig, groupType);
+            SchemaFilter filterFailOnNotNullable = new SchemaFilter(failOnNullForPrimitives, groupType);
+
+            record NotNullUuid(@NotNull UUID value) {
+            }
+            assertEquals(groupType, filterDefault.project(NotNullUuid.class));
+            assertThrows(RecordTypeConversionException.class,
+                    () -> filterFailOnNotNullable.project(NotNullUuid.class));
+
+            record NullableUuid(UUID value) {
+            }
+            assertEquals(groupType, filterDefault.project(NullableUuid.class));
+            assertEquals(groupType, filterFailOnNotNullable.project(NullableUuid.class));
+        }
+
+        @Test
+        void castToStringIsSupported() {
+            Type field = Types.primitive(FIXED_LEN_BYTE_ARRAY, OPTIONAL).as(uuidType())
+                    .length(UUIDLogicalTypeAnnotation.BYTES)
+                    .named("value");
+            GroupType groupType = new MessageType("foo", field);
+            SchemaFilter filterDefault = new SchemaFilter(defaultReadConfig, groupType);
+            SchemaFilter filterFailOnNotNullable = new SchemaFilter(failOnNullForPrimitives, groupType);
+
+            record NullableString(String value) {
+            }
+            assertEquals(groupType, filterDefault.project(NullableString.class));
+            assertEquals(groupType, filterFailOnNotNullable.project(NullableString.class));
+        }
     }
 
     @Nested

@@ -17,6 +17,7 @@ package com.jerolba.carpet.impl.read;
 
 import static org.apache.parquet.schema.LogicalTypeAnnotation.enumType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.stringType;
+import static org.apache.parquet.schema.LogicalTypeAnnotation.uuidType;
 
 import java.lang.reflect.RecordComponent;
 
@@ -36,6 +37,8 @@ import com.jerolba.carpet.impl.read.converter.ToFloatConverter;
 import com.jerolba.carpet.impl.read.converter.ToIntegerConverter;
 import com.jerolba.carpet.impl.read.converter.ToLongConverter;
 import com.jerolba.carpet.impl.read.converter.ToShortConverter;
+import com.jerolba.carpet.impl.read.converter.UuidToStringConverter;
+import com.jerolba.carpet.impl.read.converter.UuidToUuidConverter;
 
 class PrimitiveConverterFactory {
 
@@ -48,8 +51,8 @@ class PrimitiveConverterFactory {
         case FLOAT, DOUBLE -> buildFromDecimalConverter(constructor, index, recordComponent);
         case BOOLEAN -> buildFromBooleanConverter(constructor, index, recordComponent);
         case BINARY -> buildFromBinaryConverter(constructor, index, recordComponent, parquetField);
-        case INT96, FIXED_LEN_BYTE_ARRAY -> throw new RecordTypeConversionException(
-                type + " deserialization not supported");
+        case FIXED_LEN_BYTE_ARRAY -> buildFromByteArrayConverter(constructor, index, recordComponent, parquetField);
+        case INT96 -> throw new RecordTypeConversionException(type + " deserialization not supported");
         default -> throw new RecordTypeConversionException(type + " deserialization not supported");
         };
     }
@@ -127,6 +130,24 @@ class PrimitiveConverterFactory {
         }
         throw new RecordTypeConversionException(
                 typeName + " not compatible with " + recordComponent.getName() + " field");
+    }
+
+    private static Converter buildFromByteArrayConverter(ConstructorParams constructor, int index,
+            RecordComponent recordComponent, Type parquetField) {
+
+        LogicalTypeAnnotation logicalType = parquetField.getLogicalTypeAnnotation();
+        if (!logicalType.equals(uuidType())) {
+            throw new RecordTypeConversionException(parquetField + " deserialization not supported");
+        }
+        Class<?> type = recordComponent.getType();
+        String typeName = type.getName();
+        if (typeName.equals("java.lang.String")) {
+            return new UuidToStringConverter(constructor, index);
+        }
+        if (typeName.equals("java.util.UUID")) {
+            return new UuidToUuidConverter(constructor, index);
+        }
+        throw new RecordTypeConversionException(parquetField + " deserialization not supported for type " + typeName);
     }
 
 }

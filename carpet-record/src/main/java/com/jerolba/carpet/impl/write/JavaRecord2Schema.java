@@ -21,7 +21,9 @@ import static com.jerolba.carpet.impl.Parameterized.getParameterizedCollection;
 import static com.jerolba.carpet.impl.Parameterized.getParameterizedMap;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.enumType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.stringType;
+import static org.apache.parquet.schema.LogicalTypeAnnotation.uuidType;
 import static org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName.BINARY;
+import static org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY;
 import static org.apache.parquet.schema.Type.Repetition.OPTIONAL;
 import static org.apache.parquet.schema.Type.Repetition.REPEATED;
 import static org.apache.parquet.schema.Type.Repetition.REQUIRED;
@@ -37,6 +39,7 @@ import java.util.Set;
 
 import org.apache.parquet.schema.ConversionPatterns;
 import org.apache.parquet.schema.GroupType;
+import org.apache.parquet.schema.LogicalTypeAnnotation.UUIDLogicalTypeAnnotation;
 import org.apache.parquet.schema.MessageType;
 import org.apache.parquet.schema.PrimitiveType;
 import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
@@ -86,6 +89,9 @@ public class JavaRecord2Schema {
                 fields.add(new GroupType(repetition, fieldName, childFields));
             } else if (type.isEnum()) {
                 fields.add(Types.primitive(BINARY, repetition).as(enumType()).named(fieldName));
+            } else if (type.getName().equals("java.util.UUID")) {
+                fields.add(Types.primitive(FIXED_LEN_BYTE_ARRAY, repetition).as(uuidType())
+                        .length(UUIDLogicalTypeAnnotation.BYTES).named(fieldName));
             } else if (Collection.class.isAssignableFrom(type)) {
                 var parameterizedCollection = getParameterizedCollection(attr);
                 fields.add(createCollectionType(fieldName, parameterizedCollection, visited, attr, repetition));
@@ -97,6 +103,8 @@ public class JavaRecord2Schema {
                 if (genericType instanceof TypeVariable<?>) {
                     throw new RecordTypeConversionException(genericType.toString() + " generic types not supported");
                 }
+                throw new RecordTypeConversionException(
+                        "Field '" + attr.getName() + "' of type " + attr.getType() + " not supported");
             }
         }
         return fields;
@@ -192,6 +200,10 @@ public class JavaRecord2Schema {
             return new GroupType(repetition, name, childFields);
         } else if (type.isEnum()) {
             return Types.primitive(BINARY, repetition).as(enumType()).named(name);
+        } else if (type.getName().equals("java.util.UUID")) {
+            return Types.primitive(FIXED_LEN_BYTE_ARRAY, repetition).as(uuidType())
+                    .length(UUIDLogicalTypeAnnotation.BYTES)
+                    .named(name);
         } else {
             // Generic types in first child are detected
         }

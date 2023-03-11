@@ -65,7 +65,12 @@ public class SchemaValidation {
             return validBooleanSource(primitiveType, type);
         case BINARY:
             return validBinarySource(primitiveType, type);
-        case INT96, FIXED_LEN_BYTE_ARRAY:
+        case FIXED_LEN_BYTE_ARRAY:
+            if (primitiveType.getLogicalTypeAnnotation().equals(LogicalTypeAnnotation.uuidType())) {
+                return validUuidSource(primitiveType, type);
+            }
+            return false;
+        case INT96:
             throw new RecordTypeConversionException(type + " deserialization not supported");
         }
         return false;
@@ -264,6 +269,14 @@ public class SchemaValidation {
             return false;
         }
         return true;
+    }
+
+    private boolean validUuidSource(PrimitiveType primitiveType, Class<?> type) {
+        String typeName = type.getName();
+        if (typeName.equals("java.lang.String") || typeName.equals("java.util.UUID")) {
+            return true;
+        }
+        return throwInvalidConversionException(primitiveType, type);
     }
 
 }
