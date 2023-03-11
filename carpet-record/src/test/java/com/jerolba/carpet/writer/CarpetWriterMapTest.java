@@ -21,11 +21,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.util.Utf8;
 import org.apache.parquet.io.InvalidRecordException;
+import org.apache.parquet.io.ParquetEncodingException;
 import org.junit.jupiter.api.Test;
 
 import com.jerolba.carpet.ParquetWriterTest;
@@ -406,6 +408,48 @@ class CarpetWriterMapTest {
 
         var carpetReader = writerTest.getCarpetReader();
         assertEquals(rec, carpetReader.read());
+    }
+
+    @Test
+    void emptyMapIsTransformedToNull() throws IOException {
+
+        record EmptyMap(String name, Map<String, Integer> ids) {
+        }
+
+        var rec = new EmptyMap("foo", Map.of());
+        var writerTest = new ParquetWriterTest<>(EmptyMap.class);
+        writerTest.write(rec);
+
+        var avroReader = writerTest.getAvroGenericRecordReader();
+        GenericRecord avroRecord = avroReader.read();
+        assertEquals(rec.name(), avroRecord.get("name").toString());
+        assertNull(avroRecord.get("ids"));
+
+        var carpetReader = writerTest.getCarpetReader();
+        EmptyMap expectedNullList = new EmptyMap("foo", null);
+        assertEquals(expectedNullList, carpetReader.read());
+    }
+
+    @Test
+    void emptyNestedMapIsNotSupported() throws IOException {
+
+        record EmptyNestedMap(String name, Map<String, Map<String, Integer>> ids) {
+        }
+
+        var rec = new EmptyNestedMap("foo", Map.of("key", Map.of()));
+        var writerTest = new ParquetWriterTest<>(EmptyNestedMap.class);
+        assertThrows(ParquetEncodingException.class, () -> writerTest.write(rec));
+    }
+
+    @Test
+    void emptyNestedListIsNotSupported() throws IOException {
+
+        record EmptyNestedCollection(String name, Map<String, List<String>> ids) {
+        }
+
+        var rec = new EmptyNestedCollection("foo", Map.of("key", List.of()));
+        var writerTest = new ParquetWriterTest<>(EmptyNestedCollection.class);
+        assertThrows(ParquetEncodingException.class, () -> writerTest.write(rec));
     }
 
     // Map.of doesn't support null values

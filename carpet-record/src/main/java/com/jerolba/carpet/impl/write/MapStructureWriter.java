@@ -68,9 +68,10 @@ public class MapStructureWriter {
         var innerKeyStructureWriter = elemKeyConsumer;
         var innerValueStructureWriter = elemValueConsumer;
         return value -> {
-            if (value != null) {
+            Map<?, ?> map = (Map<?, ?>) value;
+            if (map != null && !map.isEmpty()) {
                 recordConsumer.startGroup();
-                writeGroupElement(innerKeyStructureWriter, innerValueStructureWriter, value);
+                writeKeyalueGroup(innerKeyStructureWriter, innerValueStructureWriter, map);
                 recordConsumer.endGroup();
             }
         };
@@ -90,35 +91,32 @@ public class MapStructureWriter {
 
         @Override
         public void writeField(Object object) {
-            var value = accesor.apply(object);
-            if (value != null) {
+            var value = (Map<?, ?>) accesor.apply(object);
+            if (value != null && !value.isEmpty()) {
                 recordConsumer.startField(recordField.fieldName(), recordField.idx());
                 recordConsumer.startGroup();
-                writeGroupElement(innerKeyStructureWriter, innerValueStructureWriter, value);
+                writeKeyalueGroup(innerKeyStructureWriter, innerValueStructureWriter, value);
                 recordConsumer.endGroup();
                 recordConsumer.endField(recordField.fieldName(), recordField.idx());
             }
         }
     }
 
-    private void writeGroupElement(BiConsumer<RecordConsumer, Object> innerKeyStructureWriter,
-            BiConsumer<RecordConsumer, Object> innerValueStructureWriter, Object value) {
+    private void writeKeyalueGroup(BiConsumer<RecordConsumer, Object> keyStructureWriter,
+            BiConsumer<RecordConsumer, Object> valueStructureWriter, Map<?, ?> map) {
 
         recordConsumer.startField("key_value", 0);
-        Map<?, ?> coll = (Map<?, ?>) value;
-        for (var v : coll.entrySet()) {
+        for (var v : map.entrySet()) {
             recordConsumer.startGroup();
-
             if (v.getKey() != null) {
                 recordConsumer.startField("key", 0);
-                innerKeyStructureWriter.accept(recordConsumer, v.getKey());
+                keyStructureWriter.accept(recordConsumer, v.getKey());
                 recordConsumer.endField("key", 0);
             }
-
             var mapValue = v.getValue();
             if (mapValue != null) {
                 recordConsumer.startField("value", 1);
-                innerValueStructureWriter.accept(recordConsumer, mapValue);
+                valueStructureWriter.accept(recordConsumer, mapValue);
                 recordConsumer.endField("value", 1);
             }
             recordConsumer.endGroup();
