@@ -62,9 +62,10 @@ public class ThreeLevelStructureWriter {
         // We are referenced by other collection
         var innerStructureWriter = elemConsumer;
         return value -> {
-            if (value != null) {
+            Collection<?> coll = (Collection<?>) value;
+            if (coll != null && !coll.isEmpty()) {
                 recordConsumer.startGroup();
-                writeGroupElement(innerStructureWriter, value);
+                writeGroupElement(innerStructureWriter, coll);
                 recordConsumer.endGroup();
             }
         };
@@ -82,8 +83,8 @@ public class ThreeLevelStructureWriter {
 
         @Override
         public void writeField(Object object) {
-            var value = accesor.apply(object);
-            if (value != null) {
+            Collection<?> value = (Collection<?>) accesor.apply(object);
+            if (value != null && !value.isEmpty()) {
                 recordConsumer.startField(recordField.fieldName(), recordField.idx());
                 recordConsumer.startGroup();
                 writeGroupElement(innerStructureWriter, value);
@@ -93,9 +94,8 @@ public class ThreeLevelStructureWriter {
         }
     }
 
-    private void writeGroupElement(BiConsumer<RecordConsumer, Object> innerStructureWriter, Object value) {
+    private void writeGroupElement(BiConsumer<RecordConsumer, Object> innerStructureWriter, Collection<?> coll) {
         recordConsumer.startField("list", 0);
-        Collection<?> coll = (Collection<?>) value;
         for (var v : coll) {
             recordConsumer.startGroup();
             if (v != null) {

@@ -69,10 +69,9 @@ public class OneLevelStructureWriter {
 
         @Override
         public void writeField(Object object) {
-            var value = accesor.apply(object);
-            if (value != null) {
+            Collection<?> coll = (Collection<?>) accesor.apply(object);
+            if (coll != null && !coll.isEmpty()) {
                 recordConsumer.startField(recordField.fieldName(), recordField.idx());
-                Collection<?> coll = (Collection<?>) value;
                 for (var v : coll) {
                     consumer.accept(recordConsumer, v);
                 }

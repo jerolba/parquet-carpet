@@ -62,8 +62,9 @@ public class TwoLevelStructureWriter {
         // We are referenced by other collection
         var innerStructureWriter = elemConsumer;
         return value -> {
-            if (value != null) {
-                writeGroupElement(innerStructureWriter, value);
+            Collection<?> coll = (Collection<?>) value;
+            if (coll != null && !coll.isEmpty()) {
+                writeGroupElement(innerStructureWriter, coll);
             }
         };
     }
@@ -81,19 +82,19 @@ public class TwoLevelStructureWriter {
         @Override
         public void writeField(Object object) {
             var value = accesor.apply(object);
-            if (value != null) {
+            Collection<?> coll = (Collection<?>) value;
+            if (coll != null && !coll.isEmpty()) {
                 recordConsumer.startField(recordField.fieldName(), recordField.idx());
-                writeGroupElement(innerStructureWriter, value);
+                writeGroupElement(innerStructureWriter, coll);
                 recordConsumer.endField(recordField.fieldName(), recordField.idx());
             }
         }
 
     }
 
-    private void writeGroupElement(BiConsumer<RecordConsumer, Object> innerStructureWriter, Object value) {
+    private void writeGroupElement(BiConsumer<RecordConsumer, Object> innerStructureWriter, Collection<?> coll) {
         recordConsumer.startGroup();
         recordConsumer.startField("element", 0);
-        Collection<?> coll = (Collection<?>) value;
         for (var v : coll) {
             if (v == null) {
                 throw new NullPointerException("2-level list structures doesn't support null values");

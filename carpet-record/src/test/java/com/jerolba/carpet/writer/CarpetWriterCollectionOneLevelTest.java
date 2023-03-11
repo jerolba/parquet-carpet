@@ -55,6 +55,29 @@ public class CarpetWriterCollectionOneLevelTest {
     }
 
     @Test
+    void emptyCollectionIsTransformedToNull() throws IOException {
+
+        record EmptyCollection(String name, List<Integer> ids) {
+        }
+
+        var rec = new EmptyCollection("foo", List.of());
+        var writerTest = new ParquetWriterTest<>(EmptyCollection.class).withLevel(ONE);
+        writerTest.write(rec);
+
+        String expected = """
+                message EmptyCollection {
+                  optional binary name (STRING);
+                  repeated int32 ids;
+                }
+                """;
+        assertEquals(expected, writerTest.getSchema().toString());
+
+        var carpetReader = writerTest.getCarpetReader();
+        EmptyCollection expectedNullList = new EmptyCollection("foo", null);
+        assertEquals(expectedNullList, carpetReader.read());
+    }
+
+    @Test
     void consecutiveNestedCollectionsAreNotSupported() throws IOException {
 
         record ConsecutiveNestedCollection(String id, List<List<Integer>> values) {

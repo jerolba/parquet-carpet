@@ -17,6 +17,8 @@ package com.jerolba.carpet.writer;
 
 import static com.jerolba.carpet.AnnotatedLevels.TWO;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
 import java.util.List;
@@ -25,6 +27,7 @@ import java.util.Map;
 import org.apache.avro.generic.GenericData.Array;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.util.Utf8;
+import org.apache.parquet.io.ParquetEncodingException;
 import org.junit.jupiter.api.Test;
 
 import com.jerolba.carpet.ParquetWriterTest;
@@ -191,6 +194,37 @@ public class CarpetWriterCollectionTwoLevelTest {
 
         var carpetReader = writerTest.getCarpetReader();
         assertEquals(rec, carpetReader.read());
+    }
+
+    @Test
+    void emptyCollectionIsTransformedToNull() throws IOException {
+
+        record EmptyCollection(String name, List<Integer> ids) {
+        }
+
+        var rec = new EmptyCollection("foo", List.of());
+        var writerTest = new ParquetWriterTest<>(EmptyCollection.class).withLevel(TWO);
+        writerTest.write(rec);
+
+        var avroReader = writerTest.getAvroGenericRecordReader();
+        GenericRecord avroRecord = avroReader.read();
+        assertEquals(rec.name(), avroRecord.get("name").toString());
+        assertNull(avroRecord.get("ids"));
+
+        var carpetReader = writerTest.getCarpetReader();
+        EmptyCollection expectedNullList = new EmptyCollection("foo", null);
+        assertEquals(expectedNullList, carpetReader.read());
+    }
+
+    @Test
+    void emptyNestedCollectionIsNotSupported() throws IOException {
+
+        record EmptyNestedCollection(String name, List<List<Integer>> ids) {
+        }
+
+        var rec = new EmptyNestedCollection("foo", List.of(List.of()));
+        var writerTest = new ParquetWriterTest<>(EmptyNestedCollection.class).withLevel(TWO);
+        assertThrows(ParquetEncodingException.class, () -> writerTest.write(rec));
     }
 
 }
