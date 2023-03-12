@@ -20,6 +20,7 @@ import static com.jerolba.carpet.impl.write.SimpleCollectionItemConsumerFactory.
 import java.util.Collection;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.apache.parquet.io.api.RecordConsumer;
 
@@ -71,25 +72,30 @@ public class ThreeLevelStructureWriter {
         };
     }
 
-    private class ThreeLevelCollectionRecordFieldWriter extends FieldWriter {
+    private class ThreeLevelCollectionRecordFieldWriter implements Consumer<Object> {
 
+        private final String fieldName;
+        private final int idx;
+        private final Function<Object, Object> accesor;
         private final BiConsumer<RecordConsumer, Object> innerStructureWriter;
 
         ThreeLevelCollectionRecordFieldWriter(RecordField recordField,
                 BiConsumer<RecordConsumer, Object> innerStructureWriter) {
-            super(recordField);
+            this.fieldName = recordField.fieldName();
+            this.idx = recordField.idx();
+            this.accesor = Reflection.recordAccessor(recordField.targetClass(), recordField.recordComponent());
             this.innerStructureWriter = innerStructureWriter;
         }
 
         @Override
-        public void writeField(Object object) {
+        public void accept(Object object) {
             Collection<?> value = (Collection<?>) accesor.apply(object);
             if (value != null && !value.isEmpty()) {
-                recordConsumer.startField(recordField.fieldName(), recordField.idx());
+                recordConsumer.startField(fieldName, idx);
                 recordConsumer.startGroup();
                 writeGroupElement(innerStructureWriter, value);
                 recordConsumer.endGroup();
-                recordConsumer.endField(recordField.fieldName(), recordField.idx());
+                recordConsumer.endField(fieldName, idx);
             }
         }
     }
