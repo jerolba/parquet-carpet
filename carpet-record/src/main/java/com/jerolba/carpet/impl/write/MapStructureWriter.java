@@ -20,6 +20,7 @@ import static com.jerolba.carpet.impl.write.SimpleCollectionItemConsumerFactory.
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.apache.parquet.io.api.RecordConsumer;
 
@@ -77,27 +78,32 @@ public class MapStructureWriter {
         };
     }
 
-    private class MapRecordFieldWriter extends FieldWriter {
+    private class MapRecordFieldWriter implements Consumer<Object> {
 
+        private final String fieldName;
+        private final int idx;
+        private final Function<Object, Object> accesor;
         private final BiConsumer<RecordConsumer, Object> innerKeyStructureWriter;
         private final BiConsumer<RecordConsumer, Object> innerValueStructureWriter;
 
         MapRecordFieldWriter(RecordField recordField, BiConsumer<RecordConsumer, Object> innerStructureWriter,
                 BiConsumer<RecordConsumer, Object> innerValueStructureWriter) {
-            super(recordField);
+            this.fieldName = recordField.fieldName();
+            this.idx = recordField.idx();
+            this.accesor = Reflection.recordAccessor(recordField.targetClass(), recordField.recordComponent());
             this.innerKeyStructureWriter = innerStructureWriter;
             this.innerValueStructureWriter = innerValueStructureWriter;
         }
 
         @Override
-        public void writeField(Object object) {
+        public void accept(Object object) {
             var value = (Map<?, ?>) accesor.apply(object);
             if (value != null && !value.isEmpty()) {
-                recordConsumer.startField(recordField.fieldName(), recordField.idx());
+                recordConsumer.startField(fieldName, idx);
                 recordConsumer.startGroup();
                 writeKeyalueGroup(innerKeyStructureWriter, innerValueStructureWriter, value);
                 recordConsumer.endGroup();
-                recordConsumer.endField(recordField.fieldName(), recordField.idx());
+                recordConsumer.endField(fieldName, idx);
             }
         }
     }

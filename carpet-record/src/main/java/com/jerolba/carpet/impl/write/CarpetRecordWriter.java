@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.io.api.RecordConsumer;
@@ -92,7 +93,7 @@ public class CarpetRecordWriter {
 
     }
 
-    private FieldWriter buildBasicTypeWriter(String typeName, Class<?> type, RecordField f) {
+    private Consumer<Object> buildBasicTypeWriter(String typeName, Class<?> type, RecordField f) {
         if (typeName.equals("int") || typeName.equals("java.lang.Integer")) {
             return new IntegerFieldWriter(f);
         } else if (typeName.equals("java.lang.String")) {
@@ -122,182 +123,240 @@ public class CarpetRecordWriter {
         }
     }
 
-    private class IntegerFieldWriter extends FieldWriter {
+    private class IntegerFieldWriter implements Consumer<Object> {
+
+        private final String fieldName;
+        private final int idx;
+        private final Function<Object, Object> accesor;
 
         IntegerFieldWriter(RecordField recordField) {
-            super(recordField);
+            this.fieldName = recordField.fieldName();
+            this.idx = recordField.idx();
+            this.accesor = Reflection.recordAccessor(recordField.targetClass(), recordField.recordComponent());
         }
 
         @Override
-        public void writeField(Object object) {
+        public void accept(Object object) {
             var value = accesor.apply(object);
             if (value != null) {
-                recordConsumer.startField(recordField.fieldName(), recordField.idx());
+                recordConsumer.startField(fieldName, idx);
                 recordConsumer.addInteger((Integer) value);
-                recordConsumer.endField(recordField.fieldName(), recordField.idx());
+                recordConsumer.endField(fieldName, idx);
             }
         }
     }
 
-    private class IntegerCompatibleFieldWriter extends FieldWriter {
+    private class IntegerCompatibleFieldWriter implements Consumer<Object> {
+
+        private final String fieldName;
+        private final int idx;
+        private final Function<Object, Object> accesor;
 
         IntegerCompatibleFieldWriter(RecordField recordField) {
-            super(recordField);
+            this.fieldName = recordField.fieldName();
+            this.idx = recordField.idx();
+            this.accesor = Reflection.recordAccessor(recordField.targetClass(), recordField.recordComponent());
         }
 
         @Override
-        public void writeField(Object object) {
+        public void accept(Object object) {
             var value = accesor.apply(object);
             if (value != null) {
-                recordConsumer.startField(recordField.fieldName(), recordField.idx());
+                recordConsumer.startField(fieldName, idx);
                 recordConsumer.addInteger(((Number) value).intValue());
-                recordConsumer.endField(recordField.fieldName(), recordField.idx());
+                recordConsumer.endField(fieldName, idx);
             }
         }
     }
 
-    private class LongFieldWriter extends FieldWriter {
+    private class LongFieldWriter implements Consumer<Object> {
+
+        private final String fieldName;
+        private final int idx;
+        private final Function<Object, Object> accesor;
 
         LongFieldWriter(RecordField recordField) {
-            super(recordField);
+            this.fieldName = recordField.fieldName();
+            this.idx = recordField.idx();
+            this.accesor = Reflection.recordAccessor(recordField.targetClass(), recordField.recordComponent());
         }
 
         @Override
-        public void writeField(Object object) {
+        public void accept(Object object) {
             var value = accesor.apply(object);
             if (value != null) {
-                recordConsumer.startField(recordField.fieldName(), recordField.idx());
+                recordConsumer.startField(fieldName, idx);
                 recordConsumer.addLong((Long) value);
-                recordConsumer.endField(recordField.fieldName(), recordField.idx());
+                recordConsumer.endField(fieldName, idx);
             }
         }
     }
 
-    private class BooleanFieldWriter extends FieldWriter {
+    private class BooleanFieldWriter implements Consumer<Object> {
+
+        private final String fieldName;
+        private final int idx;
+        private final Function<Object, Object> accesor;
 
         BooleanFieldWriter(RecordField recordField) {
-            super(recordField);
+            this.fieldName = recordField.fieldName();
+            this.idx = recordField.idx();
+            this.accesor = Reflection.recordAccessor(recordField.targetClass(), recordField.recordComponent());
         }
 
         @Override
-        public void writeField(Object object) {
+        public void accept(Object object) {
             var value = accesor.apply(object);
             if (value != null) {
-                recordConsumer.startField(recordField.fieldName(), recordField.idx());
+                recordConsumer.startField(fieldName, idx);
                 recordConsumer.addBoolean((Boolean) value);
-                recordConsumer.endField(recordField.fieldName(), recordField.idx());
+                recordConsumer.endField(fieldName, idx);
             }
         }
     }
 
-    private class FloatFieldWriter extends FieldWriter {
+    private class FloatFieldWriter implements Consumer<Object> {
+
+        private final String fieldName;
+        private final int idx;
+        private final Function<Object, Object> accesor;
 
         FloatFieldWriter(RecordField recordField) {
-            super(recordField);
+            this.fieldName = recordField.fieldName();
+            this.idx = recordField.idx();
+            this.accesor = Reflection.recordAccessor(recordField.targetClass(), recordField.recordComponent());
         }
 
         @Override
-        public void writeField(Object object) {
+        public void accept(Object object) {
             var value = accesor.apply(object);
             if (value != null) {
-                recordConsumer.startField(recordField.fieldName(), recordField.idx());
+                recordConsumer.startField(fieldName, idx);
                 recordConsumer.addFloat((Float) value);
-                recordConsumer.endField(recordField.fieldName(), recordField.idx());
+                recordConsumer.endField(fieldName, idx);
             }
         }
     }
 
-    private class DoubleFieldWriter extends FieldWriter {
+    private class DoubleFieldWriter implements Consumer<Object> {
+
+        private final String fieldName;
+        private final int idx;
+        private final Function<Object, Object> accesor;
 
         DoubleFieldWriter(RecordField recordField) {
-            super(recordField);
+            this.fieldName = recordField.fieldName();
+            this.idx = recordField.idx();
+            this.accesor = Reflection.recordAccessor(recordField.targetClass(), recordField.recordComponent());
         }
 
         @Override
-        public void writeField(Object object) {
+        public void accept(Object object) {
             var value = accesor.apply(object);
             if (value != null) {
-                recordConsumer.startField(recordField.fieldName(), recordField.idx());
+                recordConsumer.startField(fieldName, idx);
                 recordConsumer.addDouble((Double) value);
-                recordConsumer.endField(recordField.fieldName(), recordField.idx());
+                recordConsumer.endField(fieldName, idx);
             }
         }
     }
 
-    private class StringFieldWriter extends FieldWriter {
+    private class StringFieldWriter implements Consumer<Object> {
+
+        private final String fieldName;
+        private final int idx;
+        private final Function<Object, Object> accesor;
 
         StringFieldWriter(RecordField recordField) {
-            super(recordField);
+            this.fieldName = recordField.fieldName();
+            this.idx = recordField.idx();
+            this.accesor = Reflection.recordAccessor(recordField.targetClass(), recordField.recordComponent());
         }
 
         @Override
-        public void writeField(Object object) {
+        public void accept(Object object) {
             var value = accesor.apply(object);
             if (value != null) {
-                recordConsumer.startField(recordField.fieldName(), recordField.idx());
+                recordConsumer.startField(fieldName, idx);
                 recordConsumer.addBinary(Binary.fromString((String) value));
-                recordConsumer.endField(recordField.fieldName(), recordField.idx());
+                recordConsumer.endField(fieldName, idx);
             }
         }
     }
 
-    private class EnumFieldWriter extends FieldWriter {
+    private class EnumFieldWriter implements Consumer<Object> {
 
+        private final String fieldName;
+        private final int idx;
+        private final Function<Object, Object> accesor;
         private final EnumsValues values;
 
         EnumFieldWriter(RecordField recordField, Class<?> enumClass) {
-            super(recordField);
-            values = new EnumsValues(enumClass);
+            this.fieldName = recordField.fieldName();
+            this.idx = recordField.idx();
+            this.accesor = Reflection.recordAccessor(recordField.targetClass(), recordField.recordComponent());
+            this.values = new EnumsValues(enumClass);
         }
 
         @Override
-        public void writeField(Object object) {
+        public void accept(Object object) {
             var value = accesor.apply(object);
             if (value != null) {
-                recordConsumer.startField(recordField.fieldName(), recordField.idx());
+                recordConsumer.startField(fieldName, idx);
                 recordConsumer.addBinary(values.getValue(value));
-                recordConsumer.endField(recordField.fieldName(), recordField.idx());
+                recordConsumer.endField(fieldName, idx);
             }
         }
 
     }
 
-    private class UuidFieldWriter extends FieldWriter {
+    private class UuidFieldWriter implements Consumer<Object> {
+
+        private final String fieldName;
+        private final int idx;
+        private final Function<Object, Object> accesor;
 
         UuidFieldWriter(RecordField recordField) {
-            super(recordField);
+            this.fieldName = recordField.fieldName();
+            this.idx = recordField.idx();
+            this.accesor = Reflection.recordAccessor(recordField.targetClass(), recordField.recordComponent());
         }
 
         @Override
-        public void writeField(Object object) {
+        public void accept(Object object) {
             var value = accesor.apply(object);
             if (value != null) {
-                recordConsumer.startField(recordField.fieldName(), recordField.idx());
+                recordConsumer.startField(fieldName, idx);
                 recordConsumer.addBinary(uuidToBinary(value));
-                recordConsumer.endField(recordField.fieldName(), recordField.idx());
+                recordConsumer.endField(fieldName, idx);
             }
         }
 
     }
 
-    private class RecordFieldWriter extends FieldWriter {
+    private class RecordFieldWriter implements Consumer<Object> {
 
+        private final String fieldName;
+        private final int idx;
+        private final Function<Object, Object> accesor;
         private final CarpetRecordWriter writer;
 
         RecordFieldWriter(RecordField recordField, CarpetRecordWriter writer) {
-            super(recordField);
+            this.fieldName = recordField.fieldName();
+            this.idx = recordField.idx();
+            this.accesor = Reflection.recordAccessor(recordField.targetClass(), recordField.recordComponent());
             this.writer = writer;
         }
 
         @Override
-        public void writeField(Object object) {
+        public void accept(Object object) {
             var value = accesor.apply(object);
             if (value != null) {
-                recordConsumer.startField(recordField.fieldName(), recordField.idx());
+                recordConsumer.startField(fieldName, idx);
                 recordConsumer.startGroup();
                 writer.write(value);
                 recordConsumer.endGroup();
-                recordConsumer.endField(recordField.fieldName(), recordField.idx());
+                recordConsumer.endField(fieldName, idx);
             }
         }
     }
