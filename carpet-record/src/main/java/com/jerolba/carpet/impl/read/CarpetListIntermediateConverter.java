@@ -46,9 +46,8 @@ class CarpetListIntermediateConverter extends GroupConverter {
             throw new RecordTypeConversionException(
                     requestedSchema.getName() + " LIST child element can not have more than one field");
         }
-        Consumer<Object> consumer = this::accept;
         Type listElement = fields.get(0);
-        converter = createCollectionConverter(listElement, parameterized, consumer);
+        converter = createCollectionConverter(listElement, parameterized, value -> elementValue = value);
     }
 
     @Override
@@ -64,10 +63,6 @@ class CarpetListIntermediateConverter extends GroupConverter {
     @Override
     public void end() {
         listHolder.add(elementValue);
-    }
-
-    public void accept(Object value) {
-        elementValue = value;
     }
 
     public static Converter createCollectionConverter(Type listElement, ParameterizedCollection parameterized,

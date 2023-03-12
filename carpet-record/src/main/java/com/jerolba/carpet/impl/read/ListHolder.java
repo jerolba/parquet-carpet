@@ -26,7 +26,7 @@ class ListHolder {
         list = new ArrayList<>();
     }
 
-    public Object end() {
+    public List<Object> end() {
         return list;
     }
 

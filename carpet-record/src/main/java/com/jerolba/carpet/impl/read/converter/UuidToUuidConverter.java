@@ -47,8 +47,9 @@ public class UuidToUuidConverter extends PrimitiveConverter {
 
     @Override
     public void setDictionary(Dictionary dictionary) {
-        dict = new UUID[dictionary.getMaxId() + 1];
-        for (int i = 0; i <= dictionary.getMaxId(); i++) {
+        int maxId = dictionary.getMaxId();
+        dict = new UUID[maxId + 1];
+        for (int i = 0; i <= maxId; i++) {
             dict[i] = convert(dictionary.decodeToBinary(i));
         }
     }

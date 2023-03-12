@@ -102,11 +102,11 @@ class CarpetMapIntermediateConverter extends GroupConverter {
         mapHolder.put(elementKey, elementValue);
     }
 
-    public void consumeKey(Object value) {
+    private void consumeKey(Object value) {
         elementKey = value;
     }
 
-    public void consumeValue(Object value) {
+    private void consumeValue(Object value) {
         elementValue = value;
     }
 

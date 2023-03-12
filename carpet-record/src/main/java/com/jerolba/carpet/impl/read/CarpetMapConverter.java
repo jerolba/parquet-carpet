@@ -30,12 +30,10 @@ class CarpetMapConverter extends GroupConverter {
 
     private final Consumer<Object> groupConsumer;
     private final Converter converter;
-    private final MapHolder mapHolder;
+    private final MapHolder mapHolder = new MapHolder();
 
-    CarpetMapConverter(GroupType requestedSchema, ParameterizedMap parameterized,
-            Consumer<Object> groupConsumer) {
+    CarpetMapConverter(GroupType requestedSchema, ParameterizedMap parameterized, Consumer<Object> groupConsumer) {
         this.groupConsumer = groupConsumer;
-        this.mapHolder = new MapHolder();
 
         List<Type> fields = requestedSchema.getFields();
         if (fields.size() > 1) {
@@ -43,7 +41,7 @@ class CarpetMapConverter extends GroupConverter {
                     requestedSchema.getName() + " MAP can not have more than one field");
         }
         Type mapChild = fields.get(0);
-        converter = new CarpetMapIntermediateConverter(parameterized, mapChild.asGroupType(), mapHolder);
+        this.converter = new CarpetMapIntermediateConverter(parameterized, mapChild.asGroupType(), mapHolder);
     }
 
     @Override
@@ -58,8 +56,7 @@ class CarpetMapConverter extends GroupConverter {
 
     @Override
     public void end() {
-        Object currentRecord = mapHolder.end();
-        groupConsumer.accept(currentRecord);
+        groupConsumer.accept(mapHolder.end());
     }
 
 }

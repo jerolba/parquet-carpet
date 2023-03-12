@@ -26,7 +26,7 @@ class MapHolder {
         map = new HashMap<>();
     }
 
-    public Object end() {
+    public Map<Object, Object> end() {
         return map;
     }
 

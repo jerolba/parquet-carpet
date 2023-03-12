@@ -44,8 +44,9 @@ public class EnumGenericConverter extends PrimitiveConverter {
 
     @Override
     public void setDictionary(Dictionary dictionary) {
-        dict = new Enum[dictionary.getMaxId() + 1];
-        for (int i = 0; i <= dictionary.getMaxId(); i++) {
+        int maxId = dictionary.getMaxId();
+        dict = new Enum[maxId + 1];
+        for (int i = 0; i <= maxId; i++) {
             dict[i] = convert(dictionary.decodeToBinary(i));
         }
     }

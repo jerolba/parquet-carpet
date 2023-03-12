@@ -30,12 +30,11 @@ class CarpetListConverter extends GroupConverter {
 
     private final Consumer<Object> groupConsumer;
     private final Converter converter;
-    private final ListHolder listHolder;
+    private final ListHolder listHolder = new ListHolder();
 
     CarpetListConverter(GroupType requestedSchema, ParameterizedCollection parameterized,
             Consumer<Object> groupConsumer) {
         this.groupConsumer = groupConsumer;
-        this.listHolder = new ListHolder();
 
         Type listChild = requestedSchema.getFields().get(0);
         boolean threeLevel = SchemaValidation.isThreeLevel(listChild);
@@ -58,8 +57,7 @@ class CarpetListConverter extends GroupConverter {
 
     @Override
     public void end() {
-        Object currentRecord = listHolder.end();
-        groupConsumer.accept(currentRecord);
+        groupConsumer.accept(listHolder.end());
     }
 
 }
