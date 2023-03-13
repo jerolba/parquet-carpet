@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jerolba.carpet.filestream;
+package com.jerolba.carpet.io;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,7 +37,6 @@ import org.apache.parquet.io.SeekableInputStream;
  * https://github.com/tideworks/arvo2parquet/blob/master/src/main/java/com/tideworks/data_load/io/InputFile.java
  */
 
-//Review usage of DelegatingSeekableInputStream
 public class FileSystemInputFile implements InputFile {
 
     private final File file;

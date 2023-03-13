@@ -13,57 +13,64 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jerolba.carpet.filestream;
+package com.jerolba.carpet.io;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 
 import org.apache.parquet.io.OutputFile;
 import org.apache.parquet.io.PositionOutputStream;
 
 /**
  *
- * Class for writing to an OutputStream using the Parquet output file interface.
+ * Class for writing to a file on the file system using the Parquet output file
+ * interface.
  *
+ * @author jerolba
  */
-public class OutputStreamOutputFile implements OutputFile {
+public class FileSystemOutputFile implements OutputFile {
 
-    private final OutputStream outputStream;
+    private final File file;
 
     /**
      *
-     * Constructs an OutputStreamOutputFile with the specified OutputStream.
+     * Constructs a FileSystemOutputFile with the specified file.
      *
-     * @param outputStream the OutputStream to write to
+     * @param file the file to write to
      */
-    public OutputStreamOutputFile(OutputStream outputStream) {
-        this.outputStream = outputStream;
+    public FileSystemOutputFile(File file) {
+        this.file = file;
     }
 
     /**
      *
-     * Creates an output stream for writing.
+     * Creates an output stream for writing to the file.
      *
      * @param blockSizeHint the block size hint, ignored by this implementation
-     * @return a new PositionOutputStream for writing to the OutputStream
-     * @throws IOException if an error occurs while creating the output stream
+     * @return a new PositionOutputStream for writing to the file
+     * @throws IOException if the file already exists or an error occurs while
+     *                     creating the output stream
      */
     @Override
     public PositionOutputStream create(long blockSizeHint) throws IOException {
-        return new CountedPositionOutputStream(outputStream);
+        if (file.exists()) {
+            throw new IllegalArgumentException("File already exists: " + file);
+        }
+        return createOrOverwrite(blockSizeHint);
     }
 
     /**
      *
-     * Creates or overwrites an output stream for writing.
+     * Creates or overwrites an output stream for writing to the file.
      *
      * @param blockSizeHint the block size hint, ignored by this implementation
-     * @return a new PositionOutputStream for writing to the OutputStream
+     * @return a new PositionOutputStream for writing to the file
      * @throws IOException if an error occurs while creating the output stream
      */
     @Override
     public PositionOutputStream createOrOverwrite(long blockSizeHint) throws IOException {
-        return new CountedPositionOutputStream(outputStream);
+        return new CountedPositionOutputStream(new FileOutputStream(file));
     }
 
     /**

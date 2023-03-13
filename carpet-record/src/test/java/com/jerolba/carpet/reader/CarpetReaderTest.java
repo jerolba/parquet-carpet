@@ -47,8 +47,8 @@ import com.jerolba.carpet.ParquetReaderTest;
 import com.jerolba.carpet.ParquetWriterTest;
 import com.jerolba.carpet.ReadFlag;
 import com.jerolba.carpet.RecordTypeConversionException;
-import com.jerolba.carpet.filestream.FileSystemInputFile;
-import com.jerolba.carpet.filestream.FileSystemOutputFile;
+import com.jerolba.carpet.io.FileSystemInputFile;
+import com.jerolba.carpet.io.FileSystemOutputFile;
 
 class CarpetReaderTest {
 

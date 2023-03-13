@@ -38,8 +38,8 @@ import org.junit.jupiter.api.Test;
 
 import com.jerolba.carpet.CarpetParquetReader;
 import com.jerolba.carpet.ParquetReaderTest;
-import com.jerolba.carpet.filestream.FileSystemInputFile;
-import com.jerolba.carpet.filestream.FileSystemOutputFile;
+import com.jerolba.carpet.io.FileSystemInputFile;
+import com.jerolba.carpet.io.FileSystemOutputFile;
 import com.jerolba.carpet.reader.CarpetReaderTest.Category;
 
 class CarpetReaderConversionTest {

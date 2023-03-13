@@ -30,8 +30,8 @@ import org.apache.parquet.io.InputFile;
 import org.apache.parquet.io.OutputFile;
 
 import com.jerolba.carpet.CarpetParquetReader.Builder;
-import com.jerolba.carpet.filestream.FileSystemInputFile;
-import com.jerolba.carpet.filestream.FileSystemOutputFile;
+import com.jerolba.carpet.io.FileSystemInputFile;
+import com.jerolba.carpet.io.FileSystemOutputFile;
 
 public class ParquetReaderTest {
 

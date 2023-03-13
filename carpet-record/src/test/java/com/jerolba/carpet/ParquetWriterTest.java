@@ -33,8 +33,8 @@ import org.apache.parquet.hadoop.metadata.FileMetaData;
 import org.apache.parquet.schema.MessageType;
 
 import com.jerolba.carpet.CarpetParquetReader.Builder;
-import com.jerolba.carpet.filestream.FileSystemInputFile;
-import com.jerolba.carpet.filestream.OutputStreamOutputFile;
+import com.jerolba.carpet.io.FileSystemInputFile;
+import com.jerolba.carpet.io.OutputStreamOutputFile;
 
 public class ParquetWriterTest<T> {
 

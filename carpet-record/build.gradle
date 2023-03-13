@@ -77,7 +77,6 @@ dependencies {
         exclude group: 'org.apache.curator', module: 'curator-framework'
     }
 
-    testImplementation project(':carpet-filestream')
     testImplementation "org.apache.avro:avro:1.10.2"
     
     testImplementation 'org.apache.commons:commons-lang3:3.12.0'
