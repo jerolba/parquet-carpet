@@ -31,6 +31,7 @@ import java.util.function.Function;
 import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.io.api.RecordConsumer;
 
+import com.jerolba.carpet.impl.JavaType;
 import com.jerolba.carpet.impl.ParameterizedCollection;
 import com.jerolba.carpet.impl.ParameterizedMap;
 
@@ -52,11 +53,10 @@ public class CarpetRecordWriter {
             String fieldName = getFieldName(attr);
 
             Class<?> type = attr.getType();
-            String typeName = type.getName();
             Consumer<Object> writer = null;
             RecordField f = new RecordField(recordClass, attr, fieldName, idx);
 
-            writer = buildBasicTypeWriter(typeName, type, f);
+            writer = buildBasicTypeWriter(type, f);
 
             if (writer == null) {
                 if (type.isRecord()) {
@@ -69,7 +69,7 @@ public class CarpetRecordWriter {
                     ParameterizedMap mapClass = getParameterizedMap(attr);
                     writer = createMapWriter(mapClass, f);
                 } else {
-                    throw new RuntimeException(typeName + " can not be serialized");
+                    throw new RuntimeException(type.getName() + " can not be serialized");
                 }
             }
             fieldWriters.add(writer);
@@ -93,25 +93,25 @@ public class CarpetRecordWriter {
 
     }
 
-    private Consumer<Object> buildBasicTypeWriter(String typeName, Class<?> type, RecordField f) {
-        if (typeName.equals("int") || typeName.equals("java.lang.Integer")) {
+    private Consumer<Object> buildBasicTypeWriter(Class<?> javaType, RecordField f) {
+        JavaType type = new JavaType(javaType);
+        if (type.isInteger()) {
             return new IntegerFieldWriter(f);
-        } else if (typeName.equals("java.lang.String")) {
+        } else if (type.isString()) {
             return new StringFieldWriter(f);
-        } else if (typeName.equals("boolean") || typeName.equals("java.lang.Boolean")) {
+        } else if (type.isBoolean()) {
             return new BooleanFieldWriter(f);
-        } else if (typeName.equals("long") || typeName.equals("java.lang.Long")) {
+        } else if (type.isLong()) {
             return new LongFieldWriter(f);
-        } else if (typeName.equals("double") || typeName.equals("java.lang.Double")) {
+        } else if (type.isDouble()) {
             return new DoubleFieldWriter(f);
-        } else if (typeName.equals("float") || typeName.equals("java.lang.Float")) {
+        } else if (type.isFloat()) {
             return new FloatFieldWriter(f);
-        } else if (typeName.equals("short") || typeName.equals("java.lang.Short")
-                || typeName.equals("byte") || typeName.equals("java.lang.Byte")) {
+        } else if (type.isShort() || type.isByte()) {
             return new IntegerCompatibleFieldWriter(f);
         } else if (type.isEnum()) {
-            return new EnumFieldWriter(f, type);
-        } else if (typeName.equals("java.util.UUID")) {
+            return new EnumFieldWriter(f, type.getJavaType());
+        } else if (type.isUuid()) {
             return new UuidFieldWriter(f);
         }
         return null;

@@ -39,6 +39,7 @@ import org.apache.parquet.schema.Type;
 import org.apache.parquet.schema.Type.Repetition;
 
 import com.jerolba.carpet.RecordTypeConversionException;
+import com.jerolba.carpet.impl.JavaType;
 import com.jerolba.carpet.impl.ParameterizedCollection;
 import com.jerolba.carpet.impl.ParameterizedMap;
 
@@ -222,7 +223,7 @@ public class SchemaFilter {
             Type listGroupMapped = rewrapListIfExists(listGroup, childMapped);
             return parentGroupType.withNewFields(listGroupMapped);
         }
-        if (isBasicSupportedType(actualCollectionType) && !childElement.isPrimitive()) {
+        if (isBasicSupportedType(new JavaType(actualCollectionType)) && !childElement.isPrimitive()) {
             throw new RecordTypeConversionException(
                     childElement.getName() + " is not compatible with " + actualCollectionType.getName());
         }

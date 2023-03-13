@@ -27,6 +27,7 @@ import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
 import org.apache.parquet.schema.Type;
 
 import com.jerolba.carpet.RecordTypeConversionException;
+import com.jerolba.carpet.impl.JavaType;
 import com.jerolba.carpet.impl.read.ReadReflection.ConstructorParams;
 import com.jerolba.carpet.impl.read.converter.BooleanConverter;
 import com.jerolba.carpet.impl.read.converter.EnumConverter;
@@ -59,77 +60,73 @@ class PrimitiveConverterFactory {
 
     public static Converter buildFromIntConverter(ConstructorParams constructor, int index,
             RecordComponent recordComponent) {
-        Class<?> type = recordComponent.getType();
-        String typeName = type.getName();
-        if (typeName.equals("int") || typeName.equals("java.lang.Integer")) {
+        JavaType type = new JavaType(recordComponent);
+        if (type.isInteger()) {
             return new ToIntegerConverter(constructor, index);
         }
-        if (typeName.equals("long") || typeName.equals("java.lang.Long")) {
+        if (type.isLong()) {
             return new ToLongConverter(constructor, index);
         }
-        if (typeName.equals("short") || typeName.equals("java.lang.Short")) {
+        if (type.isShort()) {
             return new ToShortConverter(constructor, index);
         }
-        if (typeName.equals("byte") || typeName.equals("java.lang.Byte")) {
+        if (type.isByte()) {
             return new ToByteConverter(constructor, index);
         }
-        if (typeName.equals("double") || typeName.equals("java.lang.Double")) {
+        if (type.isDouble()) {
             return new ToDoubleConverter(constructor, index);
         }
-        if (typeName.equals("float") || typeName.equals("java.lang.Float")) {
+        if (type.isFloat()) {
             return new ToFloatConverter(constructor, index);
         }
         throw new RecordTypeConversionException(
-                typeName + " not compatible with " + recordComponent.getName() + " field");
+                type.getTypeName() + " not compatible with " + recordComponent.getName() + " field");
     }
 
     public static Converter buildFromDecimalConverter(ConstructorParams constructor, int index,
             RecordComponent recordComponent) {
-        Class<?> type = recordComponent.getType();
-        String typeName = type.getName();
-        if (typeName.equals("float") || typeName.equals("java.lang.Float")) {
+        JavaType type = new JavaType(recordComponent);
+        if (type.isFloat()) {
             return new ToFloatConverter(constructor, index);
         }
-        if (typeName.equals("double") || typeName.equals("java.lang.Double")) {
+        if (type.isDouble()) {
             return new ToDoubleConverter(constructor, index);
         }
         throw new RecordTypeConversionException(
-                typeName + " not compatible with " + recordComponent.getName() + " field");
+                type.getTypeName() + " not compatible with " + recordComponent.getName() + " field");
     }
 
     public static Converter buildFromBooleanConverter(ConstructorParams constructor, int index,
             RecordComponent recordComponent) {
-        Class<?> type = recordComponent.getType();
-        String typeName = type.getName();
-        if (typeName.equals("boolean") || typeName.equals("java.lang.Boolean")) {
+        JavaType type = new JavaType(recordComponent);
+        if (type.isBoolean()) {
             return new BooleanConverter(constructor, index);
         }
         throw new RecordTypeConversionException(
-                typeName + " not compatible with " + recordComponent.getName() + " field");
+                type.getTypeName() + " not compatible with " + recordComponent.getName() + " field");
     }
 
     public static Converter buildFromBinaryConverter(ConstructorParams constructor, int index,
             RecordComponent recordComponent, Type schemaType) {
-        Class<?> type = recordComponent.getType();
-        String typeName = type.getName();
+        JavaType type = new JavaType(recordComponent);
         LogicalTypeAnnotation logicalType = schemaType.getLogicalTypeAnnotation();
         if (logicalType.equals(stringType())) {
-            if (typeName.equals("java.lang.String")) {
+            if (type.isString()) {
                 return new StringConverter(constructor, index);
             }
             if (type.isEnum()) {
                 return new EnumConverter(constructor, index, recordComponent.getType());
             }
-            throw new RecordTypeConversionException(typeName + " not compatible with String field");
+            throw new RecordTypeConversionException(type.getTypeName() + " not compatible with String field");
         }
         if (logicalType.equals(enumType())) {
-            if (typeName.equals("java.lang.String")) {
+            if (type.isString()) {
                 return new StringConverter(constructor, index);
             }
             return new EnumConverter(constructor, index, recordComponent.getType());
         }
         throw new RecordTypeConversionException(
-                typeName + " not compatible with " + recordComponent.getName() + " field");
+                type.getTypeName() + " not compatible with " + recordComponent.getName() + " field");
     }
 
     private static Converter buildFromByteArrayConverter(ConstructorParams constructor, int index,
@@ -139,15 +136,15 @@ class PrimitiveConverterFactory {
         if (!logicalType.equals(uuidType())) {
             throw new RecordTypeConversionException(parquetField + " deserialization not supported");
         }
-        Class<?> type = recordComponent.getType();
-        String typeName = type.getName();
-        if (typeName.equals("java.lang.String")) {
+        JavaType type = new JavaType(recordComponent);
+        if (type.isString()) {
             return new UuidToStringConverter(constructor, index);
         }
-        if (typeName.equals("java.util.UUID")) {
+        if (type.isUuid()) {
             return new UuidToUuidConverter(constructor, index);
         }
-        throw new RecordTypeConversionException(parquetField + " deserialization not supported for type " + typeName);
+        throw new RecordTypeConversionException(
+                parquetField + " deserialization not supported for type " + type.getTypeName());
     }
 
 }

@@ -27,6 +27,7 @@ import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
 import org.apache.parquet.schema.Type;
 
 import com.jerolba.carpet.RecordTypeConversionException;
+import com.jerolba.carpet.impl.JavaType;
 import com.jerolba.carpet.impl.read.converter.BooleanGenericConverter;
 import com.jerolba.carpet.impl.read.converter.EnumGenericConverter;
 import com.jerolba.carpet.impl.read.converter.StringGenericConverter;
@@ -41,13 +42,14 @@ import com.jerolba.carpet.impl.read.converter.UuidToUuidGenericConverter;
 
 class PrimitiveGenericConverterFactory {
 
-    public static Converter buildPrimitiveGenericConverters(Type parquetField, Class<?> genericType,
+    public static Converter buildPrimitiveGenericConverters(Type parquetField, Class<?> genericJavaType,
             Consumer<Object> listConsumer) {
+        JavaType genericType = new JavaType(genericJavaType);
         PrimitiveTypeName type = parquetField.asPrimitiveType().getPrimitiveTypeName();
         return switch (type) {
-        case INT32, INT64 -> genericBuildFromIntConverter(listConsumer, genericType);
-        case FLOAT, DOUBLE -> genericBuildFromDecimalConverter(listConsumer, genericType);
-        case BOOLEAN -> genericBuildFromBooleanConverter(listConsumer, genericType);
+        case INT32, INT64 -> genericBuildFromIntConverter(listConsumer, genericType, parquetField);
+        case FLOAT, DOUBLE -> genericBuildFromDecimalConverter(listConsumer, genericType, parquetField);
+        case BOOLEAN -> genericBuildFromBooleanConverter(listConsumer, genericType, parquetField);
         case BINARY -> genericBuildFromBinaryConverter(listConsumer, genericType, parquetField);
         case FIXED_LEN_BYTE_ARRAY -> genericBuildFromByteArrayConverter(listConsumer, genericType, parquetField);
         case INT96 -> throw new RecordTypeConversionException(type + " deserialization not supported");
@@ -55,86 +57,87 @@ class PrimitiveGenericConverterFactory {
         };
     }
 
-    public static Converter genericBuildFromIntConverter(Consumer<Object> listConsumer, Class<?> type) {
-        String typeName = type.getName();
-        if (typeName.equals("int") || typeName.equals("java.lang.Integer")) {
+    private static Converter genericBuildFromIntConverter(Consumer<Object> listConsumer, JavaType type,
+            Type schemaType) {
+        if (type.isInteger()) {
             return new ToIntegerGenericConverter(listConsumer);
         }
-        if (typeName.equals("long") || typeName.equals("java.lang.Long")) {
+        if (type.isLong()) {
             return new ToLongGenericConverter(listConsumer);
         }
-        if (typeName.equals("short") || typeName.equals("java.lang.Short")) {
+        if (type.isShort()) {
             return new ToShortGenericConverter(listConsumer);
         }
-        if (typeName.equals("byte") || typeName.equals("java.lang.Byte")) {
+        if (type.isByte()) {
             return new ToByteGenericConverter(listConsumer);
         }
-        if (typeName.equals("double") || typeName.equals("java.lang.Double")) {
+        if (type.isDouble()) {
             return new ToDoubleGenericConverter(listConsumer);
         }
-        if (typeName.equals("float") || typeName.equals("java.lang.Float")) {
+        if (type.isFloat()) {
             return new ToFloatGenericConverter(listConsumer);
         }
-        throw new RecordTypeConversionException(typeName + " not compatible with " + type.getName() + " collection");
+        throw new RecordTypeConversionException(
+                type.getTypeName() + " not compatible with " + schemaType.getName() + " collection");
     }
 
-    public static Converter genericBuildFromDecimalConverter(Consumer<Object> listConsumer, Class<?> type) {
-        String typeName = type.getName();
-        if (typeName.equals("float") || typeName.equals("java.lang.Float")) {
+    private static Converter genericBuildFromDecimalConverter(Consumer<Object> listConsumer, JavaType type,
+            Type schemaType) {
+        if (type.isFloat()) {
             return new ToFloatGenericConverter(listConsumer);
         }
-        if (typeName.equals("double") || typeName.equals("java.lang.Double")) {
+        if (type.isDouble()) {
             return new ToDoubleGenericConverter(listConsumer);
         }
-        throw new RecordTypeConversionException(typeName + " not compatible with " + type.getName() + " collection");
+        throw new RecordTypeConversionException(
+                type.getTypeName() + " not compatible with " + schemaType.getName() + " collection");
     }
 
-    public static Converter genericBuildFromBooleanConverter(Consumer<Object> listConsumer, Class<?> type) {
-        String typeName = type.getName();
-        if (typeName.equals("boolean") || typeName.equals("java.lang.Boolean")) {
+    private static Converter genericBuildFromBooleanConverter(Consumer<Object> listConsumer, JavaType type,
+            Type schemaType) {
+        if (type.isBoolean()) {
             return new BooleanGenericConverter(listConsumer);
         }
-        throw new RecordTypeConversionException(typeName + " not compatible with " + type.getName() + " collection");
+        throw new RecordTypeConversionException(
+                type.getTypeName() + " not compatible with " + schemaType.getName() + " collection");
     }
 
-    public static Converter genericBuildFromBinaryConverter(Consumer<Object> listConsumer, Class<?> type,
+    private static Converter genericBuildFromBinaryConverter(Consumer<Object> listConsumer, JavaType type,
             Type schemaType) {
         LogicalTypeAnnotation logicalType = schemaType.getLogicalTypeAnnotation();
-        String typeName = type.getName();
         if (logicalType.equals(stringType())) {
-            if (typeName.equals("java.lang.String")) {
+            if (type.isString()) {
                 return new StringGenericConverter(listConsumer);
             }
             if (type.isEnum()) {
-                return new EnumGenericConverter(listConsumer, type);
+                return new EnumGenericConverter(listConsumer, type.getJavaType());
             }
-            throw new RecordTypeConversionException(typeName + " not compatible with String field");
+            throw new RecordTypeConversionException(type.getTypeName() + " not compatible with String field");
         }
         if (logicalType.equals(enumType())) {
-            if (typeName.equals("java.lang.String")) {
+            if (type.isString()) {
                 return new StringGenericConverter(listConsumer);
             }
-            return new EnumGenericConverter(listConsumer, type);
-
+            return new EnumGenericConverter(listConsumer, type.getJavaType());
         }
-        throw new RecordTypeConversionException(typeName + " not compatible with " + schemaType.getName() + " field");
+        throw new RecordTypeConversionException(
+                type.getTypeName() + " not compatible with " + schemaType.getName() + " field");
     }
 
-    public static Converter genericBuildFromByteArrayConverter(Consumer<Object> listConsumer, Class<?> type,
+    private static Converter genericBuildFromByteArrayConverter(Consumer<Object> listConsumer, JavaType type,
             Type schemaType) {
         LogicalTypeAnnotation logicalType = schemaType.getLogicalTypeAnnotation();
         if (!logicalType.equals(uuidType())) {
             throw new RecordTypeConversionException(schemaType + " deserialization not supported");
         }
-
-        String typeName = type.getName();
-        if (typeName.equals("java.lang.String")) {
+        if (type.isString()) {
             return new UuidToStringGenericConverter(listConsumer);
         }
-        if (typeName.equals("java.util.UUID")) {
+        if (type.isUuid()) {
             return new UuidToUuidGenericConverter(listConsumer);
         }
-        throw new RecordTypeConversionException(typeName + " not compatible with " + schemaType.getName() + " field");
+        throw new RecordTypeConversionException(
+                type.getTypeName() + " not compatible with " + schemaType.getName() + " field");
     }
 
 }

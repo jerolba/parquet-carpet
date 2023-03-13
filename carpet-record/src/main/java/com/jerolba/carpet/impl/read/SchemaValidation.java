@@ -29,6 +29,7 @@ import org.apache.parquet.schema.Type.Repetition;
 
 import com.jerolba.carpet.CarpetMissingColumnException;
 import com.jerolba.carpet.RecordTypeConversionException;
+import com.jerolba.carpet.impl.JavaType;
 
 public class SchemaValidation {
 
@@ -51,7 +52,8 @@ public class SchemaValidation {
         return true;
     }
 
-    public boolean validatePrimitiveCompatibility(PrimitiveType primitiveType, Class<?> type) {
+    public boolean validatePrimitiveCompatibility(PrimitiveType primitiveType, Class<?> javaType) {
+        JavaType type = new JavaType(javaType);
         switch (primitiveType.getPrimitiveTypeName()) {
         case INT32:
             return validInt32Source(primitiveType, type);
@@ -89,62 +91,32 @@ public class SchemaValidation {
         return true;
     }
 
-    private boolean validInt32Source(PrimitiveType primitiveType, Class<?> type) {
-        String typeName = type.getName();
-        if (typeName.equals("int") || typeName.equals("java.lang.Integer")) {
-            return true;
-        }
-        if (typeName.equals("long") || typeName.equals("java.lang.Long")) {
-            return true;
-        }
-        if (typeName.equals("double") || typeName.equals("java.lang.Double")) {
+    private boolean validInt32Source(PrimitiveType primitiveType, JavaType type) {
+        if (type.isInteger() || type.isLong() || type.isDouble()) {
             return true;
         }
         if (!strictNumericType) {
-            if (typeName.equals("float") || typeName.equals("java.lang.Float")) {
+            if (type.isFloat() || type.isShort() || type.isByte()) {
                 return true;
             }
-            if (typeName.equals("short") || typeName.equals("java.lang.Short")) {
-                return true;
-            }
-            if (typeName.equals("byte") || typeName.equals("java.lang.Byte")) {
+        }
+        return throwInvalidConversionException(primitiveType, type);
+    }
+
+    private boolean validInt64Source(PrimitiveType primitiveType, JavaType type) {
+        if (type.isLong()) {
+            return true;
+        }
+        if (!strictNumericType) {
+            if (type.isInteger() || type.isDouble() || type.isFloat() || type.isShort() || type.isByte()) {
                 return false;
             }
         }
         return throwInvalidConversionException(primitiveType, type);
     }
 
-    private boolean validInt64Source(PrimitiveType primitiveType, Class<?> type) {
-        String typeName = type.getName();
-        if (typeName.equals("long") || typeName.equals("java.lang.Long")) {
-            return true;
-        }
-        if (!strictNumericType) {
-            if (typeName.equals("double") || typeName.equals("java.lang.Double")) {
-                return false;
-            }
-            if (typeName.equals("float") || typeName.equals("java.lang.Float")) {
-                return false;
-            }
-            if (typeName.equals("int") || typeName.equals("java.lang.Integer")) {
-                return false;
-            }
-            if (typeName.equals("short") || typeName.equals("java.lang.Short")) {
-                return true;
-            }
-            if (typeName.equals("byte") || typeName.equals("java.lang.Byte")) {
-                return false;
-            }
-        }
-        return throwInvalidConversionException(primitiveType, type);
-    }
-
-    private boolean validFloatSource(PrimitiveType primitiveType, Class<?> type) {
-        String typeName = type.getName();
-        if (typeName.equals("double") || typeName.equals("java.lang.Double")) {
-            return true;
-        }
-        if (typeName.equals("float") || typeName.equals("java.lang.Float")) {
+    private boolean validFloatSource(PrimitiveType primitiveType, JavaType type) {
+        if (type.isDouble() || type.isFloat()) {
             return true;
         }
         if (!strictNumericType) {
@@ -152,72 +124,52 @@ public class SchemaValidation {
         return throwInvalidConversionException(primitiveType, type);
     }
 
-    private boolean validDoubleSource(PrimitiveType primitiveType, Class<?> type) {
-        String typeName = type.getName();
-        if (typeName.equals("double") || typeName.equals("java.lang.Double")) {
+    private boolean validDoubleSource(PrimitiveType primitiveType, JavaType type) {
+        if (type.isDouble()) {
             return true;
         }
         if (!strictNumericType) {
-            if (typeName.equals("float") || typeName.equals("java.lang.Float")) {
+            if (type.isFloat()) {
                 return true;
             }
         }
         return throwInvalidConversionException(primitiveType, type);
     }
 
-    private boolean validBooleanSource(PrimitiveType primitiveType, Class<?> type) {
-        String typeName = type.getName();
-        if (typeName.equals("boolean") || typeName.equals("java.lang.Boolean")) {
+    private boolean validBooleanSource(PrimitiveType primitiveType, JavaType type) {
+        if (type.isBoolean()) {
             return true;
         }
         return throwInvalidConversionException(primitiveType, type);
     }
 
-    private boolean validBinarySource(PrimitiveType primitiveType, Class<?> type) {
-        String typeName = type.getName();
+    private boolean validBinarySource(PrimitiveType primitiveType, JavaType type) {
         LogicalTypeAnnotation logicalType = primitiveType.getLogicalTypeAnnotation();
-        if (logicalType.equals(stringType()) && (typeName.equals("java.lang.String") || type.isEnum())) {
+        if (logicalType.equals(stringType()) && (type.isString() || type.isEnum())) {
             return true;
         }
-        if (logicalType.equals(enumType()) && (typeName.equals("java.lang.String") || type.isEnum())) {
+        if (logicalType.equals(enumType()) && (type.isString() || type.isEnum())) {
             return true;
         }
         return throwInvalidConversionException(primitiveType, type);
     }
 
-    public static boolean isBasicSupportedType(Class<?> type) {
-        String typeName = type.getName();
-        if (typeName.equals("int") || typeName.equals("java.lang.Integer")) {
-            return true;
-        }
-        if (typeName.equals("long") || typeName.equals("java.lang.Long")) {
-            return true;
-        }
-        if (typeName.equals("short") || typeName.equals("java.lang.Short")) {
-            return true;
-        }
-        if (typeName.equals("byte") || typeName.equals("java.lang.Byte")) {
-            return false;
-        }
-        if (typeName.equals("double") || typeName.equals("java.lang.Double")) {
-            return true;
-        }
-        if (typeName.equals("float") || typeName.equals("java.lang.Float")) {
-            return true;
-        }
-        if (typeName.equals("boolean") || typeName.equals("java.lang.Boolean")) {
-            return true;
-        }
-        if (type.isEnum()) {
-            return true;
-        }
-        return false;
+    public static boolean isBasicSupportedType(JavaType type) {
+        return (type.isInteger() || type.isLong() || type.isDouble()
+                || type.isFloat() || type.isBoolean() || type.isShort() || type.isByte() || type.isEnum());
     }
 
-    private boolean throwInvalidConversionException(PrimitiveType primitiveType, Class<?> type) {
+    private boolean validUuidSource(PrimitiveType primitiveType, JavaType type) {
+        if (type.isString() || type.isUuid()) {
+            return true;
+        }
+        return throwInvalidConversionException(primitiveType, type);
+    }
+
+    private boolean throwInvalidConversionException(PrimitiveType primitiveType, JavaType type) {
         throw new RecordTypeConversionException(
                 primitiveType.getPrimitiveTypeName().name() + " (" + primitiveType.getName()
-                        + ") can not be converted to " + type.getName());
+                        + ") can not be converted to " + type.getTypeName());
     }
 
     public static boolean isThreeLevel(Type child) {
@@ -269,14 +221,6 @@ public class SchemaValidation {
             return false;
         }
         return true;
-    }
-
-    private boolean validUuidSource(PrimitiveType primitiveType, Class<?> type) {
-        String typeName = type.getName();
-        if (typeName.equals("java.lang.String") || typeName.equals("java.util.UUID")) {
-            return true;
-        }
-        return throwInvalidConversionException(primitiveType, type);
     }
 
 }

@@ -22,44 +22,45 @@ import java.util.function.BiConsumer;
 import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.io.api.RecordConsumer;
 
+import com.jerolba.carpet.impl.JavaType;
+
 public class SimpleCollectionItemConsumerFactory {
 
-    public static BiConsumer<RecordConsumer, Object> buildSimpleElementConsumer(Class<?> type,
+    public static BiConsumer<RecordConsumer, Object> buildSimpleElementConsumer(Class<?> javaType,
             RecordConsumer recordConsumer, CarpetWriteConfiguration carpetConfiguration) {
 
         BiConsumer<RecordConsumer, Object> elemConsumer = null;
-        String typeName = type.getName();
-        if (typeName.equals("int") || typeName.equals("java.lang.Integer")) {
+        JavaType type = new JavaType(javaType);
+        if (type.isInteger()) {
             return (consumer, v) -> consumer.addInteger((Integer) v);
         }
-        if (typeName.equals("java.lang.String")) {
+        if (type.isString()) {
             return (consumer, v) -> consumer.addBinary(Binary.fromString((String) v));
         }
-        if (typeName.equals("boolean") || typeName.equals("java.lang.Boolean")) {
+        if (type.isBoolean()) {
             return (consumer, v) -> consumer.addBoolean((Boolean) v);
         }
-        if (typeName.equals("long") || typeName.equals("java.lang.Long")) {
+        if (type.isLong()) {
             return (consumer, v) -> consumer.addLong((Long) v);
         }
-        if (typeName.equals("double") || typeName.equals("java.lang.Double")) {
+        if (type.isDouble()) {
             return (consumer, v) -> consumer.addDouble((Double) v);
         }
-        if (typeName.equals("float") || typeName.equals("java.lang.Float")) {
+        if (type.isFloat()) {
             return (consumer, v) -> consumer.addFloat((Float) v);
         }
-        if (typeName.equals("short") || typeName.equals("java.lang.Short")
-                || typeName.equals("byte") || typeName.equals("java.lang.Byte")) {
+        if (type.isShort() || type.isByte()) {
             return (consumer, v) -> consumer.addInteger(((Number) v).intValue());
         }
         if (type.isEnum()) {
-            EnumsValues enumValues = new EnumsValues(type);
+            EnumsValues enumValues = new EnumsValues(type.getJavaType());
             return (consumer, v) -> consumer.addBinary(enumValues.getValue(v));
         }
-        if (typeName.equals("java.util.UUID")) {
+        if (type.isUuid()) {
             return (consumer, v) -> consumer.addBinary(uuidToBinary(v));
         }
         if (type.isRecord()) {
-            CarpetRecordWriter recordWriter = new CarpetRecordWriter(recordConsumer, type, carpetConfiguration);
+            var recordWriter = new CarpetRecordWriter(recordConsumer, type.getJavaType(), carpetConfiguration);
             return (consumer, v) -> {
                 consumer.startGroup();
                 recordWriter.write(v);
