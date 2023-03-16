@@ -24,7 +24,7 @@ import org.apache.parquet.io.PositionOutputStream;
 class CountedPositionOutputStream extends PositionOutputStream {
 
     private final BufferedOutputStream bos;
-    private int pos = 0;
+    private long pos = 0;
 
     CountedPositionOutputStream(OutputStream os) {
         this.bos = new BufferedOutputStream(os);
