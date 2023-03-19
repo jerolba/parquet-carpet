@@ -18,14 +18,24 @@ package com.jerolba.carpet.reader;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.avro.LogicalTypes;
 import org.apache.avro.Schema;
@@ -37,6 +47,7 @@ import org.apache.parquet.avro.AvroWriteSupport;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.apache.parquet.io.InputFile;
 import org.apache.parquet.io.OutputFile;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -1296,6 +1307,157 @@ class CarpetReaderTest {
                     .withLevel(AnnotatedLevels.ONE);
             assertThrows(RecordTypeConversionException.class, () -> writerTest.write(rec1, rec2));
         }
+
+        @Test
+        void setCollection() throws IOException {
+
+            record SetCollection(String name, Set<String> sizes) {
+            }
+
+            var rec1 = new SetCollection("foo", Set.of("1", "2", "3"));
+            var writerTest = new ParquetWriterTest<>(SetCollection.class)
+                    .withLevel(AnnotatedLevels.ONE);
+            writerTest.write(rec1);
+
+            var reader = writerTest.getCarpetReader();
+            assertEquals(rec1, reader.read());
+        }
+
+        @Nested
+        class ListConversion {
+
+            record ListCollection(String name, List<String> sizes) {
+            }
+
+            private final ParquetWriterTest<ListCollection> writerTest = new ParquetWriterTest<>(ListCollection.class)
+                    .withLevel(AnnotatedLevels.ONE);
+            private final List<String> sizes = List.of("1", "2", "3");
+
+            @BeforeEach
+            void givenPersistedCollection() throws IOException {
+                writerTest.write(new ListCollection("foo", sizes));
+            }
+
+            @Test
+            void genericCollection() throws IOException {
+
+                record GenericCollection(String name, Collection<String> sizes) {
+                }
+
+                var reader = writerTest.getCarpetReader(GenericCollection.class);
+                assertEquals(new GenericCollection("foo", sizes), reader.read());
+            }
+
+            @Test
+            void genericList() throws IOException {
+
+                record GenericList(String name, List<String> sizes) {
+                }
+
+                var reader = writerTest.getCarpetReader(GenericList.class);
+                assertEquals(new GenericList("foo", sizes), reader.read());
+            }
+
+            @Test
+            void arrayListCollection() throws IOException {
+
+                record ArrayListCollection(String name, ArrayList<String> sizes) {
+                }
+
+                var reader = writerTest.getCarpetReader(ArrayListCollection.class);
+                var read = reader.read();
+                assertEquals(new ArrayListCollection("foo", new ArrayList<>(sizes)), read);
+                assertTrue(read.sizes instanceof ArrayList);
+            }
+
+            @Test
+            void linkedListCollection() throws IOException {
+
+                record LinkedListCollection(String name, LinkedList<String> sizes) {
+                }
+
+                var reader = writerTest.getCarpetReader(LinkedListCollection.class);
+                var read = reader.read();
+                assertEquals(new LinkedListCollection("foo", new LinkedList<>(sizes)), read);
+                assertTrue(read.sizes instanceof LinkedList);
+            }
+
+            @Test
+            void unknownSetCollection() throws IOException {
+
+                record UnknownCollection(String name, CopyOnWriteArrayList<String> sizes) {
+                }
+
+                var reader = writerTest.getCarpetReader(UnknownCollection.class);
+                var read = reader.read();
+                assertEquals(new UnknownCollection("foo", new CopyOnWriteArrayList<>(sizes)), read);
+                assertTrue(read.sizes instanceof CopyOnWriteArrayList);
+            }
+
+        }
+
+        @Nested
+        class SetConversion {
+
+            record ListCollection(String name, List<String> sizes) {
+            }
+
+            private final ParquetWriterTest<ListCollection> writerTest = new ParquetWriterTest<>(ListCollection.class)
+                    .withLevel(AnnotatedLevels.ONE);
+            private final List<String> sizes = List.of("1", "2", "3");
+
+            @BeforeEach
+            void givenPersistedCollection() throws IOException {
+                writerTest.write(new ListCollection("foo", sizes));
+            }
+
+            @Test
+            void genericSetCollection() throws IOException {
+
+                record GenericSetCollection(String name, Set<String> sizes) {
+                }
+
+                var reader = writerTest.getCarpetReader(GenericSetCollection.class);
+                assertEquals(new GenericSetCollection("foo", new HashSet<>(sizes)), reader.read());
+            }
+
+            @Test
+            void hashSetCollection() throws IOException {
+
+                record HashSetCollection(String name, HashSet<String> sizes) {
+                }
+
+                var reader = writerTest.getCarpetReader(HashSetCollection.class);
+                var read = reader.read();
+                assertEquals(new HashSetCollection("foo", new HashSet<>(sizes)), read);
+                assertTrue(read.sizes instanceof HashSet);
+            }
+
+            @Test
+            void linkedHashSetCollection() throws IOException {
+
+                record LinkedHashSetCollection(String name, LinkedHashSet<String> sizes) {
+                }
+
+                var reader = writerTest.getCarpetReader(LinkedHashSetCollection.class);
+                var read = reader.read();
+                assertEquals(new LinkedHashSetCollection("foo", new LinkedHashSet<>(sizes)), read);
+                assertTrue(read.sizes instanceof LinkedHashSet);
+            }
+
+            @Test
+            void unknownSetCollection() throws IOException {
+
+                record UnknownSetCollection(String name, TreeSet<String> sizes) {
+                }
+
+                var reader = writerTest.getCarpetReader(UnknownSetCollection.class);
+                var read = reader.read();
+                assertEquals(new UnknownSetCollection("foo", new TreeSet<>(sizes)), read);
+                assertTrue(read.sizes instanceof TreeSet);
+            }
+
+        }
     }
 
     @Nested
@@ -1495,6 +1657,157 @@ class CarpetReaderTest {
             var reader = writerTest.getCarpetReader();
             assertEquals(rec1, reader.read());
             assertEquals(rec2, reader.read());
+        }
+
+        @Test
+        void setCollection() throws IOException {
+
+            record SetCollection(String name, Set<String> sizes) {
+            }
+
+            var rec1 = new SetCollection("foo", Set.of("1", "2", "3"));
+            var writerTest = new ParquetWriterTest<>(SetCollection.class)
+                    .withLevel(AnnotatedLevels.TWO);
+            writerTest.write(rec1);
+
+            var reader = writerTest.getCarpetReader();
+            assertEquals(rec1, reader.read());
+        }
+
+        @Nested
+        class ListConversion {
+
+            record ListCollection(String name, List<String> sizes) {
+            }
+
+            private final ParquetWriterTest<ListCollection> writerTest = new ParquetWriterTest<>(ListCollection.class)
+                    .withLevel(AnnotatedLevels.TWO);
+            private final List<String> sizes = List.of("1", "2", "3");
+
+            @BeforeEach
+            void givenPersistedCollection() throws IOException {
+                writerTest.write(new ListCollection("foo", sizes));
+            }
+
+            @Test
+            void genericCollection() throws IOException {
+
+                record GenericCollection(String name, Collection<String> sizes) {
+                }
+
+                var reader = writerTest.getCarpetReader(GenericCollection.class);
+                assertEquals(new GenericCollection("foo", sizes), reader.read());
+            }
+
+            @Test
+            void genericList() throws IOException {
+
+                record GenericList(String name, List<String> sizes) {
+                }
+
+                var reader = writerTest.getCarpetReader(GenericList.class);
+                assertEquals(new GenericList("foo", sizes), reader.read());
+            }
+
+            @Test
+            void arrayListCollection() throws IOException {
+
+                record ArrayListCollection(String name, ArrayList<String> sizes) {
+                }
+
+                var reader = writerTest.getCarpetReader(ArrayListCollection.class);
+                var read = reader.read();
+                assertEquals(new ArrayListCollection("foo", new ArrayList<>(sizes)), read);
+                assertTrue(read.sizes instanceof ArrayList);
+            }
+
+            @Test
+            void linkedListCollection() throws IOException {
+
+                record LinkedListCollection(String name, LinkedList<String> sizes) {
+                }
+
+                var reader = writerTest.getCarpetReader(LinkedListCollection.class);
+                var read = reader.read();
+                assertEquals(new LinkedListCollection("foo", new LinkedList<>(sizes)), read);
+                assertTrue(read.sizes instanceof LinkedList);
+            }
+
+            @Test
+            void unknownSetCollection() throws IOException {
+
+                record UnknownCollection(String name, CopyOnWriteArrayList<String> sizes) {
+                }
+
+                var reader = writerTest.getCarpetReader(UnknownCollection.class);
+                var read = reader.read();
+                assertEquals(new UnknownCollection("foo", new CopyOnWriteArrayList<>(sizes)), read);
+                assertTrue(read.sizes instanceof CopyOnWriteArrayList);
+            }
+
+        }
+
+        @Nested
+        class SetConversion {
+
+            record ListCollection(String name, List<String> sizes) {
+            }
+
+            private final ParquetWriterTest<ListCollection> writerTest = new ParquetWriterTest<>(ListCollection.class)
+                    .withLevel(AnnotatedLevels.TWO);
+            private final List<String> sizes = List.of("1", "2", "3");
+
+            @BeforeEach
+            void givenPersistedCollection() throws IOException {
+                writerTest.write(new ListCollection("foo", sizes));
+            }
+
+            @Test
+            void genericSetCollection() throws IOException {
+
+                record GenericSetCollection(String name, Set<String> sizes) {
+                }
+
+                var reader = writerTest.getCarpetReader(GenericSetCollection.class);
+                assertEquals(new GenericSetCollection("foo", new HashSet<>(sizes)), reader.read());
+            }
+
+            @Test
+            void hashSetCollection() throws IOException {
+
+                record HashSetCollection(String name, HashSet<String> sizes) {
+                }
+
+                var reader = writerTest.getCarpetReader(HashSetCollection.class);
+                var read = reader.read();
+                assertEquals(new HashSetCollection("foo", new HashSet<>(sizes)), read);
+                assertTrue(read.sizes instanceof HashSet);
+            }
+
+            @Test
+            void linkedHashSetCollection() throws IOException {
+
+                record LinkedHashSetCollection(String name, LinkedHashSet<String> sizes) {
+                }
+
+                var reader = writerTest.getCarpetReader(LinkedHashSetCollection.class);
+                var read = reader.read();
+                assertEquals(new LinkedHashSetCollection("foo", new LinkedHashSet<>(sizes)), read);
+                assertTrue(read.sizes instanceof LinkedHashSet);
+            }
+
+            @Test
+            void unknownSetCollection() throws IOException {
+
+                record UnknownSetCollection(String name, TreeSet<String> sizes) {
+                }
+
+                var reader = writerTest.getCarpetReader(UnknownSetCollection.class);
+                var read = reader.read();
+                assertEquals(new UnknownSetCollection("foo", new TreeSet<>(sizes)), read);
+                assertTrue(read.sizes instanceof TreeSet);
+            }
+
         }
     }
 
@@ -1698,99 +2011,314 @@ class CarpetReaderTest {
             assertEquals(rec1, reader.read());
             assertEquals(rec2, reader.read());
         }
+
+        @Test
+        void setCollection() throws IOException {
+
+            record SetCollection(String name, Set<String> sizes) {
+            }
+
+            var rec1 = new SetCollection("foo", Set.of("1", "2", "3"));
+            var writerTest = new ParquetWriterTest<>(SetCollection.class);
+            writerTest.write(rec1);
+
+            var reader = writerTest.getCarpetReader();
+            assertEquals(rec1, reader.read());
+        }
+
+        @Nested
+        class ListConversion {
+
+            record ListCollection(String name, List<String> sizes) {
+            }
+
+            private final ParquetWriterTest<ListCollection> writerTest = new ParquetWriterTest<>(ListCollection.class);
+            private final List<String> sizes = List.of("1", "2", "3");
+
+            @BeforeEach
+            void givenPersistedCollection() throws IOException {
+                writerTest.write(new ListCollection("foo", sizes));
+            }
+
+            @Test
+            void genericCollection() throws IOException {
+
+                record GenericCollection(String name, Collection<String> sizes) {
+                }
+
+                var reader = writerTest.getCarpetReader(GenericCollection.class);
+                assertEquals(new GenericCollection("foo", sizes), reader.read());
+            }
+
+            @Test
+            void genericList() throws IOException {
+
+                record GenericList(String name, List<String> sizes) {
+                }
+
+                var reader = writerTest.getCarpetReader(GenericList.class);
+                assertEquals(new GenericList("foo", sizes), reader.read());
+            }
+
+            @Test
+            void arrayListCollection() throws IOException {
+
+                record ArrayListCollection(String name, ArrayList<String> sizes) {
+                }
+
+                var reader = writerTest.getCarpetReader(ArrayListCollection.class);
+                var read = reader.read();
+                assertEquals(new ArrayListCollection("foo", new ArrayList<>(sizes)), read);
+                assertTrue(read.sizes instanceof ArrayList);
+            }
+
+            @Test
+            void linkedListCollection() throws IOException {
+
+                record LinkedListCollection(String name, LinkedList<String> sizes) {
+                }
+
+                var reader = writerTest.getCarpetReader(LinkedListCollection.class);
+                var read = reader.read();
+                assertEquals(new LinkedListCollection("foo", new LinkedList<>(sizes)), read);
+                assertTrue(read.sizes instanceof LinkedList);
+            }
+
+            @Test
+            void unknownSetCollection() throws IOException {
+
+                record UnknownCollection(String name, CopyOnWriteArrayList<String> sizes) {
+                }
+
+                var reader = writerTest.getCarpetReader(UnknownCollection.class);
+                var read = reader.read();
+                assertEquals(new UnknownCollection("foo", new CopyOnWriteArrayList<>(sizes)), read);
+                assertTrue(read.sizes instanceof CopyOnWriteArrayList);
+            }
+
+        }
+
+        @Nested
+        class SetConversion {
+
+            record ListCollection(String name, List<String> sizes) {
+            }
+
+            private final ParquetWriterTest<ListCollection> writerTest = new ParquetWriterTest<>(ListCollection.class);
+            private final List<String> sizes = List.of("1", "2", "3");
+
+            @BeforeEach
+            void givenPersistedCollection() throws IOException {
+                writerTest.write(new ListCollection("foo", sizes));
+            }
+
+            @Test
+            void genericSetCollection() throws IOException {
+
+                record GenericSetCollection(String name, Set<String> sizes) {
+                }
+
+                var reader = writerTest.getCarpetReader(GenericSetCollection.class);
+                assertEquals(new GenericSetCollection("foo", new HashSet<>(sizes)), reader.read());
+            }
+
+            @Test
+            void hashSetCollection() throws IOException {
+
+                record HashSetCollection(String name, HashSet<String> sizes) {
+                }
+
+                var reader = writerTest.getCarpetReader(HashSetCollection.class);
+                var read = reader.read();
+                assertEquals(new HashSetCollection("foo", new HashSet<>(sizes)), read);
+                assertTrue(read.sizes instanceof HashSet);
+            }
+
+            @Test
+            void linkedHashSetCollection() throws IOException {
+
+                record LinkedHashSetCollection(String name, LinkedHashSet<String> sizes) {
+                }
+
+                var reader = writerTest.getCarpetReader(LinkedHashSetCollection.class);
+                var read = reader.read();
+                assertEquals(new LinkedHashSetCollection("foo", new LinkedHashSet<>(sizes)), read);
+                assertTrue(read.sizes instanceof LinkedHashSet);
+            }
+
+            @Test
+            void unknownSetCollection() throws IOException {
+
+                record UnknownSetCollection(String name, TreeSet<String> sizes) {
+                }
+
+                var reader = writerTest.getCarpetReader(UnknownSetCollection.class);
+                var read = reader.read();
+                assertEquals(new UnknownSetCollection("foo", new TreeSet<>(sizes)), read);
+                assertTrue(read.sizes instanceof TreeSet);
+            }
+
+        }
     }
 
-    @Test
-    void nestedMapStringKeyPrimitiveValue() throws IOException {
+    @Nested
+    class Maps {
 
-        record NestedMapStringKeyPrimitiveValue(String name, Map<String, Integer> sizes) {
+        @Test
+        void nestedMapStringKeyPrimitiveValue() throws IOException {
+
+            record NestedMapStringKeyPrimitiveValue(String name, Map<String, Integer> sizes) {
+            }
+
+            Map<String, Integer> map = new HashMap<>(Map.of("one", 1, "three", 3));
+            map.put("two", null);
+            var rec1 = new NestedMapStringKeyPrimitiveValue("foo", map);
+            var rec2 = new NestedMapStringKeyPrimitiveValue("bar", null);
+            var writerTest = new ParquetWriterTest<>(NestedMapStringKeyPrimitiveValue.class);
+            writerTest.write(rec1, rec2);
+            var reader = writerTest.getCarpetReader();
+            assertEquals(rec1, reader.read());
+            assertEquals(rec2, reader.read());
         }
 
-        Map<String, Integer> map = new HashMap<>(Map.of("one", 1, "three", 3));
-        map.put("two", null);
-        var rec1 = new NestedMapStringKeyPrimitiveValue("foo", map);
-        var rec2 = new NestedMapStringKeyPrimitiveValue("bar", null);
-        var writerTest = new ParquetWriterTest<>(NestedMapStringKeyPrimitiveValue.class);
-        writerTest.write(rec1, rec2);
-        var reader = writerTest.getCarpetReader();
-        assertEquals(rec1, reader.read());
-        assertEquals(rec2, reader.read());
-    }
+        @Test
+        void nestedMapStringKeyStringValue() throws IOException {
 
-    @Test
-    void nestedMapStringKeyStringValue() throws IOException {
+            record NestedMapStringKeyStringValue(String name, Map<String, String> sizes) {
+            }
 
-        record NestedMapStringKeyStringValue(String name, Map<String, String> sizes) {
+            Map<String, String> map = new HashMap<>(Map.of("one", "1", "three", "3"));
+            map.put("two", null);
+            var rec1 = new NestedMapStringKeyStringValue("foo", map);
+            var rec2 = new NestedMapStringKeyStringValue("bar", null);
+            var writerTest = new ParquetWriterTest<>(NestedMapStringKeyStringValue.class);
+            writerTest.write(rec1, rec2);
+            var reader = writerTest.getCarpetReader();
+            assertEquals(rec1, reader.read());
+            assertEquals(rec2, reader.read());
         }
 
-        Map<String, String> map = new HashMap<>(Map.of("one", "1", "three", "3"));
-        map.put("two", null);
-        var rec1 = new NestedMapStringKeyStringValue("foo", map);
-        var rec2 = new NestedMapStringKeyStringValue("bar", null);
-        var writerTest = new ParquetWriterTest<>(NestedMapStringKeyStringValue.class);
-        writerTest.write(rec1, rec2);
-        var reader = writerTest.getCarpetReader();
-        assertEquals(rec1, reader.read());
-        assertEquals(rec2, reader.read());
-    }
+        @Test
+        void nestedMapPrimitiveKeyRecordValue() throws IOException {
 
-    @Test
-    void nestedMapPrimitiveKeyRecordValue() throws IOException {
+            record ChildMap(String id, double value) {
+            }
+            record NestedMapPrimitiveKeyRecordValue(String name, Map<Integer, ChildMap> metrics) {
+            }
 
-        record ChildMap(String id, double value) {
-        }
-        record NestedMapPrimitiveKeyRecordValue(String name, Map<Integer, ChildMap> metrics) {
-        }
-
-        Map<Integer, ChildMap> map = new HashMap<>(Map.of(1, new ChildMap("Madrid", 12.0),
-                3, new ChildMap("Bilbao", 23.0)));
-        map.put(2, null);
-        var rec1 = new NestedMapPrimitiveKeyRecordValue("foo", map);
-        var rec2 = new NestedMapPrimitiveKeyRecordValue("bar", null);
-        var writerTest = new ParquetWriterTest<>(NestedMapPrimitiveKeyRecordValue.class);
-        writerTest.write(rec1, rec2);
-        var reader = writerTest.getCarpetReader();
-        assertEquals(rec1, reader.read());
-        assertEquals(rec2, reader.read());
-    }
-
-    @Test
-    void nestedMapPrimitiveKeyListPrimitiveValue() throws IOException {
-
-        record NestedMapPrimitiveKeyListPrimitiveValue(String name, Map<Short, List<Integer>> metrics) {
+            Map<Integer, ChildMap> map = new HashMap<>(Map.of(1, new ChildMap("Madrid", 12.0),
+                    3, new ChildMap("Bilbao", 23.0)));
+            map.put(2, null);
+            var rec1 = new NestedMapPrimitiveKeyRecordValue("foo", map);
+            var rec2 = new NestedMapPrimitiveKeyRecordValue("bar", null);
+            var writerTest = new ParquetWriterTest<>(NestedMapPrimitiveKeyRecordValue.class);
+            writerTest.write(rec1, rec2);
+            var reader = writerTest.getCarpetReader();
+            assertEquals(rec1, reader.read());
+            assertEquals(rec2, reader.read());
         }
 
-        Map<Short, List<Integer>> map = new HashMap<>(Map.of((short) 1, List.of(1, 2, 3),
-                (short) 3, List.of(4, 5, 6)));
-        map.put((short) 2, null);
-        var rec1 = new NestedMapPrimitiveKeyListPrimitiveValue("foo", map);
-        var rec2 = new NestedMapPrimitiveKeyListPrimitiveValue("bar", null);
-        var writerTest = new ParquetWriterTest<>(NestedMapPrimitiveKeyListPrimitiveValue.class);
-        writerTest.write(rec1, rec2);
-        var reader = writerTest.getCarpetReader();
-        assertEquals(rec1, reader.read());
-        assertEquals(rec2, reader.read());
-    }
+        @Test
+        void nestedMapPrimitiveKeyListPrimitiveValue() throws IOException {
 
-    @Test
-    void nestedMapRecordKeyMapValue() throws IOException {
+            record NestedMapPrimitiveKeyListPrimitiveValue(String name, Map<Short, List<Integer>> metrics) {
+            }
 
-        record CompositeKey(String a, String b) {
+            Map<Short, List<Integer>> map = new HashMap<>(Map.of((short) 1, List.of(1, 2, 3),
+                    (short) 3, List.of(4, 5, 6)));
+            map.put((short) 2, null);
+            var rec1 = new NestedMapPrimitiveKeyListPrimitiveValue("foo", map);
+            var rec2 = new NestedMapPrimitiveKeyListPrimitiveValue("bar", null);
+            var writerTest = new ParquetWriterTest<>(NestedMapPrimitiveKeyListPrimitiveValue.class);
+            writerTest.write(rec1, rec2);
+            var reader = writerTest.getCarpetReader();
+            assertEquals(rec1, reader.read());
+            assertEquals(rec2, reader.read());
         }
 
-        record NestedMapRecordKeyMapValue(String name, Map<CompositeKey, Map<Category, String>> metrics) {
+        @Test
+        void nestedMapRecordKeyMapValue() throws IOException {
+
+            record CompositeKey(String a, String b) {
+            }
+
+            record NestedMapRecordKeyMapValue(String name, Map<CompositeKey, Map<Category, String>> metrics) {
+            }
+
+            Map<CompositeKey, Map<Category, String>> map = new HashMap<>(Map.of(
+                    new CompositeKey("A", "B"), Map.of(Category.one, "ONE", Category.two, "TWO")));
+            map.put(new CompositeKey("B", "C"), null);
+            var rec1 = new NestedMapRecordKeyMapValue("foo", map);
+            var rec2 = new NestedMapRecordKeyMapValue("bar", null);
+            var writerTest = new ParquetWriterTest<>(NestedMapRecordKeyMapValue.class);
+            writerTest.write(rec1, rec2);
+            var reader = writerTest.getCarpetReader();
+            assertEquals(rec1, reader.read());
+            assertEquals(rec2, reader.read());
         }
 
-        Map<CompositeKey, Map<Category, String>> map = new HashMap<>(Map.of(
-                new CompositeKey("A", "B"), Map.of(Category.one, "ONE", Category.two, "TWO")));
-        map.put(new CompositeKey("B", "C"), null);
-        var rec1 = new NestedMapRecordKeyMapValue("foo", map);
-        var rec2 = new NestedMapRecordKeyMapValue("bar", null);
-        var writerTest = new ParquetWriterTest<>(NestedMapRecordKeyMapValue.class);
-        writerTest.write(rec1, rec2);
-        var reader = writerTest.getCarpetReader();
-        assertEquals(rec1, reader.read());
-        assertEquals(rec2, reader.read());
+        @Nested
+        class MapConversion {
+
+            record NestedMap(String name, Map<String, Integer> sizes) {
+            }
+
+            private final ParquetWriterTest<NestedMap> writerTest = new ParquetWriterTest<>(NestedMap.class);
+            private final Map<String, Integer> values = Map.of("one", 1, "three", 3);
+
+            @BeforeEach
+            void setup() throws IOException {
+                var rec1 = new NestedMap("foo", values);
+                writerTest.write(rec1);
+            }
+
+            @Test
+            void genericMap() throws IOException {
+
+                record GenericMap(String name, Map<String, Integer> sizes) {
+                }
+
+                var reader = writerTest.getCarpetReader(GenericMap.class);
+                assertEquals(new GenericMap("foo", values), reader.read());
+            }
+
+            @Test
+            void hashMap() throws IOException {
+
+                record GenericMap(String name, HashMap<String, Integer> sizes) {
+                }
+
+                var reader = writerTest.getCarpetReader(GenericMap.class);
+                GenericMap read = reader.read();
+                assertEquals(new GenericMap("foo", new HashMap<>(values)), read);
+                assertTrue(read.sizes() instanceof HashMap);
+            }
+
+            @Test
+            void linkedHashMap() throws IOException {
+
+                record GenericMap(String name, LinkedHashMap<String, Integer> sizes) {
+                }
+
+                var reader = writerTest.getCarpetReader(GenericMap.class);
+                GenericMap read = reader.read();
+                assertEquals(new GenericMap("foo", new LinkedHashMap<>(values)), read);
+                assertTrue(read.sizes() instanceof LinkedHashMap);
+            }
+
+            @Test
+            void unknownMap() throws IOException {
+
+                record GenericMap(String name, ConcurrentHashMap<String, Integer> sizes) {
+                }
+
+                var reader = writerTest.getCarpetReader(GenericMap.class);
+                GenericMap read = reader.read();
+                assertEquals(new GenericMap("foo", new ConcurrentHashMap<>(values)), read);
+                assertTrue(read.sizes() instanceof ConcurrentHashMap);
+            }
+
+        }
     }
 
     @Test

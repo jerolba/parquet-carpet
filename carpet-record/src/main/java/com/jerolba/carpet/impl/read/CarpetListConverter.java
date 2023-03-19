@@ -16,6 +16,7 @@
 package com.jerolba.carpet.impl.read;
 
 import static com.jerolba.carpet.impl.read.CarpetListIntermediateConverter.createCollectionConverter;
+import static com.jerolba.carpet.impl.read.ReadReflection.collectionFactory;
 
 import java.util.function.Consumer;
 
@@ -30,18 +31,19 @@ class CarpetListConverter extends GroupConverter {
 
     private final Consumer<Object> groupConsumer;
     private final Converter converter;
-    private final ListHolder listHolder = new ListHolder();
+    private final CollectionHolder collectionHolder;
 
     CarpetListConverter(GroupType requestedSchema, ParameterizedCollection parameterized,
             Consumer<Object> groupConsumer) {
         this.groupConsumer = groupConsumer;
+        this.collectionHolder = new CollectionHolder(collectionFactory(parameterized.getCollectionType()));
 
         Type listChild = requestedSchema.getFields().get(0);
         boolean threeLevel = SchemaValidation.isThreeLevel(listChild);
         if (threeLevel) {
-            converter = new CarpetListIntermediateConverter(listChild, parameterized, listHolder);
+            converter = new CarpetListIntermediateConverter(listChild, parameterized, collectionHolder);
         } else {
-            converter = createCollectionConverter(listChild, parameterized, listHolder::add);
+            converter = createCollectionConverter(listChild, parameterized, collectionHolder::add);
         }
     }
 
@@ -52,12 +54,12 @@ class CarpetListConverter extends GroupConverter {
 
     @Override
     public void start() {
-        listHolder.start();
+        collectionHolder.create();
     }
 
     @Override
     public void end() {
-        groupConsumer.accept(listHolder.end());
+        groupConsumer.accept(collectionHolder.getCollection());
     }
 
 }

@@ -20,8 +20,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.avro.generic.GenericData.Array;
 import org.apache.avro.generic.GenericRecord;
@@ -231,6 +234,32 @@ public class CarpetWriterCollectionThreeLevelTest {
         var rec = new EmptyNestedCollection("foo", List.of(List.of()));
         var writerTest = new ParquetWriterTest<>(EmptyNestedCollection.class);
         assertThrows(ParquetEncodingException.class, () -> writerTest.write(rec));
+    }
+
+    @Test
+    void setCollectionIsSupported() throws IOException {
+
+        record SetCollection(String name, Set<String> ids) {
+        }
+
+        var ids = List.of("ONE", "TWO", "THREE");
+        var rec = new SetCollection("foo", new HashSet<>(ids));
+        var writerTest = new ParquetWriterTest<>(SetCollection.class);
+        writerTest.write(rec);
+
+        var avroReader = writerTest.getAvroGenericRecordReader();
+        GenericRecord avroRecord = avroReader.read();
+        assertEquals(rec.name(), avroRecord.get("name").toString());
+        var asLst = ((Collection<GenericRecord>) avroRecord.get("ids"))
+                .stream().map(r -> r.get("element").toString())
+                .toList();
+        assertEquals(ids, asLst);
+
+        record ListCollection(String name, List<String> ids) {
+        }
+
+        var carpetReader = writerTest.getCarpetReader(ListCollection.class);
+        assertEquals(new ListCollection("foo", ids), carpetReader.read());
     }
 
 }

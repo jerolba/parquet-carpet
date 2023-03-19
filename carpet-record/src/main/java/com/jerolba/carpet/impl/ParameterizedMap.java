@@ -20,12 +20,18 @@ import java.lang.reflect.Type;
 
 public class ParameterizedMap {
 
+    private final Type mapType;
     private final Type keyType;
     private final Type valueType;
 
-    public ParameterizedMap(ParameterizedType type) {
+    public ParameterizedMap(Type mapType, ParameterizedType type) {
+        this.mapType = mapType;
         this.keyType = type.getActualTypeArguments()[0];
         this.valueType = type.getActualTypeArguments()[1];
+    }
+
+    public Class<?> getMapType() {
+        return (Class<?>) mapType;
     }
 
     public Class<?> getValueActualType() {
@@ -38,14 +44,16 @@ public class ParameterizedMap {
 
     public ParameterizedMap getValueTypeAsMap() {
         if (valueType instanceof ParameterizedType paramType) {
-            return new ParameterizedMap(paramType);
+            Type map = paramType.getRawType();
+            return new ParameterizedMap(map, paramType);
         }
         return null;
     }
 
     public ParameterizedCollection getValueTypeAsCollection() {
         if (valueType instanceof ParameterizedType paramType) {
-            return new ParameterizedCollection(paramType);
+            Type collection = paramType.getRawType();
+            return new ParameterizedCollection(collection, paramType);
         }
         return null;
     }

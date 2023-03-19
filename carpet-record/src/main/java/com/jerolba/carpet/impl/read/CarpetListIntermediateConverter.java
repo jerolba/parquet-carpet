@@ -34,11 +34,11 @@ import com.jerolba.carpet.impl.ParameterizedCollection;
 class CarpetListIntermediateConverter extends GroupConverter {
 
     private final Converter converter;
-    private final ListHolder listHolder;
+    private final CollectionHolder collectionHolder;
     private Object elementValue;
 
-    CarpetListIntermediateConverter(Type rootListType, ParameterizedCollection parameterized, ListHolder listHolder) {
-        this.listHolder = listHolder;
+    CarpetListIntermediateConverter(Type rootListType, ParameterizedCollection parameterized, CollectionHolder collectionHolder) {
+        this.collectionHolder = collectionHolder;
 
         var requestedSchema = rootListType.asGroupType();
         List<Type> fields = requestedSchema.getFields();
@@ -62,7 +62,7 @@ class CarpetListIntermediateConverter extends GroupConverter {
 
     @Override
     public void end() {
-        listHolder.add(elementValue);
+        collectionHolder.add(elementValue);
     }
 
     public static Converter createCollectionConverter(Type listElement, ParameterizedCollection parameterized,

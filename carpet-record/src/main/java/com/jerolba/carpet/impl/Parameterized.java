@@ -21,7 +21,7 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.Collection;
 import java.util.Map;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 import com.jerolba.carpet.RecordTypeConversionException;
 
@@ -64,13 +64,14 @@ public class Parameterized {
         return false;
     }
 
-    private static <T> T parametizeTo(RecordComponent attr, Function<ParameterizedType, T> constructor) {
+    private static <T> T parametizeTo(RecordComponent attr, BiFunction<Type, ParameterizedType, T> constructor) {
         java.lang.reflect.Type genericType = attr.getGenericType();
         if (genericType instanceof TypeVariable<?>) {
             throw new RecordTypeConversionException(genericType.toString() + " generic types not supported");
         }
         if (genericType instanceof ParameterizedType paramType) {
-            return constructor.apply(paramType);
+            Type collection = paramType.getRawType();
+            return constructor.apply(collection, paramType);
         }
         throw new RecordTypeConversionException("Unsuported type in collection");
     }

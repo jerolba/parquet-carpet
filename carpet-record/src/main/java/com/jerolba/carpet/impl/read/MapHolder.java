@@ -15,23 +15,28 @@
  */
 package com.jerolba.carpet.impl.read;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
 class MapHolder {
 
-    public Map<Object, Object> map;
+    private final Supplier<Map<Object, Object>> mapFactory;
+    private Map<Object, Object> map;
 
-    public void start() {
-        map = new HashMap<>();
+    MapHolder(Supplier<Map<Object, Object>> mapFactory) {
+        this.mapFactory = mapFactory;
     }
 
-    public Map<Object, Object> end() {
-        return map;
+    public void create() {
+        map = mapFactory.get();
     }
 
     public void put(Object key, Object value) {
-        this.map.put(key, value);
+        map.put(key, value);
+    }
+
+    public Map<Object, Object> getMap() {
+        return map;
     }
 
 }

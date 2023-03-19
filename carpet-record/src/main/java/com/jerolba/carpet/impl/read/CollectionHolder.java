@@ -15,23 +15,28 @@
  */
 package com.jerolba.carpet.impl.read;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
+import java.util.function.Supplier;
 
-class ListHolder {
+class CollectionHolder {
 
-    public List<Object> list;
+    private final Supplier<Collection<Object>> collectionFactory;
+    private Collection<Object> collection;
 
-    public void start() {
-        list = new ArrayList<>();
+    public CollectionHolder(Supplier<Collection<Object>> collectionFactory) {
+        this.collectionFactory = collectionFactory;
     }
 
-    public List<Object> end() {
-        return list;
+    public void create() {
+        collection = collectionFactory.get();
     }
 
     public void add(Object value) {
-        this.list.add(value);
+        collection.add(value);
+    }
+
+    public Collection<Object> getCollection() {
+        return collection;
     }
 
 }

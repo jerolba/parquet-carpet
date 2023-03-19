@@ -15,6 +15,8 @@
  */
 package com.jerolba.carpet.impl.read;
 
+import static com.jerolba.carpet.impl.read.ReadReflection.mapFactory;
+
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -30,11 +32,11 @@ class CarpetMapConverter extends GroupConverter {
 
     private final Consumer<Object> groupConsumer;
     private final Converter converter;
-    private final MapHolder mapHolder = new MapHolder();
+    private final MapHolder mapHolder;
 
     CarpetMapConverter(GroupType requestedSchema, ParameterizedMap parameterized, Consumer<Object> groupConsumer) {
         this.groupConsumer = groupConsumer;
-
+        this.mapHolder = new MapHolder(mapFactory(parameterized.getMapType()));
         List<Type> fields = requestedSchema.getFields();
         if (fields.size() > 1) {
             throw new RecordTypeConversionException(
@@ -51,12 +53,12 @@ class CarpetMapConverter extends GroupConverter {
 
     @Override
     public void start() {
-        mapHolder.start();
+        mapHolder.create();
     }
 
     @Override
     public void end() {
-        groupConsumer.accept(mapHolder.end());
+        groupConsumer.accept(mapHolder.getMap());
     }
 
 }

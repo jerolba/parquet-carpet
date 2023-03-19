@@ -17,10 +17,10 @@ package com.jerolba.carpet.impl.read;
 
 import static com.jerolba.carpet.impl.Parameterized.getParameterizedCollection;
 import static com.jerolba.carpet.impl.read.PrimitiveGenericConverterFactory.buildPrimitiveGenericConverters;
+import static com.jerolba.carpet.impl.read.ReadReflection.collectionFactory;
 
 import java.lang.reflect.RecordComponent;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
 import java.util.function.Consumer;
 
 import org.apache.parquet.io.api.Converter;
@@ -56,15 +56,16 @@ class SingleLevelConverterFactory {
 
     public static Converter createSingleLevelConverter(Type parquetField, ConstructorParams constructor,
             int index, RecordComponent recordComponent) {
+        var parameterized = getParameterizedCollection(recordComponent);
+        var collectionFactory = collectionFactory(parameterized.getCollectionType());
 
         Consumer<Object> consumer = v -> {
             if (constructor.c[index] == null) {
-                constructor.c[index] = new ArrayList<>();
+                constructor.c[index] = collectionFactory.get();
             }
-            ((List) constructor.c[index]).add(v);
+            ((Collection) constructor.c[index]).add(v);
         };
 
-        var parameterized = getParameterizedCollection(recordComponent);
         if (parquetField.isPrimitive()) {
             return buildPrimitiveGenericConverters(parquetField, parameterized.getActualType(), consumer);
         }

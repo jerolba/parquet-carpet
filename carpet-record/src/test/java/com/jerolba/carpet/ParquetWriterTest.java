@@ -52,13 +52,13 @@ public class ParquetWriterTest<T> {
             e.printStackTrace();
         }
         this.type = type;
-        new File(path).delete();
+        getTestFile().delete();
     }
 
     public ParquetWriterTest(String path, Class<T> type) {
         this.path = path;
         this.type = type;
-        new File(path).delete();
+        getTestFile().delete();
     }
 
     public ParquetWriterTest<T> withLevel(AnnotatedLevels level) {
@@ -83,7 +83,7 @@ public class ParquetWriterTest<T> {
     }
 
     public ParquetReader<GenericRecord> getAvroGenericRecordReader() throws IOException {
-        return AvroParquetReader.<GenericRecord>builder(new FileSystemInputFile(new File(path)))
+        return AvroParquetReader.<GenericRecord>builder(new FileSystemInputFile(getTestFile()))
                 .withDataModel(GenericData.get())
                 .build();
     }
@@ -92,8 +92,8 @@ public class ParquetWriterTest<T> {
         return getCarpetReader(type);
     }
 
-    public <T> ParquetReader<T> getCarpetReader(Class<T> readType, ReadFlag... flags) throws IOException {
-        Builder<T> builder = CarpetParquetReader.builder(new FileSystemInputFile(new File(path)), readType);
+    public <R> ParquetReader<R> getCarpetReader(Class<R> readType, ReadFlag... flags) throws IOException {
+        Builder<R> builder = CarpetParquetReader.builder(new FileSystemInputFile(getTestFile()), readType);
         for (ReadFlag f : flags) {
             if (f.equals(ReadFlag.DONT_FAIL_ON_MISSING_COLUMN)) {
                 builder = builder.failOnMissingColumn(false);
@@ -110,8 +110,12 @@ public class ParquetWriterTest<T> {
 
     public MessageType getSchema() throws IOException {
         var options = ParquetReadOptions.builder().build();
-        ParquetFileReader reader = new ParquetFileReader(new FileSystemInputFile(new File(path)), options);
+        ParquetFileReader reader = new ParquetFileReader(new FileSystemInputFile(getTestFile()), options);
         FileMetaData metaData = reader.getFileMetaData();
         return metaData.getSchema();
+    }
+
+    public File getTestFile() {
+        return new File(path);
     }
 }

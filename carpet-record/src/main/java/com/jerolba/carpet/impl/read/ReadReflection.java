@@ -18,7 +18,19 @@ package com.jerolba.carpet.impl.read;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.RecordComponent;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 public class ReadReflection {
@@ -89,6 +101,64 @@ public class ReadReflection {
             throw new RuntimeException(recordClass.getName() + " record has an invalid constructor");
         }
 
+    }
+
+    public static Supplier<Collection<Object>> collectionFactory(Class<?> type) {
+        if (Set.class.isAssignableFrom(type)) {
+            if (type.equals(Set.class)) {
+                return HashSet::new;
+            }
+            if (type.equals(HashSet.class)) {
+                return HashSet::new;
+            }
+            if (type.equals(LinkedHashSet.class)) {
+                return LinkedHashSet::new;
+            }
+            return getDefaultConstructor(type);
+        }
+        if (List.class.isAssignableFrom(type)) {
+            if (type.equals(List.class)) {
+                return ArrayList::new;
+            }
+            if (type.equals(LinkedList.class)) {
+                return LinkedList::new;
+            }
+            return getDefaultConstructor(type);
+
+        }
+        return ArrayList::new;
+    }
+
+    public static Supplier<Map<Object, Object>> mapFactory(Class<?> type) {
+        if (Map.class.isAssignableFrom(type)) {
+            if (type.equals(Map.class)) {
+                return HashMap::new;
+            }
+            if (type.equals(LinkedHashMap.class)) {
+                return LinkedHashMap::new;
+            }
+            if (type.equals(TreeMap.class)) {
+                return TreeMap::new;
+            }
+            return getDefaultConstructor(type);
+        }
+        return HashMap::new;
+    }
+
+    private static <T> Supplier<T> getDefaultConstructor(Class<?> type) {
+        try {
+            Constructor<?> constructor = type.getConstructor();
+            return () -> {
+                try {
+                    return (T) constructor.newInstance();
+                } catch (InstantiationException | IllegalAccessException | IllegalArgumentException
+                        | InvocationTargetException e) {
+                    throw new RuntimeException(type + " class can not be instantiated", e);
+                }
+            };
+        } catch (NoSuchMethodException | SecurityException e) {
+            throw new RuntimeException(type + " class doesn't have an empty constructor", e);
+        }
     }
 
 }

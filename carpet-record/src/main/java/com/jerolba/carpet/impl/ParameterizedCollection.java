@@ -21,35 +21,43 @@ import java.lang.reflect.Type;
 public class ParameterizedCollection {
 
     private final Type collectionType;
+    private final Type collectionElementType;
 
-    public ParameterizedCollection(ParameterizedType type) {
-        this.collectionType = type.getActualTypeArguments()[0];
+    public ParameterizedCollection(Type collectionType, ParameterizedType type) {
+        this.collectionType = collectionType;
+        this.collectionElementType = type.getActualTypeArguments()[0];
     }
 
     public Class<?> getActualType() {
-        return Parameterized.getClassFromType(collectionType, "in Collection");
+        return Parameterized.getClassFromType(collectionElementType, "in Collection");
+    }
+
+    public Class<?> getCollectionType() {
+        return (Class<?>) collectionType;
     }
 
     public ParameterizedCollection getParametizedAsCollection() {
-        if (collectionType instanceof ParameterizedType paramType) {
-            return new ParameterizedCollection(paramType);
+        if (collectionElementType instanceof ParameterizedType paramType) {
+            Type collection = paramType.getRawType();
+            return new ParameterizedCollection(collection, paramType);
         }
         return null;
     }
 
     public ParameterizedMap getParametizedAsMap() {
-        if (collectionType instanceof ParameterizedType paramType) {
-            return new ParameterizedMap(paramType);
+        if (collectionElementType instanceof ParameterizedType paramType) {
+            Type map = paramType.getRawType();
+            return new ParameterizedMap(map, paramType);
         }
         return null;
     }
 
     public boolean isCollection() {
-        return Parameterized.isCollection(collectionType);
+        return Parameterized.isCollection(collectionElementType);
     }
 
     public boolean isMap() {
-        return Parameterized.isMap(collectionType);
+        return Parameterized.isMap(collectionElementType);
     }
 
 }
