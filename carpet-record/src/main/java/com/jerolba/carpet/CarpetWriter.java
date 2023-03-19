@@ -35,14 +35,36 @@ import org.apache.parquet.io.OutputFile;
 
 import com.jerolba.carpet.io.OutputStreamOutputFile;
 
+/**
+ * A Parquet file writer for writing java records of type T to a file or output
+ * stream. The writer is also a consumer that can be used with Java 8 streams.
+ *
+ * @param <T> The type of records to write.
+ */
 public class CarpetWriter<T> implements Closeable, Consumer<T> {
 
     private final ParquetWriter<T> writer;
 
-    public CarpetWriter(OutputFile path, Class<T> recordClass) throws IOException {
-        this.writer = new Builder<>(path, recordClass).buildWriter();
+    /**
+     * Constructs a CarpetWriter that writes records of type T to the specified
+     * OutputFile.
+     *
+     * @param outputFile  The output file to write to.
+     * @param recordClass The class of the records to write.
+     * @throws IOException If an I/O error occurs while creating the Parquet writer.
+     */
+    public CarpetWriter(OutputFile outputFile, Class<T> recordClass) throws IOException {
+        this.writer = new Builder<>(outputFile, recordClass).buildWriter();
     }
 
+    /**
+     * Constructs a CarpetWriter that writes records of type T to the specified
+     * OutputStream.
+     *
+     * @param path        The output file to write to.
+     * @param recordClass The class of the records to write.
+     * @throws IOException If an I/O error occurs while creating the Parquet writer.
+     */
     public CarpetWriter(OutputStream outputSrream, Class<T> recordClass) throws IOException {
         OutputStreamOutputFile wrappedStream = new OutputStreamOutputFile(outputSrream);
         this.writer = new Builder<>(wrappedStream, recordClass).buildWriter();

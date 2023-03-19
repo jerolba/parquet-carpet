@@ -33,6 +33,13 @@ import org.apache.parquet.io.InputFile;
 
 import com.jerolba.carpet.io.FileSystemInputFile;
 
+/**
+ * CarpetReader wraps the creation of CarpetParquetReader CarpetReader is an
+ * Iterable and Streamable class that can be used to read a Parquet file and
+ * iterate over its records.
+ *
+ * @param <T> The type of the records being read.
+ */
 public class CarpetReader<T> implements Iterable<T> {
 
     private final InputFile inputFile;
@@ -43,12 +50,11 @@ public class CarpetReader<T> implements Iterable<T> {
 
     /**
      *
-     * Creates a new {@code CarpetReader} instance from the specified input file and
+     * Creates a new {@code CarpetReader} instance from the specified InputFile and
      * record class.
      *
-     * @param inputFile   the input file containing the Parquet data
-     * @param recordClass the class of the records in the Parquet file
-     * @throws IOException if an I/O error occurs
+     * @param inputFile   the input file from which the records will be read
+     * @param recordClass the class of the records being read
      */
     public CarpetReader(InputFile inputFile, Class<T> recordClass) {
         this.inputFile = inputFile;
@@ -57,23 +63,43 @@ public class CarpetReader<T> implements Iterable<T> {
 
     /**
      *
-     * Creates a new {@code CarpetReader} instance from the specified input file and
+     * Creates a new {@code CarpetReader} instance from the specified File and
      * record class.
      *
-     * @param inputFile   the input File containing the Parquet data
-     * @param recordClass the class of the records in the Parquet file
-     * @throws IOException if an I/O error occurs
+     * @param file        the File containing the Parquet data
+     * @param recordClass the class of the records being read
      */
-    public CarpetReader(File inputFile, Class<T> recordClass) {
-        this(new FileSystemInputFile(inputFile), recordClass);
+    public CarpetReader(File file, Class<T> recordClass) {
+        this(new FileSystemInputFile(file), recordClass);
     }
 
+    /**
+     * Feature that determines whether encountering of missed parquet column should
+     * result in a failure (by throwing a RecordTypeConversionException) or not.
+     *
+     * Feature is enabled by default.
+     *
+     * @param value The new value for the failOnMissingColumn flag.
+     * @return a new instance of CarpetReader
+     */
     public CarpetReader<T> withFailOnMissingColumn(boolean value) {
         CarpetReader<T> newInstance = cloneInstance();
         newInstance.failOnMissingColumn = value;
         return newInstance;
     }
 
+    /**
+     * Feature that determines whether encountering null is an error when
+     * deserializing into Java primitive types (like 'int' or 'double'). If it is, a
+     * RecordTypeConversionException is thrown to indicate this; if not, default
+     * value is used (0 for 'int', 0.0 for double, same defaulting as what JVM
+     * uses).
+     *
+     * Feature is disabled by default.
+     *
+     * @param value The new value for the failOnNullForPrimitives flag.
+     * @return a new instance of CarpetReader
+     */
     public CarpetReader<T> withFailOnNullForPrimitives(boolean value) {
         CarpetReader<T> newInstance = cloneInstance();
         newInstance.failOnNullForPrimitives = value;
