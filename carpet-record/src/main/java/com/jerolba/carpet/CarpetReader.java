@@ -16,6 +16,7 @@
 package com.jerolba.carpet;
 
 import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
@@ -30,10 +31,15 @@ import java.util.stream.StreamSupport;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.io.InputFile;
 
-public class CarpetReader<T> {
+import com.jerolba.carpet.io.FileSystemInputFile;
+
+public class CarpetReader<T> implements Iterable<T> {
 
     private final InputFile inputFile;
     private final Class<T> recordClass;
+
+    private boolean failOnMissingColumn = CarpetParquetReader.DEFAULT_FAIL_ON_MISSING_COLUMN;
+    private boolean failOnNullForPrimitives = CarpetParquetReader.DEFAULT_FAIL_ON_NULL_FOR_PRIMITIVES;
 
     /**
      *
@@ -44,9 +50,41 @@ public class CarpetReader<T> {
      * @param recordClass the class of the records in the Parquet file
      * @throws IOException if an I/O error occurs
      */
-    public CarpetReader(InputFile inputFile, Class<T> recordClass) throws IOException {
+    public CarpetReader(InputFile inputFile, Class<T> recordClass) {
         this.inputFile = inputFile;
         this.recordClass = recordClass;
+    }
+
+    /**
+     *
+     * Creates a new {@code CarpetReader} instance from the specified input file and
+     * record class.
+     *
+     * @param inputFile   the input File containing the Parquet data
+     * @param recordClass the class of the records in the Parquet file
+     * @throws IOException if an I/O error occurs
+     */
+    public CarpetReader(File inputFile, Class<T> recordClass) {
+        this(new FileSystemInputFile(inputFile), recordClass);
+    }
+
+    public CarpetReader<T> withFailOnMissingColumn(boolean value) {
+        CarpetReader<T> newInstance = cloneInstance();
+        newInstance.failOnMissingColumn = value;
+        return newInstance;
+    }
+
+    public CarpetReader<T> withFailOnNullForPrimitives(boolean value) {
+        CarpetReader<T> newInstance = cloneInstance();
+        newInstance.failOnNullForPrimitives = value;
+        return newInstance;
+    }
+
+    private CarpetReader<T> cloneInstance() {
+        CarpetReader<T> newInstace = new CarpetReader<>(inputFile, recordClass);
+        newInstace.failOnMissingColumn = failOnMissingColumn;
+        newInstace.failOnNullForPrimitives = failOnNullForPrimitives;
+        return newInstace;
     }
 
     /**
@@ -55,9 +93,10 @@ public class CarpetReader<T> {
      * the Parquet file.
      *
      * @return an iterator for the records in the Parquet file
-     * @throws IOException if an I/O error occurs
+     * @throws UncheckedIOException if an I/O error occurs
      */
-    public Iterator<T> iterator() throws IOException {
+    @Override
+    public Iterator<T> iterator() {
         return buildIterator();
     }
 
@@ -69,12 +108,12 @@ public class CarpetReader<T> {
      * @return a stream for the records in the Parquet file
      * @throws IOException if an I/O error occurs
      */
-    public Stream<T> stream() throws IOException {
+    public Stream<T> stream() {
         RecordIterator<T> iterator = buildIterator();
         Spliterator<T> spliterator = Spliterators.spliteratorUnknownSize(iterator,
                 Spliterator.ORDERED | Spliterator.NONNULL | Spliterator.IMMUTABLE);
         return StreamSupport.stream(spliterator, false)
-                .onClose(() -> iterator.uncheckedCloseReader());
+                .onClose(iterator::uncheckedCloseReader);
     }
 
     /**
@@ -94,9 +133,17 @@ public class CarpetReader<T> {
         }
     }
 
-    private RecordIterator<T> buildIterator() throws IOException {
-        ParquetReader<T> reader = CarpetParquetReader.builder(inputFile, recordClass).build();
-        return new RecordIterator<>(recordClass, reader);
+    private RecordIterator<T> buildIterator() {
+        try {
+            ParquetReader<T> reader = CarpetParquetReader
+                    .builder(inputFile, recordClass)
+                    .failOnMissingColumn(failOnMissingColumn)
+                    .failOnNullForPrimitives(failOnNullForPrimitives)
+                    .build();
+            return new RecordIterator<>(recordClass, reader);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     /**
@@ -119,7 +166,7 @@ public class CarpetReader<T> {
          */
         RecordIterator(Class<T> recordClass, ParquetReader<T> reader) throws IOException {
             this.reader = reader;
-            nextRecord = reader.read();
+            this.nextRecord = reader.read();
         }
 
         /**

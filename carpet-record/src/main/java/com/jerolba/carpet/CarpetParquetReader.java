@@ -32,6 +32,9 @@ import com.jerolba.carpet.impl.read.SchemaValidation;
 
 public class CarpetParquetReader {
 
+    public static boolean DEFAULT_FAIL_ON_MISSING_COLUMN = true;
+    public static boolean DEFAULT_FAIL_ON_NULL_FOR_PRIMITIVES = false;
+
     public static <T> Builder<T> builder(InputFile file, Class<T> readClass) {
         return new Builder<>(file, readClass);
     }
@@ -39,9 +42,9 @@ public class CarpetParquetReader {
     public static class Builder<T> extends ParquetReader.Builder<T> {
 
         private final Class<T> readClass;
-        private boolean failOnMissingColumn = true;
+        private boolean failOnMissingColumn = DEFAULT_FAIL_ON_MISSING_COLUMN;
+        private boolean failOnNullForPrimitives = DEFAULT_FAIL_ON_NULL_FOR_PRIMITIVES;
         private boolean strictNumericType = false;
-        private boolean failOnNullForPrimitives = false;
 
         private Builder(InputFile file, Class<T> readClass) {
             super(file);
@@ -62,11 +65,6 @@ public class CarpetParquetReader {
             return this;
         }
 
-        public Builder<T> strictNumericType(boolean strictNumericType) {
-            this.strictNumericType = strictNumericType;
-            return this;
-        }
-
         /**
          * Feature that determines whether encountering null is an error when
          * deserializing into Java primitive types (like 'int' or 'double'). If it is, a
@@ -81,6 +79,11 @@ public class CarpetParquetReader {
          */
         public Builder<T> failOnNullForPrimitives(boolean failOnNullForPrimitives) {
             this.failOnNullForPrimitives = failOnNullForPrimitives;
+            return this;
+        }
+
+        public Builder<T> strictNumericType(boolean strictNumericType) {
+            this.strictNumericType = strictNumericType;
             return this;
         }
 

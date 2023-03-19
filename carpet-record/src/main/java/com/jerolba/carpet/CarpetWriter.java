@@ -17,8 +17,11 @@ package com.jerolba.carpet;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import org.apache.hadoop.conf.Configuration;
@@ -30,15 +33,19 @@ import org.apache.parquet.hadoop.ParquetWriter;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.apache.parquet.io.OutputFile;
 
-public class CarpetWriter<T> implements Closeable {
+import com.jerolba.carpet.io.OutputStreamOutputFile;
+
+public class CarpetWriter<T> implements Closeable, Consumer<T> {
 
     private final ParquetWriter<T> writer;
 
     public CarpetWriter(OutputFile path, Class<T> recordClass) throws IOException {
-        this.writer = new Builder<>(path, recordClass)
-                .withWriteMode(Mode.OVERWRITE)
-                .withValidation(true)
-                .buildWriter();
+        this.writer = new Builder<>(path, recordClass).buildWriter();
+    }
+
+    public CarpetWriter(OutputStream outputSrream, Class<T> recordClass) throws IOException {
+        OutputStreamOutputFile wrappedStream = new OutputStreamOutputFile(outputSrream);
+        this.writer = new Builder<>(wrappedStream, recordClass).buildWriter();
     }
 
     private CarpetWriter(ParquetWriter<T> writer) {
@@ -53,8 +60,36 @@ public class CarpetWriter<T> implements Closeable {
      * @throws IOException if an error occurs while writing the records
      */
     public void write(Collection<T> collection) throws IOException {
-        for (var v : collection) {
-            writer.write(v);
+        for (var value : collection) {
+            writer.write(value);
+        }
+    }
+
+    /**
+     *
+     * Writes the specified collection of Java objects to a Parquet file.
+     *
+     * @param value object to write
+     * @throws IOException if an error occurs while writing the records
+     */
+    public void write(T value) throws IOException {
+        writer.write(value);
+    }
+
+    /**
+     *
+     * Writes the specified collection of Java objects to a Parquet file
+     * implementing Consumer<T>
+     *
+     * @param value object to write
+     * @throws UncheckedIOException if an error occurs while writing the records
+     */
+    @Override
+    public void accept(T value) {
+        try {
+            writer.write(value);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 
@@ -85,7 +120,11 @@ public class CarpetWriter<T> implements Closeable {
         public Builder(OutputFile path, Class<T> recordClass) {
             builder = CarpetParquetWriter.builder(path, recordClass)
                     .withWriteMode(Mode.OVERWRITE)
-                    .withValidation(true);
+                    .withCompressionCodec(CompressionCodecName.SNAPPY);
+        }
+
+        public Builder(OutputStream outputSrream, Class<T> recordClass) {
+            this(new OutputStreamOutputFile(outputSrream), recordClass);
         }
 
         /**
@@ -358,6 +397,20 @@ public class CarpetWriter<T> implements Closeable {
             return this;
         }
 
+        /**
+         * Set the type of collections type that will be generated following the
+         * <a href=
+         * "https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#lists">LogicalTypes
+         * definition</a>
+         *
+         * @param annotatedLevels an Enum configuring the number of levels
+         * @return this builder for method chaining.
+         */
+        public Builder<T> levelStructure(AnnotatedLevels annotatedLevels) {
+            builder.levelStructure(annotatedLevels);
+            return this;
+        }
+
         public CarpetWriter<T> build() throws IOException {
             return new CarpetWriter<>(builder.build());
         }
@@ -367,4 +420,5 @@ public class CarpetWriter<T> implements Closeable {
         }
 
     }
+
 }

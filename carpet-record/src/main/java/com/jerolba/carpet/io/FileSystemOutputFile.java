@@ -27,7 +27,6 @@ import org.apache.parquet.io.PositionOutputStream;
  * Class for writing to a file on the file system using the Parquet output file
  * interface.
  *
- * @author jerolba
  */
 public class FileSystemOutputFile implements OutputFile {
 
