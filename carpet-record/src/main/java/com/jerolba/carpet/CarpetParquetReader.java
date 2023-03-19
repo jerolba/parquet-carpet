@@ -83,6 +83,22 @@ public class CarpetParquetReader {
             return this;
         }
 
+        /**
+         * Feature that determines whether coercion from one number type to other number
+         * type with less resolutions is allowed or not. If disabled, coercion truncates
+         * value.
+         *
+         * A narrowing primitive conversion may lose information about the overall
+         * magnitude of a numeric value and may also lose precision and range. Narrowing
+         * follows
+         * <a href="https://docs.oracle.com/javase/specs/jls/se10/html/jls-5.html">Java
+         * Language Specification</a>
+         *
+         * Feature is disabled by default.
+         *
+         * @param failNarrowingPrimitiveConversion
+         * @return Carpet Reader Builder
+         */
         public Builder<T> failNarrowingPrimitiveConversion(boolean failNarrowingPrimitiveConversion) {
             this.failNarrowingPrimitiveConversion = failNarrowingPrimitiveConversion;
             return this;

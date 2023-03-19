@@ -47,6 +47,7 @@ public class CarpetReader<T> implements Iterable<T> {
 
     private boolean failOnMissingColumn = CarpetParquetReader.DEFAULT_FAIL_ON_MISSING_COLUMN;
     private boolean failOnNullForPrimitives = CarpetParquetReader.DEFAULT_FAIL_ON_NULL_FOR_PRIMITIVES;
+    private boolean failNarrowingPrimitiveConversion = CarpetParquetReader.DEFAULT_FAIL_NARROWING_PRIMITIVE_CONVERSION;
 
     /**
      *
@@ -103,6 +104,28 @@ public class CarpetReader<T> implements Iterable<T> {
     public CarpetReader<T> withFailOnNullForPrimitives(boolean value) {
         CarpetReader<T> newInstance = cloneInstance();
         newInstance.failOnNullForPrimitives = value;
+        return newInstance;
+    }
+
+    /**
+     * Feature that determines whether coercion from one number type to other number
+     * type with less resolutions is allowed or not. If disabled, coercion truncates
+     * value.
+     *
+     * A narrowing primitive conversion may lose information about the overall
+     * magnitude of a numeric value and may also lose precision and range. Narrowing
+     * follows
+     * <a href="https://docs.oracle.com/javase/specs/jls/se10/html/jls-5.html">Java
+     * Language Specification</a>
+     *
+     * Feature is disabled by default.
+     *
+     * @param failNarrowingPrimitiveConversion
+     * @return a new instance of CarpetReader
+     */
+    public CarpetReader<T> withFailNarrowingPrimitiveConversion(boolean value) {
+        CarpetReader<T> newInstance = cloneInstance();
+        newInstance.failNarrowingPrimitiveConversion = value;
         return newInstance;
     }
 
@@ -165,6 +188,7 @@ public class CarpetReader<T> implements Iterable<T> {
                     .builder(inputFile, recordClass)
                     .failOnMissingColumn(failOnMissingColumn)
                     .failOnNullForPrimitives(failOnNullForPrimitives)
+                    .failNarrowingPrimitiveConversion(failNarrowingPrimitiveConversion)
                     .build();
             return new RecordIterator<>(recordClass, reader);
         } catch (IOException e) {
