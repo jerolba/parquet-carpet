@@ -18,13 +18,14 @@ package com.jerolba.carpet;
 class CarpetReadConfiguration {
 
     private final boolean failOnMissingColumn;
-    private final boolean strictNumericType;
+    private final boolean failNarrowingPrimitiveConversion;
     private final boolean failOnNullForPrimitives;
 
-    public CarpetReadConfiguration(boolean failOnMissingColumn, boolean strictNumericType,
+    public CarpetReadConfiguration(boolean failOnMissingColumn,
+            boolean failNarrowingPrimitiveConversion,
             boolean failOnNullForPrimitives) {
         this.failOnMissingColumn = failOnMissingColumn;
-        this.strictNumericType = strictNumericType;
+        this.failNarrowingPrimitiveConversion = failNarrowingPrimitiveConversion;
         this.failOnNullForPrimitives = failOnNullForPrimitives;
     }
 
@@ -32,8 +33,8 @@ class CarpetReadConfiguration {
         return failOnMissingColumn;
     }
 
-    public boolean isStrictNumericType() {
-        return strictNumericType;
+    public boolean isFailNarrowingPrimitiveConversion() {
+        return failNarrowingPrimitiveConversion;
     }
 
     public boolean isFailOnNullForPrimitives() {

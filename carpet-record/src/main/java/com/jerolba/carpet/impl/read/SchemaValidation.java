@@ -33,14 +33,14 @@ import com.jerolba.carpet.impl.JavaType;
 
 public class SchemaValidation {
 
-    private final boolean strictNumericType;
+    private final boolean failNarrowingPrimitiveConversion;
     private final boolean failOnMissingColumn;
     private final boolean failOnNullForPrimitives;
 
-    public SchemaValidation(boolean failOnMissingColumn, boolean strictNumericType,
+    public SchemaValidation(boolean failOnMissingColumn, boolean failNarrowingPrimitiveConversion,
             boolean failOnNullForPrimitives) {
         this.failOnMissingColumn = failOnMissingColumn;
-        this.strictNumericType = strictNumericType;
+        this.failNarrowingPrimitiveConversion = failNarrowingPrimitiveConversion;
         this.failOnNullForPrimitives = failOnNullForPrimitives;
     }
 
@@ -95,7 +95,7 @@ public class SchemaValidation {
         if (type.isInteger() || type.isLong() || type.isDouble()) {
             return true;
         }
-        if (!strictNumericType) {
+        if (!failNarrowingPrimitiveConversion) {
             if (type.isFloat() || type.isShort() || type.isByte()) {
                 return true;
             }
@@ -107,7 +107,7 @@ public class SchemaValidation {
         if (type.isLong()) {
             return true;
         }
-        if (!strictNumericType) {
+        if (!failNarrowingPrimitiveConversion) {
             if (type.isInteger() || type.isDouble() || type.isFloat() || type.isShort() || type.isByte()) {
                 return false;
             }
@@ -119,7 +119,7 @@ public class SchemaValidation {
         if (type.isDouble() || type.isFloat()) {
             return true;
         }
-        if (!strictNumericType) {
+        if (!failNarrowingPrimitiveConversion) {
         }
         return throwInvalidConversionException(primitiveType, type);
     }
@@ -128,7 +128,7 @@ public class SchemaValidation {
         if (type.isDouble()) {
             return true;
         }
-        if (!strictNumericType) {
+        if (!failNarrowingPrimitiveConversion) {
             if (type.isFloat()) {
                 return true;
             }

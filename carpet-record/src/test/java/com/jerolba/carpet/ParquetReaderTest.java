@@ -78,8 +78,8 @@ public class ParquetReaderTest {
             if (f.equals(ReadFlag.FAIL_ON_NULL_FOR_PRIMITIVES)) {
                 builder = builder.failOnNullForPrimitives(true);
             }
-            if (f.equals(ReadFlag.STRICT_NUMERIC_TYPE)) {
-                builder = builder.strictNumericType(true);
+            if (f.equals(ReadFlag.FAIL_NARROWING_PRIMITIVE_CONVERSION)) {
+                builder = builder.failNarrowingPrimitiveConversion(true);
             }
         }
         return builder.build();

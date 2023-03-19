@@ -34,6 +34,7 @@ public class CarpetParquetReader {
 
     public static boolean DEFAULT_FAIL_ON_MISSING_COLUMN = true;
     public static boolean DEFAULT_FAIL_ON_NULL_FOR_PRIMITIVES = false;
+    public static boolean DEFAULT_FAIL_NARROWING_PRIMITIVE_CONVERSION = false;
 
     public static <T> Builder<T> builder(InputFile file, Class<T> readClass) {
         return new Builder<>(file, readClass);
@@ -44,7 +45,7 @@ public class CarpetParquetReader {
         private final Class<T> readClass;
         private boolean failOnMissingColumn = DEFAULT_FAIL_ON_MISSING_COLUMN;
         private boolean failOnNullForPrimitives = DEFAULT_FAIL_ON_NULL_FOR_PRIMITIVES;
-        private boolean strictNumericType = false;
+        private boolean failNarrowingPrimitiveConversion = DEFAULT_FAIL_NARROWING_PRIMITIVE_CONVERSION;
 
         private Builder(InputFile file, Class<T> readClass) {
             super(file);
@@ -82,18 +83,18 @@ public class CarpetParquetReader {
             return this;
         }
 
-        public Builder<T> strictNumericType(boolean strictNumericType) {
-            this.strictNumericType = strictNumericType;
+        public Builder<T> failNarrowingPrimitiveConversion(boolean failNarrowingPrimitiveConversion) {
+            this.failNarrowingPrimitiveConversion = failNarrowingPrimitiveConversion;
             return this;
         }
 
         @Override
         protected ReadSupport<T> getReadSupport() {
-            CarpetReadConfiguration configuration = new CarpetReadConfiguration(failOnMissingColumn,
-                    strictNumericType,
+            CarpetReadConfiguration configuration = new CarpetReadConfiguration(
+                    failOnMissingColumn,
+                    failNarrowingPrimitiveConversion,
                     failOnNullForPrimitives);
-            CarpetReadSupport<T> readSupport = new CarpetReadSupport<>(readClass, configuration);
-            return readSupport;
+            return new CarpetReadSupport<>(readClass, configuration);
         }
 
     }
@@ -120,7 +121,7 @@ public class CarpetParquetReader {
                 MessageType fileSchema) {
 
             var validation = new SchemaValidation(carpetConfiguration.isFailOnMissingColumn(),
-                    carpetConfiguration.isStrictNumericType(),
+                    carpetConfiguration.isFailNarrowingPrimitiveConversion(),
                     carpetConfiguration.isFailOnNullForPrimitives());
             SchemaFilter projectedSchema = new SchemaFilter(validation, fileSchema);
             MessageType projection = projectedSchema.project(readClass);
