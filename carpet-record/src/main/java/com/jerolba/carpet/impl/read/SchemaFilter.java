@@ -193,8 +193,7 @@ public class SchemaFilter {
                             + " is not a collection");
                 }
                 var parameterizedChild = parameterized.getParametizedAsCollection();
-                Type type = analyzeMultipleLevelStructure(column, name, parameterizedChild,
-                        childElement.asGroupType());
+                Type type = analyzeMultipleLevelStructure(column, name, parameterizedChild, childElement.asGroupType());
                 Type filtered = rewrapListIfExists(listGroup, type);
                 return parentGroupType.withNewFields(filtered);
             } else if (typeAnnotation == mapType()) {
@@ -283,8 +282,7 @@ public class SchemaFilter {
         } else {
             Class<?> valueActualType = parameterized.getValueActualType();
             if (value.isPrimitive()) {
-                PrimitiveType primitiveType = value.asPrimitiveType();
-                validation.validatePrimitiveCompatibility(primitiveType, valueActualType);
+                validation.validatePrimitiveCompatibility(value.asPrimitiveType(), valueActualType);
             } else if (valueActualType.isRecord()) {
                 SchemaFilter recordFilter = new SchemaFilter(validation, value.asGroupType());
                 value = recordFilter.filter(valueActualType, column);

@@ -39,15 +39,15 @@ public class CarpetGroupConverter extends GroupConverter {
     private final ConstructorParams constructor;
     private final Consumer<Object> groupConsumer;
 
-    public CarpetGroupConverter(GroupType requestedSchema, Class<?> groupClass, Consumer<Object> groupConsumer) {
+    public CarpetGroupConverter(GroupType schema, Class<?> groupClass, Consumer<Object> groupConsumer) {
         this.groupConsumer = groupConsumer;
         this.constructor = new ConstructorParams(groupClass);
 
         GroupFieldsMapper mapper = new GroupFieldsMapper(groupClass);
 
-        converters = new Converter[requestedSchema.getFields().size()];
+        converters = new Converter[schema.getFields().size()];
         int cont = 0;
-        for (var schemaField : requestedSchema.getFields()) {
+        for (var schemaField : schema.getFields()) {
             String name = schemaField.getName();
             int index = mapper.getIndex(name);
             var recordComponent = mapper.getRecordComponent(name);
@@ -72,7 +72,7 @@ public class CarpetGroupConverter extends GroupConverter {
                             value -> constructor.c[index] = value);
                 } else {
                     Class<?> childClass = recordComponent.getType();
-                    CarpetGroupConverter converter = new CarpetGroupConverter(asGroupType, childClass,
+                    Converter converter = new CarpetGroupConverter(asGroupType, childClass,
                             value -> constructor.c[index] = value);
                     converters[cont] = converter;
                 }

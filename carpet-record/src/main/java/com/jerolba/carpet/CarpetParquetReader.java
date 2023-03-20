@@ -149,7 +149,7 @@ public class CarpetParquetReader {
 
     static class CarpetMaterializer<T> extends RecordMaterializer<T> {
 
-        private final CarpetGroupConverter root;
+        private final GroupConverter root;
         private T value;
 
         CarpetMaterializer(Class<T> readClass, MessageType requestedSchema) {

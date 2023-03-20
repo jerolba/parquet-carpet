@@ -15,7 +15,7 @@
  */
 package com.jerolba.carpet.impl.read;
 
-import static com.jerolba.carpet.impl.read.PrimitiveGenericConverterFactory.buildPrimitiveGenericConverters;
+import static com.jerolba.carpet.impl.read.PrimitiveGenericConverterFactory.buildPrimitiveGenericConverter;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.listType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.mapType;
 
@@ -38,30 +38,27 @@ class CarpetMapIntermediateConverter extends GroupConverter {
     private Object elementValue;
     private Object elementKey;
 
-    CarpetMapIntermediateConverter(ParameterizedMap parameterized, GroupType requestedSchema, MapHolder mapHolder) {
+    CarpetMapIntermediateConverter(ParameterizedMap parameterized, GroupType schema, MapHolder mapHolder) {
         this.mapHolder = mapHolder;
 
-        List<Type> fields = requestedSchema.getFields();
+        List<Type> fields = schema.getFields();
         if (fields.size() != 2) {
-            throw new RecordTypeConversionException(
-                    requestedSchema.getName() + " MAP child element must have two fields");
+            throw new RecordTypeConversionException(schema.getName() + " MAP child element must have two fields");
         }
 
         // Key
         Type mapKeyType = fields.get(0);
+        Class<?> mapKeyActualType = parameterized.getKeyActualType();
         if (mapKeyType.isPrimitive()) {
-            converterKey = buildPrimitiveGenericConverters(mapKeyType, parameterized.getKeyActualType(),
-                    this::consumeKey);
+            converterKey = buildPrimitiveGenericConverter(mapKeyType, mapKeyActualType, this::consumeKey);
         } else {
-            GroupType mapKeyGroupType = mapKeyType.asGroupType();
-            Class<?> mapKeyActualType = parameterized.getKeyActualType();
-            converterKey = new CarpetGroupConverter(mapKeyGroupType, mapKeyActualType, this::consumeKey);
+            converterKey = new CarpetGroupConverter(mapKeyType.asGroupType(), mapKeyActualType, this::consumeKey);
         }
 
         // Value
         Type mapValueType = fields.get(1);
         if (mapValueType.isPrimitive()) {
-            converterValue = buildPrimitiveGenericConverters(mapValueType, parameterized.getValueActualType(),
+            converterValue = buildPrimitiveGenericConverter(mapValueType, parameterized.getValueActualType(),
                     this::consumeValue);
             return;
         }
@@ -78,9 +75,8 @@ class CarpetMapIntermediateConverter extends GroupConverter {
                     this::consumeValue);
             return;
         }
-        GroupType mapValueGroupType = mapValueType.asGroupType();
         Class<?> mapValueActualType = parameterized.getValueActualType();
-        converterValue = new CarpetGroupConverter(mapValueGroupType, mapValueActualType, this::consumeValue);
+        converterValue = new CarpetGroupConverter(mapValueType.asGroupType(), mapValueActualType, this::consumeValue);
     }
 
     @Override

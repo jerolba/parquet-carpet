@@ -18,6 +18,7 @@ package com.jerolba.carpet.impl.read;
 import static com.jerolba.carpet.impl.NotNullField.isNotNull;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.enumType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.stringType;
+import static org.apache.parquet.schema.LogicalTypeAnnotation.uuidType;
 
 import java.lang.reflect.RecordComponent;
 
@@ -54,28 +55,17 @@ public class SchemaValidation {
 
     public boolean validatePrimitiveCompatibility(PrimitiveType primitiveType, Class<?> javaType) {
         JavaType type = new JavaType(javaType);
-        switch (primitiveType.getPrimitiveTypeName()) {
-        case INT32:
-            return validInt32Source(primitiveType, type);
-        case INT64:
-            return validInt64Source(primitiveType, type);
-        case FLOAT:
-            return validFloatSource(primitiveType, type);
-        case DOUBLE:
-            return validDoubleSource(primitiveType, type);
-        case BOOLEAN:
-            return validBooleanSource(primitiveType, type);
-        case BINARY:
-            return validBinarySource(primitiveType, type);
-        case FIXED_LEN_BYTE_ARRAY:
-            if (primitiveType.getLogicalTypeAnnotation().equals(LogicalTypeAnnotation.uuidType())) {
-                return validUuidSource(primitiveType, type);
-            }
-            return false;
-        case INT96:
-            throw new RecordTypeConversionException(type + " deserialization not supported");
-        }
-        return false;
+        return switch (primitiveType.getPrimitiveTypeName()) {
+        case INT32 -> validInt32Source(primitiveType, type);
+        case INT64 -> validInt64Source(primitiveType, type);
+        case FLOAT -> validFloatSource(primitiveType, type);
+        case DOUBLE -> validDoubleSource(primitiveType, type);
+        case BOOLEAN -> validBooleanSource(primitiveType, type);
+        case BINARY -> validBinarySource(primitiveType, type);
+        case FIXED_LEN_BYTE_ARRAY -> validFixedLenBinarySource(primitiveType, type);
+        case INT96 -> throw new RecordTypeConversionException(type + " deserialization not supported");
+        default -> false;
+        };
     }
 
     public boolean validateNullability(Type parquetType, RecordComponent recordComponent) {
@@ -145,18 +135,25 @@ public class SchemaValidation {
 
     private boolean validBinarySource(PrimitiveType primitiveType, JavaType type) {
         LogicalTypeAnnotation logicalType = primitiveType.getLogicalTypeAnnotation();
-        if (logicalType.equals(stringType()) && (type.isString() || type.isEnum())) {
+        if (stringType().equals(logicalType) && (type.isString() || type.isEnum())) {
             return true;
         }
-        if (logicalType.equals(enumType()) && (type.isString() || type.isEnum())) {
+        if (enumType().equals(logicalType) && (type.isString() || type.isEnum())) {
             return true;
         }
         return throwInvalidConversionException(primitiveType, type);
     }
 
+    private boolean validFixedLenBinarySource(PrimitiveType parquetType, JavaType javaType) {
+        if (uuidType().equals(parquetType.getLogicalTypeAnnotation())) {
+            return validUuidSource(parquetType, javaType);
+        }
+        return false;
+    }
+
     public static boolean isBasicSupportedType(JavaType type) {
-        return (type.isInteger() || type.isLong() || type.isDouble()
-                || type.isFloat() || type.isBoolean() || type.isShort() || type.isByte() || type.isEnum());
+        return (type.isInteger() || type.isLong() || type.isDouble() || type.isFloat()
+                || type.isBoolean() || type.isShort() || type.isByte() || type.isEnum());
     }
 
     private boolean validUuidSource(PrimitiveType primitiveType, JavaType type) {

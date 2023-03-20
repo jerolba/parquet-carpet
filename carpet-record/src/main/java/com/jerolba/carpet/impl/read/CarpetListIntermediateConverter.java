@@ -15,7 +15,7 @@
  */
 package com.jerolba.carpet.impl.read;
 
-import static com.jerolba.carpet.impl.read.PrimitiveGenericConverterFactory.buildPrimitiveGenericConverters;
+import static com.jerolba.carpet.impl.read.PrimitiveGenericConverterFactory.buildPrimitiveGenericConverter;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.listType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.mapType;
 
@@ -33,18 +33,19 @@ import com.jerolba.carpet.impl.ParameterizedCollection;
 
 class CarpetListIntermediateConverter extends GroupConverter {
 
-    private final Converter converter;
     private final CollectionHolder collectionHolder;
+    private final Converter converter;
     private Object elementValue;
 
-    CarpetListIntermediateConverter(Type rootListType, ParameterizedCollection parameterized, CollectionHolder collectionHolder) {
+    CarpetListIntermediateConverter(Type rootListType, ParameterizedCollection parameterized,
+            CollectionHolder collectionHolder) {
         this.collectionHolder = collectionHolder;
 
-        var requestedSchema = rootListType.asGroupType();
-        List<Type> fields = requestedSchema.getFields();
+        var schema = rootListType.asGroupType();
+        List<Type> fields = schema.getFields();
         if (fields.size() > 1) {
             throw new RecordTypeConversionException(
-                    requestedSchema.getName() + " LIST child element can not have more than one field");
+                    schema.getName() + " LIST child element can not have more than one field");
         }
         Type listElement = fields.get(0);
         converter = createCollectionConverter(listElement, parameterized, value -> elementValue = value);
@@ -68,7 +69,7 @@ class CarpetListIntermediateConverter extends GroupConverter {
     public static Converter createCollectionConverter(Type listElement, ParameterizedCollection parameterized,
             Consumer<Object> consumer) {
         if (listElement.isPrimitive()) {
-            return buildPrimitiveGenericConverters(listElement, parameterized.getActualType(), consumer);
+            return buildPrimitiveGenericConverter(listElement, parameterized.getActualType(), consumer);
         }
         LogicalTypeAnnotation logicalType = listElement.getLogicalTypeAnnotation();
         if (logicalType != null) {

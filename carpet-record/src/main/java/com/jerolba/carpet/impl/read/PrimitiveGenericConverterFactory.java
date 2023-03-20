@@ -22,7 +22,6 @@ import static org.apache.parquet.schema.LogicalTypeAnnotation.uuidType;
 import java.util.function.Consumer;
 
 import org.apache.parquet.io.api.Converter;
-import org.apache.parquet.schema.LogicalTypeAnnotation;
 import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
 import org.apache.parquet.schema.Type;
 
@@ -42,99 +41,97 @@ import com.jerolba.carpet.impl.read.converter.UuidToUuidGenericConverter;
 
 class PrimitiveGenericConverterFactory {
 
-    public static Converter buildPrimitiveGenericConverters(Type parquetField, Class<?> genericJavaType,
-            Consumer<Object> listConsumer) {
+    public static Converter buildPrimitiveGenericConverter(Type parquetField, Class<?> genericJavaType,
+            Consumer<Object> consumer) {
         JavaType genericType = new JavaType(genericJavaType);
         PrimitiveTypeName type = parquetField.asPrimitiveType().getPrimitiveTypeName();
         return switch (type) {
-        case INT32, INT64 -> genericBuildFromIntConverter(listConsumer, genericType, parquetField);
-        case FLOAT, DOUBLE -> genericBuildFromDecimalConverter(listConsumer, genericType, parquetField);
-        case BOOLEAN -> genericBuildFromBooleanConverter(listConsumer, genericType, parquetField);
-        case BINARY -> genericBuildFromBinaryConverter(listConsumer, genericType, parquetField);
-        case FIXED_LEN_BYTE_ARRAY -> genericBuildFromByteArrayConverter(listConsumer, genericType, parquetField);
+        case INT32, INT64 -> genericBuildFromIntConverter(consumer, genericType, parquetField);
+        case FLOAT, DOUBLE -> genericBuildFromDecimalConverter(consumer, genericType, parquetField);
+        case BOOLEAN -> genericBuildFromBooleanConverter(consumer, genericType, parquetField);
+        case BINARY -> genericBuildFromBinaryConverter(consumer, genericType, parquetField);
+        case FIXED_LEN_BYTE_ARRAY -> genericBuildFromByteArrayConverter(consumer, genericType, parquetField);
         case INT96 -> throw new RecordTypeConversionException(type + " deserialization not supported");
         default -> throw new RecordTypeConversionException(type + " deserialization not supported");
         };
     }
 
-    private static Converter genericBuildFromIntConverter(Consumer<Object> listConsumer, JavaType type,
-            Type schemaType) {
+    private static Converter genericBuildFromIntConverter(Consumer<Object> consumer, JavaType type, Type schemaType) {
         if (type.isInteger()) {
-            return new ToIntegerGenericConverter(listConsumer);
+            return new ToIntegerGenericConverter(consumer);
         }
         if (type.isLong()) {
-            return new ToLongGenericConverter(listConsumer);
+            return new ToLongGenericConverter(consumer);
         }
         if (type.isShort()) {
-            return new ToShortGenericConverter(listConsumer);
+            return new ToShortGenericConverter(consumer);
         }
         if (type.isByte()) {
-            return new ToByteGenericConverter(listConsumer);
+            return new ToByteGenericConverter(consumer);
         }
         if (type.isDouble()) {
-            return new ToDoubleGenericConverter(listConsumer);
+            return new ToDoubleGenericConverter(consumer);
         }
         if (type.isFloat()) {
-            return new ToFloatGenericConverter(listConsumer);
+            return new ToFloatGenericConverter(consumer);
         }
         throw new RecordTypeConversionException(
                 type.getTypeName() + " not compatible with " + schemaType.getName() + " collection");
     }
 
-    private static Converter genericBuildFromDecimalConverter(Consumer<Object> listConsumer, JavaType type,
+    private static Converter genericBuildFromDecimalConverter(Consumer<Object> consumer, JavaType type,
             Type schemaType) {
         if (type.isFloat()) {
-            return new ToFloatGenericConverter(listConsumer);
+            return new ToFloatGenericConverter(consumer);
         }
         if (type.isDouble()) {
-            return new ToDoubleGenericConverter(listConsumer);
+            return new ToDoubleGenericConverter(consumer);
         }
         throw new RecordTypeConversionException(
                 type.getTypeName() + " not compatible with " + schemaType.getName() + " collection");
     }
 
-    private static Converter genericBuildFromBooleanConverter(Consumer<Object> listConsumer, JavaType type,
+    private static Converter genericBuildFromBooleanConverter(Consumer<Object> consumer, JavaType type,
             Type schemaType) {
         if (type.isBoolean()) {
-            return new BooleanGenericConverter(listConsumer);
+            return new BooleanGenericConverter(consumer);
         }
         throw new RecordTypeConversionException(
                 type.getTypeName() + " not compatible with " + schemaType.getName() + " collection");
     }
 
-    private static Converter genericBuildFromBinaryConverter(Consumer<Object> listConsumer, JavaType type,
+    private static Converter genericBuildFromBinaryConverter(Consumer<Object> consumer, JavaType type,
             Type schemaType) {
-        LogicalTypeAnnotation logicalType = schemaType.getLogicalTypeAnnotation();
-        if (logicalType.equals(stringType())) {
+        var logicalType = schemaType.getLogicalTypeAnnotation();
+        if (stringType().equals(logicalType)) {
             if (type.isString()) {
-                return new StringGenericConverter(listConsumer);
+                return new StringGenericConverter(consumer);
             }
             if (type.isEnum()) {
-                return new EnumGenericConverter(listConsumer, type.getJavaType());
+                return new EnumGenericConverter(consumer, type.getJavaType());
             }
             throw new RecordTypeConversionException(type.getTypeName() + " not compatible with String field");
         }
-        if (logicalType.equals(enumType())) {
+        if (enumType().equals(logicalType)) {
             if (type.isString()) {
-                return new StringGenericConverter(listConsumer);
+                return new StringGenericConverter(consumer);
             }
-            return new EnumGenericConverter(listConsumer, type.getJavaType());
+            return new EnumGenericConverter(consumer, type.getJavaType());
         }
         throw new RecordTypeConversionException(
                 type.getTypeName() + " not compatible with " + schemaType.getName() + " field");
     }
 
-    private static Converter genericBuildFromByteArrayConverter(Consumer<Object> listConsumer, JavaType type,
+    private static Converter genericBuildFromByteArrayConverter(Consumer<Object> consumer, JavaType type,
             Type schemaType) {
-        LogicalTypeAnnotation logicalType = schemaType.getLogicalTypeAnnotation();
-        if (!logicalType.equals(uuidType())) {
+        if (!uuidType().equals(schemaType.getLogicalTypeAnnotation())) {
             throw new RecordTypeConversionException(schemaType + " deserialization not supported");
         }
         if (type.isString()) {
-            return new UuidToStringGenericConverter(listConsumer);
+            return new UuidToStringGenericConverter(consumer);
         }
         if (type.isUuid()) {
-            return new UuidToUuidGenericConverter(listConsumer);
+            return new UuidToUuidGenericConverter(consumer);
         }
         throw new RecordTypeConversionException(
                 type.getTypeName() + " not compatible with " + schemaType.getName() + " field");

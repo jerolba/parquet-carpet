@@ -58,7 +58,7 @@ class PrimitiveConverterFactory {
         };
     }
 
-    public static Converter buildFromIntConverter(ConstructorParams constructor, int index,
+    private static Converter buildFromIntConverter(ConstructorParams constructor, int index,
             RecordComponent recordComponent) {
         JavaType type = new JavaType(recordComponent);
         if (type.isInteger()) {
@@ -83,7 +83,7 @@ class PrimitiveConverterFactory {
                 type.getTypeName() + " not compatible with " + recordComponent.getName() + " field");
     }
 
-    public static Converter buildFromDecimalConverter(ConstructorParams constructor, int index,
+    private static Converter buildFromDecimalConverter(ConstructorParams constructor, int index,
             RecordComponent recordComponent) {
         JavaType type = new JavaType(recordComponent);
         if (type.isFloat()) {
@@ -96,7 +96,7 @@ class PrimitiveConverterFactory {
                 type.getTypeName() + " not compatible with " + recordComponent.getName() + " field");
     }
 
-    public static Converter buildFromBooleanConverter(ConstructorParams constructor, int index,
+    private static Converter buildFromBooleanConverter(ConstructorParams constructor, int index,
             RecordComponent recordComponent) {
         JavaType type = new JavaType(recordComponent);
         if (type.isBoolean()) {
@@ -106,7 +106,7 @@ class PrimitiveConverterFactory {
                 type.getTypeName() + " not compatible with " + recordComponent.getName() + " field");
     }
 
-    public static Converter buildFromBinaryConverter(ConstructorParams constructor, int index,
+    private static Converter buildFromBinaryConverter(ConstructorParams constructor, int index,
             RecordComponent recordComponent, Type schemaType) {
         JavaType type = new JavaType(recordComponent);
         LogicalTypeAnnotation logicalType = schemaType.getLogicalTypeAnnotation();

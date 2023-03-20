@@ -30,15 +30,14 @@ import com.jerolba.carpet.impl.ParameterizedCollection;
 class CarpetListConverter extends GroupConverter {
 
     private final Consumer<Object> groupConsumer;
-    private final Converter converter;
     private final CollectionHolder collectionHolder;
+    private final Converter converter;
 
-    CarpetListConverter(GroupType requestedSchema, ParameterizedCollection parameterized,
-            Consumer<Object> groupConsumer) {
+    CarpetListConverter(GroupType schema, ParameterizedCollection parameterized, Consumer<Object> groupConsumer) {
         this.groupConsumer = groupConsumer;
         this.collectionHolder = new CollectionHolder(collectionFactory(parameterized.getCollectionType()));
 
-        Type listChild = requestedSchema.getFields().get(0);
+        Type listChild = schema.getFields().get(0);
         boolean threeLevel = SchemaValidation.isThreeLevel(listChild);
         if (threeLevel) {
             converter = new CarpetListIntermediateConverter(listChild, parameterized, collectionHolder);

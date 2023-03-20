@@ -16,7 +16,7 @@
 package com.jerolba.carpet.impl.read;
 
 import static com.jerolba.carpet.impl.Parameterized.getParameterizedCollection;
-import static com.jerolba.carpet.impl.read.PrimitiveGenericConverterFactory.buildPrimitiveGenericConverters;
+import static com.jerolba.carpet.impl.read.PrimitiveGenericConverterFactory.buildPrimitiveGenericConverter;
 import static com.jerolba.carpet.impl.read.ReadReflection.collectionFactory;
 
 import java.lang.reflect.RecordComponent;
@@ -67,7 +67,7 @@ class SingleLevelConverterFactory {
         };
 
         if (parquetField.isPrimitive()) {
-            return buildPrimitiveGenericConverters(parquetField, parameterized.getActualType(), consumer);
+            return buildPrimitiveGenericConverter(parquetField, parameterized.getActualType(), consumer);
         }
         var asGroupType = parquetField.asGroupType();
         if (parameterized.isMap()) {
