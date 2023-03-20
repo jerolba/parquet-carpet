@@ -28,13 +28,10 @@ import static org.apache.parquet.schema.Type.Repetition.OPTIONAL;
 import static org.apache.parquet.schema.Type.Repetition.REPEATED;
 import static org.apache.parquet.schema.Type.Repetition.REQUIRED;
 
-import java.lang.reflect.RecordComponent;
 import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.apache.parquet.schema.ConversionPatterns;
@@ -48,6 +45,7 @@ import org.apache.parquet.schema.Type.Repetition;
 import org.apache.parquet.schema.Types;
 
 import com.jerolba.carpet.RecordTypeConversionException;
+import com.jerolba.carpet.impl.JavaType;
 import com.jerolba.carpet.impl.ParameterizedCollection;
 import com.jerolba.carpet.impl.ParameterizedMap;
 
@@ -78,24 +76,24 @@ public class JavaRecord2Schema {
             String fieldName = getFieldName(attr);
             boolean notNull = type.isPrimitive() || isNotNull(attr);
             Repetition repetition = notNull ? REQUIRED : OPTIONAL;
-
-            PrimitiveTypeName primitiveType = simpleTypeItems(type);
+            JavaType javaType = new JavaType(type);
+            PrimitiveTypeName primitiveType = simpleTypeItems(javaType);
             if (primitiveType != null) {
                 fields.add(new PrimitiveType(repetition, primitiveType, fieldName));
-            } else if (type.getName().equals("java.lang.String")) {
+            } else if (javaType.isString()) {
                 fields.add(Types.primitive(BINARY, repetition).as(stringType()).named(fieldName));
-            } else if (type.isRecord()) {
+            } else if (javaType.isRecord()) {
                 List<Type> childFields = buildCompositeChild(type, visited);
                 fields.add(new GroupType(repetition, fieldName, childFields));
-            } else if (type.isEnum()) {
+            } else if (javaType.isEnum()) {
                 fields.add(Types.primitive(BINARY, repetition).as(enumType()).named(fieldName));
-            } else if (type.getName().equals("java.util.UUID")) {
+            } else if (javaType.isUuid()) {
                 fields.add(Types.primitive(FIXED_LEN_BYTE_ARRAY, repetition).as(uuidType())
                         .length(UUIDLogicalTypeAnnotation.BYTES).named(fieldName));
-            } else if (Collection.class.isAssignableFrom(type)) {
+            } else if (javaType.isCollection()) {
                 var parameterizedCollection = getParameterizedCollection(attr);
-                fields.add(createCollectionType(fieldName, parameterizedCollection, visited, attr, repetition));
-            } else if (Map.class.isAssignableFrom(type)) {
+                fields.add(createCollectionType(fieldName, parameterizedCollection, visited, repetition));
+            } else if (javaType.isMap()) {
                 var parameterizedMap = getParameterizedMap(attr);
                 fields.add(createMapType(fieldName, parameterizedMap, visited, repetition));
             } else {
@@ -118,7 +116,7 @@ public class JavaRecord2Schema {
     }
 
     private Type createCollectionType(String fieldName, ParameterizedCollection collectionClass, Set<Class<?>> visited,
-            RecordComponent attr, Repetition repetition) {
+            Repetition repetition) {
         return switch (carpetConfiguration.annotatedLevels()) {
         case ONE -> createCollectionOneLevel(fieldName, collectionClass, visited);
         case TWO -> createCollectionTwoLevel(fieldName, collectionClass, visited, repetition);
@@ -155,7 +153,7 @@ public class JavaRecord2Schema {
     private Type createNestedCollection(ParameterizedCollection parametized, Set<Class<?>> visited,
             Repetition repetition) {
         if (parametized.isCollection()) {
-            return createCollectionType("element", parametized.getParametizedAsCollection(), visited, null, repetition);
+            return createCollectionType("element", parametized.getParametizedAsCollection(), visited, repetition);
         }
         if (parametized.isMap()) {
             return createMapType("element", parametized.getParametizedAsMap(), visited, repetition);
@@ -170,7 +168,7 @@ public class JavaRecord2Schema {
 
         if (parametized.valueIsCollection()) {
             Type childCollection = createCollectionType("value", parametized.getValueTypeAsCollection(),
-                    visited, null, OPTIONAL);
+                    visited, OPTIONAL);
             return Types.map(repetition).key(nestedKey).value(childCollection).named(fieldName);
         }
         if (parametized.valueIsMap()) {
@@ -183,43 +181,51 @@ public class JavaRecord2Schema {
         if (nestedKey != null && nestedValue != null) {
             // TODO: what to change to support generation of older versions?
             return Types.map(repetition).key(nestedKey).value(nestedValue).named(fieldName);
-            // return ConversionPatterns.mapType(repetition, fieldName, "key_value",
-            // nestedKey, nestedValue);
         }
         throw new RecordTypeConversionException("Unsuported type in Map");
     }
 
     private Type buildTypeElement(Class<?> type, Set<Class<?>> visited, Repetition repetition, String name) {
-        PrimitiveTypeName primitiveKeyType = simpleTypeItems(type);
+        JavaType javaType = new JavaType(type);
+        PrimitiveTypeName primitiveKeyType = simpleTypeItems(javaType);
         if (primitiveKeyType != null) {
             return new PrimitiveType(repetition, primitiveKeyType, name);
-        } else if (type.getName().equals("java.lang.String")) {
+        }
+        if (javaType.isString()) {
             return Types.primitive(BINARY, repetition).as(stringType()).named(name);
-        } else if (type.isRecord()) {
+        }
+        if (javaType.isRecord()) {
             List<Type> childFields = buildCompositeChild(type, visited);
             return new GroupType(repetition, name, childFields);
-        } else if (type.isEnum()) {
+        }
+        if (javaType.isEnum()) {
             return Types.primitive(BINARY, repetition).as(enumType()).named(name);
-        } else if (type.getName().equals("java.util.UUID")) {
+        }
+        if (javaType.isUuid()) {
             return Types.primitive(FIXED_LEN_BYTE_ARRAY, repetition).as(uuidType())
                     .length(UUIDLogicalTypeAnnotation.BYTES)
                     .named(name);
-        } else {
-            // Generic types in first child are detected
         }
         throw new RecordTypeConversionException("Unsuported type " + type);
     }
 
-    private PrimitiveTypeName simpleTypeItems(Class<?> type) {
-        return switch (type.getName()) {
-        case "short", "java.lang.Short", "int", "java.lang.Integer" -> PrimitiveTypeName.INT32;
-        case "byte", "java.lang.Byte" -> PrimitiveTypeName.INT32;
-        case "long", "java.lang.Long" -> PrimitiveTypeName.INT64;
-        case "float", "java.lang.Float" -> PrimitiveTypeName.FLOAT;
-        case "double", "java.lang.Double" -> PrimitiveTypeName.DOUBLE;
-        case "boolean", "java.lang.Boolean" -> PrimitiveTypeName.BOOLEAN;
-        default -> null;
-        };
+    private PrimitiveTypeName simpleTypeItems(JavaType javaType) {
+        if (javaType.isInteger() || javaType.isShort() || javaType.isByte()) {
+            return PrimitiveTypeName.INT32;
+        }
+        if (javaType.isLong()) {
+            return PrimitiveTypeName.INT64;
+        }
+        if (javaType.isFloat()) {
+            return PrimitiveTypeName.FLOAT;
+        }
+        if (javaType.isDouble()) {
+            return PrimitiveTypeName.DOUBLE;
+        }
+        if (javaType.isBoolean()) {
+            return PrimitiveTypeName.BOOLEAN;
+        }
+        return null;
     }
 
     private void validateNotVisitedRecord(Class<?> recordClass, Set<Class<?>> visited) {

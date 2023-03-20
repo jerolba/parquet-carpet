@@ -16,6 +16,8 @@
 package com.jerolba.carpet.impl;
 
 import java.lang.reflect.RecordComponent;
+import java.util.Collection;
+import java.util.Map;
 
 public class JavaType {
 
@@ -81,6 +83,14 @@ public class JavaType {
 
     public boolean isRecord() {
         return type.isRecord();
+    }
+
+    public boolean isCollection() {
+        return Collection.class.isAssignableFrom(type);
+    }
+
+    public boolean isMap() {
+        return Map.class.isAssignableFrom(type);
     }
 
 }
