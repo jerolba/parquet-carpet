@@ -21,12 +21,14 @@ import static com.jerolba.carpet.impl.read.SingleLevelConverterFactory.createSin
 import static org.apache.parquet.schema.LogicalTypeAnnotation.listType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.mapType;
 
+import java.lang.reflect.RecordComponent;
 import java.util.function.Consumer;
 
 import org.apache.parquet.io.api.Converter;
 import org.apache.parquet.io.api.GroupConverter;
 import org.apache.parquet.schema.GroupType;
 import org.apache.parquet.schema.LogicalTypeAnnotation;
+import org.apache.parquet.schema.Type;
 import org.apache.parquet.schema.Type.Repetition;
 
 import com.jerolba.carpet.RecordTypeConversionException;
@@ -43,42 +45,40 @@ public class CarpetGroupConverter extends GroupConverter {
         this.constructor = new ConstructorParams(groupClass);
 
         GroupFieldsMapper mapper = new GroupFieldsMapper(groupClass);
-
         converters = new Converter[schema.getFields().size()];
         int cont = 0;
         for (var schemaField : schema.getFields()) {
             String name = schemaField.getName();
-            int index = mapper.getIndex(name);
             var recordComponent = mapper.getRecordComponent(name);
             if (recordComponent == null) {
                 throw new RecordTypeConversionException(
                         groupClass.getName() + " doesn't have an attribute called " + name);
             }
-            if (schemaField.isRepetition(Repetition.REPEATED)) {
-                converters[cont] = createSingleLevelConverter(schemaField, constructor, index, recordComponent);
-            } else if (schemaField.isPrimitive()) {
-                var factory = new PrimitiveConverterFactory(constructor, index, recordComponent);
-                converters[cont] = factory.buildConverters(schemaField);
-            } else {
-                GroupType asGroupType = schemaField.asGroupType();
-                LogicalTypeAnnotation logicalType = asGroupType.getLogicalTypeAnnotation();
-                if (listType().equals(logicalType)) {
-                    var parameterized = getParameterizedCollection(recordComponent);
-                    converters[cont] = new CarpetListConverter(asGroupType, parameterized,
-                            value -> constructor.c[index] = value);
-                } else if (mapType().equals(logicalType)) {
-                    var parameterized = getParameterizedMap(recordComponent);
-                    converters[cont] = new CarpetMapConverter(asGroupType, parameterized,
-                            value -> constructor.c[index] = value);
-                } else {
-                    Class<?> childClass = recordComponent.getType();
-                    Converter converter = new CarpetGroupConverter(asGroupType, childClass,
-                            value -> constructor.c[index] = value);
-                    converters[cont] = converter;
-                }
-            }
-            cont++;
+            converters[cont++] = converterFor(schemaField, constructor, mapper.getIndex(name), recordComponent);
         }
+    }
+
+    public static Converter converterFor(Type schemaField, ConstructorParams constructor, int index,
+            RecordComponent recordComponent) {
+
+        if (schemaField.isRepetition(Repetition.REPEATED)) {
+            return createSingleLevelConverter(schemaField, constructor, index, recordComponent);
+        }
+        if (schemaField.isPrimitive()) {
+            var factory = new PrimitiveConverterFactory(constructor, index, recordComponent);
+            return factory.buildConverters(schemaField);
+        }
+        GroupType asGroupType = schemaField.asGroupType();
+        LogicalTypeAnnotation logicalType = asGroupType.getLogicalTypeAnnotation();
+        if (listType().equals(logicalType)) {
+            var parameterized = getParameterizedCollection(recordComponent);
+            return new CarpetListConverter(asGroupType, parameterized, value -> constructor.c[index] = value);
+        }
+        if (mapType().equals(logicalType)) {
+            var parameterized = getParameterizedMap(recordComponent);
+            return new CarpetMapConverter(asGroupType, parameterized, value -> constructor.c[index] = value);
+        }
+        return new CarpetGroupConverter(asGroupType, recordComponent.getType(), value -> constructor.c[index] = value);
     }
 
     public Object getCurrentRecord() {
