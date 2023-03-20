@@ -43,24 +43,32 @@ import com.jerolba.carpet.impl.read.converter.UuidToUuidConverter;
 
 class PrimitiveConverterFactory {
 
-    public static Converter buildPrimitiveConverters(Type parquetField, ConstructorParams constructor,
-            int index, RecordComponent recordComponent) {
+    private final RecordComponent recordComponent;
+    private final ConstructorParams constructor;
+    private final JavaType type;
+    private final int index;
 
+    PrimitiveConverterFactory(ConstructorParams constructor, int index, RecordComponent recordComponent) {
+        this.recordComponent = recordComponent;
+        this.constructor = constructor;
+        this.index = index;
+        this.type = new JavaType(recordComponent);
+    }
+
+    public Converter buildConverters(Type parquetField) {
         PrimitiveTypeName type = parquetField.asPrimitiveType().getPrimitiveTypeName();
         return switch (type) {
-        case INT32, INT64 -> buildFromIntConverter(constructor, index, recordComponent);
-        case FLOAT, DOUBLE -> buildFromDecimalConverter(constructor, index, recordComponent);
-        case BOOLEAN -> buildFromBooleanConverter(constructor, index, recordComponent);
-        case BINARY -> buildFromBinaryConverter(constructor, index, recordComponent, parquetField);
-        case FIXED_LEN_BYTE_ARRAY -> buildFromByteArrayConverter(constructor, index, recordComponent, parquetField);
+        case INT32, INT64 -> buildFromIntConverter();
+        case FLOAT, DOUBLE -> buildFromDecimalConverter();
+        case BOOLEAN -> buildFromBooleanConverter();
+        case BINARY -> buildFromBinaryConverter(parquetField);
+        case FIXED_LEN_BYTE_ARRAY -> buildFromByteArrayConverter(parquetField);
         case INT96 -> throw new RecordTypeConversionException(type + " deserialization not supported");
         default -> throw new RecordTypeConversionException(type + " deserialization not supported");
         };
     }
 
-    private static Converter buildFromIntConverter(ConstructorParams constructor, int index,
-            RecordComponent recordComponent) {
-        JavaType type = new JavaType(recordComponent);
+    private Converter buildFromIntConverter() {
         if (type.isInteger()) {
             return new ToIntegerConverter(constructor, index);
         }
@@ -83,9 +91,7 @@ class PrimitiveConverterFactory {
                 type.getTypeName() + " not compatible with " + recordComponent.getName() + " field");
     }
 
-    private static Converter buildFromDecimalConverter(ConstructorParams constructor, int index,
-            RecordComponent recordComponent) {
-        JavaType type = new JavaType(recordComponent);
+    private Converter buildFromDecimalConverter() {
         if (type.isFloat()) {
             return new ToFloatConverter(constructor, index);
         }
@@ -96,9 +102,7 @@ class PrimitiveConverterFactory {
                 type.getTypeName() + " not compatible with " + recordComponent.getName() + " field");
     }
 
-    private static Converter buildFromBooleanConverter(ConstructorParams constructor, int index,
-            RecordComponent recordComponent) {
-        JavaType type = new JavaType(recordComponent);
+    private Converter buildFromBooleanConverter() {
         if (type.isBoolean()) {
             return new BooleanConverter(constructor, index);
         }
@@ -106,11 +110,9 @@ class PrimitiveConverterFactory {
                 type.getTypeName() + " not compatible with " + recordComponent.getName() + " field");
     }
 
-    private static Converter buildFromBinaryConverter(ConstructorParams constructor, int index,
-            RecordComponent recordComponent, Type schemaType) {
-        JavaType type = new JavaType(recordComponent);
-        LogicalTypeAnnotation logicalType = schemaType.getLogicalTypeAnnotation();
-        if (logicalType.equals(stringType())) {
+    private Converter buildFromBinaryConverter(Type parquetField) {
+        LogicalTypeAnnotation logicalType = parquetField.getLogicalTypeAnnotation();
+        if (stringType().equals(logicalType)) {
             if (type.isString()) {
                 return new StringConverter(constructor, index);
             }
@@ -119,7 +121,7 @@ class PrimitiveConverterFactory {
             }
             throw new RecordTypeConversionException(type.getTypeName() + " not compatible with String field");
         }
-        if (logicalType.equals(enumType())) {
+        if (enumType().equals(logicalType)) {
             if (type.isString()) {
                 return new StringConverter(constructor, index);
             }
@@ -129,14 +131,10 @@ class PrimitiveConverterFactory {
                 type.getTypeName() + " not compatible with " + recordComponent.getName() + " field");
     }
 
-    private static Converter buildFromByteArrayConverter(ConstructorParams constructor, int index,
-            RecordComponent recordComponent, Type parquetField) {
-
-        LogicalTypeAnnotation logicalType = parquetField.getLogicalTypeAnnotation();
-        if (!logicalType.equals(uuidType())) {
+    private Converter buildFromByteArrayConverter(Type parquetField) {
+        if (!uuidType().equals(parquetField.getLogicalTypeAnnotation())) {
             throw new RecordTypeConversionException(parquetField + " deserialization not supported");
         }
-        JavaType type = new JavaType(recordComponent);
         if (type.isString()) {
             return new UuidToStringConverter(constructor, index);
         }

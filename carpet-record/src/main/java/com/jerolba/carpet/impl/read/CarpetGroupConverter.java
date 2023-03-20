@@ -17,7 +17,6 @@ package com.jerolba.carpet.impl.read;
 
 import static com.jerolba.carpet.impl.Parameterized.getParameterizedCollection;
 import static com.jerolba.carpet.impl.Parameterized.getParameterizedMap;
-import static com.jerolba.carpet.impl.read.PrimitiveConverterFactory.buildPrimitiveConverters;
 import static com.jerolba.carpet.impl.read.SingleLevelConverterFactory.createSingleLevelConverter;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.listType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.mapType;
@@ -58,7 +57,8 @@ public class CarpetGroupConverter extends GroupConverter {
             if (schemaField.isRepetition(Repetition.REPEATED)) {
                 converters[cont] = createSingleLevelConverter(schemaField, constructor, index, recordComponent);
             } else if (schemaField.isPrimitive()) {
-                converters[cont] = buildPrimitiveConverters(schemaField, constructor, index, recordComponent);
+                var factory = new PrimitiveConverterFactory(constructor, index, recordComponent);
+                converters[cont] = factory.buildConverters(schemaField);
             } else {
                 GroupType asGroupType = schemaField.asGroupType();
                 LogicalTypeAnnotation logicalType = asGroupType.getLogicalTypeAnnotation();
