@@ -77,19 +77,10 @@ public class JavaRecord2Schema {
             boolean notNull = type.isPrimitive() || isNotNull(attr);
             Repetition repetition = notNull ? REQUIRED : OPTIONAL;
             JavaType javaType = new JavaType(type);
-            PrimitiveTypeName primitiveType = simpleTypeItems(javaType);
-            if (primitiveType != null) {
-                fields.add(new PrimitiveType(repetition, primitiveType, fieldName));
-            } else if (javaType.isString()) {
-                fields.add(Types.primitive(BINARY, repetition).as(stringType()).named(fieldName));
-            } else if (javaType.isRecord()) {
-                List<Type> childFields = buildCompositeChild(type, visited);
-                fields.add(new GroupType(repetition, fieldName, childFields));
-            } else if (javaType.isEnum()) {
-                fields.add(Types.primitive(BINARY, repetition).as(enumType()).named(fieldName));
-            } else if (javaType.isUuid()) {
-                fields.add(Types.primitive(FIXED_LEN_BYTE_ARRAY, repetition).as(uuidType())
-                        .length(UUIDLogicalTypeAnnotation.BYTES).named(fieldName));
+
+            Type parquetType = buildType(type, visited, repetition, fieldName);
+            if (parquetType != null) {
+                fields.add(parquetType);
             } else if (javaType.isCollection()) {
                 var parameterizedCollection = getParameterizedCollection(attr);
                 fields.add(createCollectionType(fieldName, parameterizedCollection, visited, repetition));
@@ -186,10 +177,18 @@ public class JavaRecord2Schema {
     }
 
     private Type buildTypeElement(Class<?> type, Set<Class<?>> visited, Repetition repetition, String name) {
+        Type parquetType = buildType(type, visited, repetition, name);
+        if (parquetType == null) {
+            throw new RecordTypeConversionException("Unsuported type " + type);
+        }
+        return parquetType;
+    }
+
+    private Type buildType(Class<?> type, Set<Class<?>> visited, Repetition repetition, String name) {
         JavaType javaType = new JavaType(type);
-        PrimitiveTypeName primitiveKeyType = simpleTypeItems(javaType);
-        if (primitiveKeyType != null) {
-            return new PrimitiveType(repetition, primitiveKeyType, name);
+        PrimitiveTypeName primitiveType = simpleTypeItems(javaType);
+        if (primitiveType != null) {
+            return new PrimitiveType(repetition, primitiveType, name);
         }
         if (javaType.isString()) {
             return Types.primitive(BINARY, repetition).as(stringType()).named(name);
@@ -206,7 +205,7 @@ public class JavaRecord2Schema {
                     .length(UUIDLogicalTypeAnnotation.BYTES)
                     .named(name);
         }
-        throw new RecordTypeConversionException("Unsuported type " + type);
+        return null;
     }
 
     private PrimitiveTypeName simpleTypeItems(JavaType javaType) {

@@ -29,7 +29,6 @@ public class SimpleCollectionItemConsumerFactory {
     public static BiConsumer<RecordConsumer, Object> buildSimpleElementConsumer(Class<?> javaType,
             RecordConsumer recordConsumer, CarpetWriteConfiguration carpetConfiguration) {
 
-        BiConsumer<RecordConsumer, Object> elemConsumer = null;
         JavaType type = new JavaType(javaType);
         if (type.isInteger()) {
             return (consumer, v) -> consumer.addInteger((Integer) v);
@@ -67,6 +66,6 @@ public class SimpleCollectionItemConsumerFactory {
                 consumer.endGroup();
             };
         }
-        return elemConsumer;
+        return null;
     }
 }
