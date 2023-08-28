@@ -89,7 +89,7 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
 
     /**
      *
-     * Writes the specified collection of Java objects to a Parquet file.
+     * Writes the specified Java object to a Parquet file
      *
      * @param value object to write
      * @throws IOException if an error occurs while writing the records
@@ -100,8 +100,7 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
 
     /**
      *
-     * Writes the specified collection of Java objects to a Parquet file
-     * implementing Consumer<T>
+     * Writes the specified Java object to a Parquet file implementing Consumer<T>
      *
      * @param value object to write
      * @throws UncheckedIOException if an error occurs while writing the records
