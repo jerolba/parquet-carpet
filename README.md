@@ -1,3 +1,7 @@
+[![Build Status](https://github.com/jerolba/parquet-carpet/actions/workflows/build-gradle-project.yml/badge.svg)](https://github.com/jerolba/parquet-carpet/actions)
+[![Maven Central](https://img.shields.io/maven-central/v/com.jerolba/carpet-record.svg)](https://maven-badges.herokuapp.com/maven-central/com.jerolba/carpet-record)
+[![License](http://img.shields.io/:license-apache-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
+
 # Carpet: Parquet Serialization and Deserialization Library for Java
 
 A Java library for serializing and deserializing Parquet files efficiently using Java records. This library provides a simple and user-friendly API for working with Parquet files, making it easy to read and write data in the Parquet format in your Java applications.
@@ -17,18 +21,8 @@ A Java library for serializing and deserializing Parquet files efficiently using
 ## Table of Contents
 
 - [Installation](#installation)
-- [Usage](#basic-usage)
+- [Basic Usage](#basic-usage)
 - [Advanced Usage](#advanced-usage)
-    - [CarpetWriter API](#carpetwriter-api)
-    - [CarpetReader API](#carpetreader-api)
-    - [Column name mapping](#column-name-mapping)
-    - [Supported types](#supported-types)
-    - [Projections](#projections)
-    - [Nullability](#nullability)
-    - [Read schema mismatch](#read-schema-mismatch)
-    - [Parquet configuration tunning](#parquet-configuration-tunning)
-    - [Low level Parquet classes](#low-level-parquet-classes)
-    - [Local file system files](#local-file-system-files)
 - [Contribute](#contribute)
 - [License](#license)
 
@@ -586,6 +580,23 @@ InputFile inputFile = new FileSystemOutputFile(new File("my_file.parquet"));
 InputFile outputFile = new FileSystemInputFile(new File("my_file.parquet"));
 ```
 
+## Build
+
+To run the unit tests:
+
+```bash
+./gradlew test
+```
+
+To build the jars:
+
+```bash
+./gradlew assemble
+```
+
+The build runs in [GitHub Actions](https://github.com/jerolba/parquet-carpet/actions):
+
+[![Build Status](https://github.com/jerolba/parquet-carpet/actions/workflows/build-gradle-project.yml/badge.svg)](https://github.com/jerolba/parquet-carpet/actions)
 
 ## Contribute
 Feel free to dive in! [Open an issue](https://github.com/jerolba/parquet-carpet/issues/new) or submit PRs.
