@@ -38,12 +38,12 @@ class CountedPositionOutputStream extends PositionOutputStream {
     @Override
     public void flush() throws IOException {
         bos.flush();
-    };
+    }
 
     @Override
     public void close() throws IOException {
         bos.close();
-    };
+    }
 
     @Override
     public void write(int b) throws IOException {
