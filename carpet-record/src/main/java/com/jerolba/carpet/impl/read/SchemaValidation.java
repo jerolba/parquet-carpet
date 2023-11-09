@@ -47,8 +47,8 @@ public class SchemaValidation {
 
     public boolean validateMissingColumn(String name, ColumnPath column) {
         if (failOnMissingColumn) {
-            throw new CarpetMissingColumnException("Field '" + column.getFieldName() + "' not found in class '"
-                    + column.getClassName() + "' mapping column '" + column.path() + "'");
+            throw new CarpetMissingColumnException("Field '" + column.getFieldName() + "' from class '"
+                    + column.getClassName() + "' not present in parquet schema");
         }
         return true;
     }
@@ -99,7 +99,7 @@ public class SchemaValidation {
         }
         if (!failNarrowingPrimitiveConversion) {
             if (type.isInteger() || type.isDouble() || type.isFloat() || type.isShort() || type.isByte()) {
-                return false;
+                return true;
             }
         }
         return throwInvalidConversionException(primitiveType, type);
