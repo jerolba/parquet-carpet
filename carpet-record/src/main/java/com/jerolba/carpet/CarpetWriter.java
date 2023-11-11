@@ -39,6 +39,15 @@ import com.jerolba.carpet.io.OutputStreamOutputFile;
  * A Parquet file writer for writing java records of type T to a file or output
  * stream. The writer is also a consumer that can be used with Java 8 streams.
  *
+ * Creates a ParquetWriter with this configuration:
+ *
+ * <pre>{@code
+ * .withWriteMode(Mode.OVERWRITE)
+ * .withWriterVersion(WriterVersion.PARQUET_2_0)
+ * .withCompressionCodec(CompressionCodecName.SNAPPY)
+ *
+ * }</pre>
+ *
  * @param <T> The type of records to write.
  */
 public class CarpetWriter<T> implements Closeable, Consumer<T> {
@@ -141,6 +150,7 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
         public Builder(OutputFile path, Class<T> recordClass) {
             builder = CarpetParquetWriter.builder(path, recordClass)
                     .withWriteMode(Mode.OVERWRITE)
+                    .withWriterVersion(WriterVersion.PARQUET_2_0)
                     .withCompressionCodec(CompressionCodecName.SNAPPY);
         }
 
