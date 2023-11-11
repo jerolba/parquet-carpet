@@ -18,6 +18,7 @@ package com.jerolba.carpet.reader;
 import static org.apache.parquet.schema.ConversionPatterns.listOfElements;
 import static org.apache.parquet.schema.ConversionPatterns.listType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.enumType;
+import static org.apache.parquet.schema.LogicalTypeAnnotation.intType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.stringType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.uuidType;
 import static org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName.BINARY;
@@ -134,6 +135,27 @@ class SchemaFilterTest {
         }
 
         @Test
+        void castToShortIsSupportedWithLogicalTypeInt16() {
+            Type field = Types.primitive(PrimitiveTypeName.INT32, REQUIRED)
+                    .as(intType(16, true))
+                    .named("value");
+            GroupType groupType = new MessageType("foo", field);
+
+            record PrimitiveShort(short value) {
+            }
+            record ObjectShort(Short value) {
+            }
+
+            SchemaFilter filterStrict = new SchemaFilter(strictNumericConfig, groupType);
+            assertEquals(groupType, filterStrict.project(PrimitiveShort.class));
+            assertEquals(groupType, filterStrict.project(ObjectShort.class));
+
+            SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, groupType);
+            assertEquals(groupType, filterNonStrict.project(PrimitiveShort.class));
+            assertEquals(groupType, filterNonStrict.project(ObjectShort.class));
+        }
+
+        @Test
         void castToByteIsSupportedIfStrictNotActive() {
             Type field = new PrimitiveType(REQUIRED, PrimitiveTypeName.INT32, "value");
             GroupType groupType = new MessageType("foo", field);
@@ -146,6 +168,27 @@ class SchemaFilterTest {
             SchemaFilter filterStrict = new SchemaFilter(strictNumericConfig, groupType);
             assertThrows(RecordTypeConversionException.class, () -> filterStrict.project(PrimitiveByte.class));
             assertThrows(RecordTypeConversionException.class, () -> filterStrict.project(ObjectByte.class));
+
+            SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, groupType);
+            assertEquals(groupType, filterNonStrict.project(PrimitiveByte.class));
+            assertEquals(groupType, filterNonStrict.project(ObjectByte.class));
+        }
+
+        @Test
+        void castToByteIsSupportedWithLogicalTypeInt8() {
+            Type field = Types.primitive(PrimitiveTypeName.INT32, REQUIRED)
+                    .as(intType(8, true))
+                    .named("value");
+            GroupType groupType = new MessageType("foo", field);
+
+            record PrimitiveByte(byte value) {
+            }
+            record ObjectByte(Byte value) {
+            }
+
+            SchemaFilter filterStrict = new SchemaFilter(strictNumericConfig, groupType);
+            assertEquals(groupType, filterStrict.project(PrimitiveByte.class));
+            assertEquals(groupType, filterStrict.project(ObjectByte.class));
 
             SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, groupType);
             assertEquals(groupType, filterNonStrict.project(PrimitiveByte.class));

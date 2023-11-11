@@ -17,6 +17,7 @@ package com.jerolba.carpet.impl.read;
 
 import static com.jerolba.carpet.impl.NotNullField.isNotNull;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.enumType;
+import static org.apache.parquet.schema.LogicalTypeAnnotation.intType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.stringType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.uuidType;
 
@@ -24,6 +25,7 @@ import java.lang.reflect.RecordComponent;
 
 import org.apache.parquet.schema.GroupType;
 import org.apache.parquet.schema.LogicalTypeAnnotation;
+import org.apache.parquet.schema.LogicalTypeAnnotation.IntLogicalTypeAnnotation;
 import org.apache.parquet.schema.PrimitiveType;
 import org.apache.parquet.schema.Type;
 import org.apache.parquet.schema.Type.Repetition;
@@ -33,6 +35,9 @@ import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.impl.JavaType;
 
 public class SchemaValidation {
+
+    private static final IntLogicalTypeAnnotation INT8 = intType(8, true);
+    private static final IntLogicalTypeAnnotation INT16 = intType(16, true);
 
     private final boolean failNarrowingPrimitiveConversion;
     private final boolean failOnMissingColumn;
@@ -87,6 +92,16 @@ public class SchemaValidation {
         }
         if (!failNarrowingPrimitiveConversion) {
             if (type.isFloat() || type.isShort() || type.isByte()) {
+                return true;
+            }
+        }
+
+        LogicalTypeAnnotation logicalTypeAnnotation = primitiveType.getLogicalTypeAnnotation();
+        if (logicalTypeAnnotation != null) {
+            if (type.isShort() && logicalTypeAnnotation.equals(INT16)) {
+                return true;
+            }
+            if (type.isByte() && logicalTypeAnnotation.equals(INT8)) {
                 return true;
             }
         }

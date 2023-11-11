@@ -66,8 +66,8 @@ class JavaRecord2SchemaTest {
                   required int32 intValue;
                   required float floatValue;
                   required double doubleValue;
-                  required int32 shortValue;
-                  required int32 byteValue;
+                  required int32 shortValue (INTEGER(16,true));
+                  required int32 byteValue (INTEGER(8,true));
                   required boolean booleanValue;
                 }
                 """;
@@ -87,8 +87,8 @@ class JavaRecord2SchemaTest {
                   optional int32 intValue;
                   optional float floatValue;
                   optional double doubleValue;
-                  optional int32 shortValue;
-                  optional int32 byteValue;
+                  optional int32 shortValue (INTEGER(16,true));
+                  optional int32 byteValue (INTEGER(8,true));
                   optional boolean booleanValue;
                 }
                 """;
@@ -566,7 +566,7 @@ class JavaRecord2SchemaTest {
         private final JavaRecord2Schema schemaFactory = new JavaRecord2Schema(threeLevel);
 
         @Test
-        void nestedSimpleTypeCollection() {
+        void nestedIntegerCollection() {
             record SimpleTypeCollection(String id, List<Integer> values) {
             }
 
@@ -577,6 +577,120 @@ class JavaRecord2SchemaTest {
                       optional group values (LIST) {
                         repeated group list {
                           optional int32 element;
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedLongCollection() {
+            record SimpleTypeCollection(String id, List<Long> values) {
+            }
+
+            MessageType schema = schemaFactory.createSchema(SimpleTypeCollection.class);
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated group list {
+                          optional int64 element;
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedFloatCollection() {
+            record SimpleTypeCollection(String id, List<Float> values) {
+            }
+
+            MessageType schema = schemaFactory.createSchema(SimpleTypeCollection.class);
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated group list {
+                          optional float element;
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedDoubleCollection() {
+            record SimpleTypeCollection(String id, List<Double> values) {
+            }
+
+            MessageType schema = schemaFactory.createSchema(SimpleTypeCollection.class);
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated group list {
+                          optional double element;
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedBooleanCollection() {
+            record SimpleTypeCollection(String id, List<Boolean> values) {
+            }
+
+            MessageType schema = schemaFactory.createSchema(SimpleTypeCollection.class);
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated group list {
+                          optional boolean element;
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedShortCollection() {
+            record SimpleTypeCollection(String id, List<Short> values) {
+            }
+
+            MessageType schema = schemaFactory.createSchema(SimpleTypeCollection.class);
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated group list {
+                          optional int32 element (INTEGER(16,true));
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedByteCollection() {
+            record SimpleTypeCollection(String id, List<Byte> values) {
+            }
+
+            MessageType schema = schemaFactory.createSchema(SimpleTypeCollection.class);
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated group list {
+                          optional int32 element (INTEGER(8,true));
                         }
                       }
                     }

@@ -20,6 +20,7 @@ import static com.jerolba.carpet.impl.NotNullField.isNotNull;
 import static com.jerolba.carpet.impl.Parameterized.getParameterizedCollection;
 import static com.jerolba.carpet.impl.Parameterized.getParameterizedMap;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.enumType;
+import static org.apache.parquet.schema.LogicalTypeAnnotation.intType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.stringType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.uuidType;
 import static org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName.BINARY;
@@ -186,9 +187,9 @@ public class JavaRecord2Schema {
 
     private Type buildType(Class<?> type, Set<Class<?>> visited, Repetition repetition, String name) {
         JavaType javaType = new JavaType(type);
-        PrimitiveTypeName primitiveType = simpleTypeItems(javaType);
+        PrimitiveType primitiveType = simpleTypeItems(javaType, repetition, name);
         if (primitiveType != null) {
-            return new PrimitiveType(repetition, primitiveType, name);
+            return primitiveType;
         }
         if (javaType.isString()) {
             return Types.primitive(BINARY, repetition).as(stringType()).named(name);
@@ -208,21 +209,27 @@ public class JavaRecord2Schema {
         return null;
     }
 
-    private PrimitiveTypeName simpleTypeItems(JavaType javaType) {
-        if (javaType.isInteger() || javaType.isShort() || javaType.isByte()) {
-            return PrimitiveTypeName.INT32;
+    private PrimitiveType simpleTypeItems(JavaType javaType, Repetition repetition, String name) {
+        if (javaType.isInteger()) {
+            return new PrimitiveType(repetition, PrimitiveTypeName.INT32, name);
         }
         if (javaType.isLong()) {
-            return PrimitiveTypeName.INT64;
+            return new PrimitiveType(repetition, PrimitiveTypeName.INT64, name);
         }
         if (javaType.isFloat()) {
-            return PrimitiveTypeName.FLOAT;
+            return new PrimitiveType(repetition, PrimitiveTypeName.FLOAT, name);
         }
         if (javaType.isDouble()) {
-            return PrimitiveTypeName.DOUBLE;
+            return new PrimitiveType(repetition, PrimitiveTypeName.DOUBLE, name);
         }
         if (javaType.isBoolean()) {
-            return PrimitiveTypeName.BOOLEAN;
+            return new PrimitiveType(repetition, PrimitiveTypeName.BOOLEAN, name);
+        }
+        if (javaType.isShort()) {
+            return Types.primitive(PrimitiveTypeName.INT32, repetition).as(intType(16, true)).named(name);
+        }
+        if (javaType.isByte()) {
+            return Types.primitive(PrimitiveTypeName.INT32, repetition).as(intType(8, true)).named(name);
         }
         return null;
     }
