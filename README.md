@@ -506,7 +506,7 @@ record MyRecord(int id, float value) { }
 
 Carpet will cast numeric types using [Narrowing Primitive Conversion](https://docs.oracle.com/javase/specs/jls/se10/html/jls-5.html) rules from Java.
 
-If you want to ensure that the application fails if a type is converted, you can enable the flag `FailNarrowingPrimitiveConversion`:
+If you want to ensure that the application fails if a type is converted to a narrow value, you can enable the flag `FailNarrowingPrimitiveConversion`:
 
 ```java
 List<MyRecord> data = new CarpetReader<>(file, MyRecord.class)
@@ -518,7 +518,7 @@ By default, `FailNarrowingPrimitiveConversion` value is false.
 
 ### Parquet configuration tunning
 
-Default `CarpetWriter` constructors cover default `ParquetWriter` configuration. You can customize Parquet configuration using CarpetWriter Builder, that exposes all configuration methods if you need to tune it (compression, sizes, hadoop usage, etc).
+Default `CarpetWriter` constructors cover default `ParquetWriter` configuration. You can customize Parquet configuration using `CarpetWriter.Builder`, that exposes all configuration methods if you need to tune it (compression, sizes, hadoop usage, etc).
 
 ```java
 List<MyRecord> data = calculateDataToPersist();
@@ -538,7 +538,7 @@ try (OutputStream outputStream = new FileOutputStream("my_file.parquet")) {
 
 Carpet is built on top of [parquet-mr](https://github.com/apache/parquet-mr/) library and supports creating a `ParquetWriter` and `ParquetReader`, and use it with third party libraries that work with parquet classes.
 
-#### Serialization
+#### ParquetWriter
 
 ```java
 List<MyRecord> data = calculateDataToPersist();
@@ -556,7 +556,7 @@ try (ParquetWriter<MyRecord> writer = CarpetParquetWriter.builder(outputFile, My
 }
 ```
 
-#### Deserialization
+#### ParquetReader
 
 ```java
 Path path = new org.apache.hadoop.fs.Path("my_file.parquet");
