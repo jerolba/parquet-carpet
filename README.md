@@ -24,6 +24,7 @@ A Java library for serializing and deserializing Parquet files efficiently using
 - [Basic Usage](#basic-usage)
 - [Advanced Usage](#advanced-usage)
 - [Contribute](#contribute)
+- [Build](#build)
 - [License](#license)
 
 ## Installation
@@ -34,14 +35,14 @@ You can include this library in your Java project using Maven:
 <dependency>
     <groupId>com.jerolba</groupId>
     <artifactId>carpet-record</artifactId>
-    <version>0.0.6</version>
+    <version>0.0.7</version>
 </dependency>
 ```
 
 or using Gradle:
 
 ```gradle
-implementation 'com.jerolba:carpet-record:0.0.6'
+implementation 'com.jerolba:carpet-record:0.0.7'
 ```
 
 Carpet includes only the essential transitive dependencies required for file read and write operations.
