@@ -69,7 +69,8 @@ dependencies {
         exclude group: 'org.slf4j', module: 'slf4j-log4j12'
         exclude group: 'log4j', module: 'log4j'    
         exclude group: 'com.jcraft', module: 'jsch'
-        exclude group: 'dnsjava', module: 'dnsjava'        
+        exclude group: 'dnsjava', module: 'dnsjava'
+        exclude group: 'com.github.pjfanning', module: 'jersey-json'        
 
         exclude group: 'org.apache.kerby', module: 'kerb-simplekdc'
         exclude group: 'com.nimbusds', module: 'nimbus-jose-jwt'
