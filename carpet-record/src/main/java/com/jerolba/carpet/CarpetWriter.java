@@ -43,7 +43,6 @@ import com.jerolba.carpet.io.OutputStreamOutputFile;
  *
  * <pre>{@code
  * .withWriteMode(Mode.OVERWRITE)
- * .withWriterVersion(WriterVersion.PARQUET_2_0)
  * .withCompressionCodec(CompressionCodecName.SNAPPY)
  *
  * }</pre>
@@ -150,7 +149,6 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
         public Builder(OutputFile path, Class<T> recordClass) {
             builder = CarpetParquetWriter.builder(path, recordClass)
                     .withWriteMode(Mode.OVERWRITE)
-                    .withWriterVersion(WriterVersion.PARQUET_2_0)
                     .withCompressionCodec(CompressionCodecName.SNAPPY);
         }
 
