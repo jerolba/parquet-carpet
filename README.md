@@ -1,6 +1,7 @@
 [![Build Status](https://github.com/jerolba/parquet-carpet/actions/workflows/build-gradle-project.yml/badge.svg)](https://github.com/jerolba/parquet-carpet/actions)
 [![Maven Central](https://img.shields.io/maven-central/v/com.jerolba/carpet-record.svg)](https://maven-badges.herokuapp.com/maven-central/com.jerolba/carpet-record)
 [![License](http://img.shields.io/:license-apache-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
+[![javadoc](https://javadoc.io/badge2/com.jerolba/carpet-record/javadoc.svg)](https://javadoc.io/doc/com.jerolba/carpet-record)
 
 # Carpet: Parquet Serialization and Deserialization Library for Java
 
