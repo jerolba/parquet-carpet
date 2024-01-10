@@ -31,7 +31,8 @@ dependencies {
         exclude group: 'com.google.protobuf', module: 'protobuf-java'
         exclude group: 'javax.ws.rs', module: 'javax.ws.rs-api'
         exclude group: 'org.slf4j', module: 'slf4j-log4j12'
-        exclude group: 'org.slf4j', module: 'slf4j-reload4j'          
+        exclude group: 'org.slf4j', module: 'slf4j-reload4j'       
+        exclude group: 'org.apache.avro', module: 'avro'   
     } 
     api("org.apache.hadoop:hadoop-common:${hadoopVersion}") {
         exclude group: 'org.apache.avro', module: 'avro'
@@ -138,7 +139,7 @@ configurations.implementation {
     exclude group: 'log4j', module: 'log4j'    
     exclude group: 'com.jcraft', module: 'jsch'
     exclude group: 'dnsjava', module: 'dnsjava'
-
+    
     //Following dependencies excluded from included hadoop-auth
     exclude group: 'org.apache.kerby', module: 'kerb-simplekdc'
     exclude group: 'com.nimbusds', module: 'nimbus-jose-jwt'
