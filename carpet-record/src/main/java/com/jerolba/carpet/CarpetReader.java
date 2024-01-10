@@ -120,7 +120,7 @@ public class CarpetReader<T> implements Iterable<T> {
      *
      * Feature is disabled by default.
      *
-     * @param failNarrowingPrimitiveConversion
+     * @param value
      * @return a new instance of CarpetReader
      */
     public CarpetReader<T> withFailNarrowingPrimitiveConversion(boolean value) {

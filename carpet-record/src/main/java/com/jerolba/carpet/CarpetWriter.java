@@ -69,8 +69,8 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
      * Constructs a CarpetWriter that writes records of type T to the specified
      * OutputStream.
      *
-     * @param path        The output file to write to.
-     * @param recordClass The class of the records to write.
+     * @param outputSrream An OutputStream to write to, of any type.
+     * @param recordClass  The class of the records to write.
      * @throws IOException If an I/O error occurs while creating the Parquet writer.
      */
     public CarpetWriter(OutputStream outputSrream, Class<T> recordClass) throws IOException {
