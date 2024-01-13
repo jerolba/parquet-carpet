@@ -2261,4 +2261,23 @@ class SchemaFilterTest {
 
     }
 
+    @Nested
+    class GroupToMapConversion {
+
+        @Test
+        void compositeChild() {
+            Type field1 = Types.primitive(BINARY, OPTIONAL).as(stringType()).named("name");
+            Type childField1 = Types.primitive(BINARY, OPTIONAL).as(stringType()).named("id");
+            Type childField2 = new PrimitiveType(REQUIRED, PrimitiveTypeName.INT32, "age");
+            GroupType childGroupType = new GroupType(OPTIONAL, "child", childField1, childField2);
+            GroupType groupType = new MessageType("foo", field1, childGroupType);
+
+            record CompositeMain(String name, Map<String, Object> child) {
+            }
+
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+            assertEquals(groupType, filter.project(CompositeMain.class));
+        }
+
+    }
 }

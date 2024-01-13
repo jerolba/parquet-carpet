@@ -118,9 +118,25 @@ public class SchemaFilter {
 
                 GroupType recordSchema = recordFilter.filter(recordComponent.getType(), column);
                 inProjection.put(name, recordSchema);
-            } else {
-                throw new RecordTypeConversionException(recordComponent.getType().getName() + " is not a Java Record");
+                continue;
             }
+            if (Map.class.isAssignableFrom(recordComponent.getType())) {
+                var parameterized = getParameterizedMap(recordComponent);
+                if (parameterized.getKeyActualType().equals(String.class)) {
+                    if (parameterized.getValueActualType().equals(Object.class)) {
+                        validation.validateNullability(parquetType, recordComponent);
+                        inProjection.put(name, parquetType);
+                        continue;
+                    } else {
+                        throw new RecordTypeConversionException(
+                                "To map record to Map, values must be Object: Map<String, Object>");
+                    }
+                } else {
+                    throw new RecordTypeConversionException(
+                            "To map record to Map, keys must be String: Map<String, Object>");
+                }
+            }
+            throw new RecordTypeConversionException(recordComponent.getType().getName() + " is not a Java Record");
         }
         List<Type> projection = schema.getFields().stream()
                 .filter(f -> inProjection.containsKey(f.getName()))
