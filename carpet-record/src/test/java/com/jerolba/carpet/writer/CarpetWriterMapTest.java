@@ -442,14 +442,33 @@ class CarpetWriterMapTest {
     }
 
     @Test
-    void emptyNestedListIsNotSupported() throws IOException {
+    void emptyNestedListIsSupported() throws IOException {
 
         record EmptyNestedCollection(String name, Map<String, List<String>> ids) {
         }
 
         var rec = new EmptyNestedCollection("foo", Map.of("key", List.of()));
         var writerTest = new ParquetWriterTest<>(EmptyNestedCollection.class);
-        assertThrows(ParquetEncodingException.class, () -> writerTest.write(rec));
+        writerTest.write(rec);
+
+        var carpetReader = writerTest.getCarpetReader();
+        assertEquals(rec, carpetReader.read());
+    }
+
+    @Test
+    void nullNestedListIsSupported() throws IOException {
+
+        record EmptyNestedCollection(String name, Map<String, List<String>> ids) {
+        }
+
+        Map<String, List<String>> nullValue = new HashMap<>();
+        nullValue.put("key", null);
+        var rec = new EmptyNestedCollection("foo", nullValue);
+        var writerTest = new ParquetWriterTest<>(EmptyNestedCollection.class);
+        writerTest.write(rec);
+
+        var carpetReader = writerTest.getCarpetReader();
+        assertEquals(rec, carpetReader.read());
     }
 
     // Map.of doesn't support null values

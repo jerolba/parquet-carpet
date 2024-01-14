@@ -15,9 +15,9 @@
  */
 package com.jerolba.carpet.writer;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -29,7 +29,6 @@ import java.util.Set;
 import org.apache.avro.generic.GenericData.Array;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.util.Utf8;
-import org.apache.parquet.io.ParquetEncodingException;
 import org.junit.jupiter.api.Test;
 
 import com.jerolba.carpet.ParquetWriterTest;
@@ -206,7 +205,7 @@ public class CarpetWriterCollectionThreeLevelTest {
     }
 
     @Test
-    void emptyCollectionIsTransformedToNull() throws IOException {
+    void emptyCollectionIsTransformedToEmptyCollection() throws IOException {
 
         record EmptyCollection(String name, List<Integer> ids) {
         }
@@ -218,22 +217,45 @@ public class CarpetWriterCollectionThreeLevelTest {
         var avroReader = writerTest.getAvroGenericRecordReader();
         GenericRecord avroRecord = avroReader.read();
         assertEquals(rec.name(), avroRecord.get("name").toString());
-        assertNull(avroRecord.get("ids"));
+        assertEquals(avroRecord.get("ids"), emptyList());
 
         var carpetReader = writerTest.getCarpetReader();
-        EmptyCollection expectedNullList = new EmptyCollection("foo", null);
+        EmptyCollection expectedNullList = new EmptyCollection("foo", emptyList());
         assertEquals(expectedNullList, carpetReader.read());
     }
 
     @Test
-    void emptyNestedCollectionIsNotSupported() throws IOException {
+    void emptyNestedCollectionAreNotSupported() throws IOException {
 
         record EmptyNestedCollection(String name, List<List<Integer>> ids) {
         }
 
         var rec = new EmptyNestedCollection("foo", List.of(List.of()));
         var writerTest = new ParquetWriterTest<>(EmptyNestedCollection.class);
-        assertThrows(ParquetEncodingException.class, () -> writerTest.write(rec));
+        writerTest.write(rec);
+
+        var carpetReader = writerTest.getCarpetReader();
+        EmptyNestedCollection expected = new EmptyNestedCollection("foo", List.of(List.of()));
+        assertEquals(expected, carpetReader.read());
+    }
+
+    @Test
+    void mixedCollection() throws IOException {
+
+        record WithCollection(String name, List<Integer> ids) {
+        }
+
+        var writerTest = new ParquetWriterTest<>(WithCollection.class);
+        writerTest.write(new WithCollection("foo", null),
+                new WithCollection("bar", List.of()),
+                new WithCollection("baz", List.of(1, 2, 3)),
+                new WithCollection("baz", asList(1, null, 3)));
+
+        var carpetReader = writerTest.getCarpetReader();
+        assertEquals(new WithCollection("foo", null), carpetReader.read());
+        assertEquals(new WithCollection("bar", List.of()), carpetReader.read());
+        assertEquals(new WithCollection("baz", List.of(1, 2, 3)), carpetReader.read());
+        assertEquals(new WithCollection("baz", asList(1, null, 3)), carpetReader.read());
     }
 
     @Test
