@@ -64,9 +64,11 @@ public class ThreeLevelStructureWriter {
         var innerStructureWriter = elemConsumer;
         return value -> {
             Collection<?> coll = (Collection<?>) value;
-            if (coll != null && !coll.isEmpty()) {
+            if (coll != null) {
                 recordConsumer.startGroup();
-                writeGroupElement(innerStructureWriter, coll);
+                if (!coll.isEmpty()) {
+                    writeGroupElement(innerStructureWriter, coll);
+                }
                 recordConsumer.endGroup();
             }
         };
@@ -90,10 +92,12 @@ public class ThreeLevelStructureWriter {
         @Override
         public void accept(Object object) {
             Collection<?> value = (Collection<?>) accesor.apply(object);
-            if (value != null && !value.isEmpty()) {
+            if (value != null) {
                 recordConsumer.startField(fieldName, idx);
                 recordConsumer.startGroup();
-                writeGroupElement(innerStructureWriter, value);
+                if (!value.isEmpty()) {
+                    writeGroupElement(innerStructureWriter, value);
+                }
                 recordConsumer.endGroup();
                 recordConsumer.endField(fieldName, idx);
             }
