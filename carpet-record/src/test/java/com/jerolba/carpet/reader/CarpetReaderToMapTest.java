@@ -309,6 +309,51 @@ class CarpetReaderToMapTest {
             assertEquals(expected, actual);
         }
 
+        @Test
+        void convertMapValues() throws IOException {
+
+            record InnerRecord(String id, List<Map<String, String>> values) {
+            }
+            record MainTypeWrite(String name, InnerRecord inner) {
+            }
+
+            ParquetWriterTest<MainTypeWrite> writerTest = new ParquetWriterTest<>(MainTypeWrite.class)
+                    .withLevel(AnnotatedLevels.TWO);
+            var root = new MainTypeWrite("root", new InnerRecord("foo",
+                    List.of(Map.of("name", "Madrid"), Map.of("name", "Barcelona"))));
+            writerTest.write(root);
+
+            record MainTypeRead(String name, Map<String, Object> inner) {
+            }
+
+            var reader = writerTest.getCarpetReader(MainTypeRead.class);
+            var expected = new MainTypeRead("root", Map.of("id", "foo", "values", List.of(
+                    Map.of("name", "Madrid"), Map.of("name", "Barcelona"))));
+            MainTypeRead actual = reader.read();
+            assertEquals(expected, actual);
+        }
+
+        @Test
+        void convertEmptyMapValues() throws IOException {
+
+            record InnerRecord(String id, List<Map<String, String>> values) {
+            }
+            record MainTypeWrite(String name, InnerRecord inner) {
+            }
+
+            ParquetWriterTest<MainTypeWrite> writerTest = new ParquetWriterTest<>(MainTypeWrite.class)
+                    .withLevel(AnnotatedLevels.TWO);
+            var root = new MainTypeWrite("root", new InnerRecord("foo", List.of(Map.of())));
+            writerTest.write(root);
+
+            record MainTypeRead(String name, Map<String, Object> inner) {
+            }
+
+            var reader = writerTest.getCarpetReader(MainTypeRead.class);
+            var expected = new MainTypeRead("root", Map.of("id", "foo", "values", List.of(Map.of())));
+            MainTypeRead actual = reader.read();
+            assertEquals(expected, actual);
+        }
     }
 
     @Nested
@@ -384,6 +429,52 @@ class CarpetReaderToMapTest {
             assertEquals(expected, actual);
         }
 
+        @Test
+        void convertMapValues() throws IOException {
+
+            record InnerRecord(String id, List<Map<String, String>> values) {
+            }
+            record MainTypeWrite(String name, InnerRecord inner) {
+            }
+
+            ParquetWriterTest<MainTypeWrite> writerTest = new ParquetWriterTest<>(MainTypeWrite.class)
+                    .withLevel(AnnotatedLevels.THREE);
+            var root = new MainTypeWrite("root", new InnerRecord("foo",
+                    List.of(Map.of("name", "Madrid"), Map.of("name", "Barcelona"))));
+            writerTest.write(root);
+
+            record MainTypeRead(String name, Map<String, Object> inner) {
+            }
+
+            var reader = writerTest.getCarpetReader(MainTypeRead.class);
+            var expected = new MainTypeRead("root", Map.of("id", "foo", "values", List.of(
+                    Map.of("name", "Madrid"), Map.of("name", "Barcelona"))));
+            MainTypeRead actual = reader.read();
+            assertEquals(expected, actual);
+        }
+
+        @Test
+        void convertEmptyMapValues() throws IOException {
+
+            record InnerRecord(String id, List<Map<String, String>> values) {
+            }
+            record MainTypeWrite(String name, InnerRecord inner) {
+            }
+
+            ParquetWriterTest<MainTypeWrite> writerTest = new ParquetWriterTest<>(MainTypeWrite.class)
+                    .withLevel(AnnotatedLevels.THREE);
+            var root = new MainTypeWrite("root", new InnerRecord("foo", List.of(Map.of())));
+            writerTest.write(root);
+
+            record MainTypeRead(String name, Map<String, Object> inner) {
+            }
+
+            var reader = writerTest.getCarpetReader(MainTypeRead.class);
+            var expected = new MainTypeRead("root", Map.of("id", "foo", "values", List.of(Map.of())));
+            MainTypeRead actual = reader.read();
+            assertEquals(expected, actual);
+        }
+
     }
 
     @Nested
@@ -436,6 +527,88 @@ class CarpetReaderToMapTest {
             var expected = new MainTypeRead("root", Map.of("id", "foo", "values", Map.of(
                     "Madrid", Map.of("code", "Zip", "name", "28"),
                     "Barcelona", Map.of("code", "Zip", "name", "08"))));
+            MainTypeRead actual = reader.read();
+            assertEquals(expected, actual);
+        }
+
+        @Test
+        void convertNestedMapAsMapValues() throws IOException {
+
+            record InnerRecord(String id, Map<String, Map<String, String>> values) {
+            }
+            record MainTypeWrite(String name, InnerRecord inner) {
+            }
+
+            ParquetWriterTest<MainTypeWrite> writerTest = new ParquetWriterTest<>(MainTypeWrite.class)
+                    .withLevel(AnnotatedLevels.THREE);
+            var root = new MainTypeWrite("root",
+                    new InnerRecord("foo", Map.of(
+                            "Madrid", Map.of("Zip", "28"),
+                            "Barcelona", Map.of("Zip", "08"))));
+            writerTest.write(root);
+
+            record MainTypeRead(String name, Map<String, Object> inner) {
+            }
+
+            var reader = writerTest.getCarpetReader(MainTypeRead.class);
+            var expected = new MainTypeRead("root", Map.of("id", "foo", "values", Map.of(
+                    "Madrid", Map.of("Zip", "28"),
+                    "Barcelona", Map.of("Zip", "08"))));
+            MainTypeRead actual = reader.read();
+            assertEquals(expected, actual);
+        }
+
+        @Test
+        void convertNestedListAsMapValues() throws IOException {
+
+            record InnerRecord(String id, Map<String, List<Integer>> values) {
+            }
+            record MainTypeWrite(String name, InnerRecord inner) {
+            }
+
+            ParquetWriterTest<MainTypeWrite> writerTest = new ParquetWriterTest<>(MainTypeWrite.class)
+                    .withLevel(AnnotatedLevels.THREE);
+            var root = new MainTypeWrite("root",
+                    new InnerRecord("foo", Map.of(
+                            "Madrid", List.of(1, 2, 3),
+                            "Barcelona", List.of(4, 5, 6))));
+            writerTest.write(root);
+
+            record MainTypeRead(String name, Map<String, Object> inner) {
+            }
+
+            var reader = writerTest.getCarpetReader(MainTypeRead.class);
+            var expected = new MainTypeRead("root", Map.of("id", "foo", "values", Map.of(
+                    "Madrid", List.of(1, 2, 3),
+                    "Barcelona", List.of(4, 5, 6))));
+            MainTypeRead actual = reader.read();
+            assertEquals(expected, actual);
+        }
+
+        @Test
+        void convertKeyRecordAsMapValues() throws IOException {
+
+            record ChildRecord(String code, String name) {
+            }
+            record InnerRecord(String id, Map<ChildRecord, Integer> values) {
+            }
+            record MainTypeWrite(String name, InnerRecord inner) {
+            }
+
+            ParquetWriterTest<MainTypeWrite> writerTest = new ParquetWriterTest<>(MainTypeWrite.class);
+            var root = new MainTypeWrite("root", new InnerRecord("foo", Map.of(
+                    new ChildRecord("Madrid", "Population"), 4500000,
+                    new ChildRecord("Barcelona", "Population"), 3000000)));
+            writerTest.write(root);
+
+            record MainTypeRead(String name, Map<String, Object> inner) {
+            }
+
+            var reader = writerTest.getCarpetReader(MainTypeRead.class);
+            var expected = new MainTypeRead("root",
+                    Map.of("id", "foo", "values", Map.of(
+                            Map.of("code", "Madrid", "name", "Population"), 4500000,
+                            Map.of("code", "Barcelona", "name", "Population"), 3000000)));
             MainTypeRead actual = reader.read();
             assertEquals(expected, actual);
         }
