@@ -75,8 +75,10 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
         GroupType asGroupType = schemaField.asGroupType();
         LogicalTypeAnnotation logicalType = asGroupType.getLogicalTypeAnnotation();
         if (listType().equals(logicalType)) {
+            return new CarpetListAsMapConverter(asGroupType, consumer);
         }
         if (mapType().equals(logicalType)) {
+            return new CarpetMapAsMapConverter(asGroupType, consumer);
         }
         return new CarpetGroupAsMapConverter(asGroupType, consumer);
     }
@@ -100,21 +102,7 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
         groupConsumer.accept(getCurrentRecord());
     }
 
-    public static Converter createSingleLevelConverter(Type parquetField, MapHolder mapHolder, String name) {
-        Consumer<Object> consumer = v -> ((List<Object>) mapHolder.getMap()
-                .computeIfAbsent(name, n -> new ArrayList<>())).add(v);
-
-        if (parquetField.isPrimitive()) {
-            return PrimitiveConverterFactory.buildConverters(parquetField, consumer);
-        }
-        var asGroupType = parquetField.asGroupType();
-        LogicalTypeAnnotation logicalType = asGroupType.getLogicalTypeAnnotation();
-        if (mapType().equals(logicalType)) {
-        }
-        return new CarpetGroupAsMapConverter(asGroupType, consumer);
-    }
-
-    class PrimitiveConverterFactory {
+    private static class PrimitiveConverterFactory {
 
         public static Converter buildConverters(Type parquetField, Consumer<Object> consumer) {
             PrimitiveTypeName type = parquetField.asPrimitiveType().getPrimitiveTypeName();
@@ -159,6 +147,214 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
                 throw new RecordTypeConversionException(parquetField + " deserialization not supported");
             }
             return new UuidToUuidGenericConverter(consumer);
+        }
+
+    }
+
+    private static Converter createSingleLevelConverter(Type parquetField, MapHolder mapHolder, String name) {
+        Consumer<Object> consumer = v -> {
+            ((List<Object>) mapHolder.getMap()
+                    .computeIfAbsent(name, n -> new ArrayList<>())).add(v);
+        };
+
+        if (parquetField.isPrimitive()) {
+            return PrimitiveConverterFactory.buildConverters(parquetField, consumer);
+        }
+        var asGroupType = parquetField.asGroupType();
+        LogicalTypeAnnotation logicalType = asGroupType.getLogicalTypeAnnotation();
+        if (mapType().equals(logicalType)) {
+            return new CarpetMapAsMapConverter(asGroupType, consumer);
+        }
+        return new CarpetGroupAsMapConverter(asGroupType, consumer);
+    }
+
+    private static class CarpetListAsMapConverter extends GroupConverter {
+
+        private final Consumer<Object> groupConsumer;
+        private final CollectionHolder collectionHolder;
+        private final Converter converter;
+
+        CarpetListAsMapConverter(GroupType schema, Consumer<Object> consumer) {
+            this.groupConsumer = consumer;
+            this.collectionHolder = new CollectionHolder(ArrayList::new);
+
+            Type listChild = schema.getFields().get(0);
+            boolean threeLevel = SchemaValidation.isThreeLevel(listChild);
+            if (threeLevel) {
+                converter = new CarpetListAsMapIntermediateConverter(listChild, collectionHolder);
+            } else {
+                converter = createCollectionConverter(listChild, collectionHolder::add);
+            }
+        }
+
+        @Override
+        public Converter getConverter(int fieldIndex) {
+            return converter;
+        }
+
+        @Override
+        public void start() {
+            collectionHolder.create();
+        }
+
+        @Override
+        public void end() {
+            groupConsumer.accept(collectionHolder.getCollection());
+        }
+
+    }
+
+    private static Converter createCollectionConverter(Type listElement, Consumer<Object> consumer) {
+        if (listElement.isPrimitive()) {
+            return PrimitiveConverterFactory.buildConverters(listElement, consumer);
+        }
+        GroupType groupType = listElement.asGroupType();
+        LogicalTypeAnnotation logicalType = listElement.getLogicalTypeAnnotation();
+        if (logicalType != null) {
+            if (listType().equals(logicalType)) {
+                return new CarpetListAsMapConverter(groupType, consumer);
+            }
+            if (mapType().equals(logicalType)) {
+                return new CarpetMapAsMapConverter(groupType, consumer);
+            }
+        }
+        return new CarpetGroupAsMapConverter(groupType, consumer);
+    }
+
+    private static class CarpetListAsMapIntermediateConverter extends GroupConverter {
+
+        private final CollectionHolder collectionHolder;
+        private final Converter converter;
+        private Object elementValue;
+
+        CarpetListAsMapIntermediateConverter(Type rootListType, CollectionHolder collectionHolder) {
+            this.collectionHolder = collectionHolder;
+
+            var schema = rootListType.asGroupType();
+            List<Type> fields = schema.getFields();
+            if (fields.size() > 1) {
+                throw new RecordTypeConversionException(
+                        schema.getName() + " LIST child element can not have more than one field");
+            }
+            converter = createCollectionConverter(fields.get(0), value -> elementValue = value);
+        }
+
+        @Override
+        public Converter getConverter(int fieldIndex) {
+            return converter;
+        }
+
+        @Override
+        public void start() {
+            elementValue = null;
+        }
+
+        @Override
+        public void end() {
+            collectionHolder.add(elementValue);
+        }
+
+    }
+
+    private static class CarpetMapAsMapConverter extends GroupConverter {
+
+        private final Consumer<Object> consumer;
+        private final Converter converter;
+        private final MapHolder mapHolder;
+
+        CarpetMapAsMapConverter(GroupType schema, Consumer<Object> consumer) {
+            this.consumer = consumer;
+            this.mapHolder = new MapHolder(HashMap::new);
+            List<Type> fields = schema.getFields();
+            if (fields.size() > 1) {
+                throw new RecordTypeConversionException(schema.getName() + " MAP can not have more than one field");
+            }
+            GroupType mapChild = fields.get(0).asGroupType();
+            this.converter = new CarpetMapAsMapIntermediateConverter(mapChild, mapHolder);
+        }
+
+        @Override
+        public Converter getConverter(int fieldIndex) {
+            return converter;
+        }
+
+        @Override
+        public void start() {
+            mapHolder.create();
+        }
+
+        @Override
+        public void end() {
+            consumer.accept(mapHolder.getMap());
+        }
+
+    }
+
+    static class CarpetMapAsMapIntermediateConverter extends GroupConverter {
+
+        private final Converter converterValue;
+        private final Converter converterKey;
+        private final MapHolder mapHolder;
+        private Object elementValue;
+        private Object elementKey;
+
+        CarpetMapAsMapIntermediateConverter(GroupType schema, MapHolder mapHolder) {
+            this.mapHolder = mapHolder;
+
+            List<Type> fields = schema.getFields();
+            if (fields.size() != 2) {
+                throw new RecordTypeConversionException(schema.getName() + " MAP child element must have two fields");
+            }
+
+            // Key
+            Type mapKeyType = fields.get(0);
+            if (mapKeyType.isPrimitive()) {
+                converterKey = PrimitiveConverterFactory.buildConverters(mapKeyType, this::consumeKey);
+            } else {
+                converterKey = new CarpetGroupAsMapConverter(mapKeyType.asGroupType(), this::consumeKey);
+            }
+
+            // Value
+            Type mapValueType = fields.get(1);
+            if (mapValueType.isPrimitive()) {
+                converterValue = PrimitiveConverterFactory.buildConverters(mapValueType, this::consumeValue);
+            } else {
+                LogicalTypeAnnotation logicalType = mapValueType.getLogicalTypeAnnotation();
+                if (listType().equals(logicalType)) {
+                    converterValue = new CarpetListAsMapConverter(mapValueType.asGroupType(), this::consumeValue);
+                } else if (mapType().equals(logicalType)) {
+                    converterValue = new CarpetMapAsMapConverter(mapValueType.asGroupType(), this::consumeValue);
+                } else {
+                    converterValue = new CarpetGroupAsMapConverter(mapValueType.asGroupType(), this::consumeValue);
+                }
+            }
+        }
+
+        @Override
+        public Converter getConverter(int fieldIndex) {
+            if (fieldIndex == 0) {
+                return converterKey;
+            }
+            return converterValue;
+        }
+
+        @Override
+        public void start() {
+            elementKey = null;
+            elementValue = null;
+        }
+
+        @Override
+        public void end() {
+            mapHolder.put(elementKey, elementValue);
+        }
+
+        private void consumeKey(Object value) {
+            elementKey = value;
+        }
+
+        private void consumeValue(Object value) {
+            elementValue = value;
         }
 
     }
