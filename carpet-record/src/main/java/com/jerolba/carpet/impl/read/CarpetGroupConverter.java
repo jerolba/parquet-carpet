@@ -22,6 +22,7 @@ import static org.apache.parquet.schema.LogicalTypeAnnotation.listType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.mapType;
 
 import java.lang.reflect.RecordComponent;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import org.apache.parquet.io.api.Converter;
@@ -77,6 +78,9 @@ public class CarpetGroupConverter extends GroupConverter {
         if (mapType().equals(logicalType)) {
             var parameterized = getParameterizedMap(recordComponent);
             return new CarpetMapConverter(asGroupType, parameterized, value -> constructor.c[index] = value);
+        }
+        if (Map.class.isAssignableFrom(recordComponent.getType())) {
+            return new CarpetGroupAsMapConverter(asGroupType, value -> constructor.c[index] = value);
         }
         return new CarpetGroupConverter(asGroupType, recordComponent.getType(), value -> constructor.c[index] = value);
     }
