@@ -70,9 +70,11 @@ public class MapStructureWriter {
         var innerValueStructureWriter = elemValueConsumer;
         return value -> {
             Map<?, ?> map = (Map<?, ?>) value;
-            if (map != null && !map.isEmpty()) {
+            if (map != null) {
                 recordConsumer.startGroup();
-                writeKeyalueGroup(innerKeyStructureWriter, innerValueStructureWriter, map);
+                if (!map.isEmpty()) {
+                    writeKeyalueGroup(innerKeyStructureWriter, innerValueStructureWriter, map);
+                }
                 recordConsumer.endGroup();
             }
         };
@@ -98,10 +100,12 @@ public class MapStructureWriter {
         @Override
         public void accept(Object object) {
             var value = (Map<?, ?>) accesor.apply(object);
-            if (value != null && !value.isEmpty()) {
+            if (value != null) {
                 recordConsumer.startField(fieldName, idx);
                 recordConsumer.startGroup();
-                writeKeyalueGroup(innerKeyStructureWriter, innerValueStructureWriter, value);
+                if (!value.isEmpty()) {
+                    writeKeyalueGroup(innerKeyStructureWriter, innerValueStructureWriter, value);
+                }
                 recordConsumer.endGroup();
                 recordConsumer.endField(fieldName, idx);
             }

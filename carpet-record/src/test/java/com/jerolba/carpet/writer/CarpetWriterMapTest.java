@@ -15,6 +15,7 @@
  */
 package com.jerolba.carpet.writer;
 
+import static java.util.Collections.emptyMap;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -27,7 +28,6 @@ import java.util.Map;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.util.Utf8;
 import org.apache.parquet.io.InvalidRecordException;
-import org.apache.parquet.io.ParquetEncodingException;
 import org.junit.jupiter.api.Test;
 
 import com.jerolba.carpet.ParquetWriterTest;
@@ -411,7 +411,7 @@ class CarpetWriterMapTest {
     }
 
     @Test
-    void emptyMapIsTransformedToNull() throws IOException {
+    void emptyMapIsTransformedToEmptyMap() throws IOException {
 
         record EmptyMap(String name, Map<String, Integer> ids) {
         }
@@ -423,22 +423,43 @@ class CarpetWriterMapTest {
         var avroReader = writerTest.getAvroGenericRecordReader();
         GenericRecord avroRecord = avroReader.read();
         assertEquals(rec.name(), avroRecord.get("name").toString());
-        assertNull(avroRecord.get("ids"));
+        assertEquals(avroRecord.get("ids"), emptyMap());
 
         var carpetReader = writerTest.getCarpetReader();
-        EmptyMap expectedNullList = new EmptyMap("foo", null);
-        assertEquals(expectedNullList, carpetReader.read());
+        EmptyMap expectedEmptyMap = new EmptyMap("foo", emptyMap());
+        assertEquals(expectedEmptyMap, carpetReader.read());
     }
 
     @Test
-    void emptyNestedMapIsNotSupported() throws IOException {
+    void emptyNestedMapIsSupported() throws IOException {
 
         record EmptyNestedMap(String name, Map<String, Map<String, Integer>> ids) {
         }
 
         var rec = new EmptyNestedMap("foo", Map.of("key", Map.of()));
         var writerTest = new ParquetWriterTest<>(EmptyNestedMap.class);
-        assertThrows(ParquetEncodingException.class, () -> writerTest.write(rec));
+        writerTest.write(rec);
+
+        var carpetReader = writerTest.getCarpetReader();
+        EmptyNestedMap expectedEmptyMap = new EmptyNestedMap("foo", Map.of("key", emptyMap()));
+        assertEquals(expectedEmptyMap, carpetReader.read());
+    }
+
+    @Test
+    void nullNestedMapIsSupported() throws IOException {
+
+        record EmptyNestedMap(String name, Map<String, Map<String, Integer>> ids) {
+        }
+
+        Map<String, Map<String, Integer>> ids = new HashMap<>();
+        ids.put("key", null);
+        var rec = new EmptyNestedMap("foo", ids);
+        var writerTest = new ParquetWriterTest<>(EmptyNestedMap.class);
+        writerTest.write(rec);
+
+        var carpetReader = writerTest.getCarpetReader();
+        EmptyNestedMap expectedEmptyMap = new EmptyNestedMap("foo", ids);
+        assertEquals(expectedEmptyMap, carpetReader.read());
     }
 
     @Test
