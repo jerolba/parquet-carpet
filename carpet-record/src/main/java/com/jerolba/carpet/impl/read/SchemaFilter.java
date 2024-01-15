@@ -54,6 +54,9 @@ public class SchemaFilter {
     }
 
     public MessageType project(Class<?> readClass) {
+        if (Map.class.isAssignableFrom(readClass)) {
+            return new MessageType(schema.getName(), schema.getFields());
+        }
         ColumnPath path = new ColumnPath();
         GroupType projected = filter(readClass, path);
         return new MessageType(projected.getName(), projected.getFields());

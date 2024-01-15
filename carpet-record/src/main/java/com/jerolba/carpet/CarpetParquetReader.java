@@ -26,6 +26,7 @@ import org.apache.parquet.io.api.GroupConverter;
 import org.apache.parquet.io.api.RecordMaterializer;
 import org.apache.parquet.schema.MessageType;
 
+import com.jerolba.carpet.impl.read.CarpetGroupAsMapConverter;
 import com.jerolba.carpet.impl.read.CarpetGroupConverter;
 import com.jerolba.carpet.impl.read.SchemaFilter;
 import com.jerolba.carpet.impl.read.SchemaValidation;
@@ -153,7 +154,11 @@ public class CarpetParquetReader {
         private T value;
 
         CarpetMaterializer(Class<T> readClass, MessageType requestedSchema) {
-            this.root = new CarpetGroupConverter(requestedSchema, readClass, record -> this.value = (T) record);
+            if (Map.class.isAssignableFrom(readClass)) {
+                this.root = new CarpetGroupAsMapConverter(requestedSchema, value -> this.value = (T) value);
+            } else {
+                this.root = new CarpetGroupConverter(requestedSchema, readClass, record -> this.value = (T) record);
+            }
         }
 
         @Override
