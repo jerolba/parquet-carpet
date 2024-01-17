@@ -19,6 +19,7 @@ import static java.util.Collections.emptyList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -94,7 +95,17 @@ class CarpetReaderToMapTest {
             writerTest.write(root);
 
             var reader = writerTest.getCarpetReader(Map.class);
-            var expected = Map.of();
+            var expected = new HashMap<>();
+            expected.put("id", null);
+            expected.put("asByte", null);
+            expected.put("asShort", null);
+            expected.put("asInt", null);
+            expected.put("asLong", null);
+            expected.put("asFloat", null);
+            expected.put("asDouble", null);
+            expected.put("asBoolean", null);
+            expected.put("asEnum", null);
+            expected.put("asUuid", null);
             Map<String, Object> actual = reader.read();
             assertEquals(expected, actual);
         }
@@ -276,7 +287,7 @@ class CarpetReaderToMapTest {
 
             @Test
             // TODO: Review behavior: no attribute vs attribute with null value
-            void emptyListIsDeserializedAsNoElement() throws IOException {
+            void emptyListIsDeserializedAsNull() throws IOException {
 
                 record InnerRecord(String id, List<String> values) {
                 }
@@ -292,7 +303,7 @@ class CarpetReaderToMapTest {
                 }
 
                 var reader = writerTest.getCarpetReader(MainTypeRead.class);
-                var expected = new MainTypeRead("root", Map.of("id", "foo"));
+                var expected = new MainTypeRead("root", mapOf("id", "foo", "values", null));
                 MainTypeRead actual = reader.read();
                 assertEquals(expected, actual);
             }
@@ -398,7 +409,7 @@ class CarpetReaderToMapTest {
 
             @Test
             // TODO: Review behavior: no attribute vs attribute with null value
-            void emptyListIsDeserializedAsNoElement() throws IOException {
+            void emptyListIsDeserializedAsNull() throws IOException {
 
                 record InnerRecord(String id, List<String> values) {
                 }
@@ -414,7 +425,7 @@ class CarpetReaderToMapTest {
                 }
 
                 var reader = writerTest.getCarpetReader(MainTypeRead.class);
-                var expected = new MainTypeRead("root", Map.of("id", "foo"));
+                var expected = new MainTypeRead("root", mapOf("id", "foo", "values", null));
                 MainTypeRead actual = reader.read();
                 assertEquals(expected, actual);
             }
@@ -751,4 +762,10 @@ class CarpetReaderToMapTest {
         }
     }
 
+    private static Map<String, Object> mapOf(String k1, Object v1, String k2, Object v2) {
+        Map<String, Object> map = new HashMap<>();
+        map.put(k1, v1);
+        map.put(k2, v2);
+        return map;
+    }
 }
