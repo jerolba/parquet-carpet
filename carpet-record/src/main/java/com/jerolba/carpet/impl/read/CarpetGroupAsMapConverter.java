@@ -15,7 +15,7 @@
  */
 package com.jerolba.carpet.impl.read;
 
-import static java.util.stream.Collectors.toUnmodifiableSet;
+import static java.util.stream.Collectors.toCollection;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.enumType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.listType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.mapType;
@@ -29,10 +29,12 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -60,12 +62,13 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
 
     private final Converter[] converters;
     private final Consumer<Object> groupConsumer;
+    private final Class<?> mapClass;
     private final GroupMapHolder mapHolder;
 
-    public CarpetGroupAsMapConverter(GroupType schema, Consumer<Object> groupConsumer) {
+    public CarpetGroupAsMapConverter(Class<?> mapClass, GroupType schema, Consumer<Object> groupConsumer) {
+        this.mapClass = mapClass;
         this.groupConsumer = groupConsumer;
-        Map<String, Integer> indexByName = getSchemaFields(schema);
-        this.mapHolder = new GroupMapHolder(() -> new ParquetGroupMap<>(indexByName));
+        this.mapHolder = crateGroupMapHolder(mapClass, schema);
 
         converters = new Converter[schema.getFields().size()];
         int cont = 0;
@@ -75,11 +78,11 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
         }
     }
 
-    private static Converter converterFor(int idx, Type schemaField, GroupMapHolder mapHolder) {
+    private Converter converterFor(int idx, Type schemaField, GroupMapHolder mapHolder) {
         var name = schemaField.getName();
-        Consumer<Object> consumer = value -> mapHolder.add(idx, value);
+        Consumer<Object> consumer = value -> mapHolder.add(idx, name, value);
         if (schemaField.isRepetition(Repetition.REPEATED)) {
-            return createSingleLevelConverter(idx, schemaField, mapHolder, name);
+            return createSingleLevelConverter(idx, name, schemaField, mapHolder);
         }
         if (schemaField.isPrimitive()) {
             return PrimitiveConverterFactory.buildConverters(schemaField, consumer);
@@ -87,12 +90,12 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
         GroupType asGroupType = schemaField.asGroupType();
         LogicalTypeAnnotation logicalType = asGroupType.getLogicalTypeAnnotation();
         if (listType().equals(logicalType)) {
-            return new CarpetListAsMapConverter(asGroupType, consumer);
+            return new CarpetListAsMapConverter(mapClass, asGroupType, consumer);
         }
         if (mapType().equals(logicalType)) {
-            return new CarpetMapAsMapConverter(asGroupType, consumer);
+            return new CarpetMapAsMapConverter(mapClass, asGroupType, consumer);
         }
-        return new CarpetGroupAsMapConverter(asGroupType, consumer);
+        return new CarpetGroupAsMapConverter(mapClass, asGroupType, consumer);
     }
 
     @Override
@@ -159,27 +162,17 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
 
     }
 
-    private static Converter createSingleLevelConverter(int idx, Type parquetField,
-            GroupMapHolder mapHolder, String name) {
-        Consumer<Object> consumer = v -> {
-            ParquetGroupMap<String, Object> map = mapHolder.getMap();
-            List<Object> list = (List<Object>) map.getValue(idx);
-            if (list == null) {
-                list = new ArrayList<>();
-                map.add(idx, list);
-            }
-            list.add(v);
-        };
+    private Converter createSingleLevelConverter(int idx, String name, Type parquetField, GroupMapHolder mapHolder) {
+        Consumer<Object> consumer = v -> mapHolder.getList(idx, name).add(v);
 
         if (parquetField.isPrimitive()) {
             return PrimitiveConverterFactory.buildConverters(parquetField, consumer);
         }
         var asGroupType = parquetField.asGroupType();
-        LogicalTypeAnnotation logicalType = asGroupType.getLogicalTypeAnnotation();
-        if (mapType().equals(logicalType)) {
-            return new CarpetMapAsMapConverter(asGroupType, consumer);
+        if (mapType().equals(asGroupType.getLogicalTypeAnnotation())) {
+            return new CarpetMapAsMapConverter(mapClass, asGroupType, consumer);
         }
-        return new CarpetGroupAsMapConverter(asGroupType, consumer);
+        return new CarpetGroupAsMapConverter(mapClass, asGroupType, consumer);
     }
 
     private static class CarpetListAsMapConverter extends GroupConverter {
@@ -188,16 +181,16 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
         private final CollectionHolder collectionHolder;
         private final Converter converter;
 
-        CarpetListAsMapConverter(GroupType schema, Consumer<Object> consumer) {
+        CarpetListAsMapConverter(Class<?> mapClass, GroupType schema, Consumer<Object> consumer) {
             this.groupConsumer = consumer;
             this.collectionHolder = new CollectionHolder(ArrayList::new);
 
             Type listChild = schema.getFields().get(0);
             boolean threeLevel = SchemaValidation.isThreeLevel(listChild);
             if (threeLevel) {
-                converter = new CarpetListAsMapIntermediateConverter(listChild, collectionHolder);
+                converter = new CarpetListAsMapIntermediateConverter(mapClass, listChild, collectionHolder);
             } else {
-                converter = createCollectionConverter(listChild, collectionHolder::add);
+                converter = createCollectionConverter(mapClass, listChild, collectionHolder::add);
             }
         }
 
@@ -218,7 +211,7 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
 
     }
 
-    private static Converter createCollectionConverter(Type listElement, Consumer<Object> consumer) {
+    private static Converter createCollectionConverter(Class<?> mapClass, Type listElement, Consumer<Object> consumer) {
         if (listElement.isPrimitive()) {
             return PrimitiveConverterFactory.buildConverters(listElement, consumer);
         }
@@ -226,13 +219,13 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
         LogicalTypeAnnotation logicalType = listElement.getLogicalTypeAnnotation();
         if (logicalType != null) {
             if (listType().equals(logicalType)) {
-                return new CarpetListAsMapConverter(groupType, consumer);
+                return new CarpetListAsMapConverter(mapClass, groupType, consumer);
             }
             if (mapType().equals(logicalType)) {
-                return new CarpetMapAsMapConverter(groupType, consumer);
+                return new CarpetMapAsMapConverter(mapClass, groupType, consumer);
             }
         }
-        return new CarpetGroupAsMapConverter(groupType, consumer);
+        return new CarpetGroupAsMapConverter(mapClass, groupType, consumer);
     }
 
     private static class CarpetListAsMapIntermediateConverter extends GroupConverter {
@@ -241,7 +234,7 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
         private final Converter converter;
         private Object elementValue;
 
-        CarpetListAsMapIntermediateConverter(Type rootListType, CollectionHolder collectionHolder) {
+        CarpetListAsMapIntermediateConverter(Class<?> mapClass, Type rootListType, CollectionHolder collectionHolder) {
             this.collectionHolder = collectionHolder;
 
             var schema = rootListType.asGroupType();
@@ -250,7 +243,7 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
                 throw new RecordTypeConversionException(
                         schema.getName() + " LIST child element can not have more than one field");
             }
-            converter = createCollectionConverter(fields.get(0), value -> elementValue = value);
+            converter = createCollectionConverter(mapClass, fields.get(0), value -> elementValue = value);
         }
 
         @Override
@@ -276,7 +269,7 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
         private final Converter converter;
         private final MapHolder mapHolder;
 
-        CarpetMapAsMapConverter(GroupType schema, Consumer<Object> consumer) {
+        CarpetMapAsMapConverter(Class<?> mapClass, GroupType schema, Consumer<Object> consumer) {
             this.consumer = consumer;
             this.mapHolder = new MapHolder(HashMap::new);
             List<Type> fields = schema.getFields();
@@ -284,7 +277,7 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
                 throw new RecordTypeConversionException(schema.getName() + " MAP can not have more than one field");
             }
             GroupType mapChild = fields.get(0).asGroupType();
-            this.converter = new CarpetMapAsMapIntermediateConverter(mapChild, mapHolder);
+            this.converter = new CarpetMapAsMapIntermediateConverter(mapClass, mapChild, mapHolder);
         }
 
         @Override
@@ -312,7 +305,7 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
         private Object elementValue;
         private Object elementKey;
 
-        CarpetMapAsMapIntermediateConverter(GroupType schema, MapHolder mapHolder) {
+        CarpetMapAsMapIntermediateConverter(Class<?> mapClass, GroupType schema, MapHolder mapHolder) {
             this.mapHolder = mapHolder;
 
             List<Type> fields = schema.getFields();
@@ -325,7 +318,7 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
             if (mapKeyType.isPrimitive()) {
                 converterKey = PrimitiveConverterFactory.buildConverters(mapKeyType, this::consumeKey);
             } else {
-                converterKey = new CarpetGroupAsMapConverter(mapKeyType.asGroupType(), this::consumeKey);
+                converterKey = new CarpetGroupAsMapConverter(mapClass, mapKeyType.asGroupType(), this::consumeKey);
             }
 
             // Value
@@ -334,12 +327,13 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
                 converterValue = PrimitiveConverterFactory.buildConverters(mapValueType, this::consumeValue);
             } else {
                 LogicalTypeAnnotation logicalType = mapValueType.getLogicalTypeAnnotation();
+                GroupType groupType = mapValueType.asGroupType();
                 if (listType().equals(logicalType)) {
-                    converterValue = new CarpetListAsMapConverter(mapValueType.asGroupType(), this::consumeValue);
+                    converterValue = new CarpetListAsMapConverter(mapClass, groupType, this::consumeValue);
                 } else if (mapType().equals(logicalType)) {
-                    converterValue = new CarpetMapAsMapConverter(mapValueType.asGroupType(), this::consumeValue);
+                    converterValue = new CarpetMapAsMapConverter(mapClass, groupType, this::consumeValue);
                 } else {
-                    converterValue = new CarpetGroupAsMapConverter(mapValueType.asGroupType(), this::consumeValue);
+                    converterValue = new CarpetGroupAsMapConverter(mapClass, groupType, this::consumeValue);
                 }
             }
         }
@@ -373,6 +367,28 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
 
     }
 
+    private static GroupMapHolder crateGroupMapHolder(Class<?> mapClass, GroupType schema) {
+        if (mapClass.equals(Map.class)) {
+            Map<String, Integer> indexByName = getSchemaFields(schema);
+            return new CarpetGroupMapHolder(() -> new CarpetGroupMap<>(indexByName));
+        }
+        if (Map.class.isAssignableFrom(mapClass)) {
+            Supplier<Map<String, Object>> constructor = null;
+            if (mapClass.equals(HashMap.class)) {
+                constructor = HashMap::new;
+            } else if (mapClass.equals(LinkedHashMap.class)) {
+                constructor = LinkedHashMap::new;
+            } else if (mapClass.equals(TreeMap.class)) {
+                constructor = TreeMap::new;
+            } else {
+                constructor = ReadReflection.getDefaultConstructor(mapClass);
+            }
+            return new SimpleMapHolder(constructor);
+        }
+        Map<String, Integer> indexByName = getSchemaFields(schema);
+        return new CarpetGroupMapHolder(() -> new CarpetGroupMap<>(indexByName));
+    }
+
     private static Map<String, Integer> getSchemaFields(GroupType schema) {
         List<Type> fields = schema.getFields();
         Map<String, Integer> indexByName = new LinkedHashMap<>();
@@ -382,35 +398,92 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
         return indexByName;
     }
 
-    private static class GroupMapHolder {
+    interface GroupMapHolder {
 
-        private final Supplier<ParquetGroupMap<String, Object>> mapFactory;
-        private ParquetGroupMap<String, Object> map;
+        void create();
 
-        GroupMapHolder(Supplier<ParquetGroupMap<String, Object>> mapFactory) {
+        void add(int idx, String name, Object value);
+
+        Map<String, Object> getMap();
+
+        Collection<Object> getList(int idx, String name);
+
+    }
+
+    private static class CarpetGroupMapHolder implements GroupMapHolder {
+
+        private final Supplier<CarpetGroupMap<String, Object>> mapFactory;
+        private CarpetGroupMap<String, Object> map;
+
+        CarpetGroupMapHolder(Supplier<CarpetGroupMap<String, Object>> mapFactory) {
             this.mapFactory = mapFactory;
         }
 
-        void create() {
+        @Override
+        public void create() {
             map = mapFactory.get();
         }
 
-        void add(int idx, Object value) {
+        @Override
+        public void add(int idx, String name, Object value) {
             map.add(idx, value);
         }
 
-        ParquetGroupMap<String, Object> getMap() {
+        @Override
+        public Map<String, Object> getMap() {
             return map;
+        }
+
+        @Override
+        public Collection<Object> getList(int idx, String name) {
+            List<Object> list = (List<Object>) map.getValue(idx);
+            if (list == null) {
+                list = new ArrayList<>();
+                map.add(idx, list);
+            }
+            return list;
         }
 
     }
 
-    private static class ParquetGroupMap<K, V> implements Map<K, V> {
+    private static class SimpleMapHolder implements GroupMapHolder {
+
+        private final Supplier<Map<String, Object>> mapFactory;
+        private Map<String, Object> map;
+
+        SimpleMapHolder(Supplier<Map<String, Object>> mapFactory) {
+            this.mapFactory = mapFactory;
+        }
+
+        @Override
+        public void create() {
+            map = mapFactory.get();
+        }
+
+        @Override
+        public void add(int idx, String name, Object value) {
+            map.put(name, value);
+        }
+
+        @Override
+        public Map<String, Object> getMap() {
+            return map;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public Collection<Object> getList(int idx, String name) {
+            return (Collection<Object>) map.computeIfAbsent(name, n -> new ArrayList<>());
+        }
+
+    }
+
+    private static class CarpetGroupMap<K, V> implements Map<K, V> {
 
         private final Map<K, Integer> index;
         private final Object[] values;
 
-        ParquetGroupMap(Map<K, Integer> index) {
+        CarpetGroupMap(Map<K, Integer> index) {
             this.index = index;
             this.values = new Object[index.size()];
 
@@ -493,7 +566,7 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
         public Set<Entry<K, V>> entrySet() {
             return index.entrySet().stream()
                     .map(e -> new SimpleImmutableEntry<>(e.getKey(), (V) values[e.getValue()]))
-                    .collect(toUnmodifiableSet());
+                    .collect(toCollection(LinkedHashSet::new));
         }
 
         // From AbstractMap

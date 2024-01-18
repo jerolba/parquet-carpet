@@ -155,7 +155,7 @@ public class CarpetParquetReader {
 
         CarpetMaterializer(Class<T> readClass, MessageType requestedSchema) {
             if (Map.class.isAssignableFrom(readClass)) {
-                this.root = new CarpetGroupAsMapConverter(requestedSchema, value -> this.value = (T) value);
+                this.root = new CarpetGroupAsMapConverter(readClass, requestedSchema, value -> this.value = (T) value);
             } else {
                 this.root = new CarpetGroupConverter(requestedSchema, readClass, record -> this.value = (T) record);
             }

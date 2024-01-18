@@ -145,7 +145,7 @@ public class ReadReflection {
         return HashMap::new;
     }
 
-    private static <T> Supplier<T> getDefaultConstructor(Class<?> type) {
+    public static <T> Supplier<T> getDefaultConstructor(Class<?> type) {
         try {
             Constructor<?> constructor = type.getConstructor();
             return () -> {

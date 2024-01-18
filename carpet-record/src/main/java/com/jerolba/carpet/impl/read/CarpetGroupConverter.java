@@ -80,7 +80,8 @@ public class CarpetGroupConverter extends GroupConverter {
             return new CarpetMapConverter(asGroupType, parameterized, value -> constructor.c[index] = value);
         }
         if (Map.class.isAssignableFrom(recordComponent.getType())) {
-            return new CarpetGroupAsMapConverter(asGroupType, value -> constructor.c[index] = value);
+            return new CarpetGroupAsMapConverter(recordComponent.getType(), asGroupType,
+                    value -> constructor.c[index] = value);
         }
         return new CarpetGroupConverter(asGroupType, recordComponent.getType(), value -> constructor.c[index] = value);
     }

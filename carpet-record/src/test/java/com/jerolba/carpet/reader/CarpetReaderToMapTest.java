@@ -17,13 +17,19 @@ package com.jerolba.carpet.reader;
 
 import static java.util.Collections.emptyList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.UUID;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -760,6 +766,138 @@ class CarpetReaderToMapTest {
                 assertEquals(expected, actual);
             }
         }
+    }
+
+    @Nested
+    class MapClassSelection {
+
+        record MainTypeWrite(String name, Long code, int value) {
+        }
+
+        @Nested
+        class SelectTargetMap {
+
+            private final Map<String, Object> expected = Map.of("name", "root", "code", 100L, "value", 1);
+
+            private ParquetWriterTest<MainTypeWrite> writerTest;
+
+            @BeforeEach
+            void setup() throws IOException {
+                writerTest = new ParquetWriterTest<>(MainTypeWrite.class);
+                var root = new MainTypeWrite("root", 100L, 1);
+                writerTest.write(root);
+            }
+
+            @Test
+            void genericMapIsConvertedToOptimizedCarpetGroupMap() throws IOException {
+                var reader = writerTest.getCarpetReader(Map.class);
+
+                Map<String, Object> actual = reader.read();
+                assertEquals(expected, actual);
+                assertTrue(actual.getClass().getName().contains("CarpetGroupMap"));
+            }
+
+            @Test
+            void canConfigureHashMap() throws IOException {
+                var reader = writerTest.getCarpetReader(HashMap.class);
+
+                Map<String, Object> actual = reader.read();
+                assertEquals(expected, actual);
+                assertEquals(HashMap.class, actual.getClass());
+            }
+
+            @Test
+            void canConfigureLinkedHashMap() throws IOException {
+                var reader = writerTest.getCarpetReader(LinkedHashMap.class);
+
+                Map<String, Object> actual = reader.read();
+                assertEquals(expected, actual);
+                assertEquals(LinkedHashMap.class, actual.getClass());
+            }
+
+            @Test
+            void canConfigureTreeMap() throws IOException {
+                var reader = writerTest.getCarpetReader(TreeMap.class);
+
+                Map<String, Object> actual = reader.read();
+                assertEquals(expected, actual);
+                assertEquals(TreeMap.class, actual.getClass());
+            }
+
+        }
+
+        @Nested
+        class RecursiveRecordMapsUseSelectedMapType {
+
+            private final Map<String, Object> expected = Map.of("name", "root", "code", 100L,
+                    "value", Map.of("id", "foo", "amount", 1.0));
+
+            record ChildType(String id, Double amount) {
+            }
+
+            record MainType(String name, Long code, ChildType value) {
+            }
+
+            private ParquetWriterTest<MainType> writerTest;
+
+            @BeforeEach
+            void setup() throws IOException {
+                writerTest = new ParquetWriterTest<>(MainType.class);
+                var root = new MainType("root", 100L, new ChildType("foo", 1.0));
+                writerTest.write(root);
+            }
+
+            @Test
+            void genericMapIsConvertedToOptimizedCarpetGroupMap() throws IOException {
+                var reader = writerTest.getCarpetReader(Map.class);
+
+                Map<String, Object> actual = reader.read();
+                assertEquals(expected, actual);
+                assertTrue(actual.getClass().getName().contains("CarpetGroupMap"));
+                assertTrue(actual.get("value").getClass().getName().contains("CarpetGroupMap"));
+
+            }
+
+            @Test
+            void canConfigureHashMap() throws IOException {
+                var reader = writerTest.getCarpetReader(HashMap.class);
+
+                Map<String, Object> actual = reader.read();
+                assertEquals(expected, actual);
+                assertEquals(HashMap.class, actual.getClass());
+                assertEquals(HashMap.class, actual.get("value").getClass());
+            }
+
+        }
+
+        @Test
+        void carpetMapSupportsNullElements() throws IOException {
+            ParquetWriterTest<MainTypeWrite> writerTest = new ParquetWriterTest<>(MainTypeWrite.class);
+            var root = new MainTypeWrite(null, null, 1);
+            writerTest.write(root);
+            var reader = writerTest.getCarpetReader(Map.class);
+
+            Map<String, Object> actual = reader.read();
+            assertTrue(actual.containsKey("name"));
+            assertNull(actual.get("name"));
+            assertTrue(actual.containsKey("code"));
+            assertNull(actual.get("code"));
+            assertEquals(1, actual.get("value"));
+        }
+
+        @Test
+        void hashMapDoesntContainNullElements() throws IOException {
+            ParquetWriterTest<MainTypeWrite> writerTest = new ParquetWriterTest<>(MainTypeWrite.class);
+            var root = new MainTypeWrite(null, null, 1);
+            writerTest.write(root);
+            var reader = writerTest.getCarpetReader(HashMap.class);
+
+            Map<String, Object> actual = reader.read();
+            assertFalse(actual.containsKey("name"));
+            assertFalse(actual.containsKey("code"));
+            assertEquals(1, actual.get("value"));
+        }
+
     }
 
     private static Map<String, Object> mapOf(String k1, Object v1, String k2, Object v2) {
