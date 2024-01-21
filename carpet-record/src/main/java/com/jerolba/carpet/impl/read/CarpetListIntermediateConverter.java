@@ -28,7 +28,6 @@ import org.apache.parquet.schema.GroupType;
 import org.apache.parquet.schema.LogicalTypeAnnotation;
 import org.apache.parquet.schema.Type;
 
-import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.impl.ParameterizedCollection;
 
 class CarpetListIntermediateConverter extends GroupConverter {
@@ -40,15 +39,8 @@ class CarpetListIntermediateConverter extends GroupConverter {
     CarpetListIntermediateConverter(Type rootListType, ParameterizedCollection parameterized,
             CollectionHolder collectionHolder) {
         this.collectionHolder = collectionHolder;
-
-        var schema = rootListType.asGroupType();
-        List<Type> fields = schema.getFields();
-        if (fields.size() > 1) {
-            throw new RecordTypeConversionException(
-                    schema.getName() + " LIST child element can not have more than one field");
-        }
-        Type listElement = fields.get(0);
-        converter = createCollectionConverter(listElement, parameterized, value -> elementValue = value);
+        List<Type> fields = rootListType.asGroupType().getFields();
+        converter = createCollectionConverter(fields.get(0), parameterized, value -> elementValue = value);
     }
 
     @Override

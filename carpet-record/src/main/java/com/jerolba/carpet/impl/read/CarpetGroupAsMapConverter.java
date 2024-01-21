@@ -236,13 +236,7 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
 
         CarpetListAsMapIntermediateConverter(Class<?> mapClass, Type rootListType, CollectionHolder collectionHolder) {
             this.collectionHolder = collectionHolder;
-
-            var schema = rootListType.asGroupType();
-            List<Type> fields = schema.getFields();
-            if (fields.size() > 1) {
-                throw new RecordTypeConversionException(
-                        schema.getName() + " LIST child element can not have more than one field");
-            }
+            List<Type> fields = rootListType.asGroupType().getFields();
             converter = createCollectionConverter(mapClass, fields.get(0), value -> elementValue = value);
         }
 

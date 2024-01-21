@@ -8,5 +8,7 @@ allprojects {
         header rootProject.file("config/HEADER")
         exclude "**/*.properties"
         exclude "**/*.txt"
+        exclude "**/*.parquet"
+        exclude "**/dockerfile"
     }
 }
