@@ -409,6 +409,29 @@ class JavaRecord2SchemaTest {
         }
 
         @Test
+        void nestedOneTupleCollection() {
+
+            record OneTuple(String str) {
+
+            }
+            record NestedOneTupleCollection(String id, List<OneTuple> my_list) {
+            }
+
+            MessageType schema = schemaFactory.createSchema(NestedOneTupleCollection.class);
+            String expected = """
+                    message NestedOneTupleCollection {
+                      optional binary id (STRING);
+                      optional group my_list (LIST) {
+                        repeated group element {
+                          optional binary str (STRING);
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
         void consecutiveNestedRecordCollection() {
 
             record ChildRecord(String id, Boolean loaded) {

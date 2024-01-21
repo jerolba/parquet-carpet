@@ -185,6 +185,10 @@ public class SchemaValidation {
     }
 
     public static boolean isThreeLevel(Type child) {
+        return isCompliantThreeLevelWith(child, "element") || isCompliantThreeLevelWith(child, "item");
+    }
+
+    public static boolean isCompliantThreeLevelWith(Type child, String elementName) {
 //      <list-repetition> group <name> (LIST) {
 //        repeated group list { <--child
 //          <element-repetition> <element-type> element;
@@ -201,7 +205,7 @@ public class SchemaValidation {
             return false;
         }
         Type grandChild = asGroup.getFields().get(0);
-        if (!grandChild.getName().equals("element")) { // TODO: make configurable
+        if (!grandChild.getName().equals(elementName)) {
             return false;
         }
         return true;
