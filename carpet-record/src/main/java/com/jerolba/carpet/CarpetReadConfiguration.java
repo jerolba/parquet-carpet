@@ -20,13 +20,16 @@ class CarpetReadConfiguration {
     private final boolean failOnMissingColumn;
     private final boolean failNarrowingPrimitiveConversion;
     private final boolean failOnNullForPrimitives;
+    private final FieldMatchingStrategy fieldMatchingStrategy;
 
     public CarpetReadConfiguration(boolean failOnMissingColumn,
             boolean failNarrowingPrimitiveConversion,
-            boolean failOnNullForPrimitives) {
+            boolean failOnNullForPrimitives,
+            FieldMatchingStrategy fieldMatchingStrategy) {
         this.failOnMissingColumn = failOnMissingColumn;
         this.failNarrowingPrimitiveConversion = failNarrowingPrimitiveConversion;
         this.failOnNullForPrimitives = failOnNullForPrimitives;
+        this.fieldMatchingStrategy = fieldMatchingStrategy;
     }
 
     public boolean isFailOnMissingColumn() {
@@ -39,6 +42,10 @@ class CarpetReadConfiguration {
 
     public boolean isFailOnNullForPrimitives() {
         return failOnNullForPrimitives;
+    }
+
+    public FieldMatchingStrategy fieldMatchingStrategy() {
+        return fieldMatchingStrategy;
     }
 
 }

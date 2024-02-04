@@ -15,13 +15,11 @@
  */
 package com.jerolba.carpet.impl.read;
 
-import static com.jerolba.carpet.impl.AliasField.getFieldName;
 import static com.jerolba.carpet.impl.Parameterized.getParameterizedCollection;
 import static com.jerolba.carpet.impl.Parameterized.getParameterizedMap;
 import static com.jerolba.carpet.impl.read.SchemaValidation.hasMapShape;
 import static com.jerolba.carpet.impl.read.SchemaValidation.isBasicSupportedType;
 import static com.jerolba.carpet.impl.read.SchemaValidation.isThreeLevel;
-import static java.util.stream.Collectors.toMap;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.listType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.mapType;
 
@@ -42,47 +40,47 @@ import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.impl.JavaType;
 import com.jerolba.carpet.impl.ParameterizedCollection;
 import com.jerolba.carpet.impl.ParameterizedMap;
+import com.jerolba.carpet.impl.read.ColumnToFieldMapper.NameMap;
 
 public class SchemaFilter {
 
-    private final GroupType schema;
     private final SchemaValidation validation;
+    private final ColumnToFieldMapper columnToFieldMapper;
 
-    public SchemaFilter(SchemaValidation validation, GroupType schema) {
-        this.schema = schema;
+    public SchemaFilter(SchemaValidation validation, ColumnToFieldMapper columnToFieldMapper) {
         this.validation = validation;
+        this.columnToFieldMapper = columnToFieldMapper;
     }
 
-    public MessageType project(Class<?> readClass) {
+    public MessageType project(Class<?> readClass, GroupType schema) {
         if (Map.class.isAssignableFrom(readClass)) {
             return new MessageType(schema.getName(), schema.getFields());
         }
         ColumnPath path = new ColumnPath();
-        GroupType projected = filter(readClass, path);
+        GroupType projected = filter(readClass, path, schema);
         return new MessageType(projected.getName(), projected.getFields());
     }
 
-    private GroupType filter(Class<?> readClass, ColumnPath path) {
+    private GroupType filter(Class<?> readClass, ColumnPath path, GroupType schema) {
         if (!readClass.isRecord()) {
             throw new RecordTypeConversionException(readClass.getName() + " is not a Java Record");
         }
 
-        List<Type> fields = schema.getFields();
-        Map<String, Type> fieldsByName = fields.stream().collect(toMap(Type::getName, f -> f));
+        Map<String, NameMap> mapFields = columnToFieldMapper.mapFields(schema, readClass.getRecordComponents());
 
         Map<String, Type> inProjection = new HashMap<>();
         for (RecordComponent recordComponent : readClass.getRecordComponents()) {
-            String name = getFieldName(recordComponent);
-            ColumnPath column = path.add(readClass, recordComponent.getName(), name);
-            Type parquetType = fieldsByName.get(name);
-            if (parquetType == null) {
-                validation.validateMissingColumn(name, column);
+            NameMap nameMap = mapFields.get(recordComponent.getName());
+            if (nameMap == null) {
+                validation.validateMissingColumn(readClass, recordComponent.getName());
                 continue;
             }
-
+            Type parquetType = nameMap.parquetType();
+            String parquetFieldName = parquetType.getName();
+            ColumnPath column = path.add(readClass, recordComponent.getName(), parquetFieldName);
             if (parquetType.isRepetition(Repetition.REPEATED)) {
-                Type type = analyzeOneLevelStructure(column, recordComponent, parquetType);
-                inProjection.put(name, type);
+                Type type = analyzeOneLevelStructure(column, recordComponent, parquetType, parquetFieldName);
+                inProjection.put(parquetFieldName, type);
                 continue;
             }
 
@@ -90,37 +88,37 @@ public class SchemaFilter {
                 PrimitiveType primitiveType = parquetType.asPrimitiveType();
                 validation.validatePrimitiveCompatibility(primitiveType, recordComponent.getType());
                 validation.validateNullability(primitiveType, recordComponent);
-                inProjection.put(name, parquetType);
+                inProjection.put(parquetFieldName, parquetType);
                 continue;
             }
             GroupType asGroupType = parquetType.asGroupType();
             LogicalTypeAnnotation typeAnnotation = parquetType.getLogicalTypeAnnotation();
             if (typeAnnotation == listType()) {
                 if (!Collection.class.isAssignableFrom(recordComponent.getType())) {
-                    throw new RecordTypeConversionException("Field '" + name + "' is not a collection in '"
+                    throw new RecordTypeConversionException("Field '" + parquetFieldName + "' is not a collection in '"
                             + column.getClassName() + "' mapping column '" + column.path() + "'");
                 }
                 var parameterized = getParameterizedCollection(recordComponent);
-                Type type = analyzeMultipleLevelStructure(column, name, parameterized, asGroupType);
-                inProjection.put(name, type);
+                Type type = analyzeMultipleLevelStructure(column, parquetFieldName, parameterized, asGroupType);
+                inProjection.put(parquetFieldName, type);
                 continue;
-            } else if (typeAnnotation == mapType()) {
+            }
+            if (typeAnnotation == mapType()) {
                 if (!Map.class.isAssignableFrom(recordComponent.getType())) {
-                    throw new RecordTypeConversionException("Field '" + name + "' is not a map in '"
+                    throw new RecordTypeConversionException("Field '" + parquetFieldName + "' is not a map in '"
                             + column.getClassName() + "' mapping column '" + column.path() + "'");
                 }
                 var parameterized = getParameterizedMap(recordComponent);
-                Type type = analizeMapStructure(column, name, parameterized, asGroupType);
-                inProjection.put(name, type);
+                Type type = analizeMapStructure(column, parquetFieldName, parameterized, asGroupType);
+                inProjection.put(parquetFieldName, type);
                 continue;
             }
 
             if (recordComponent.getType().isRecord()) {
                 validation.validateNullability(parquetType, recordComponent);
-                SchemaFilter recordFilter = new SchemaFilter(validation, asGroupType);
 
-                GroupType recordSchema = recordFilter.filter(recordComponent.getType(), column);
-                inProjection.put(name, recordSchema);
+                GroupType recordSchema = filter(recordComponent.getType(), column, asGroupType);
+                inProjection.put(parquetFieldName, recordSchema);
                 continue;
             }
             if (Map.class.isAssignableFrom(recordComponent.getType())) {
@@ -128,7 +126,7 @@ public class SchemaFilter {
                 if (parameterized.getKeyActualType().equals(String.class)) {
                     if (parameterized.getValueActualType().equals(Object.class)) {
                         validation.validateNullability(parquetType, recordComponent);
-                        inProjection.put(name, parquetType);
+                        inProjection.put(parquetFieldName, parquetType);
                         continue;
                     } else {
                         throw new RecordTypeConversionException(
@@ -149,7 +147,7 @@ public class SchemaFilter {
     }
 
     private Type analyzeOneLevelStructure(ColumnPath column, RecordComponent recordComponent,
-            Type parquetType) {
+            Type parquetType, String fieldName) {
 
         // Java field must be a collection type
         if (!Collection.class.isAssignableFrom(recordComponent.getType())) {
@@ -177,11 +175,10 @@ public class SchemaFilter {
         var asGroupType = parquetType.asGroupType();
         var actualCollectionType = parameterized.getActualType();
         if (actualCollectionType.isRecord()) {
-            SchemaFilter recordFilter = new SchemaFilter(validation, asGroupType);
-            return recordFilter.filter(actualCollectionType, column);
+            return filter(actualCollectionType, column, asGroupType);
         }
-        throw new RecordTypeConversionException("Field " + getFieldName(recordComponent) + " of type "
-                + actualCollectionType.getName() + " is not a basic type or " + "a Java record");
+        throw new RecordTypeConversionException("Field " + fieldName + " of type " + actualCollectionType.getName()
+                + " is not a basic type or a Java record");
     }
 
     private Type analyzeMultipleLevelStructure(ColumnPath column, String name, ParameterizedCollection parameterized,
@@ -236,8 +233,7 @@ public class SchemaFilter {
         }
         var actualCollectionType = parameterized.getActualType();
         if (actualCollectionType.isRecord()) {
-            SchemaFilter recordFilter = new SchemaFilter(validation, childElement.asGroupType());
-            GroupType childMapped = recordFilter.filter(actualCollectionType, column);
+            GroupType childMapped = filter(actualCollectionType, column, childElement.asGroupType());
             Type listGroupMapped = rewrapListIfExists(listGroup, childMapped);
             return parentGroupType.withNewFields(listGroupMapped);
         }
@@ -273,8 +269,7 @@ public class SchemaFilter {
             PrimitiveType primitiveType = key.asPrimitiveType();
             validation.validatePrimitiveCompatibility(primitiveType, keyActualType);
         } else if (keyActualType.isRecord()) {
-            SchemaFilter recordFilter = new SchemaFilter(validation, key.asGroupType());
-            key = recordFilter.filter(keyActualType, column);
+            key = filter(keyActualType, column, key.asGroupType());
         } else {
             throw new RecordTypeConversionException(keyActualType.getName() + " is not a valid key for a Map");
         }
@@ -303,8 +298,7 @@ public class SchemaFilter {
             if (value.isPrimitive()) {
                 validation.validatePrimitiveCompatibility(value.asPrimitiveType(), valueActualType);
             } else if (valueActualType.isRecord()) {
-                SchemaFilter recordFilter = new SchemaFilter(validation, value.asGroupType());
-                value = recordFilter.filter(valueActualType, column);
+                value = filter(valueActualType, column, value.asGroupType());
             } else {
                 throw new RecordTypeConversionException(valueActualType.getName() + " is not a valid key for a Map");
             }

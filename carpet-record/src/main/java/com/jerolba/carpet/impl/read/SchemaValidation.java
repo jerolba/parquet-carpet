@@ -50,10 +50,10 @@ public class SchemaValidation {
         this.failOnNullForPrimitives = failOnNullForPrimitives;
     }
 
-    public boolean validateMissingColumn(String name, ColumnPath column) {
+    public boolean validateMissingColumn(Class<?> clazz, String fieldName) {
         if (failOnMissingColumn) {
-            throw new CarpetMissingColumnException("Field '" + column.getFieldName() + "' from class '"
-                    + column.getClassName() + "' not present in parquet schema");
+            throw new CarpetMissingColumnException("Field '" + fieldName + "' from class '"
+                    + clazz.getName() + "' not present in parquet schema");
         }
         return true;
     }

@@ -15,6 +15,8 @@
  */
 package com.jerolba.carpet.reader;
 
+import static com.jerolba.carpet.FieldMatchingStrategy.FIELD_NAME_STRATEGY;
+import static com.jerolba.carpet.FieldMatchingStrategy.SNAKE_CASE_STRATEGY;
 import static org.apache.parquet.schema.ConversionPatterns.listOfElements;
 import static org.apache.parquet.schema.ConversionPatterns.listType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.enumType;
@@ -48,7 +50,9 @@ import org.junit.jupiter.api.Test;
 
 import com.jerolba.carpet.CarpetMissingColumnException;
 import com.jerolba.carpet.RecordTypeConversionException;
+import com.jerolba.carpet.annotation.Alias;
 import com.jerolba.carpet.annotation.NotNull;
+import com.jerolba.carpet.impl.read.ColumnToFieldMapper;
 import com.jerolba.carpet.impl.read.SchemaFilter;
 import com.jerolba.carpet.impl.read.SchemaValidation;
 
@@ -62,6 +66,7 @@ class SchemaFilterTest {
     private final SchemaValidation strictNumericConfig = new SchemaValidation(true, true, false);
     private final SchemaValidation dontFailOnMissingFields = new SchemaValidation(false, false, false);
     private final SchemaValidation failOnNullForPrimitives = new SchemaValidation(true, false, true);
+    private final ColumnToFieldMapper defaultFieldMapper = new ColumnToFieldMapper(FIELD_NAME_STRATEGY);
 
     @Nested
     class FieldInt32Conversion {
@@ -70,49 +75,49 @@ class SchemaFilterTest {
         void fieldRequired() {
             Type field = new PrimitiveType(REQUIRED, PrimitiveTypeName.INT32, "value");
             GroupType groupType = new MessageType("foo", field);
-            SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
 
             record PrimitiveInteger(int value) {
             }
-            assertEquals(groupType, filter.project(PrimitiveInteger.class));
+            assertEquals(groupType, filter.project(PrimitiveInteger.class, groupType));
 
             record ObjectInteger(Integer value) {
             }
-            assertEquals(groupType, filter.project(ObjectInteger.class));
+            assertEquals(groupType, filter.project(ObjectInteger.class, groupType));
         }
 
         @Test
         void fieldOptional() {
             Type field = new PrimitiveType(OPTIONAL, PrimitiveTypeName.INT32, "value");
             GroupType groupType = new MessageType("foo", field);
-            SchemaFilter filterDefault = new SchemaFilter(defaultReadConfig, groupType);
-            SchemaFilter filterFailOnNotNullable = new SchemaFilter(failOnNullForPrimitives, groupType);
+            SchemaFilter filterDefault = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            SchemaFilter filterFailOnNotNullable = new SchemaFilter(failOnNullForPrimitives, defaultFieldMapper);
 
             record PrimitiveInteger(int value) {
             }
-            assertEquals(groupType, filterDefault.project(PrimitiveInteger.class));
+            assertEquals(groupType, filterDefault.project(PrimitiveInteger.class, groupType));
             assertThrows(RecordTypeConversionException.class,
-                    () -> filterFailOnNotNullable.project(PrimitiveInteger.class));
+                    () -> filterFailOnNotNullable.project(PrimitiveInteger.class, groupType));
 
             record ObjectInteger(Integer value) {
             }
-            assertEquals(groupType, filterDefault.project(ObjectInteger.class));
-            assertEquals(groupType, filterFailOnNotNullable.project(ObjectInteger.class));
+            assertEquals(groupType, filterDefault.project(ObjectInteger.class, groupType));
+            assertEquals(groupType, filterFailOnNotNullable.project(ObjectInteger.class, groupType));
         }
 
         @Test
         void castToLongIsSupported() {
             Type field = new PrimitiveType(REQUIRED, PrimitiveTypeName.INT32, "value");
             GroupType groupType = new MessageType("foo", field);
-            SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
 
             record PrimitiveLong(long value) {
             }
-            assertEquals(groupType, filter.project(PrimitiveLong.class));
+            assertEquals(groupType, filter.project(PrimitiveLong.class, groupType));
 
             record ObjectLong(Long value) {
             }
-            assertEquals(groupType, filter.project(ObjectLong.class));
+            assertEquals(groupType, filter.project(ObjectLong.class, groupType));
         }
 
         @Test
@@ -125,13 +130,14 @@ class SchemaFilterTest {
             record ObjectShort(Short value) {
             }
 
-            SchemaFilter filterStrict = new SchemaFilter(strictNumericConfig, groupType);
-            assertThrows(RecordTypeConversionException.class, () -> filterStrict.project(PrimitiveShort.class));
-            assertThrows(RecordTypeConversionException.class, () -> filterStrict.project(ObjectShort.class));
+            SchemaFilter filterStrict = new SchemaFilter(strictNumericConfig, defaultFieldMapper);
+            assertThrows(RecordTypeConversionException.class,
+                    () -> filterStrict.project(PrimitiveShort.class, groupType));
+            assertThrows(RecordTypeConversionException.class, () -> filterStrict.project(ObjectShort.class, groupType));
 
-            SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, groupType);
-            assertEquals(groupType, filterNonStrict.project(PrimitiveShort.class));
-            assertEquals(groupType, filterNonStrict.project(ObjectShort.class));
+            SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            assertEquals(groupType, filterNonStrict.project(PrimitiveShort.class, groupType));
+            assertEquals(groupType, filterNonStrict.project(ObjectShort.class, groupType));
         }
 
         @Test
@@ -146,13 +152,13 @@ class SchemaFilterTest {
             record ObjectShort(Short value) {
             }
 
-            SchemaFilter filterStrict = new SchemaFilter(strictNumericConfig, groupType);
-            assertEquals(groupType, filterStrict.project(PrimitiveShort.class));
-            assertEquals(groupType, filterStrict.project(ObjectShort.class));
+            SchemaFilter filterStrict = new SchemaFilter(strictNumericConfig, defaultFieldMapper);
+            assertEquals(groupType, filterStrict.project(PrimitiveShort.class, groupType));
+            assertEquals(groupType, filterStrict.project(ObjectShort.class, groupType));
 
-            SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, groupType);
-            assertEquals(groupType, filterNonStrict.project(PrimitiveShort.class));
-            assertEquals(groupType, filterNonStrict.project(ObjectShort.class));
+            SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            assertEquals(groupType, filterNonStrict.project(PrimitiveShort.class, groupType));
+            assertEquals(groupType, filterNonStrict.project(ObjectShort.class, groupType));
         }
 
         @Test
@@ -165,13 +171,14 @@ class SchemaFilterTest {
             record ObjectByte(Byte value) {
             }
 
-            SchemaFilter filterStrict = new SchemaFilter(strictNumericConfig, groupType);
-            assertThrows(RecordTypeConversionException.class, () -> filterStrict.project(PrimitiveByte.class));
-            assertThrows(RecordTypeConversionException.class, () -> filterStrict.project(ObjectByte.class));
+            SchemaFilter filterStrict = new SchemaFilter(strictNumericConfig, defaultFieldMapper);
+            assertThrows(RecordTypeConversionException.class,
+                    () -> filterStrict.project(PrimitiveByte.class, groupType));
+            assertThrows(RecordTypeConversionException.class, () -> filterStrict.project(ObjectByte.class, groupType));
 
-            SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, groupType);
-            assertEquals(groupType, filterNonStrict.project(PrimitiveByte.class));
-            assertEquals(groupType, filterNonStrict.project(ObjectByte.class));
+            SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            assertEquals(groupType, filterNonStrict.project(PrimitiveByte.class, groupType));
+            assertEquals(groupType, filterNonStrict.project(ObjectByte.class, groupType));
         }
 
         @Test
@@ -186,13 +193,13 @@ class SchemaFilterTest {
             record ObjectByte(Byte value) {
             }
 
-            SchemaFilter filterStrict = new SchemaFilter(strictNumericConfig, groupType);
-            assertEquals(groupType, filterStrict.project(PrimitiveByte.class));
-            assertEquals(groupType, filterStrict.project(ObjectByte.class));
+            SchemaFilter filterStrict = new SchemaFilter(strictNumericConfig, defaultFieldMapper);
+            assertEquals(groupType, filterStrict.project(PrimitiveByte.class, groupType));
+            assertEquals(groupType, filterStrict.project(ObjectByte.class, groupType));
 
-            SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, groupType);
-            assertEquals(groupType, filterNonStrict.project(PrimitiveByte.class));
-            assertEquals(groupType, filterNonStrict.project(ObjectByte.class));
+            SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            assertEquals(groupType, filterNonStrict.project(PrimitiveByte.class, groupType));
+            assertEquals(groupType, filterNonStrict.project(ObjectByte.class, groupType));
         }
 
     }
@@ -204,34 +211,34 @@ class SchemaFilterTest {
         void fieldRequired() {
             Type field = new PrimitiveType(REQUIRED, PrimitiveTypeName.INT64, "value");
             GroupType groupType = new MessageType("foo", field);
-            SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
 
             record PrimitiveLong(long value) {
             }
-            assertEquals(groupType, filter.project(PrimitiveLong.class));
+            assertEquals(groupType, filter.project(PrimitiveLong.class, groupType));
 
             record ObjectLong(Long value) {
             }
-            assertEquals(groupType, filter.project(ObjectLong.class));
+            assertEquals(groupType, filter.project(ObjectLong.class, groupType));
         }
 
         @Test
         void fieldOptional() {
             Type field = new PrimitiveType(OPTIONAL, PrimitiveTypeName.INT64, "value");
             GroupType groupType = new MessageType("foo", field);
-            SchemaFilter filterDefault = new SchemaFilter(defaultReadConfig, groupType);
-            SchemaFilter filterFailOnNotNullable = new SchemaFilter(failOnNullForPrimitives, groupType);
+            SchemaFilter filterDefault = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            SchemaFilter filterFailOnNotNullable = new SchemaFilter(failOnNullForPrimitives, defaultFieldMapper);
 
             record PrimitiveLong(long value) {
             }
-            assertEquals(groupType, filterDefault.project(PrimitiveLong.class));
+            assertEquals(groupType, filterDefault.project(PrimitiveLong.class, groupType));
             assertThrows(RecordTypeConversionException.class,
-                    () -> filterFailOnNotNullable.project(PrimitiveLong.class));
+                    () -> filterFailOnNotNullable.project(PrimitiveLong.class, groupType));
 
             record ObjectLong(Long value) {
             }
-            assertEquals(groupType, filterDefault.project(PrimitiveLong.class));
-            assertEquals(groupType, filterFailOnNotNullable.project(ObjectLong.class));
+            assertEquals(groupType, filterDefault.project(PrimitiveLong.class, groupType));
+            assertEquals(groupType, filterFailOnNotNullable.project(ObjectLong.class, groupType));
         }
 
         @Test
@@ -244,13 +251,15 @@ class SchemaFilterTest {
             record ObjectInteger(Integer value) {
             }
 
-            SchemaFilter filterStrict = new SchemaFilter(strictNumericConfig, groupType);
-            assertThrows(RecordTypeConversionException.class, () -> filterStrict.project(PrimitiveInt.class));
-            assertThrows(RecordTypeConversionException.class, () -> filterStrict.project(ObjectInteger.class));
+            SchemaFilter filterStrict = new SchemaFilter(strictNumericConfig, defaultFieldMapper);
+            assertThrows(RecordTypeConversionException.class,
+                    () -> filterStrict.project(PrimitiveInt.class, groupType));
+            assertThrows(RecordTypeConversionException.class,
+                    () -> filterStrict.project(ObjectInteger.class, groupType));
 
-            SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, groupType);
-            assertEquals(groupType, filterNonStrict.project(PrimitiveInt.class));
-            assertEquals(groupType, filterNonStrict.project(ObjectInteger.class));
+            SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            assertEquals(groupType, filterNonStrict.project(PrimitiveInt.class, groupType));
+            assertEquals(groupType, filterNonStrict.project(ObjectInteger.class, groupType));
         }
 
         @Test
@@ -263,13 +272,14 @@ class SchemaFilterTest {
             record ObjectShort(Short value) {
             }
 
-            SchemaFilter filterStrict = new SchemaFilter(strictNumericConfig, groupType);
-            assertThrows(RecordTypeConversionException.class, () -> filterStrict.project(PrimitiveShort.class));
-            assertThrows(RecordTypeConversionException.class, () -> filterStrict.project(ObjectShort.class));
+            SchemaFilter filterStrict = new SchemaFilter(strictNumericConfig, defaultFieldMapper);
+            assertThrows(RecordTypeConversionException.class,
+                    () -> filterStrict.project(PrimitiveShort.class, groupType));
+            assertThrows(RecordTypeConversionException.class, () -> filterStrict.project(ObjectShort.class, groupType));
 
-            SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, groupType);
-            assertEquals(groupType, filterNonStrict.project(PrimitiveShort.class));
-            assertEquals(groupType, filterNonStrict.project(ObjectShort.class));
+            SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            assertEquals(groupType, filterNonStrict.project(PrimitiveShort.class, groupType));
+            assertEquals(groupType, filterNonStrict.project(ObjectShort.class, groupType));
         }
 
         @Test
@@ -282,13 +292,14 @@ class SchemaFilterTest {
             record ObjectByte(Byte value) {
             }
 
-            SchemaFilter filterStrict = new SchemaFilter(strictNumericConfig, groupType);
-            assertThrows(RecordTypeConversionException.class, () -> filterStrict.project(PrimitiveByte.class));
-            assertThrows(RecordTypeConversionException.class, () -> filterStrict.project(ObjectByte.class));
+            SchemaFilter filterStrict = new SchemaFilter(strictNumericConfig, defaultFieldMapper);
+            assertThrows(RecordTypeConversionException.class,
+                    () -> filterStrict.project(PrimitiveByte.class, groupType));
+            assertThrows(RecordTypeConversionException.class, () -> filterStrict.project(ObjectByte.class, groupType));
 
-            SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, groupType);
-            assertEquals(groupType, filterNonStrict.project(PrimitiveByte.class));
-            assertEquals(groupType, filterNonStrict.project(ObjectByte.class));
+            SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            assertEquals(groupType, filterNonStrict.project(PrimitiveByte.class, groupType));
+            assertEquals(groupType, filterNonStrict.project(ObjectByte.class, groupType));
         }
 
     }
@@ -300,49 +311,49 @@ class SchemaFilterTest {
         void fieldRequired() {
             Type field = new PrimitiveType(REQUIRED, PrimitiveTypeName.FLOAT, "value");
             GroupType groupType = new MessageType("foo", field);
-            SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
 
             record PrimitiveFloat(float value) {
             }
-            assertEquals(groupType, filter.project(PrimitiveFloat.class));
+            assertEquals(groupType, filter.project(PrimitiveFloat.class, groupType));
 
             record ObjectFloat(Float value) {
             }
-            assertEquals(groupType, filter.project(ObjectFloat.class));
+            assertEquals(groupType, filter.project(ObjectFloat.class, groupType));
         }
 
         @Test
         void fieldOptional() {
             Type field = new PrimitiveType(OPTIONAL, PrimitiveTypeName.FLOAT, "value");
             GroupType groupType = new MessageType("foo", field);
-            SchemaFilter filterDefault = new SchemaFilter(defaultReadConfig, groupType);
-            SchemaFilter filterFailOnNotNullable = new SchemaFilter(failOnNullForPrimitives, groupType);
+            SchemaFilter filterDefault = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            SchemaFilter filterFailOnNotNullable = new SchemaFilter(failOnNullForPrimitives, defaultFieldMapper);
 
             record PrimitiveFloat(float value) {
             }
-            assertEquals(groupType, filterDefault.project(PrimitiveFloat.class));
+            assertEquals(groupType, filterDefault.project(PrimitiveFloat.class, groupType));
             assertThrows(RecordTypeConversionException.class,
-                    () -> filterFailOnNotNullable.project(PrimitiveFloat.class));
+                    () -> filterFailOnNotNullable.project(PrimitiveFloat.class, groupType));
 
             record ObjectFloat(Float value) {
             }
-            assertEquals(groupType, filterDefault.project(ObjectFloat.class));
-            assertEquals(groupType, filterFailOnNotNullable.project(ObjectFloat.class));
+            assertEquals(groupType, filterDefault.project(ObjectFloat.class, groupType));
+            assertEquals(groupType, filterFailOnNotNullable.project(ObjectFloat.class, groupType));
         }
 
         @Test
         void castToDoubleIsSupported() {
             Type field = new PrimitiveType(REQUIRED, PrimitiveTypeName.FLOAT, "value");
             GroupType groupType = new MessageType("foo", field);
-            SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
 
             record PrimitiveDouble(double value) {
             }
-            assertEquals(groupType, filter.project(PrimitiveDouble.class));
+            assertEquals(groupType, filter.project(PrimitiveDouble.class, groupType));
 
             record ObjectDouble(Double value) {
             }
-            assertEquals(groupType, filter.project(ObjectDouble.class));
+            assertEquals(groupType, filter.project(ObjectDouble.class, groupType));
         }
 
     }
@@ -354,34 +365,34 @@ class SchemaFilterTest {
         void fieldRequired() {
             Type field = new PrimitiveType(REQUIRED, PrimitiveTypeName.DOUBLE, "value");
             GroupType groupType = new MessageType("foo", field);
-            SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
 
             record PrimitiveDouble(double value) {
             }
-            assertEquals(groupType, filter.project(PrimitiveDouble.class));
+            assertEquals(groupType, filter.project(PrimitiveDouble.class, groupType));
 
             record ObjectDouble(Double value) {
             }
-            assertEquals(groupType, filter.project(ObjectDouble.class));
+            assertEquals(groupType, filter.project(ObjectDouble.class, groupType));
         }
 
         @Test
         void fieldOptional() {
             Type field = new PrimitiveType(OPTIONAL, PrimitiveTypeName.DOUBLE, "value");
             GroupType groupType = new MessageType("foo", field);
-            SchemaFilter filterDefault = new SchemaFilter(defaultReadConfig, groupType);
-            SchemaFilter filterFailOnNotNullable = new SchemaFilter(failOnNullForPrimitives, groupType);
+            SchemaFilter filterDefault = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            SchemaFilter filterFailOnNotNullable = new SchemaFilter(failOnNullForPrimitives, defaultFieldMapper);
 
             record PrimitiveDouble(double value) {
             }
-            assertEquals(groupType, filterDefault.project(PrimitiveDouble.class));
+            assertEquals(groupType, filterDefault.project(PrimitiveDouble.class, groupType));
             assertThrows(RecordTypeConversionException.class,
-                    () -> filterFailOnNotNullable.project(PrimitiveDouble.class));
+                    () -> filterFailOnNotNullable.project(PrimitiveDouble.class, groupType));
 
             record ObjectDouble(Double value) {
             }
-            assertEquals(groupType, filterDefault.project(ObjectDouble.class));
-            assertEquals(groupType, filterFailOnNotNullable.project(ObjectDouble.class));
+            assertEquals(groupType, filterDefault.project(ObjectDouble.class, groupType));
+            assertEquals(groupType, filterFailOnNotNullable.project(ObjectDouble.class, groupType));
         }
 
         @Test
@@ -394,13 +405,14 @@ class SchemaFilterTest {
             record ObjectFloat(Float value) {
             }
 
-            SchemaFilter filterStrict = new SchemaFilter(strictNumericConfig, groupType);
-            assertThrows(RecordTypeConversionException.class, () -> filterStrict.project(PrimitiveFloat.class));
-            assertThrows(RecordTypeConversionException.class, () -> filterStrict.project(ObjectFloat.class));
+            SchemaFilter filterStrict = new SchemaFilter(strictNumericConfig, defaultFieldMapper);
+            assertThrows(RecordTypeConversionException.class,
+                    () -> filterStrict.project(PrimitiveFloat.class, groupType));
+            assertThrows(RecordTypeConversionException.class, () -> filterStrict.project(ObjectFloat.class, groupType));
 
-            SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, groupType);
-            assertEquals(groupType, filterNonStrict.project(PrimitiveFloat.class));
-            assertEquals(groupType, filterNonStrict.project(ObjectFloat.class));
+            SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            assertEquals(groupType, filterNonStrict.project(PrimitiveFloat.class, groupType));
+            assertEquals(groupType, filterNonStrict.project(ObjectFloat.class, groupType));
         }
 
     }
@@ -412,34 +424,34 @@ class SchemaFilterTest {
         void fieldRequired() {
             Type field = Types.primitive(BINARY, REQUIRED).as(stringType()).named("value");
             GroupType groupType = new MessageType("foo", field);
-            SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
 
             record NotNullString(@NotNull String value) {
             }
-            assertEquals(groupType, filter.project(NotNullString.class));
+            assertEquals(groupType, filter.project(NotNullString.class, groupType));
 
             record NullableString(String value) {
             }
-            assertEquals(groupType, filter.project(NullableString.class));
+            assertEquals(groupType, filter.project(NullableString.class, groupType));
         }
 
         @Test
         void fieldOptional() {
             Type field = Types.primitive(BINARY, OPTIONAL).as(stringType()).named("value");
             GroupType groupType = new MessageType("foo", field);
-            SchemaFilter filterDefault = new SchemaFilter(defaultReadConfig, groupType);
-            SchemaFilter filterFailOnNotNullable = new SchemaFilter(failOnNullForPrimitives, groupType);
+            SchemaFilter filterDefault = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            SchemaFilter filterFailOnNotNullable = new SchemaFilter(failOnNullForPrimitives, defaultFieldMapper);
 
             record NotNullString(@NotNull String value) {
             }
-            assertEquals(groupType, filterDefault.project(NotNullString.class));
+            assertEquals(groupType, filterDefault.project(NotNullString.class, groupType));
             assertThrows(RecordTypeConversionException.class,
-                    () -> filterFailOnNotNullable.project(NotNullString.class));
+                    () -> filterFailOnNotNullable.project(NotNullString.class, groupType));
 
             record NullableString(String value) {
             }
-            assertEquals(groupType, filterDefault.project(NullableString.class));
-            assertEquals(groupType, filterFailOnNotNullable.project(NullableString.class));
+            assertEquals(groupType, filterDefault.project(NullableString.class, groupType));
+            assertEquals(groupType, filterFailOnNotNullable.project(NullableString.class, groupType));
         }
 
     }
@@ -453,15 +465,15 @@ class SchemaFilterTest {
                     .length(UUIDLogicalTypeAnnotation.BYTES)
                     .named("value");
             GroupType groupType = new MessageType("foo", field);
-            SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
 
             record NotNullUuid(@NotNull UUID value) {
             }
-            assertEquals(groupType, filter.project(NotNullUuid.class));
+            assertEquals(groupType, filter.project(NotNullUuid.class, groupType));
 
             record NullableUuid(UUID value) {
             }
-            assertEquals(groupType, filter.project(NullableUuid.class));
+            assertEquals(groupType, filter.project(NullableUuid.class, groupType));
         }
 
         @Test
@@ -470,19 +482,19 @@ class SchemaFilterTest {
                     .length(UUIDLogicalTypeAnnotation.BYTES)
                     .named("value");
             GroupType groupType = new MessageType("foo", field);
-            SchemaFilter filterDefault = new SchemaFilter(defaultReadConfig, groupType);
-            SchemaFilter filterFailOnNotNullable = new SchemaFilter(failOnNullForPrimitives, groupType);
+            SchemaFilter filterDefault = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            SchemaFilter filterFailOnNotNullable = new SchemaFilter(failOnNullForPrimitives, defaultFieldMapper);
 
             record NotNullUuid(@NotNull UUID value) {
             }
-            assertEquals(groupType, filterDefault.project(NotNullUuid.class));
+            assertEquals(groupType, filterDefault.project(NotNullUuid.class, groupType));
             assertThrows(RecordTypeConversionException.class,
-                    () -> filterFailOnNotNullable.project(NotNullUuid.class));
+                    () -> filterFailOnNotNullable.project(NotNullUuid.class, groupType));
 
             record NullableUuid(UUID value) {
             }
-            assertEquals(groupType, filterDefault.project(NullableUuid.class));
-            assertEquals(groupType, filterFailOnNotNullable.project(NullableUuid.class));
+            assertEquals(groupType, filterDefault.project(NullableUuid.class, groupType));
+            assertEquals(groupType, filterFailOnNotNullable.project(NullableUuid.class, groupType));
         }
 
         @Test
@@ -491,13 +503,13 @@ class SchemaFilterTest {
                     .length(UUIDLogicalTypeAnnotation.BYTES)
                     .named("value");
             GroupType groupType = new MessageType("foo", field);
-            SchemaFilter filterDefault = new SchemaFilter(defaultReadConfig, groupType);
-            SchemaFilter filterFailOnNotNullable = new SchemaFilter(failOnNullForPrimitives, groupType);
+            SchemaFilter filterDefault = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            SchemaFilter filterFailOnNotNullable = new SchemaFilter(failOnNullForPrimitives, defaultFieldMapper);
 
             record NullableString(String value) {
             }
-            assertEquals(groupType, filterDefault.project(NullableString.class));
-            assertEquals(groupType, filterFailOnNotNullable.project(NullableString.class));
+            assertEquals(groupType, filterDefault.project(NullableString.class, groupType));
+            assertEquals(groupType, filterFailOnNotNullable.project(NullableString.class, groupType));
         }
     }
 
@@ -512,33 +524,34 @@ class SchemaFilterTest {
         void fieldRequired() {
             Type field = Types.primitive(BINARY, REQUIRED).as(enumType()).named("value");
             GroupType groupType = new MessageType("foo", field);
-            SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
 
             record NotNullEnum(@NotNull Category value) {
             }
-            assertEquals(groupType, filter.project(NotNullEnum.class));
+            assertEquals(groupType, filter.project(NotNullEnum.class, groupType));
 
             record NullableEnum(Category value) {
             }
-            assertEquals(groupType, filter.project(NullableEnum.class));
+            assertEquals(groupType, filter.project(NullableEnum.class, groupType));
         }
 
         @Test
         void fieldOptional() {
             Type field = Types.primitive(BINARY, OPTIONAL).as(enumType()).named("value");
             GroupType groupType = new MessageType("foo", field);
-            SchemaFilter filterDefault = new SchemaFilter(defaultReadConfig, groupType);
-            SchemaFilter filterFailOnNotNullable = new SchemaFilter(failOnNullForPrimitives, groupType);
+            SchemaFilter filterDefault = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            SchemaFilter filterFailOnNotNullable = new SchemaFilter(failOnNullForPrimitives, defaultFieldMapper);
 
             record NotNullEnum(@NotNull Category value) {
             }
-            assertEquals(groupType, filterDefault.project(NotNullEnum.class));
-            assertThrows(RecordTypeConversionException.class, () -> filterFailOnNotNullable.project(NotNullEnum.class));
+            assertEquals(groupType, filterDefault.project(NotNullEnum.class, groupType));
+            assertThrows(RecordTypeConversionException.class,
+                    () -> filterFailOnNotNullable.project(NotNullEnum.class, groupType));
 
             record NullableEnum(Category value) {
             }
-            assertEquals(groupType, filterDefault.project(NullableEnum.class));
-            assertEquals(groupType, filterFailOnNotNullable.project(NullableEnum.class));
+            assertEquals(groupType, filterDefault.project(NullableEnum.class, groupType));
+            assertEquals(groupType, filterFailOnNotNullable.project(NullableEnum.class, groupType));
         }
 
         @Test
@@ -549,8 +562,8 @@ class SchemaFilterTest {
             record CastToString(String value) {
             }
 
-            SchemaFilter filterStrict = new SchemaFilter(defaultReadConfig, groupType);
-            assertEquals(groupType, filterStrict.project(CastToString.class));
+            SchemaFilter filterStrict = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            assertEquals(groupType, filterStrict.project(CastToString.class, groupType));
         }
 
         @Test
@@ -561,8 +574,8 @@ class SchemaFilterTest {
             record CastToEnum(Category value) {
             }
 
-            SchemaFilter filterStrict = new SchemaFilter(defaultReadConfig, groupType);
-            assertEquals(groupType, filterStrict.project(CastToEnum.class));
+            SchemaFilter filterStrict = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            assertEquals(groupType, filterStrict.project(CastToEnum.class, groupType));
         }
 
     }
@@ -575,11 +588,11 @@ class SchemaFilterTest {
             Type field1 = Types.primitive(BINARY, OPTIONAL).as(stringType()).named("name");
             Type field2 = new PrimitiveType(REQUIRED, PrimitiveTypeName.INT32, "age");
             GroupType groupType = new MessageType("foo", field1, field2);
-            SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
 
             record AllPresent(String name, int age) {
             }
-            assertEquals(groupType, filter.project(AllPresent.class));
+            assertEquals(groupType, filter.project(AllPresent.class, groupType));
         }
 
         @Test
@@ -587,17 +600,17 @@ class SchemaFilterTest {
             Type field1 = Types.primitive(BINARY, OPTIONAL).as(stringType()).named("name");
             Type field2 = new PrimitiveType(REQUIRED, PrimitiveTypeName.INT32, "age");
             GroupType groupType = new MessageType("foo", field1, field2);
-            SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
 
             record OnlyName(String name) {
             }
             GroupType expectedName = new MessageType("foo", field1);
-            assertEquals(expectedName, filter.project(OnlyName.class));
+            assertEquals(expectedName, filter.project(OnlyName.class, groupType));
 
             record OnlyAge(int age) {
             }
             GroupType expectedAge = new MessageType("foo", field2);
-            assertEquals(expectedAge, filter.project(OnlyAge.class));
+            assertEquals(expectedAge, filter.project(OnlyAge.class, groupType));
         }
 
         @Test
@@ -605,12 +618,12 @@ class SchemaFilterTest {
             Type field1 = Types.primitive(BINARY, OPTIONAL).as(stringType()).named("name");
             Type field2 = new PrimitiveType(REQUIRED, PrimitiveTypeName.INT32, "age");
             GroupType groupType = new MessageType("foo", field1, field2);
-            SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
 
             record MoreThanExisting(String name, int age, boolean active) {
             }
 
-            assertThrows(CarpetMissingColumnException.class, () -> filter.project(MoreThanExisting.class));
+            assertThrows(CarpetMissingColumnException.class, () -> filter.project(MoreThanExisting.class, groupType));
         }
 
         @Test
@@ -622,9 +635,9 @@ class SchemaFilterTest {
             record MoreThanExisting(String name, int age, boolean active) {
             }
 
-            SchemaFilter filter = new SchemaFilter(dontFailOnMissingFields, groupType);
+            SchemaFilter filter = new SchemaFilter(dontFailOnMissingFields, defaultFieldMapper);
             GroupType expectedAge = new MessageType("foo", field1, field2);
-            assertEquals(expectedAge, filter.project(MoreThanExisting.class));
+            assertEquals(expectedAge, filter.project(MoreThanExisting.class, groupType));
         }
 
     }
@@ -645,8 +658,8 @@ class SchemaFilterTest {
             record CompositeMain(String name, Child child) {
             }
 
-            SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-            assertEquals(groupType, filter.project(CompositeMain.class));
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            assertEquals(groupType, filter.project(CompositeMain.class, groupType));
         }
 
         @Test
@@ -664,11 +677,11 @@ class SchemaFilterTest {
             record CompositeMain(String name, Child child) {
             }
 
-            SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
 
             GroupType expectedChildGroupType = new GroupType(OPTIONAL, "child", childField1, childField2);
             GroupType expectedGroup = new MessageType("foo", field1, expectedChildGroupType);
-            assertEquals(expectedGroup, filter.project(CompositeMain.class));
+            assertEquals(expectedGroup, filter.project(CompositeMain.class, groupType));
         }
 
         @Test
@@ -686,8 +699,8 @@ class SchemaFilterTest {
             record CompositeMain(String name, Child child) {
             }
 
-            SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-            assertThrows(CarpetMissingColumnException.class, () -> filter.project(CompositeMain.class));
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            assertThrows(CarpetMissingColumnException.class, () -> filter.project(CompositeMain.class, groupType));
         }
 
         @Test
@@ -705,9 +718,9 @@ class SchemaFilterTest {
             record CompositeMain(String name, Child child) {
             }
 
-            SchemaFilter filter = new SchemaFilter(dontFailOnMissingFields, groupType);
+            SchemaFilter filter = new SchemaFilter(dontFailOnMissingFields, defaultFieldMapper);
 
-            assertEquals(groupType, filter.project(CompositeMain.class));
+            assertEquals(groupType, filter.project(CompositeMain.class, groupType));
         }
     }
 
@@ -732,8 +745,8 @@ class SchemaFilterTest {
             Type field1 = Types.primitive(BINARY, OPTIONAL).as(stringType()).named("id");
             GroupType groupType = new MessageType("foo", field1);
 
-            SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-            assertThrows(RecordTypeConversionException.class, () -> filter.project(NormalClass.class));
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            assertThrows(RecordTypeConversionException.class, () -> filter.project(NormalClass.class, groupType));
         }
 
         @Test
@@ -746,14 +759,14 @@ class SchemaFilterTest {
             record ParentClass(String id, NormalClass child) {
             }
 
-            SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-            assertThrows(RecordTypeConversionException.class, () -> filter.project(ParentClass.class));
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            assertThrows(RecordTypeConversionException.class, () -> filter.project(ParentClass.class, groupType));
 
             record ChildRecord(String id) {
             }
             record ParentRecord(String id, ChildRecord child) {
             }
-            assertEquals(groupType, filter.project(ParentRecord.class));
+            assertEquals(groupType, filter.project(ParentRecord.class, groupType));
         }
 
         @Test
@@ -763,8 +776,8 @@ class SchemaFilterTest {
 
             record BigIntegerRecord(BigInteger id) {
             }
-            SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-            assertThrows(RecordTypeConversionException.class, () -> filter.project(BigIntegerRecord.class));
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            assertThrows(RecordTypeConversionException.class, () -> filter.project(BigIntegerRecord.class, groupType));
         }
 
         @Test
@@ -774,8 +787,8 @@ class SchemaFilterTest {
 
             record BigDecimalRecord(BigDecimal value) {
             }
-            SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-            assertThrows(RecordTypeConversionException.class, () -> filter.project(BigDecimalRecord.class));
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            assertThrows(RecordTypeConversionException.class, () -> filter.project(BigDecimalRecord.class, groupType));
         }
 
     }
@@ -799,8 +812,8 @@ class SchemaFilterTest {
                 record LevelOnePrimitive(String name, List<Integer> ids) {
                 }
 
-                SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-                assertEquals(groupType, filter.project(LevelOnePrimitive.class));
+                SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                assertEquals(groupType, filter.project(LevelOnePrimitive.class, groupType));
             }
 
             @Test
@@ -811,11 +824,12 @@ class SchemaFilterTest {
                 record LevelOnePrimitive(String name, List<Short> ids) {
                 }
 
-                SchemaFilter filter = new SchemaFilter(strictNumericConfig, groupType);
-                assertThrows(RecordTypeConversionException.class, () -> filter.project(LevelOnePrimitive.class));
+                SchemaFilter filter = new SchemaFilter(strictNumericConfig, defaultFieldMapper);
+                assertThrows(RecordTypeConversionException.class,
+                        () -> filter.project(LevelOnePrimitive.class, groupType));
 
-                SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, groupType);
-                assertEquals(groupType, filterNonStrict.project(LevelOnePrimitive.class));
+                SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                assertEquals(groupType, filterNonStrict.project(LevelOnePrimitive.class, groupType));
             }
 
             @Test
@@ -826,11 +840,12 @@ class SchemaFilterTest {
                 record LevelOnePrimitive(String name, List<Byte> ids) {
                 }
 
-                SchemaFilter filter = new SchemaFilter(strictNumericConfig, groupType);
-                assertThrows(RecordTypeConversionException.class, () -> filter.project(LevelOnePrimitive.class));
+                SchemaFilter filter = new SchemaFilter(strictNumericConfig, defaultFieldMapper);
+                assertThrows(RecordTypeConversionException.class,
+                        () -> filter.project(LevelOnePrimitive.class, groupType));
 
-                SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, groupType);
-                assertEquals(groupType, filterNonStrict.project(LevelOnePrimitive.class));
+                SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                assertEquals(groupType, filterNonStrict.project(LevelOnePrimitive.class, groupType));
             }
 
             @Test
@@ -841,8 +856,8 @@ class SchemaFilterTest {
                 record LevelOnePrimitive(String name, List<Long> ids) {
                 }
 
-                SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-                assertEquals(groupType, filter.project(LevelOnePrimitive.class));
+                SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                assertEquals(groupType, filter.project(LevelOnePrimitive.class, groupType));
             }
 
             @Test
@@ -853,8 +868,8 @@ class SchemaFilterTest {
                 record LevelOnePrimitive(String name, List<Float> values) {
                 }
 
-                SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-                assertEquals(groupType, filter.project(LevelOnePrimitive.class));
+                SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                assertEquals(groupType, filter.project(LevelOnePrimitive.class, groupType));
             }
 
             @Test
@@ -865,11 +880,12 @@ class SchemaFilterTest {
                 record LevelOnePrimitive(String name, List<Float> values) {
                 }
 
-                SchemaFilter filter = new SchemaFilter(strictNumericConfig, groupType);
-                assertThrows(RecordTypeConversionException.class, () -> filter.project(LevelOnePrimitive.class));
+                SchemaFilter filter = new SchemaFilter(strictNumericConfig, defaultFieldMapper);
+                assertThrows(RecordTypeConversionException.class,
+                        () -> filter.project(LevelOnePrimitive.class, groupType));
 
-                SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, groupType);
-                assertEquals(groupType, filterNonStrict.project(LevelOnePrimitive.class));
+                SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                assertEquals(groupType, filterNonStrict.project(LevelOnePrimitive.class, groupType));
             }
 
             @Test
@@ -880,8 +896,8 @@ class SchemaFilterTest {
                 record LevelOnePrimitive(String name, List<Double> values) {
                 }
 
-                SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-                assertEquals(groupType, filter.project(LevelOnePrimitive.class));
+                SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                assertEquals(groupType, filter.project(LevelOnePrimitive.class, groupType));
             }
 
             @Test
@@ -892,8 +908,8 @@ class SchemaFilterTest {
                 record LevelOnePrimitive(String name, List<String> ids) {
                 }
 
-                SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-                assertEquals(groupType, filter.project(LevelOnePrimitive.class));
+                SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                assertEquals(groupType, filter.project(LevelOnePrimitive.class, groupType));
             }
 
             enum Category {
@@ -908,8 +924,8 @@ class SchemaFilterTest {
                 record LevelOnePrimitive(String name, List<Category> categories) {
                 }
 
-                SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-                assertEquals(groupType, filter.project(LevelOnePrimitive.class));
+                SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                assertEquals(groupType, filter.project(LevelOnePrimitive.class, groupType));
             }
 
             @Test
@@ -920,8 +936,8 @@ class SchemaFilterTest {
                 record LevelOnePrimitive(String name, List<String> categories) {
                 }
 
-                SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-                assertEquals(groupType, filter.project(LevelOnePrimitive.class));
+                SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                assertEquals(groupType, filter.project(LevelOnePrimitive.class, groupType));
             }
 
             @Test
@@ -934,8 +950,8 @@ class SchemaFilterTest {
                 record LevelOneComposite(String name, List<Child> child) {
                 }
 
-                SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-                assertEquals(groupType, filter.project(LevelOneComposite.class));
+                SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                assertEquals(groupType, filter.project(LevelOneComposite.class, groupType));
             }
 
             @Test
@@ -948,11 +964,11 @@ class SchemaFilterTest {
                 record LevelOneComposite(String name, List<Child> child) {
                 }
 
-                SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+                SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
 
                 GroupType repeatedExoected = new GroupType(REPEATED, "child", fieldId, fieldAge);
                 GroupType groupTypeExpected = new MessageType("foo", fieldName, repeatedExoected);
-                assertEquals(groupTypeExpected, filter.project(LevelOneComposite.class));
+                assertEquals(groupTypeExpected, filter.project(LevelOneComposite.class, groupType));
             }
 
             @Test
@@ -960,20 +976,21 @@ class SchemaFilterTest {
                 GroupType repeatedChild = new GroupType(REPEATED, "nested", fieldId, fieldAge);
                 GroupType repeated = new GroupType(REPEATED, "list", repeatedChild);
                 GroupType groupType = new MessageType("foo", fieldName, repeated);
-                SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+                SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
 
                 record Child(String id, int age) {
                 }
                 record NestedCollections(String name, List<List<Child>> list) {
                 }
 
-                assertThrows(RecordTypeConversionException.class, () -> filter.project(NestedCollections.class));
+                assertThrows(RecordTypeConversionException.class,
+                        () -> filter.project(NestedCollections.class, groupType));
 
                 record Nested(List<Child> nested) {
                 }
                 record ValidLevelOneComposite(String name, List<Nested> list) {
                 }
-                assertEquals(groupType, filter.project(ValidLevelOneComposite.class));
+                assertEquals(groupType, filter.project(ValidLevelOneComposite.class, groupType));
             }
 
             @Test
@@ -984,9 +1001,9 @@ class SchemaFilterTest {
                 record LevelOnePrimitive(String id, String name, boolean active) {
                 }
 
-                SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+                SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
                 GroupType expected = new MessageType("foo", fieldName, fieldActive, fieldId);
-                assertEquals(expected, filter.project(LevelOnePrimitive.class));
+                assertEquals(expected, filter.project(LevelOnePrimitive.class, groupType));
             }
         }
 
@@ -1003,8 +1020,8 @@ class SchemaFilterTest {
                 record LevelTwoPrimitive(String name, List<Integer> ids) {
                 }
 
-                SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-                assertEquals(groupType, filter.project(LevelTwoPrimitive.class));
+                SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                assertEquals(groupType, filter.project(LevelTwoPrimitive.class, groupType));
             }
 
             @Test
@@ -1016,11 +1033,12 @@ class SchemaFilterTest {
                 record LevelTwoPrimitive(String name, List<Short> ids) {
                 }
 
-                SchemaFilter filter = new SchemaFilter(strictNumericConfig, groupType);
-                assertThrows(RecordTypeConversionException.class, () -> filter.project(LevelTwoPrimitive.class));
+                SchemaFilter filter = new SchemaFilter(strictNumericConfig, defaultFieldMapper);
+                assertThrows(RecordTypeConversionException.class,
+                        () -> filter.project(LevelTwoPrimitive.class, groupType));
 
-                SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, groupType);
-                assertEquals(groupType, filterNonStrict.project(LevelTwoPrimitive.class));
+                SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                assertEquals(groupType, filterNonStrict.project(LevelTwoPrimitive.class, groupType));
             }
 
             @Test
@@ -1032,11 +1050,12 @@ class SchemaFilterTest {
                 record LevelTwoPrimitive(String name, List<Byte> ids) {
                 }
 
-                SchemaFilter filter = new SchemaFilter(strictNumericConfig, groupType);
-                assertThrows(RecordTypeConversionException.class, () -> filter.project(LevelTwoPrimitive.class));
+                SchemaFilter filter = new SchemaFilter(strictNumericConfig, defaultFieldMapper);
+                assertThrows(RecordTypeConversionException.class,
+                        () -> filter.project(LevelTwoPrimitive.class, groupType));
 
-                SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, groupType);
-                assertEquals(groupType, filterNonStrict.project(LevelTwoPrimitive.class));
+                SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                assertEquals(groupType, filterNonStrict.project(LevelTwoPrimitive.class, groupType));
             }
 
             @Test
@@ -1048,8 +1067,8 @@ class SchemaFilterTest {
                 record LevelTwoPrimitive(String name, List<Long> ids) {
                 }
 
-                SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-                assertEquals(groupType, filter.project(LevelTwoPrimitive.class));
+                SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                assertEquals(groupType, filter.project(LevelTwoPrimitive.class, groupType));
             }
 
             @Test
@@ -1061,8 +1080,8 @@ class SchemaFilterTest {
                 record LevelTwoPrimitive(String name, List<Float> values) {
                 }
 
-                SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-                assertEquals(groupType, filter.project(LevelTwoPrimitive.class));
+                SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                assertEquals(groupType, filter.project(LevelTwoPrimitive.class, groupType));
             }
 
             @Test
@@ -1074,11 +1093,12 @@ class SchemaFilterTest {
                 record LevelTwoPrimitive(String name, List<Float> values) {
                 }
 
-                SchemaFilter filter = new SchemaFilter(strictNumericConfig, groupType);
-                assertThrows(RecordTypeConversionException.class, () -> filter.project(LevelTwoPrimitive.class));
+                SchemaFilter filter = new SchemaFilter(strictNumericConfig, defaultFieldMapper);
+                assertThrows(RecordTypeConversionException.class,
+                        () -> filter.project(LevelTwoPrimitive.class, groupType));
 
-                SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, groupType);
-                assertEquals(groupType, filterNonStrict.project(LevelTwoPrimitive.class));
+                SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                assertEquals(groupType, filterNonStrict.project(LevelTwoPrimitive.class, groupType));
             }
 
             @Test
@@ -1090,8 +1110,8 @@ class SchemaFilterTest {
                 record LevelTwoPrimitive(String name, List<Double> values) {
                 }
 
-                SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-                assertEquals(groupType, filter.project(LevelTwoPrimitive.class));
+                SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                assertEquals(groupType, filter.project(LevelTwoPrimitive.class, groupType));
             }
 
             @Test
@@ -1103,8 +1123,8 @@ class SchemaFilterTest {
                 record LevelOnePrimitive(String name, List<String> ids) {
                 }
 
-                SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-                assertEquals(groupType, filter.project(LevelOnePrimitive.class));
+                SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                assertEquals(groupType, filter.project(LevelOnePrimitive.class, groupType));
             }
 
             enum Category {
@@ -1120,8 +1140,8 @@ class SchemaFilterTest {
                 record LevelOnePrimitive(String name, List<Category> categories) {
                 }
 
-                SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-                assertEquals(groupType, filter.project(LevelOnePrimitive.class));
+                SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                assertEquals(groupType, filter.project(LevelOnePrimitive.class, groupType));
             }
 
             @Test
@@ -1133,8 +1153,8 @@ class SchemaFilterTest {
                 record LevelTwoPrimitive(String name, List<String> categories) {
                 }
 
-                SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-                assertEquals(groupType, filter.project(LevelTwoPrimitive.class));
+                SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                assertEquals(groupType, filter.project(LevelTwoPrimitive.class, groupType));
             }
 
             @Test
@@ -1148,8 +1168,8 @@ class SchemaFilterTest {
                 record LevelTwoComposite(String name, List<Child> child) {
                 }
 
-                SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-                assertEquals(groupType, filter.project(LevelTwoComposite.class));
+                SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                assertEquals(groupType, filter.project(LevelTwoComposite.class, groupType));
             }
 
             @Test
@@ -1163,12 +1183,12 @@ class SchemaFilterTest {
                 record LevelTwoComposite(String name, List<Child> child) {
                 }
 
-                SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+                SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
 
                 GroupType repeatedExpected = new GroupType(REPEATED, "child", fieldId, fieldAge);
                 GroupType listTypeExpected = listType(OPTIONAL, "child", repeatedExpected);
                 GroupType groupTypeExpected = new MessageType("foo", fieldName, listTypeExpected);
-                assertEquals(groupTypeExpected, filter.project(LevelTwoComposite.class));
+                assertEquals(groupTypeExpected, filter.project(LevelTwoComposite.class, groupType));
             }
 
             @Test
@@ -1177,17 +1197,18 @@ class SchemaFilterTest {
                 GroupType listType = listType(REPEATED, ELEMENT, repeatedChild);
                 GroupType repeated = listType(OPTIONAL, "values", listType);
                 GroupType groupType = new MessageType("foo", fieldName, repeated);
-                SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+                SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
 
                 record NestedCollections(String name, List<List<Integer>> values) {
                 }
-                assertEquals(groupType, filter.project(NestedCollections.class));
+                assertEquals(groupType, filter.project(NestedCollections.class, groupType));
 
                 record Nested(List<Integer> nested) {
                 }
                 record ValidLevelTwoComposite(String name, List<Nested> list) {
                 }
-                assertThrows(CarpetMissingColumnException.class, () -> filter.project(ValidLevelTwoComposite.class));
+                assertThrows(CarpetMissingColumnException.class,
+                        () -> filter.project(ValidLevelTwoComposite.class, groupType));
             }
 
             @Test
@@ -1196,19 +1217,20 @@ class SchemaFilterTest {
                 GroupType listType = listType(REPEATED, ELEMENT, repeatedChild);
                 GroupType repeated = listType(OPTIONAL, "values", listType);
                 GroupType groupType = new MessageType("foo", fieldName, repeated);
-                SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+                SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
 
                 record Child(String id, int age) {
                 }
                 record NestedCollections(String name, List<List<Child>> values) {
                 }
-                assertEquals(groupType, filter.project(NestedCollections.class));
+                assertEquals(groupType, filter.project(NestedCollections.class, groupType));
 
                 record Nested(List<Child> nested) {
                 }
                 record ValidLevelTwoComposite(String name, List<Nested> list) {
                 }
-                assertThrows(CarpetMissingColumnException.class, () -> filter.project(ValidLevelTwoComposite.class));
+                assertThrows(CarpetMissingColumnException.class,
+                        () -> filter.project(ValidLevelTwoComposite.class, groupType));
             }
 
             @Test
@@ -1220,9 +1242,9 @@ class SchemaFilterTest {
                 record LevelTwoPrimitive(String id, String name, boolean active) {
                 }
 
-                SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+                SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
                 GroupType expected = new MessageType("foo", fieldName, fieldActive, fieldId);
-                assertEquals(expected, filter.project(LevelTwoPrimitive.class));
+                assertEquals(expected, filter.project(LevelTwoPrimitive.class, groupType));
             }
 
             @Test
@@ -1233,11 +1255,11 @@ class SchemaFilterTest {
                 GroupType repeated = listType(OPTIONAL, "values", mapType);
                 GroupType groupType = new MessageType("foo", fieldName, repeated);
 
-                SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+                SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
 
                 record NestedMap(String name, List<Map<String, Integer>> values) {
                 }
-                assertEquals(groupType, filter.project(NestedMap.class));
+                assertEquals(groupType, filter.project(NestedMap.class, groupType));
             }
         }
 
@@ -1252,8 +1274,8 @@ class SchemaFilterTest {
 
                 record LevelThreePrimitive(String name, List<Integer> ids) {
                 }
-                SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-                assertEquals(groupType, filter.project(LevelThreePrimitive.class));
+                SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                assertEquals(groupType, filter.project(LevelThreePrimitive.class, groupType));
             }
 
             @Test
@@ -1264,11 +1286,12 @@ class SchemaFilterTest {
 
                 record LevelThreePrimitive(String name, List<Short> ids) {
                 }
-                SchemaFilter filter = new SchemaFilter(strictNumericConfig, groupType);
-                assertThrows(RecordTypeConversionException.class, () -> filter.project(LevelThreePrimitive.class));
+                SchemaFilter filter = new SchemaFilter(strictNumericConfig, defaultFieldMapper);
+                assertThrows(RecordTypeConversionException.class,
+                        () -> filter.project(LevelThreePrimitive.class, groupType));
 
-                SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, groupType);
-                assertEquals(groupType, filterNonStrict.project(LevelThreePrimitive.class));
+                SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                assertEquals(groupType, filterNonStrict.project(LevelThreePrimitive.class, groupType));
             }
 
             @Test
@@ -1279,11 +1302,12 @@ class SchemaFilterTest {
 
                 record LevelThreePrimitive(String name, List<Byte> ids) {
                 }
-                SchemaFilter filter = new SchemaFilter(strictNumericConfig, groupType);
-                assertThrows(RecordTypeConversionException.class, () -> filter.project(LevelThreePrimitive.class));
+                SchemaFilter filter = new SchemaFilter(strictNumericConfig, defaultFieldMapper);
+                assertThrows(RecordTypeConversionException.class,
+                        () -> filter.project(LevelThreePrimitive.class, groupType));
 
-                SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, groupType);
-                assertEquals(groupType, filterNonStrict.project(LevelThreePrimitive.class));
+                SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                assertEquals(groupType, filterNonStrict.project(LevelThreePrimitive.class, groupType));
             }
 
             @Test
@@ -1294,8 +1318,8 @@ class SchemaFilterTest {
 
                 record LevelThreePrimitive(String name, List<Long> ids) {
                 }
-                SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-                assertEquals(groupType, filter.project(LevelThreePrimitive.class));
+                SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                assertEquals(groupType, filter.project(LevelThreePrimitive.class, groupType));
             }
 
             @Test
@@ -1306,8 +1330,8 @@ class SchemaFilterTest {
 
                 record LevelThreePrimitive(String name, List<Float> values) {
                 }
-                SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-                assertEquals(groupType, filter.project(LevelThreePrimitive.class));
+                SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                assertEquals(groupType, filter.project(LevelThreePrimitive.class, groupType));
             }
 
             @Test
@@ -1318,11 +1342,12 @@ class SchemaFilterTest {
 
                 record LevelThreePrimitive(String name, List<Float> values) {
                 }
-                SchemaFilter filter = new SchemaFilter(strictNumericConfig, groupType);
-                assertThrows(RecordTypeConversionException.class, () -> filter.project(LevelThreePrimitive.class));
+                SchemaFilter filter = new SchemaFilter(strictNumericConfig, defaultFieldMapper);
+                assertThrows(RecordTypeConversionException.class,
+                        () -> filter.project(LevelThreePrimitive.class, groupType));
 
-                SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, groupType);
-                assertEquals(groupType, filterNonStrict.project(LevelThreePrimitive.class));
+                SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                assertEquals(groupType, filterNonStrict.project(LevelThreePrimitive.class, groupType));
             }
 
             @Test
@@ -1333,8 +1358,8 @@ class SchemaFilterTest {
 
                 record LevelThreePrimitive(String name, List<Double> values) {
                 }
-                SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-                assertEquals(groupType, filter.project(LevelThreePrimitive.class));
+                SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                assertEquals(groupType, filter.project(LevelThreePrimitive.class, groupType));
             }
 
             @Test
@@ -1345,8 +1370,8 @@ class SchemaFilterTest {
 
                 record LevelThreePrimitive(String name, List<String> ids) {
                 }
-                SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-                assertEquals(groupType, filter.project(LevelThreePrimitive.class));
+                SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                assertEquals(groupType, filter.project(LevelThreePrimitive.class, groupType));
             }
 
             enum Category {
@@ -1362,8 +1387,8 @@ class SchemaFilterTest {
                 record LevelThreePrimitive(String name, List<Category> categories) {
 
                 }
-                SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-                assertEquals(groupType, filter.project(LevelThreePrimitive.class));
+                SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                assertEquals(groupType, filter.project(LevelThreePrimitive.class, groupType));
             }
 
             @Test
@@ -1375,8 +1400,8 @@ class SchemaFilterTest {
                 record LevelThreePrimitive(String name, List<String> categories) {
 
                 }
-                SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-                assertEquals(groupType, filter.project(LevelThreePrimitive.class));
+                SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                assertEquals(groupType, filter.project(LevelThreePrimitive.class, groupType));
             }
 
             @Test
@@ -1390,8 +1415,8 @@ class SchemaFilterTest {
                 record LevelThreeComposite(String name, List<Child> child) {
                 }
 
-                SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-                assertEquals(groupType, filter.project(LevelThreeComposite.class));
+                SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                assertEquals(groupType, filter.project(LevelThreeComposite.class, groupType));
             }
 
             @Test
@@ -1405,12 +1430,12 @@ class SchemaFilterTest {
                 record LevelThreeComposite(String name, List<Child> child) {
                 }
 
-                SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+                SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
 
                 GroupType repeatedExpected = new GroupType(OPTIONAL, ELEMENT, fieldId, fieldAge);
                 GroupType listTypeExpected = listOfElements(OPTIONAL, "child", repeatedExpected);
                 GroupType groupTypeExpected = new MessageType("foo", fieldName, listTypeExpected);
-                assertEquals(groupTypeExpected, filter.project(LevelThreeComposite.class));
+                assertEquals(groupTypeExpected, filter.project(LevelThreeComposite.class, groupType));
             }
 
             @Test
@@ -1419,17 +1444,18 @@ class SchemaFilterTest {
                 GroupType listType = listOfElements(REPEATED, ELEMENT, repeatedChild);
                 GroupType repeated = listOfElements(OPTIONAL, "values", listType);
                 GroupType groupType = new MessageType("foo", fieldName, repeated);
-                SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+                SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
 
                 record NestedCollections(String name, List<List<Integer>> values) {
                 }
-                assertEquals(groupType, filter.project(NestedCollections.class));
+                assertEquals(groupType, filter.project(NestedCollections.class, groupType));
 
                 record Nested(List<Integer> nested) {
                 }
                 record ValidLevelThreeComposite(String name, List<Nested> list) {
                 }
-                assertThrows(CarpetMissingColumnException.class, () -> filter.project(ValidLevelThreeComposite.class));
+                assertThrows(CarpetMissingColumnException.class,
+                        () -> filter.project(ValidLevelThreeComposite.class, groupType));
             }
 
             @Test
@@ -1438,19 +1464,20 @@ class SchemaFilterTest {
                 GroupType listType = listOfElements(REPEATED, ELEMENT, repeatedChild);
                 GroupType repeated = listOfElements(OPTIONAL, "values", listType);
                 GroupType groupType = new MessageType("foo", fieldName, repeated);
-                SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+                SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
 
                 record Child(String id, int age) {
                 }
                 record NestedCollections(String name, List<List<Child>> values) {
                 }
-                assertEquals(groupType, filter.project(NestedCollections.class));
+                assertEquals(groupType, filter.project(NestedCollections.class, groupType));
 
                 record Nested(List<Child> nested) {
                 }
                 record ValidLevelThreeComposite(String name, List<Nested> values) {
                 }
-                assertThrows(CarpetMissingColumnException.class, () -> filter.project(ValidLevelThreeComposite.class));
+                assertThrows(CarpetMissingColumnException.class,
+                        () -> filter.project(ValidLevelThreeComposite.class, groupType));
             }
 
             @Test
@@ -1462,9 +1489,9 @@ class SchemaFilterTest {
                 record LevelThreePrimitive(String id, String name, boolean active) {
                 }
 
-                SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+                SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
                 GroupType expected = new MessageType("foo", fieldName, fieldId, fieldActive);
-                assertEquals(expected, filter.project(LevelThreePrimitive.class));
+                assertEquals(expected, filter.project(LevelThreePrimitive.class, groupType));
             }
 
             @Test
@@ -1475,11 +1502,11 @@ class SchemaFilterTest {
                 GroupType repeated = listOfElements(OPTIONAL, "values", mapType);
                 GroupType groupType = new MessageType("foo", fieldName, repeated);
 
-                SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+                SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
 
                 record NestedMap(String name, List<Map<String, Integer>> values) {
                 }
-                assertEquals(groupType, filter.project(NestedMap.class));
+                assertEquals(groupType, filter.project(NestedMap.class, groupType));
             }
         }
 
@@ -1510,8 +1537,8 @@ class SchemaFilterTest {
                     record MapValuePrimitive(String name, Map<String, Integer> ids) {
                     }
 
-                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-                    assertEquals(groupType, filter.project(MapValuePrimitive.class));
+                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                    assertEquals(groupType, filter.project(MapValuePrimitive.class, groupType));
                 }
 
                 @Test
@@ -1523,11 +1550,12 @@ class SchemaFilterTest {
                     record MapValuePrimitive(String name, Map<String, Short> ids) {
                     }
 
-                    SchemaFilter filter = new SchemaFilter(strictNumericConfig, groupType);
-                    assertThrows(RecordTypeConversionException.class, () -> filter.project(MapValuePrimitive.class));
+                    SchemaFilter filter = new SchemaFilter(strictNumericConfig, defaultFieldMapper);
+                    assertThrows(RecordTypeConversionException.class,
+                            () -> filter.project(MapValuePrimitive.class, groupType));
 
-                    SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, groupType);
-                    assertEquals(groupType, filterNonStrict.project(MapValuePrimitive.class));
+                    SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                    assertEquals(groupType, filterNonStrict.project(MapValuePrimitive.class, groupType));
                 }
 
                 @Test
@@ -1539,11 +1567,12 @@ class SchemaFilterTest {
                     record MapValuePrimitive(String name, Map<String, Byte> ids) {
                     }
 
-                    SchemaFilter filter = new SchemaFilter(strictNumericConfig, groupType);
-                    assertThrows(RecordTypeConversionException.class, () -> filter.project(MapValuePrimitive.class));
+                    SchemaFilter filter = new SchemaFilter(strictNumericConfig, defaultFieldMapper);
+                    assertThrows(RecordTypeConversionException.class,
+                            () -> filter.project(MapValuePrimitive.class, groupType));
 
-                    SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, groupType);
-                    assertEquals(groupType, filterNonStrict.project(MapValuePrimitive.class));
+                    SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                    assertEquals(groupType, filterNonStrict.project(MapValuePrimitive.class, groupType));
                 }
 
                 @Test
@@ -1555,8 +1584,8 @@ class SchemaFilterTest {
                     record MapValuePrimitive(String name, Map<String, Long> ids) {
                     }
 
-                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-                    assertEquals(groupType, filter.project(MapValuePrimitive.class));
+                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                    assertEquals(groupType, filter.project(MapValuePrimitive.class, groupType));
                 }
 
                 @Test
@@ -1568,8 +1597,8 @@ class SchemaFilterTest {
                     record MapValuePrimitive(String name, Map<String, Float> values) {
                     }
 
-                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-                    assertEquals(groupType, filter.project(MapValuePrimitive.class));
+                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                    assertEquals(groupType, filter.project(MapValuePrimitive.class, groupType));
                 }
 
                 @Test
@@ -1581,11 +1610,12 @@ class SchemaFilterTest {
                     record MapValuePrimitive(String name, Map<String, Float> values) {
                     }
 
-                    SchemaFilter filter = new SchemaFilter(strictNumericConfig, groupType);
-                    assertThrows(RecordTypeConversionException.class, () -> filter.project(MapValuePrimitive.class));
+                    SchemaFilter filter = new SchemaFilter(strictNumericConfig, defaultFieldMapper);
+                    assertThrows(RecordTypeConversionException.class,
+                            () -> filter.project(MapValuePrimitive.class, groupType));
 
-                    SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, groupType);
-                    assertEquals(groupType, filterNonStrict.project(MapValuePrimitive.class));
+                    SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                    assertEquals(groupType, filterNonStrict.project(MapValuePrimitive.class, groupType));
                 }
 
                 @Test
@@ -1597,8 +1627,8 @@ class SchemaFilterTest {
                     record MapValuePrimitive(String name, Map<String, Double> values) {
                     }
 
-                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-                    assertEquals(groupType, filter.project(MapValuePrimitive.class));
+                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                    assertEquals(groupType, filter.project(MapValuePrimitive.class, groupType));
                 }
 
                 @Test
@@ -1610,8 +1640,8 @@ class SchemaFilterTest {
                     record MapValuePrimitive(String name, Map<String, String> ids) {
                     }
 
-                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-                    assertEquals(groupType, filter.project(MapValuePrimitive.class));
+                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                    assertEquals(groupType, filter.project(MapValuePrimitive.class, groupType));
                 }
 
                 enum Category {
@@ -1627,8 +1657,8 @@ class SchemaFilterTest {
                     record MapValuePrimitive(String name, Map<String, Category> categories) {
                     }
 
-                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-                    assertEquals(groupType, filter.project(MapValuePrimitive.class));
+                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                    assertEquals(groupType, filter.project(MapValuePrimitive.class, groupType));
                 }
 
                 @Test
@@ -1640,8 +1670,8 @@ class SchemaFilterTest {
                     record MapValuePrimitive(String name, Map<String, String> categories) {
                     }
 
-                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-                    assertEquals(groupType, filter.project(MapValuePrimitive.class));
+                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                    assertEquals(groupType, filter.project(MapValuePrimitive.class, groupType));
                 }
 
                 @Test
@@ -1655,8 +1685,8 @@ class SchemaFilterTest {
                     record MapValueComposite(String name, Map<String, Child> child) {
                     }
 
-                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-                    assertEquals(groupType, filter.project(MapValueComposite.class));
+                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                    assertEquals(groupType, filter.project(MapValueComposite.class, groupType));
                 }
 
                 @Test
@@ -1670,13 +1700,13 @@ class SchemaFilterTest {
                     record MapValueComposite(String name, Map<String, Child> child) {
                     }
 
-                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
 
                     Type valueExpected = new GroupType(OPTIONAL, MAP_VALUE, fieldId, fieldAge);
                     Type mapTypeExpected = Types.map(OPTIONAL).key(mapKey).value(valueExpected)
                             .named("child");
                     GroupType groupTypeExpected = new MessageType("foo", fieldName, mapTypeExpected);
-                    assertEquals(groupTypeExpected, filter.project(MapValueComposite.class));
+                    assertEquals(groupTypeExpected, filter.project(MapValueComposite.class, groupType));
                 }
 
                 @Test
@@ -1686,18 +1716,18 @@ class SchemaFilterTest {
                     Type firstMapType = Types.map(OPTIONAL).key(mapKey).value(innerMapType).named("values");
                     GroupType groupType = new MessageType("foo", fieldName, firstMapType);
 
-                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
 
                     record NestedMaps(String name, Map<String, Map<String, Integer>> values) {
                     }
-                    assertEquals(groupType, filter.project(NestedMaps.class));
+                    assertEquals(groupType, filter.project(NestedMaps.class, groupType));
 
                     record Nested(Map<String, Integer> nested) {
                     }
                     record InvalidNestedComposite(String name, Map<String, Nested> list) {
                     }
                     assertThrows(CarpetMissingColumnException.class,
-                            () -> filter.project(InvalidNestedComposite.class));
+                            () -> filter.project(InvalidNestedComposite.class, groupType));
                 }
 
                 @Test
@@ -1706,20 +1736,20 @@ class SchemaFilterTest {
                     GroupType innerMapType = Types.map(OPTIONAL).key(mapKey).value(groupChild).named(MAP_VALUE);
                     GroupType firstMapType = Types.map(OPTIONAL).key(mapKey).value(innerMapType).named("values");
                     GroupType groupType = new MessageType("foo", fieldName, firstMapType);
-                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
 
                     record Child(String id, int age) {
                     }
                     record NestedMaps(String name, Map<String, Map<String, Child>> values) {
                     }
-                    assertEquals(groupType, filter.project(NestedMaps.class));
+                    assertEquals(groupType, filter.project(NestedMaps.class, groupType));
 
                     record Nested(Map<String, Child> nested) {
                     }
                     record InvalidNestedComposite(String name, Map<String, Nested> list) {
                     }
                     assertThrows(CarpetMissingColumnException.class,
-                            () -> filter.project(InvalidNestedComposite.class));
+                            () -> filter.project(InvalidNestedComposite.class, groupType));
                 }
 
                 @Test
@@ -1728,7 +1758,7 @@ class SchemaFilterTest {
                     GroupType innerMapType = Types.map(OPTIONAL).key(mapKey).value(groupChild).named(MAP_VALUE);
                     GroupType firstMapType = Types.map(OPTIONAL).key(mapKey).value(innerMapType).named("values");
                     GroupType groupType = new MessageType("foo", fieldName, firstMapType);
-                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
 
                     record Child(String id, int age) {
                     }
@@ -1741,7 +1771,7 @@ class SchemaFilterTest {
                     GroupType expectedFirstMapType = Types.map(OPTIONAL).key(mapKey).value(expectedInnerMapType)
                             .named("values");
                     GroupType expectedGroupType = new MessageType("foo", fieldName, expectedFirstMapType);
-                    assertEquals(expectedGroupType, filter.project(NestedMaps.class));
+                    assertEquals(expectedGroupType, filter.project(NestedMaps.class, groupType));
                 }
 
                 @Test
@@ -1751,18 +1781,18 @@ class SchemaFilterTest {
                     Type firstMapType = Types.map(OPTIONAL).key(mapKey).value(innerListType).named("values");
                     GroupType groupType = new MessageType("foo", fieldName, firstMapType);
 
-                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
 
                     record NestedList(String name, Map<String, List<Integer>> values) {
                     }
-                    assertEquals(groupType, filter.project(NestedList.class));
+                    assertEquals(groupType, filter.project(NestedList.class, groupType));
 
                     record Nested(List<Integer> nested) {
                     }
                     record InvalidNestedComposite(String name, Map<String, Nested> list) {
                     }
                     assertThrows(CarpetMissingColumnException.class,
-                            () -> filter.project(InvalidNestedComposite.class));
+                            () -> filter.project(InvalidNestedComposite.class, groupType));
                 }
 
                 @Test
@@ -1772,20 +1802,20 @@ class SchemaFilterTest {
                     Type firstMapType = Types.map(OPTIONAL).key(mapKey).value(innerListType).named("values");
                     GroupType groupType = new MessageType("foo", fieldName, firstMapType);
 
-                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
 
                     record Child(String id, int age) {
                     }
                     record NestedList(String name, Map<String, List<Child>> values) {
                     }
-                    assertEquals(groupType, filter.project(NestedList.class));
+                    assertEquals(groupType, filter.project(NestedList.class, groupType));
 
                     record Nested(Map<String, List<Child>> nested) {
                     }
                     record InvalidNestedComposite(String name, Map<String, Nested> list) {
                     }
                     assertThrows(CarpetMissingColumnException.class,
-                            () -> filter.project(InvalidNestedComposite.class));
+                            () -> filter.project(InvalidNestedComposite.class, groupType));
                 }
 
                 @Test
@@ -1795,7 +1825,7 @@ class SchemaFilterTest {
                     Type firstMapType = Types.map(OPTIONAL).key(mapKey).value(innerListType).named("values");
                     GroupType groupType = new MessageType("foo", fieldName, firstMapType);
 
-                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
 
                     record Child(String id, int age) {
                     }
@@ -1807,7 +1837,7 @@ class SchemaFilterTest {
                     Type expectedFirstMapType = Types.map(OPTIONAL).key(mapKey).value(expectedInnerListType)
                             .named("values");
                     GroupType expectedGroupType = new MessageType("foo", fieldName, expectedFirstMapType);
-                    assertEquals(expectedGroupType, filter.project(NestedList.class));
+                    assertEquals(expectedGroupType, filter.project(NestedList.class, groupType));
                 }
 
                 @Test
@@ -1819,10 +1849,10 @@ class SchemaFilterTest {
                     record MapFiltered(String name, boolean active) {
                     }
 
-                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
 
                     GroupType expected = new MessageType("foo", fieldName, fieldActive);
-                    assertEquals(expected, filter.project(MapFiltered.class));
+                    assertEquals(expected, filter.project(MapFiltered.class, groupType));
                 }
             }
 
@@ -1840,8 +1870,8 @@ class SchemaFilterTest {
                     record MapKeyPrimitive(String name, Map<Integer, String> ids) {
                     }
 
-                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-                    assertEquals(groupType, filter.project(MapKeyPrimitive.class));
+                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                    assertEquals(groupType, filter.project(MapKeyPrimitive.class, groupType));
                 }
 
                 @Test
@@ -1853,11 +1883,12 @@ class SchemaFilterTest {
                     record MapKeyPrimitive(String name, Map<Short, String> ids) {
                     }
 
-                    SchemaFilter filter = new SchemaFilter(strictNumericConfig, groupType);
-                    assertThrows(RecordTypeConversionException.class, () -> filter.project(MapKeyPrimitive.class));
+                    SchemaFilter filter = new SchemaFilter(strictNumericConfig, defaultFieldMapper);
+                    assertThrows(RecordTypeConversionException.class,
+                            () -> filter.project(MapKeyPrimitive.class, groupType));
 
-                    SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, groupType);
-                    assertEquals(groupType, filterNonStrict.project(MapKeyPrimitive.class));
+                    SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                    assertEquals(groupType, filterNonStrict.project(MapKeyPrimitive.class, groupType));
                 }
 
                 @Test
@@ -1869,11 +1900,12 @@ class SchemaFilterTest {
                     record MapKeyPrimitive(String name, Map<Byte, String> ids) {
                     }
 
-                    SchemaFilter filter = new SchemaFilter(strictNumericConfig, groupType);
-                    assertThrows(RecordTypeConversionException.class, () -> filter.project(MapKeyPrimitive.class));
+                    SchemaFilter filter = new SchemaFilter(strictNumericConfig, defaultFieldMapper);
+                    assertThrows(RecordTypeConversionException.class,
+                            () -> filter.project(MapKeyPrimitive.class, groupType));
 
-                    SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, groupType);
-                    assertEquals(groupType, filterNonStrict.project(MapKeyPrimitive.class));
+                    SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                    assertEquals(groupType, filterNonStrict.project(MapKeyPrimitive.class, groupType));
                 }
 
                 @Test
@@ -1885,8 +1917,8 @@ class SchemaFilterTest {
                     record MapKeyPrimitive(String name, Map<Long, String> ids) {
                     }
 
-                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-                    assertEquals(groupType, filter.project(MapKeyPrimitive.class));
+                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                    assertEquals(groupType, filter.project(MapKeyPrimitive.class, groupType));
                 }
 
                 @Test
@@ -1898,8 +1930,8 @@ class SchemaFilterTest {
                     record MapKeyPrimitive(String name, Map<Float, String> ids) {
                     }
 
-                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-                    assertEquals(groupType, filter.project(MapKeyPrimitive.class));
+                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                    assertEquals(groupType, filter.project(MapKeyPrimitive.class, groupType));
                 }
 
                 @Test
@@ -1911,11 +1943,12 @@ class SchemaFilterTest {
                     record MapKeyPrimitive(String name, Map<Float, String> ids) {
                     }
 
-                    SchemaFilter filter = new SchemaFilter(strictNumericConfig, groupType);
-                    assertThrows(RecordTypeConversionException.class, () -> filter.project(MapKeyPrimitive.class));
+                    SchemaFilter filter = new SchemaFilter(strictNumericConfig, defaultFieldMapper);
+                    assertThrows(RecordTypeConversionException.class,
+                            () -> filter.project(MapKeyPrimitive.class, groupType));
 
-                    SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, groupType);
-                    assertEquals(groupType, filterNonStrict.project(MapKeyPrimitive.class));
+                    SchemaFilter filterNonStrict = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                    assertEquals(groupType, filterNonStrict.project(MapKeyPrimitive.class, groupType));
                 }
 
                 @Test
@@ -1927,8 +1960,8 @@ class SchemaFilterTest {
                     record MapKeyPrimitive(String name, Map<Double, String> ids) {
                     }
 
-                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-                    assertEquals(groupType, filter.project(MapKeyPrimitive.class));
+                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                    assertEquals(groupType, filter.project(MapKeyPrimitive.class, groupType));
                 }
 
                 enum Category {
@@ -1944,8 +1977,8 @@ class SchemaFilterTest {
                     record MapKeyPrimitive(String name, Map<Category, String> ids) {
                     }
 
-                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-                    assertEquals(groupType, filter.project(MapKeyPrimitive.class));
+                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                    assertEquals(groupType, filter.project(MapKeyPrimitive.class, groupType));
                 }
 
                 @Test
@@ -1957,8 +1990,8 @@ class SchemaFilterTest {
                     record MapKeyPrimitive(String name, Map<String, String> ids) {
                     }
 
-                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-                    assertEquals(groupType, filter.project(MapKeyPrimitive.class));
+                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                    assertEquals(groupType, filter.project(MapKeyPrimitive.class, groupType));
                 }
 
                 @Test
@@ -1972,8 +2005,8 @@ class SchemaFilterTest {
                     record MapValueComposite(String name, Map<Child, String> child) {
                     }
 
-                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-                    assertEquals(groupType, filter.project(MapValueComposite.class));
+                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+                    assertEquals(groupType, filter.project(MapValueComposite.class, groupType));
                 }
 
                 @Test
@@ -1988,12 +2021,12 @@ class SchemaFilterTest {
                     record MapValueComposite(String name, Map<Child, String> child) {
                     }
 
-                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
 
                     Type expectedKey = new GroupType(REQUIRED, MAP_KEY, fieldId, fieldAge);
                     Type expectedMapType = Types.map(OPTIONAL).key(expectedKey).value(value).named("child");
                     GroupType groupTypeExpected = new MessageType("foo", fieldName, expectedMapType);
-                    assertEquals(groupTypeExpected, filter.project(MapValueComposite.class));
+                    assertEquals(groupTypeExpected, filter.project(MapValueComposite.class, groupType));
                 }
 
                 @Test
@@ -2004,11 +2037,12 @@ class SchemaFilterTest {
                     Type firstMapType = Types.map(OPTIONAL).key(innerMapKeyType).value(count).named("values");
                     GroupType groupType = new MessageType("foo", fieldName, firstMapType);
 
-                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
 
                     record NestedMaps(String name, Map<Map<String, Integer>, Integer> values) {
                     }
-                    assertThrows(RecordTypeConversionException.class, () -> filter.project(NestedMaps.class));
+                    assertThrows(RecordTypeConversionException.class,
+                            () -> filter.project(NestedMaps.class, groupType));
                 }
 
                 @Test
@@ -2019,11 +2053,12 @@ class SchemaFilterTest {
                     Type firstMapType = Types.map(OPTIONAL).key(innerListKeyType).value(count).named("values");
                     GroupType groupType = new MessageType("foo", fieldName, firstMapType);
 
-                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
+                    SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
 
                     record NestedMaps(String name, Map<List<String>, Integer> values) {
                     }
-                    assertThrows(RecordTypeConversionException.class, () -> filter.project(NestedMaps.class));
+                    assertThrows(RecordTypeConversionException.class,
+                            () -> filter.project(NestedMaps.class, groupType));
                 }
             }
         }
@@ -2043,8 +2078,8 @@ class SchemaFilterTest {
             record Main(String id, String name) {
             }
 
-            SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-            assertEquals(new MessageType("foo", fieldName, fieldId), filter.project(Main.class));
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            assertEquals(new MessageType("foo", fieldName, fieldId), filter.project(Main.class, groupType));
         }
 
         @Test
@@ -2057,8 +2092,8 @@ class SchemaFilterTest {
             record Main(String id, String name, int age, String missingField) {
             }
 
-            SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-            assertThrows(CarpetMissingColumnException.class, () -> filter.project(Main.class));
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            assertThrows(CarpetMissingColumnException.class, () -> filter.project(Main.class, groupType));
         }
 
         @Test
@@ -2071,8 +2106,8 @@ class SchemaFilterTest {
             record Main(String id, String name, int age, String missingField) {
             }
 
-            SchemaFilter filter = new SchemaFilter(dontFailOnMissingFields, groupType);
-            assertEquals(groupType, filter.project(Main.class));
+            SchemaFilter filter = new SchemaFilter(dontFailOnMissingFields, defaultFieldMapper);
+            assertEquals(groupType, filter.project(Main.class, groupType));
         }
 
         @Test
@@ -2092,8 +2127,8 @@ class SchemaFilterTest {
             record CompositeMain(String id, String name, int age, Child child) {
             }
 
-            SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-            assertThrows(CarpetMissingColumnException.class, () -> filter.project(CompositeMain.class));
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            assertThrows(CarpetMissingColumnException.class, () -> filter.project(CompositeMain.class, groupType));
         }
 
         @Test
@@ -2113,8 +2148,8 @@ class SchemaFilterTest {
             record CompositeMain(String id, String name, int age, Child child) {
             }
 
-            SchemaFilter filter = new SchemaFilter(dontFailOnMissingFields, groupType);
-            assertEquals(groupType, filter.project(CompositeMain.class));
+            SchemaFilter filter = new SchemaFilter(dontFailOnMissingFields, defaultFieldMapper);
+            assertEquals(groupType, filter.project(CompositeMain.class, groupType));
         }
 
         @Test
@@ -2135,8 +2170,8 @@ class SchemaFilterTest {
             record CompositeMain(String id, String name, int age, List<Child> children) {
             }
 
-            SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-            assertThrows(CarpetMissingColumnException.class, () -> filter.project(CompositeMain.class));
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            assertThrows(CarpetMissingColumnException.class, () -> filter.project(CompositeMain.class, groupType));
         }
     }
 
@@ -2153,8 +2188,8 @@ class SchemaFilterTest {
             record Main(String id, String name, String age) {
             }
 
-            SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-            assertThrows(RecordTypeConversionException.class, () -> filter.project(Main.class));
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            assertThrows(RecordTypeConversionException.class, () -> filter.project(Main.class, groupType));
         }
 
         @Test
@@ -2167,8 +2202,8 @@ class SchemaFilterTest {
             record Main(String id, int name, int age) {
             }
 
-            SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-            assertThrows(RecordTypeConversionException.class, () -> filter.project(Main.class));
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            assertThrows(RecordTypeConversionException.class, () -> filter.project(Main.class, groupType));
         }
 
         @Test
@@ -2181,8 +2216,8 @@ class SchemaFilterTest {
             record Main(String id, String name, List<Integer> age) {
             }
 
-            SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-            assertThrows(RecordTypeConversionException.class, () -> filter.project(Main.class));
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            assertThrows(RecordTypeConversionException.class, () -> filter.project(Main.class, groupType));
         }
 
         @Test
@@ -2195,8 +2230,8 @@ class SchemaFilterTest {
             record Main(String id, String name, Integer ages) {
             }
 
-            SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-            assertThrows(RecordTypeConversionException.class, () -> filter.project(Main.class));
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            assertThrows(RecordTypeConversionException.class, () -> filter.project(Main.class, groupType));
         }
 
         @Test
@@ -2210,8 +2245,8 @@ class SchemaFilterTest {
             record Main(String id, String name, Integer ages) {
             }
 
-            SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-            assertThrows(RecordTypeConversionException.class, () -> filter.project(Main.class));
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            assertThrows(RecordTypeConversionException.class, () -> filter.project(Main.class, groupType));
         }
 
         @Test
@@ -2225,8 +2260,8 @@ class SchemaFilterTest {
             record Main(String id, String name, Integer ages) {
             }
 
-            SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-            assertThrows(RecordTypeConversionException.class, () -> filter.project(Main.class));
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            assertThrows(RecordTypeConversionException.class, () -> filter.project(Main.class, groupType));
         }
 
         @Test
@@ -2239,8 +2274,8 @@ class SchemaFilterTest {
             record Main(String id, String name, Map<Integer, String> code) {
             }
 
-            SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-            assertThrows(RecordTypeConversionException.class, () -> filter.project(Main.class));
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            assertThrows(RecordTypeConversionException.class, () -> filter.project(Main.class, groupType));
         }
 
         @Test
@@ -2255,8 +2290,8 @@ class SchemaFilterTest {
             record Main(String id, String name, Integer code) {
             }
 
-            SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-            assertThrows(RecordTypeConversionException.class, () -> filter.project(Main.class));
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            assertThrows(RecordTypeConversionException.class, () -> filter.project(Main.class, groupType));
         }
 
     }
@@ -2272,8 +2307,8 @@ class SchemaFilterTest {
             GroupType childGroupType = new GroupType(OPTIONAL, "child", childField1, childField2);
             GroupType groupType = new MessageType("foo", field1, childGroupType);
 
-            SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-            assertEquals(groupType, filter.project(Map.class));
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            assertEquals(groupType, filter.project(Map.class, groupType));
         }
 
         @Test
@@ -2287,8 +2322,70 @@ class SchemaFilterTest {
             record CompositeMain(String name, Map<String, Object> child) {
             }
 
-            SchemaFilter filter = new SchemaFilter(defaultReadConfig, groupType);
-            assertEquals(groupType, filter.project(CompositeMain.class));
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            assertEquals(groupType, filter.project(CompositeMain.class, groupType));
+        }
+
+    }
+
+    @Nested
+    class SnakeCaseConversion {
+
+        private final ColumnToFieldMapper noSnakeCaseMap = new ColumnToFieldMapper(FIELD_NAME_STRATEGY);
+        private final ColumnToFieldMapper snakeCaseMap = new ColumnToFieldMapper(SNAKE_CASE_STRATEGY);
+
+        @Test
+        void canNotMapSnakeCaseColumnNameIfDisabled() {
+
+            Type field = new PrimitiveType(REQUIRED, PrimitiveTypeName.INT32, "some_value");
+            GroupType groupType = new MessageType("foo", field);
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, noSnakeCaseMap);
+
+            record CamelCaseField(int someValue) {
+            }
+
+            assertThrows(CarpetMissingColumnException.class, () -> filter.project(CamelCaseField.class, groupType));
+        }
+
+        @Test
+        void mapSnakeCaseColumnNameWhenEnabled() {
+
+            Type field = new PrimitiveType(REQUIRED, PrimitiveTypeName.INT32, "some_value");
+            GroupType groupType = new MessageType("foo", field);
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, snakeCaseMap);
+
+            record CamelCaseField(int someValue) {
+            }
+
+            assertEquals(groupType, filter.project(CamelCaseField.class, groupType));
+        }
+
+        @Test
+        void priorityOnMatchingColumns() {
+
+            Type field1 = new PrimitiveType(REQUIRED, PrimitiveTypeName.INT32, "some_value");
+            Type field2 = new PrimitiveType(REQUIRED, PrimitiveTypeName.DOUBLE, "someValue");
+            GroupType groupType = new MessageType("foo", field1, field2);
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+
+            record MixedValues(int some_value, double someValue) {
+            }
+
+            assertEquals(groupType, filter.project(MixedValues.class, groupType));
+        }
+
+        @Test
+        void priorityOnAliasedFields() {
+
+            Type field1 = new PrimitiveType(REQUIRED, PrimitiveTypeName.INT32, "some_value");
+            Type field2 = new PrimitiveType(REQUIRED, PrimitiveTypeName.DOUBLE, "someValue");
+            GroupType groupType = new MessageType("foo", field1, field2);
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+
+            record MixedValues(@Alias("some_value") int foo, @Alias("someValue") double bar) {
+            }
+
+            assertEquals(groupType, filter.project(MixedValues.class, groupType));
         }
 
     }
