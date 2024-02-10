@@ -440,6 +440,17 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
             return this;
         }
 
+        /**
+         * Set the strategy to use generating message and record column names
+         *
+         * @param columnNamingStrategy an Enum configuring the strategy to use
+         * @return this builder for method chaining.
+         */
+        public Builder<T> columnNamingStrategy(ColumnNamingStrategy columnNamingStrategy) {
+            builder.columnNamingStrategy(columnNamingStrategy);
+            return this;
+        }
+
         public CarpetWriter<T> build() throws IOException {
             return new CarpetWriter<>(builder.build());
         }

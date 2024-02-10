@@ -15,26 +15,31 @@
  */
 package com.jerolba.carpet.impl.write;
 
-import com.jerolba.carpet.AnnotatedLevels;
+import static com.jerolba.carpet.impl.CaseConverter.camelCaseToSnakeCase;
+
+import java.lang.reflect.RecordComponent;
+
 import com.jerolba.carpet.ColumnNamingStrategy;
+import com.jerolba.carpet.annotation.Alias;
 
-public class CarpetWriteConfiguration {
+class FieldToColumnMapper {
 
-    private final AnnotatedLevels annotatedLevels;
     private final ColumnNamingStrategy columnNamingStrategy;
 
-    public CarpetWriteConfiguration(AnnotatedLevels annotatedLevels,
-            ColumnNamingStrategy columnNamingStrategy) {
-        this.annotatedLevels = annotatedLevels;
+    public FieldToColumnMapper(ColumnNamingStrategy columnNamingStrategy) {
         this.columnNamingStrategy = columnNamingStrategy;
     }
 
-    public AnnotatedLevels annotatedLevels() {
-        return annotatedLevels;
-    }
-
-    public ColumnNamingStrategy columnNamingStrategy() {
-        return columnNamingStrategy;
+    public String getColumnName(RecordComponent recordComponent) {
+        Alias annotation = recordComponent.getAnnotation(Alias.class);
+        if (annotation != null) {
+            return annotation.value();
+        }
+        String name = recordComponent.getName();
+        return switch (columnNamingStrategy) {
+        case FIELD_NAME -> name;
+        case SNAKE_CASE -> camelCaseToSnakeCase(name);
+        };
     }
 
 }

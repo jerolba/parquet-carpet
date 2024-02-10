@@ -39,6 +39,7 @@ public class CarpetParquetWriter {
         private final Class<T> recordClass;
         private Map<String, String> extraMetaData = new HashMap<>();
         private AnnotatedLevels annotatedLevels = AnnotatedLevels.THREE;
+        private ColumnNamingStrategy columnNamingStrategy = ColumnNamingStrategy.FIELD_NAME;
 
         private Builder(OutputFile file, Class<T> recordClass) {
             super(file);
@@ -60,9 +61,15 @@ public class CarpetParquetWriter {
             return self();
         }
 
+        public Builder<T> columnNamingStrategy(ColumnNamingStrategy columnNamingStrategy) {
+            this.columnNamingStrategy = columnNamingStrategy;
+            return self();
+        }
+
         @Override
         protected WriteSupport<T> getWriteSupport(Configuration conf) {
-            CarpetWriteConfiguration carpetCfg = new CarpetWriteConfiguration(annotatedLevels);
+            CarpetWriteConfiguration carpetCfg = new CarpetWriteConfiguration(annotatedLevels,
+                    columnNamingStrategy);
             return new CarpetWriterSupport<>(recordClass, extraMetaData, carpetCfg);
         }
 

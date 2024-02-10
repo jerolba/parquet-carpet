@@ -41,6 +41,7 @@ public class ParquetWriterTest<T> {
     private final Class<T> type;
     private String path;
     private AnnotatedLevels level = AnnotatedLevels.THREE;
+    private ColumnNamingStrategy nameStrategy = ColumnNamingStrategy.FIELD_NAME;
 
     public ParquetWriterTest(Class<T> type) {
         String fileName = type.getName() + ".parquet";
@@ -60,6 +61,11 @@ public class ParquetWriterTest<T> {
         return this;
     }
 
+    public ParquetWriterTest<T> withNameStrategy(ColumnNamingStrategy nameStrategy) {
+        this.nameStrategy = nameStrategy;
+        return this;
+    }
+
     public void write(T... values) throws IOException {
         write(List.of(values));
     }
@@ -69,6 +75,7 @@ public class ParquetWriterTest<T> {
         try (ParquetWriter<T> writer = CarpetParquetWriter.builder(output, type)
                 .levelStructure(level)
                 .enableValidation()
+                .columnNamingStrategy(nameStrategy)
                 .build()) {
             for (var v : values) {
                 writer.write(v);
