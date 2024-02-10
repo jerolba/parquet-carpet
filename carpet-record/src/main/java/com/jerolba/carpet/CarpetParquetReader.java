@@ -35,7 +35,7 @@ public class CarpetParquetReader {
     public static boolean DEFAULT_FAIL_ON_MISSING_COLUMN = true;
     public static boolean DEFAULT_FAIL_ON_NULL_FOR_PRIMITIVES = false;
     public static boolean DEFAULT_FAIL_NARROWING_PRIMITIVE_CONVERSION = false;
-    public static FieldMatchingStrategy DEFAULT_FIELD_MATCHING_STRATEGY = FieldMatchingStrategy.FIELD_NAME_STRATEGY;
+    public static FieldMatchingStrategy DEFAULT_FIELD_MATCHING_STRATEGY = FieldMatchingStrategy.FIELD_NAME;
 
     public static <T> Builder<T> builder(InputFile file, Class<T> readClass) {
         return new Builder<>(file, readClass);

@@ -15,9 +15,9 @@
  */
 package com.jerolba.carpet.reader;
 
-import static com.jerolba.carpet.FieldMatchingStrategy.BEST_EFFORT_STRATEGY;
-import static com.jerolba.carpet.FieldMatchingStrategy.FIELD_NAME_STRATEGY;
-import static com.jerolba.carpet.FieldMatchingStrategy.SNAKE_CASE_STRATEGY;
+import static com.jerolba.carpet.FieldMatchingStrategy.BEST_EFFORT;
+import static com.jerolba.carpet.FieldMatchingStrategy.FIELD_NAME;
+import static com.jerolba.carpet.FieldMatchingStrategy.SNAKE_CASE;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -2361,7 +2361,7 @@ class CarpetReaderTest {
                 }
 
                 var reader = new CarpetReader<>(writerTest.getTestFile(), CamelCaseField.class)
-                        .withFieldMatchingStrategy(FIELD_NAME_STRATEGY);
+                        .withFieldMatchingStrategy(FIELD_NAME);
                 assertThrows(CarpetMissingColumnException.class, () -> reader.toList());
             }
 
@@ -2378,7 +2378,7 @@ class CarpetReaderTest {
                 }
 
                 var reader = new CarpetReader<>(writerTest.getTestFile(), CamelCaseField.class)
-                        .withFieldMatchingStrategy(SNAKE_CASE_STRATEGY);
+                        .withFieldMatchingStrategy(SNAKE_CASE);
                 CamelCaseField value = reader.iterator().next();
                 assertEquals(new CamelCaseField(1), value);
             }
@@ -2396,7 +2396,7 @@ class CarpetReaderTest {
                 }
 
                 var reader = new CarpetReader<>(writerTest.getTestFile(), CamelCaseField.class)
-                        .withFieldMatchingStrategy(BEST_EFFORT_STRATEGY);
+                        .withFieldMatchingStrategy(BEST_EFFORT);
                 CamelCaseField value = reader.iterator().next();
                 assertEquals(new CamelCaseField(1, 2.0), value);
             }
@@ -2414,7 +2414,7 @@ class CarpetReaderTest {
                 }
 
                 var reader = new CarpetReader<>(writerTest.getTestFile(), MixedValues.class)
-                        .withFieldMatchingStrategy(SNAKE_CASE_STRATEGY);
+                        .withFieldMatchingStrategy(SNAKE_CASE);
                 MixedValues value = reader.iterator().next();
                 assertEquals(new MixedValues(1, 2.0), value);
             }

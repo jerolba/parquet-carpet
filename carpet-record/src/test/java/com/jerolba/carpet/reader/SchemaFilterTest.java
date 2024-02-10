@@ -15,8 +15,8 @@
  */
 package com.jerolba.carpet.reader;
 
-import static com.jerolba.carpet.FieldMatchingStrategy.FIELD_NAME_STRATEGY;
-import static com.jerolba.carpet.FieldMatchingStrategy.SNAKE_CASE_STRATEGY;
+import static com.jerolba.carpet.FieldMatchingStrategy.FIELD_NAME;
+import static com.jerolba.carpet.FieldMatchingStrategy.SNAKE_CASE;
 import static org.apache.parquet.schema.ConversionPatterns.listOfElements;
 import static org.apache.parquet.schema.ConversionPatterns.listType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.enumType;
@@ -66,7 +66,7 @@ class SchemaFilterTest {
     private final SchemaValidation strictNumericConfig = new SchemaValidation(true, true, false);
     private final SchemaValidation dontFailOnMissingFields = new SchemaValidation(false, false, false);
     private final SchemaValidation failOnNullForPrimitives = new SchemaValidation(true, false, true);
-    private final ColumnToFieldMapper defaultFieldMapper = new ColumnToFieldMapper(FIELD_NAME_STRATEGY);
+    private final ColumnToFieldMapper defaultFieldMapper = new ColumnToFieldMapper(FIELD_NAME);
 
     @Nested
     class FieldInt32Conversion {
@@ -2331,8 +2331,8 @@ class SchemaFilterTest {
     @Nested
     class SnakeCaseConversion {
 
-        private final ColumnToFieldMapper noSnakeCaseMap = new ColumnToFieldMapper(FIELD_NAME_STRATEGY);
-        private final ColumnToFieldMapper snakeCaseMap = new ColumnToFieldMapper(SNAKE_CASE_STRATEGY);
+        private final ColumnToFieldMapper noSnakeCaseMap = new ColumnToFieldMapper(FIELD_NAME);
+        private final ColumnToFieldMapper snakeCaseMap = new ColumnToFieldMapper(SNAKE_CASE);
 
         @Test
         void canNotMapSnakeCaseColumnNameIfDisabled() {

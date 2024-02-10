@@ -21,7 +21,7 @@ import static java.lang.Character.toLowerCase;
 
 public class CaseConverter {
 
-    public static String camelToSnakeCase(String camelCase) {
+    public static String camelCaseToSnakeCase(String camelCase) {
         if (camelCase == null || camelCase.isEmpty()) {
             return camelCase;
         }

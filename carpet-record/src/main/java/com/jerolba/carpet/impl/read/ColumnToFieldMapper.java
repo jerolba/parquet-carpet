@@ -15,10 +15,10 @@
  */
 package com.jerolba.carpet.impl.read;
 
-import static com.jerolba.carpet.FieldMatchingStrategy.BEST_EFFORT_STRATEGY;
-import static com.jerolba.carpet.FieldMatchingStrategy.FIELD_NAME_STRATEGY;
-import static com.jerolba.carpet.FieldMatchingStrategy.SNAKE_CASE_STRATEGY;
-import static com.jerolba.carpet.impl.CaseConverter.camelToSnakeCase;
+import static com.jerolba.carpet.FieldMatchingStrategy.BEST_EFFORT;
+import static com.jerolba.carpet.FieldMatchingStrategy.FIELD_NAME;
+import static com.jerolba.carpet.FieldMatchingStrategy.SNAKE_CASE;
+import static com.jerolba.carpet.impl.CaseConverter.camelCaseToSnakeCase;
 import static java.util.stream.Collectors.toMap;
 
 import java.lang.reflect.RecordComponent;
@@ -46,11 +46,11 @@ public class ColumnToFieldMapper {
     public Map<String, NameMap> mapFields(GroupType schema, RecordComponent[] recordComponent) {
         var mapper = new RecordMapper(recordComponent, schema);
         mapper.mapWith(AliasField::getComponentAlias);
-        if (fieldMatchingStrategy == FIELD_NAME_STRATEGY || fieldMatchingStrategy == BEST_EFFORT_STRATEGY) {
+        if (fieldMatchingStrategy == FIELD_NAME || fieldMatchingStrategy == BEST_EFFORT) {
             mapper.mapWith(RecordComponent::getName);
         }
-        if (fieldMatchingStrategy == SNAKE_CASE_STRATEGY || fieldMatchingStrategy == BEST_EFFORT_STRATEGY) {
-            mapper.mapWith(component -> camelToSnakeCase(component.getName()));
+        if (fieldMatchingStrategy == SNAKE_CASE || fieldMatchingStrategy == BEST_EFFORT) {
+            mapper.mapWith(component -> camelCaseToSnakeCase(component.getName()));
         }
         return mapper.getResult();
     }
