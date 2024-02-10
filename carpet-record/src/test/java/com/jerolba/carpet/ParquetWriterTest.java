@@ -55,12 +55,6 @@ public class ParquetWriterTest<T> {
         getTestFile().delete();
     }
 
-    public ParquetWriterTest(String path, Class<T> type) {
-        this.path = path;
-        this.type = type;
-        getTestFile().delete();
-    }
-
     public ParquetWriterTest<T> withLevel(AnnotatedLevels level) {
         this.level = level;
         return this;

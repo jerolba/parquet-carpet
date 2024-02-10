@@ -48,6 +48,7 @@ public class CarpetReader<T> implements Iterable<T> {
     private boolean failOnMissingColumn = CarpetParquetReader.DEFAULT_FAIL_ON_MISSING_COLUMN;
     private boolean failOnNullForPrimitives = CarpetParquetReader.DEFAULT_FAIL_ON_NULL_FOR_PRIMITIVES;
     private boolean failNarrowingPrimitiveConversion = CarpetParquetReader.DEFAULT_FAIL_NARROWING_PRIMITIVE_CONVERSION;
+    private FieldMatchingStrategy fieldMatchingStrategy = CarpetParquetReader.DEFAULT_FIELD_MATCHING_STRATEGY;
 
     /**
      *
@@ -129,6 +130,12 @@ public class CarpetReader<T> implements Iterable<T> {
         return newInstance;
     }
 
+    public CarpetReader<T> withFieldMatchingStrategy(FieldMatchingStrategy value) {
+        CarpetReader<T> newInstance = cloneInstance();
+        newInstance.fieldMatchingStrategy = value;
+        return newInstance;
+    }
+
     private CarpetReader<T> cloneInstance() {
         CarpetReader<T> newInstace = new CarpetReader<>(inputFile, recordClass);
         newInstace.failOnMissingColumn = failOnMissingColumn;
@@ -189,6 +196,7 @@ public class CarpetReader<T> implements Iterable<T> {
                     .failOnMissingColumn(failOnMissingColumn)
                     .failOnNullForPrimitives(failOnNullForPrimitives)
                     .failNarrowingPrimitiveConversion(failNarrowingPrimitiveConversion)
+                    .fieldMatchingStrategy(fieldMatchingStrategy)
                     .build();
             return new RecordIterator<>(recordClass, reader);
         } catch (IOException e) {

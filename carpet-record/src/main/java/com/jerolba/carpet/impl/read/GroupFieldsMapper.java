@@ -19,7 +19,9 @@ import java.lang.reflect.RecordComponent;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.jerolba.carpet.impl.AliasField;
+import org.apache.parquet.schema.GroupType;
+
+import com.jerolba.carpet.impl.read.ColumnToFieldMapper.NameMap;
 
 class GroupFieldsMapper {
 
@@ -27,14 +29,18 @@ class GroupFieldsMapper {
     private final Map<String, Integer> fieldIndex = new HashMap<>();
     private final Map<String, RecordComponent> fieldType = new HashMap<>();
 
-    GroupFieldsMapper(Class<?> recordClass) {
+    GroupFieldsMapper(GroupType schema, Class<?> recordClass, ColumnToFieldMapper columnToFieldMapper) {
         this.recordClass = recordClass;
         RecordComponent[] components = recordClass.getRecordComponents();
+        Map<String, NameMap> mapFields = columnToFieldMapper.mapFields(schema, components);
         int cont = 0;
         for (RecordComponent recordComponent : components) {
-            String name = AliasField.getFieldName(recordComponent);
-            fieldIndex.put(name, cont);
-            fieldType.put(name, recordComponent);
+            NameMap mapping = mapFields.get(recordComponent.getName());
+            if (mapping != null) {
+                String name = mapping.parquetType().getName();
+                fieldIndex.put(name, cont);
+                fieldType.put(name, recordComponent);
+            }
             cont++;
         }
     }

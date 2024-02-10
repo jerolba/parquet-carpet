@@ -15,6 +15,9 @@
  */
 package com.jerolba.carpet.reader;
 
+import static com.jerolba.carpet.FieldMatchingStrategy.BEST_EFFORT;
+import static com.jerolba.carpet.FieldMatchingStrategy.FIELD_NAME;
+import static com.jerolba.carpet.FieldMatchingStrategy.SNAKE_CASE;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -54,10 +57,12 @@ import org.junit.jupiter.api.Test;
 import com.jerolba.carpet.AnnotatedLevels;
 import com.jerolba.carpet.CarpetMissingColumnException;
 import com.jerolba.carpet.CarpetParquetReader;
+import com.jerolba.carpet.CarpetReader;
 import com.jerolba.carpet.ParquetReaderTest;
 import com.jerolba.carpet.ParquetWriterTest;
 import com.jerolba.carpet.ReadFlag;
 import com.jerolba.carpet.RecordTypeConversionException;
+import com.jerolba.carpet.annotation.Alias;
 import com.jerolba.carpet.io.FileSystemInputFile;
 import com.jerolba.carpet.io.FileSystemOutputFile;
 
@@ -2319,6 +2324,103 @@ class CarpetReaderTest {
             }
 
         }
+    }
+
+    @Nested
+    class FieldNameMapping {
+
+        @Test
+        void canHaveDifferentOrder() throws IOException {
+
+            record SomeRecord(int a, long b, String c, double d) {
+            }
+
+            var writerTest = new ParquetWriterTest<>(SomeRecord.class);
+            writerTest.write(new SomeRecord(1, 2L, "A", 3.0));
+
+            record ReverseRecord(double d, String c, long b, int a) {
+            }
+
+            var reader = writerTest.getCarpetReader(ReverseRecord.class);
+            assertEquals(new ReverseRecord(3.0, "A", 2L, 1), reader.read());
+        }
+
+        @Nested
+        class SnakeCaseConversion {
+
+            @Test
+            void canNotMapSnakeCaseColumnNameIfDisabled() throws IOException {
+
+                record SanakeCaseField(int some_value) {
+                }
+
+                var writerTest = new ParquetWriterTest<>(SanakeCaseField.class);
+                writerTest.write(new SanakeCaseField(1));
+
+                record CamelCaseField(int someValue) {
+                }
+
+                var reader = new CarpetReader<>(writerTest.getTestFile(), CamelCaseField.class)
+                        .withFieldMatchingStrategy(FIELD_NAME);
+                assertThrows(CarpetMissingColumnException.class, () -> reader.toList());
+            }
+
+            @Test
+            void mapSnakeCaseColumnNameWhenEnabled() throws IOException {
+
+                record SanakeCaseField(int some_value) {
+                }
+
+                var writerTest = new ParquetWriterTest<>(SanakeCaseField.class);
+                writerTest.write(new SanakeCaseField(1));
+
+                record CamelCaseField(int someValue) {
+                }
+
+                var reader = new CarpetReader<>(writerTest.getTestFile(), CamelCaseField.class)
+                        .withFieldMatchingStrategy(SNAKE_CASE);
+                CamelCaseField value = reader.iterator().next();
+                assertEquals(new CamelCaseField(1), value);
+            }
+
+            @Test
+            void bestEffortPriorityOnMatchingNameColumnsOverSnakeCase() throws IOException {
+
+                record SanakeCaseField(int some_value, double someValue) {
+                }
+
+                var writerTest = new ParquetWriterTest<>(SanakeCaseField.class);
+                writerTest.write(new SanakeCaseField(1, 2.0));
+
+                record CamelCaseField(int some_value, double someValue) {
+                }
+
+                var reader = new CarpetReader<>(writerTest.getTestFile(), CamelCaseField.class)
+                        .withFieldMatchingStrategy(BEST_EFFORT);
+                CamelCaseField value = reader.iterator().next();
+                assertEquals(new CamelCaseField(1, 2.0), value);
+            }
+
+            @Test
+            void priorityOnAliasedFieldsOverSnakeCase() throws IOException {
+
+                record SanakeCaseField(int some_value, double someValue) {
+                }
+
+                var writerTest = new ParquetWriterTest<>(SanakeCaseField.class);
+                writerTest.write(new SanakeCaseField(1, 2.0));
+
+                record MixedValues(@Alias("some_value") int foo, @Alias("someValue") double bar) {
+                }
+
+                var reader = new CarpetReader<>(writerTest.getTestFile(), MixedValues.class)
+                        .withFieldMatchingStrategy(SNAKE_CASE);
+                MixedValues value = reader.iterator().next();
+                assertEquals(new MixedValues(1, 2.0), value);
+            }
+
+        }
+
     }
 
     @Test

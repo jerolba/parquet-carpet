@@ -29,4 +29,12 @@ public class AliasField {
         return annotation.value();
     }
 
+    public static String getComponentAlias(RecordComponent recordComponent) {
+        Alias annotation = recordComponent.getAnnotation(Alias.class);
+        if (annotation != null) {
+            return annotation.value();
+        }
+        return null;
+    }
+
 }
