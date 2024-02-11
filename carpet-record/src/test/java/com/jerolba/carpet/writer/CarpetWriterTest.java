@@ -15,6 +15,7 @@
  */
 package com.jerolba.carpet.writer;
 
+import static com.jerolba.carpet.ColumnNamingStrategy.SNAKE_CASE;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -28,8 +29,11 @@ import org.apache.avro.generic.GenericRecord;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import com.jerolba.carpet.CarpetReader;
+import com.jerolba.carpet.FieldMatchingStrategy;
 import com.jerolba.carpet.ParquetWriterTest;
 import com.jerolba.carpet.RecordTypeConversionException;
+import com.jerolba.carpet.annotation.Alias;
 
 class CarpetWriterTest {
 
@@ -1043,5 +1047,102 @@ class CarpetWriterTest {
             assertEquals(rec1.id, avroReader.read().get("id").toString());
             assertEquals(rec2.id, avroReader.read().get("id").toString());
         }
+    }
+
+    @Nested
+    class ColumnNameConversion {
+
+        @Nested
+        class Aliased {
+
+            @Test
+            void fieldAliased() throws IOException {
+                record SomeClass(@Alias("foo") long someId, @Alias("bar") int operation, boolean active) {
+                }
+
+                var writerTest = new ParquetWriterTest<>(SomeClass.class);
+                writerTest.write(new SomeClass(1L, 2, true));
+
+                String expected = """
+                        message SomeClass {
+                          required int64 foo;
+                          required int32 bar;
+                          required boolean active;
+                        }
+                        """;
+                assertEquals(expected, writerTest.getSchema().toString());
+
+                record ReadClass(long foo, int bar, boolean active) {
+                }
+                ReadClass value = writerTest.getCarpetReader(ReadClass.class).read();
+                assertEquals(new ReadClass(1L, 2, true), value);
+            }
+        }
+
+        @Nested
+        class ToSnakeCase {
+
+            @Test
+            void fromCamelCase() throws IOException {
+                record SomeClass(long someId, int operationCode, int with3) {
+                }
+
+                var writerTest = new ParquetWriterTest<>(SomeClass.class)
+                        .withNameStrategy(SNAKE_CASE);
+                writerTest.write(new SomeClass(1L, 2, 3));
+
+                String expected = """
+                        message SomeClass {
+                          required int64 some_id;
+                          required int32 operation_code;
+                          required int32 with3;
+                        }
+                        """;
+                assertEquals(expected, writerTest.getSchema().toString());
+
+                record Some_Class(long some_id, int operation_code, int with3) {
+                }
+                Some_Class value = writerTest.getCarpetReader(Some_Class.class).read();
+                assertEquals(new Some_Class(1L, 2, 3), value);
+            }
+
+            @Test
+            void readAgainWithSnakeCaseStrategy() throws IOException {
+                record SomeClass(long someId, int operationCode, int with3) {
+                }
+
+                var writerTest = new ParquetWriterTest<>(SomeClass.class)
+                        .withNameStrategy(SNAKE_CASE);
+                writerTest.write(new SomeClass(1L, 2, 3));
+
+                CarpetReader<SomeClass> reader = new CarpetReader<>(writerTest.getTestFile(), SomeClass.class)
+                        .withFieldMatchingStrategy(FieldMatchingStrategy.SNAKE_CASE);
+                SomeClass read = reader.stream().toList().get(0);
+                assertEquals(new SomeClass(1L, 2, 3), read);
+            }
+
+            @Test
+            void alreadySnakeCase() throws IOException {
+                record SomeClass(long some_id, int operation_code, int with3) {
+                }
+
+                var writerTest = new ParquetWriterTest<>(SomeClass.class)
+                        .withNameStrategy(SNAKE_CASE);
+                writerTest.write(new SomeClass(1L, 2, 3));
+
+                String expected = """
+                        message SomeClass {
+                          required int64 some_id;
+                          required int32 operation_code;
+                          required int32 with3;
+                        }
+                        """;
+                assertEquals(expected, writerTest.getSchema().toString());
+
+                assertEquals(new SomeClass(1L, 2, 3), writerTest.getCarpetReader().read());
+            }
+
+        }
+
     }
 }

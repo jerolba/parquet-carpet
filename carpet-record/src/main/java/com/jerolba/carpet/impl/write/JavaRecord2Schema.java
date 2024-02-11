@@ -15,7 +15,6 @@
  */
 package com.jerolba.carpet.impl.write;
 
-import static com.jerolba.carpet.impl.AliasField.getFieldName;
 import static com.jerolba.carpet.impl.NotNullField.isNotNull;
 import static com.jerolba.carpet.impl.Parameterized.getParameterizedCollection;
 import static com.jerolba.carpet.impl.Parameterized.getParameterizedMap;
@@ -53,9 +52,11 @@ import com.jerolba.carpet.impl.ParameterizedMap;
 public class JavaRecord2Schema {
 
     private final CarpetWriteConfiguration carpetConfiguration;
+    private final FieldToColumnMapper fieldToColumnMapper;
 
     public JavaRecord2Schema(CarpetWriteConfiguration carpetConfiguration) {
         this.carpetConfiguration = carpetConfiguration;
+        this.fieldToColumnMapper = new FieldToColumnMapper(carpetConfiguration.columnNamingStrategy());
     }
 
     public MessageType createSchema(Class<?> recordClass) {
@@ -74,7 +75,7 @@ public class JavaRecord2Schema {
         List<Type> fields = new ArrayList<>();
         for (var attr : recordClass.getRecordComponents()) {
             Class<?> type = attr.getType();
-            String fieldName = getFieldName(attr);
+            String fieldName = fieldToColumnMapper.getColumnName(attr);
             boolean notNull = type.isPrimitive() || isNotNull(attr);
             Repetition repetition = notNull ? REQUIRED : OPTIONAL;
             JavaType javaType = new JavaType(type);

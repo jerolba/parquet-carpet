@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import com.jerolba.carpet.AnnotatedLevels;
+import com.jerolba.carpet.ColumnNamingStrategy;
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.annotation.Alias;
 import com.jerolba.carpet.annotation.NotNull;
@@ -35,7 +36,9 @@ import com.jerolba.carpet.impl.write.JavaRecord2Schema;
 
 class JavaRecord2SchemaTest {
 
-    private final CarpetWriteConfiguration default3Levels = new CarpetWriteConfiguration(AnnotatedLevels.THREE);
+    private final ColumnNamingStrategy defaultNaming = ColumnNamingStrategy.FIELD_NAME;
+    private final CarpetWriteConfiguration default3Levels = new CarpetWriteConfiguration(AnnotatedLevels.THREE,
+            defaultNaming);
     private final JavaRecord2Schema defaultConfigSchema = new JavaRecord2Schema(default3Levels);
 
     @Test
@@ -90,21 +93,6 @@ class JavaRecord2SchemaTest {
                   optional int32 shortValue (INTEGER(16,true));
                   optional int32 byteValue (INTEGER(8,true));
                   optional boolean booleanValue;
-                }
-                """;
-        assertEquals(expected, schema.toString());
-    }
-
-    @Test
-    void fieldAliasRecordTest() {
-        record FieldAliasRecord(long id, @Alias("nombre") String name) {
-        }
-
-        MessageType schema = defaultConfigSchema.createSchema(FieldAliasRecord.class);
-        String expected = """
-                message FieldAliasRecord {
-                  required int64 id;
-                  optional binary nombre (STRING);
                 }
                 """;
         assertEquals(expected, schema.toString());
@@ -283,7 +271,8 @@ class JavaRecord2SchemaTest {
     @Nested
     class NestedCollection1Level {
 
-        private final CarpetWriteConfiguration oneLevel = new CarpetWriteConfiguration(AnnotatedLevels.ONE);
+        private final CarpetWriteConfiguration oneLevel = new CarpetWriteConfiguration(AnnotatedLevels.ONE,
+                defaultNaming);
         private final JavaRecord2Schema schemaFactory = new JavaRecord2Schema(oneLevel);
 
         @Test
@@ -364,7 +353,8 @@ class JavaRecord2SchemaTest {
     @Nested
     class NestedCollection2Level {
 
-        private final CarpetWriteConfiguration twoLevel = new CarpetWriteConfiguration(AnnotatedLevels.TWO);
+        private final CarpetWriteConfiguration twoLevel = new CarpetWriteConfiguration(AnnotatedLevels.TWO,
+                defaultNaming);
         private final JavaRecord2Schema schemaFactory = new JavaRecord2Schema(twoLevel);
 
         @Test
@@ -585,8 +575,7 @@ class JavaRecord2SchemaTest {
     @Nested
     class NestedCollection3Level {
 
-        private final CarpetWriteConfiguration threeLevel = new CarpetWriteConfiguration(AnnotatedLevels.THREE);
-        private final JavaRecord2Schema schemaFactory = new JavaRecord2Schema(threeLevel);
+        private final JavaRecord2Schema schemaFactory = new JavaRecord2Schema(default3Levels);
 
         @Test
         void nestedIntegerCollection() {
@@ -950,8 +939,7 @@ class JavaRecord2SchemaTest {
     @Nested
     class NestedMaps {
 
-        private final CarpetWriteConfiguration twoLevel = new CarpetWriteConfiguration(AnnotatedLevels.THREE);
-        private final JavaRecord2Schema schemaFactory = new JavaRecord2Schema(twoLevel);
+        private final JavaRecord2Schema schemaFactory = new JavaRecord2Schema(default3Levels);
 
         @Test
         void nestedSimpleTypeMap() {
@@ -1230,4 +1218,65 @@ class JavaRecord2SchemaTest {
         }
 
     }
+
+    @Nested
+    class ColumnNameConversion {
+
+        @Test
+        void fieldAliasRecordTest() {
+            record FieldAliasRecord(long id, @Alias("nombre") String name) {
+            }
+
+            MessageType schema = defaultConfigSchema.createSchema(FieldAliasRecord.class);
+            String expected = """
+                    message FieldAliasRecord {
+                      required int64 id;
+                      optional binary nombre (STRING);
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Nested
+        class ToSnakeCase {
+
+            private final CarpetWriteConfiguration snakeCase = new CarpetWriteConfiguration(AnnotatedLevels.THREE,
+                    ColumnNamingStrategy.SNAKE_CASE);
+            private final JavaRecord2Schema java2Schema = new JavaRecord2Schema(snakeCase);
+
+            @Test
+            void fromCamelCase() {
+                record SomeClass(long someId, int operationName, int with3) {
+                }
+
+                MessageType schema = java2Schema.createSchema(SomeClass.class);
+                String expected = """
+                        message SomeClass {
+                          required int64 some_id;
+                          required int32 operation_name;
+                          required int32 with3;
+                        }
+                        """;
+                assertEquals(expected, schema.toString());
+            }
+
+            @Test
+            void alreadySnakeCase() {
+                record SomeClass(long some_id, int operation_name, int with3) {
+                }
+
+                MessageType schema = java2Schema.createSchema(SomeClass.class);
+                String expected = """
+                        message SomeClass {
+                          required int64 some_id;
+                          required int32 operation_name;
+                          required int32 with3;
+                        }
+                        """;
+                assertEquals(expected, schema.toString());
+            }
+
+        }
+    }
+
 }
