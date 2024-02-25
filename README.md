@@ -80,6 +80,12 @@ You just need to provide a File and Record class that match parquet schema to re
 List<MyRecord> data = new CarpetReader<>(new File("my_file.parquet"), MyRecord.class).toList();
 ```
 
+If you don't know the schema of the file, or a Map is valid, you can deserialize to `Map<String, Object>`:
+
+```java
+List<Map> data = new CarpetReader<>(new File("my_file.parquet"), Map.class).toList();
+```
+
 ## Advanced Usage
 
 - [CarpetWriter API](#carpetwriter-api)
@@ -90,6 +96,7 @@ List<MyRecord> data = new CarpetReader<>(new File("my_file.parquet"), MyRecord.c
 - [Nullability](#nullability)
 - [Read schema mismatch](#read-schema-mismatch)
 - [Parquet configuration tunning](#parquet-configuration-tunning)
+- [Column name conversion](#column-name-conversion)
 - [Low level Parquet classes](#low-level-parquet-classes)
 - [Local file system files](#local-file-system-files)
 
@@ -106,9 +113,38 @@ You can call repeatedly to all methods in any combination if needed.
 
 `CarpetWriter` needs to be closed, and implements `Closeable` interface.
 
+```java
+try (OutputStream outputStream = new FileOutputStream("my_file.parquet")) {
+    try (CarpetWriter<MyRecord> writer = new CarpetWriter<>(outputStream, MyRecord.class)) {
+        writer.write(new MyRecord("foo"));
+        writer.write(List.of(new MyRecord("bar")));
+        writer.write(Stream.of(new MyRecord("foobar")));
+    }
+}
+```
+
 ### CarpetReader API
 
 `CarpetReader` provides multiple ways to read a file. When you instantiate a `CarpetReader` the file is not opened or read. It's processed when you execute one of its read methods.
+
+#### Stream
+
+`CarpetReader<T>` can return a Java stream to iterate it applying functional logic to filter and transform its content.
+
+```java
+var reader = new CarpetReader<>(file, MyRecord.class);
+List<OtherTpye> list = reader.stream().filter(r -> r.value() > 100.0).map(this::mapToOtherType).toList();
+```
+
+File content is not materialized and then streamed. It's read while streamed.
+
+#### toList
+
+If you don't need to filter or convert the content, you can directly get the whole content as a `List<T>`:
+
+```java
+List<MyRecord> list = new CarpetReader<>(file, MyRecord.class).toList();
+```
 
 #### For-Each Loop
 
@@ -132,23 +168,6 @@ while (iterator.hasNext()) {
     MyRecord r = iterator.next();
     doSomething(r);
 }
-```
-
-#### Stream
-
-`CarpetReader<T>` can return a Java stream to iterate it applying functional logic to filter and transform its content.
-
-```java
-var reader = new CarpetReader<>(file, MyRecord.class);
-List<OtherTpye> list = reader.stream().filter(r -> r.value() > 100.0).map(this::mapToOtherType).toList();
-```
-
-#### toList
-
-If you don't need to filter or convert the content, you can directly get the whole content as a `List<T>`:
-
-```java
-List<MyRecord> list = new CarpetReader<>(file, MyRecord.class).toList();
 ```
 
 ### Column name mapping
@@ -535,6 +554,50 @@ try (OutputStream outputStream = new FileOutputStream("my_file.parquet")) {
     writer.write(data);
 }
 ```
+
+### Column name conversion
+
+Default column name mapping uses Java attribute names as Parquet column names. You can modify this behaviour while configuring Carpet.
+
+#### Writing
+
+Writing a file, configure the property `columnNamingStrategy`:
+
+```java
+record MyRecord(long userCode, String userName){ }
+
+List<MyRecord> data = calculateDataToPersist();
+try (var writer = CarpetWriter.builder(outputStream, MyRecord.class)
+    .columnNamingStrategy(ColumnNamingStrategy.SNAKE_CASE)
+    .build()) {
+  writer.write(data);
+}
+```
+
+Creates a Parquet file with all column names converted to snake_case:
+
+```
+message MyRecord {
+  required int64 user_code;
+  optional binary user_name (STRING);
+}
+```
+
+At the moment, only to snake conversion strategy is implemented.
+
+#### Reading
+
+To read a file using the inverse logic we must configure the property `fieldMatchingStrategy`:
+
+```java
+var reader = new CarpetReader<>(input, SomeEntity.class)
+    .withFieldMatchingStrategy(FieldMatchingStrategy.SNAKE_CASE);
+List<SomeEntity> list = reader.toList();
+```
+
+* The strategy `FIELD_NAME` aims to match a column with a field of the same name
+* The strategy `SNAKE_CASE` aims to match a column name with a record field name converted to snake_case
+* The strategy `BEST_EFFORT` first aims to match a column with a field of the same name. If no match is found, it then tries to find a field whose name converted to snake_case matches the column
 
 ### Low level Parquet classes
 
