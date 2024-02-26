@@ -73,9 +73,9 @@ public class ParquetWriterTest<T> {
     public void write(Collection<T> values) throws IOException {
         OutputStreamOutputFile output = new OutputStreamOutputFile(new FileOutputStream(path));
         try (ParquetWriter<T> writer = CarpetParquetWriter.builder(output, type)
-                .levelStructure(level)
+                .withLevelStructure(level)
                 .enableValidation()
-                .columnNamingStrategy(nameStrategy)
+                .withColumnNamingStrategy(nameStrategy)
                 .build()) {
             for (var v : values) {
                 writer.write(v);

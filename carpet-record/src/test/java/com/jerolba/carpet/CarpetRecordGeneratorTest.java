@@ -123,7 +123,7 @@ class CarpetRecordGeneratorTest {
         @Test
         void oneLevel() throws IOException {
             try (var writer = new CarpetWriter.Builder<>(new FileOutputStream("/tmp/nestedList1.parquet"),
-                    Sample.class).levelStructure(AnnotatedLevels.ONE).build()) {
+                    Sample.class).withLevelStructure(AnnotatedLevels.ONE).build()) {
                 writer.write(value);
             }
             List<String> classes = generateCode("/tmp/nestedList1.parquet");
@@ -133,7 +133,7 @@ class CarpetRecordGeneratorTest {
         @Test
         void twoLevel() throws IOException {
             try (var writer = new CarpetWriter.Builder<>(new FileOutputStream("/tmp/nestedList2.parquet"),
-                    Sample.class).levelStructure(AnnotatedLevels.TWO).build()) {
+                    Sample.class).withLevelStructure(AnnotatedLevels.TWO).build()) {
                 writer.write(value);
             }
             List<String> classes = generateCode("/tmp/nestedList2.parquet");
@@ -143,7 +143,7 @@ class CarpetRecordGeneratorTest {
         @Test
         void threeLevel() throws IOException {
             try (var writer = new CarpetWriter.Builder<>(new FileOutputStream("/tmp/nestedList3.parquet"),
-                    Sample.class).levelStructure(AnnotatedLevels.THREE).build()) {
+                    Sample.class).withLevelStructure(AnnotatedLevels.THREE).build()) {
                 writer.write(value);
             }
             List<String> classes = generateCode("/tmp/nestedList3.parquet");
@@ -166,7 +166,7 @@ class CarpetRecordGeneratorTest {
         void oneLevel() throws IOException {
             try (var writer = new CarpetWriter.Builder<>(
                     new FileOutputStream("/tmp/nestedList1Child.parquet"), Sample.class)
-                            .levelStructure(AnnotatedLevels.ONE).build()) {
+                            .withLevelStructure(AnnotatedLevels.ONE).build()) {
                 writer.write(value);
             }
             List<String> classes = generateCode("/tmp/nestedList1Child.parquet");
@@ -178,7 +178,7 @@ class CarpetRecordGeneratorTest {
         void twoLevel() throws IOException {
             try (var writer = new CarpetWriter.Builder<>(
                     new FileOutputStream("/tmp/nestedList2Child.parquet"), Sample.class)
-                            .levelStructure(AnnotatedLevels.TWO).build()) {
+                            .withLevelStructure(AnnotatedLevels.TWO).build()) {
                 writer.write(value);
             }
             List<String> classes = generateCode("/tmp/nestedList2Child.parquet");
@@ -190,7 +190,7 @@ class CarpetRecordGeneratorTest {
         void threeLevel() throws IOException {
             try (var writer = new CarpetWriter.Builder<>(
                     new FileOutputStream("/tmp/nestedList3Child.parquet"), Sample.class)
-                            .levelStructure(AnnotatedLevels.THREE).build()) {
+                            .withLevelStructure(AnnotatedLevels.THREE).build()) {
                 writer.write(value);
             }
             List<String> classes = generateCode("/tmp/nestedList3Child.parquet");
@@ -214,7 +214,7 @@ class CarpetRecordGeneratorTest {
         void oneLevel() throws IOException {
             try (var writer = new CarpetWriter.Builder<>(
                     new FileOutputStream("/tmp/nestedListMap1Child.parquet"), Sample.class)
-                            .levelStructure(AnnotatedLevels.ONE).build()) {
+                            .withLevelStructure(AnnotatedLevels.ONE).build()) {
                 writer.write(value);
             }
             List<String> classes = generateCode("/tmp/nestedListMap1Child.parquet");
@@ -226,7 +226,7 @@ class CarpetRecordGeneratorTest {
         void twoLevel() throws IOException {
             try (var writer = new CarpetWriter.Builder<>(
                     new FileOutputStream("/tmp/nestedListMap2Child.parquet"), Sample.class)
-                            .levelStructure(AnnotatedLevels.TWO).build()) {
+                            .withLevelStructure(AnnotatedLevels.TWO).build()) {
                 writer.write(value);
             }
             List<String> classes = generateCode("/tmp/nestedListMap2Child.parquet");
@@ -238,7 +238,7 @@ class CarpetRecordGeneratorTest {
         void threeLevel() throws IOException {
             try (var writer = new CarpetWriter.Builder<>(
                     new FileOutputStream("/tmp/nestedListMap3Child.parquet"), Sample.class)
-                            .levelStructure(AnnotatedLevels.THREE).build()) {
+                            .withLevelStructure(AnnotatedLevels.THREE).build()) {
                 writer.write(value);
             }
             List<String> classes = generateCode("/tmp/nestedListMap3Child.parquet");
@@ -259,7 +259,7 @@ class CarpetRecordGeneratorTest {
         void twoLevel() throws IOException {
             try (var writer = new CarpetWriter.Builder<>(
                     new FileOutputStream("/tmp/nestedList2Child.parquet"), Sample.class)
-                            .levelStructure(AnnotatedLevels.TWO).build()) {
+                            .withLevelStructure(AnnotatedLevels.TWO).build()) {
                 writer.write(value);
             }
             List<String> classes = generateCode("/tmp/nestedList2Child.parquet");
@@ -270,7 +270,7 @@ class CarpetRecordGeneratorTest {
         void threeLevel() throws IOException {
             try (var writer = new CarpetWriter.Builder<>(
                     new FileOutputStream("/tmp/nestedList3Child.parquet"), Sample.class)
-                            .levelStructure(AnnotatedLevels.THREE).build()) {
+                            .withLevelStructure(AnnotatedLevels.THREE).build()) {
                 writer.write(value);
             }
             List<String> classes = generateCode("/tmp/nestedList3Child.parquet");
@@ -293,7 +293,7 @@ class CarpetRecordGeneratorTest {
         void twoLevel() throws IOException {
             try (var writer = new CarpetWriter.Builder<>(
                     new FileOutputStream("/tmp/nestedList2Child.parquet"), Sample.class)
-                            .levelStructure(AnnotatedLevels.TWO).build()) {
+                            .withLevelStructure(AnnotatedLevels.TWO).build()) {
                 writer.write(value);
             }
             List<String> classes = generateCode("/tmp/nestedList2Child.parquet");
@@ -305,7 +305,7 @@ class CarpetRecordGeneratorTest {
         void threeLevel() throws IOException {
             try (var writer = new CarpetWriter.Builder<>(
                     new FileOutputStream("/tmp/nestedList3Child.parquet"), Sample.class)
-                            .levelStructure(AnnotatedLevels.THREE).build()) {
+                            .withLevelStructure(AnnotatedLevels.THREE).build()) {
                 writer.write(value);
             }
             List<String> classes = generateCode("/tmp/nestedList3Child.parquet");

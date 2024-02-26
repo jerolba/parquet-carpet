@@ -21,19 +21,25 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.apache.avro.generic.GenericRecord;
+import org.apache.parquet.hadoop.ParquetFileReader;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import com.jerolba.carpet.CarpetReader;
+import com.jerolba.carpet.CarpetWriter;
 import com.jerolba.carpet.FieldMatchingStrategy;
 import com.jerolba.carpet.ParquetWriterTest;
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.annotation.Alias;
+import com.jerolba.carpet.io.FileSystemInputFile;
+import com.jerolba.carpet.io.FileSystemOutputFile;
 
 class CarpetWriterTest {
 
@@ -1145,4 +1151,25 @@ class CarpetWriterTest {
         }
 
     }
+
+    @Test
+    void writesMetadataInParquetFile() throws IOException {
+
+        record SomeEntity(int value) {
+        }
+
+        var file = new File("/tmp/metadata.prquet");
+        try (var writer = new CarpetWriter.Builder<>(new FileSystemOutputFile(file), SomeEntity.class)
+                .withExtraMetaData("someKey", "someValue")
+                .withExtraMetaData(Map.of("foo", "bar"))
+                .build()) {
+            writer.write(new SomeEntity(1));
+        }
+
+        ParquetFileReader reader = ParquetFileReader.open(new FileSystemInputFile(file));
+        Map<String, String> metadata = reader.getFileMetaData().getKeyValueMetaData();
+        assertEquals("someValue", metadata.get("someKey"));
+        assertEquals("bar", metadata.get("foo"));
+    }
+
 }

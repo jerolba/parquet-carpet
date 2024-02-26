@@ -21,6 +21,7 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -427,6 +428,28 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
         }
 
         /**
+         * Add to writer metadata to include in the generated parquet file.
+         *
+         * @param extraMetaData to add
+         * @return this builder for method chaining.
+         */
+        public Builder<T> withExtraMetaData(Map<String, String> extraMetaData) {
+            builder.withExtraMetaData(extraMetaData);
+            return this;
+        }
+
+        /**
+         * Add to writer metadata to include in the generated parquet file.
+         *
+         * @param extraMetaData to add
+         * @return this builder for method chaining.
+         */
+        public Builder<T> withExtraMetaData(String key, String value) {
+            builder.withExtraMetaData(key, value);
+            return this;
+        }
+
+        /**
          * Set the type of collections type that will be generated following the
          * <a href=
          * "https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#lists">LogicalTypes
@@ -435,8 +458,8 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
          * @param annotatedLevels an Enum configuring the number of levels
          * @return this builder for method chaining.
          */
-        public Builder<T> levelStructure(AnnotatedLevels annotatedLevels) {
-            builder.levelStructure(annotatedLevels);
+        public Builder<T> withLevelStructure(AnnotatedLevels annotatedLevels) {
+            builder.withLevelStructure(annotatedLevels);
             return this;
         }
 
@@ -446,8 +469,8 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
          * @param columnNamingStrategy an Enum configuring the strategy to use
          * @return this builder for method chaining.
          */
-        public Builder<T> columnNamingStrategy(ColumnNamingStrategy columnNamingStrategy) {
-            builder.columnNamingStrategy(columnNamingStrategy);
+        public Builder<T> withColumnNamingStrategy(ColumnNamingStrategy columnNamingStrategy) {
+            builder.withColumnNamingStrategy(columnNamingStrategy);
             return this;
         }
 

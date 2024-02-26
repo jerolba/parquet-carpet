@@ -37,7 +37,7 @@ public class CarpetParquetWriter {
     public static class Builder<T> extends ParquetWriter.Builder<T, Builder<T>> {
 
         private final Class<T> recordClass;
-        private Map<String, String> extraMetaData = new HashMap<>();
+        private final Map<String, String> extraMetaData = new HashMap<>();
         private AnnotatedLevels annotatedLevels = AnnotatedLevels.THREE;
         private ColumnNamingStrategy columnNamingStrategy = ColumnNamingStrategy.FIELD_NAME;
 
@@ -47,7 +47,12 @@ public class CarpetParquetWriter {
         }
 
         public Builder<T> withExtraMetaData(Map<String, String> extraMetaData) {
-            this.extraMetaData = extraMetaData;
+            this.extraMetaData.putAll(extraMetaData);
+            return this;
+        }
+
+        public Builder<T> withExtraMetaData(String key, String value) {
+            this.extraMetaData.put(key, value);
             return this;
         }
 
@@ -56,12 +61,12 @@ public class CarpetParquetWriter {
             return this;
         }
 
-        public Builder<T> levelStructure(AnnotatedLevels annotatedLevels) {
+        public Builder<T> withLevelStructure(AnnotatedLevels annotatedLevels) {
             this.annotatedLevels = annotatedLevels;
             return self();
         }
 
-        public Builder<T> columnNamingStrategy(ColumnNamingStrategy columnNamingStrategy) {
+        public Builder<T> withColumnNamingStrategy(ColumnNamingStrategy columnNamingStrategy) {
             this.columnNamingStrategy = columnNamingStrategy;
             return self();
         }
