@@ -568,7 +568,7 @@ record MyRecord(long userCode, String userName){ }
 
 List<MyRecord> data = calculateDataToPersist();
 try (var writer = CarpetWriter.builder(outputStream, MyRecord.class)
-    .columnNamingStrategy(ColumnNamingStrategy.SNAKE_CASE)
+    .withColumnNamingStrategy(ColumnNamingStrategy.SNAKE_CASE)
     .build()) {
   writer.write(data);
 }
