@@ -18,6 +18,7 @@ package com.jerolba.carpet.impl.write;
 import static com.jerolba.carpet.impl.NotNullField.isNotNull;
 import static com.jerolba.carpet.impl.Parameterized.getParameterizedCollection;
 import static com.jerolba.carpet.impl.Parameterized.getParameterizedMap;
+import static org.apache.parquet.schema.LogicalTypeAnnotation.dateType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.enumType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.intType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.stringType;
@@ -207,6 +208,10 @@ public class JavaRecord2Schema {
                     .length(UUIDLogicalTypeAnnotation.BYTES)
                     .named(name);
         }
+        PrimitiveType dateTypeItems = dateTypeItems(javaType, repetition, name);
+        if (dateTypeItems != null) {
+            return dateTypeItems;
+        }
         return null;
     }
 
@@ -231,6 +236,13 @@ public class JavaRecord2Schema {
         }
         if (javaType.isByte()) {
             return Types.primitive(PrimitiveTypeName.INT32, repetition).as(intType(8, true)).named(name);
+        }
+        return null;
+    }
+
+    private PrimitiveType dateTypeItems(JavaType javaType, Repetition repetition, String name) {
+        if (javaType.isLocalDate()) {
+            return Types.primitive(PrimitiveTypeName.INT32, repetition).as(dateType()).named(name);
         }
         return null;
     }

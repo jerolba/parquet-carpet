@@ -31,6 +31,7 @@ import com.jerolba.carpet.impl.JavaType;
 import com.jerolba.carpet.impl.read.ReadReflection.ConstructorParams;
 import com.jerolba.carpet.impl.read.converter.BooleanConverter;
 import com.jerolba.carpet.impl.read.converter.EnumConverter;
+import com.jerolba.carpet.impl.read.converter.LocalDateConverter;
 import com.jerolba.carpet.impl.read.converter.StringConverter;
 import com.jerolba.carpet.impl.read.converter.ToByteConverter;
 import com.jerolba.carpet.impl.read.converter.ToDoubleConverter;
@@ -86,6 +87,9 @@ class PrimitiveConverterFactory {
         }
         if (type.isFloat()) {
             return new ToFloatConverter(constructor, index);
+        }
+        if (type.isLocalDate()) {
+            return new LocalDateConverter(obj -> constructor.c[index] = obj);
         }
         throw new RecordTypeConversionException(
                 type.getTypeName() + " not compatible with " + recordComponent.getName() + " field");

@@ -17,6 +17,7 @@ package com.jerolba.carpet.impl.write;
 
 import static com.jerolba.carpet.impl.write.UuidWrite.uuidToBinary;
 
+import java.time.LocalDate;
 import java.util.function.BiConsumer;
 
 import org.apache.parquet.io.api.Binary;
@@ -57,6 +58,9 @@ public class SimpleCollectionItemConsumerFactory {
         }
         if (type.isUuid()) {
             return (consumer, v) -> consumer.addBinary(uuidToBinary(v));
+        }
+        if (type.isLocalDate()) {
+            return (consumer, v) -> consumer.addInteger((int) ((LocalDate) v).toEpochDay());
         }
         if (type.isRecord()) {
             var recordWriter = new CarpetRecordWriter(recordConsumer, type.getJavaType(), carpetConfiguration);

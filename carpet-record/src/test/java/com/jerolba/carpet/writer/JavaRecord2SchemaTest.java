@@ -18,6 +18,7 @@ package com.jerolba.carpet.writer;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -108,6 +109,20 @@ class JavaRecord2SchemaTest {
                 message NotNullFieldRecord {
                   required int64 id;
                   required binary name (STRING);
+                }
+                """;
+        assertEquals(expected, schema.toString());
+    }
+
+    @Test
+    void dateTypesRecordTest() {
+        record DateTypesRecord(LocalDate localDate) {
+        }
+
+        MessageType schema = defaultConfigSchema.createSchema(DateTypesRecord.class);
+        String expected = """
+                message DateTypesRecord {
+                  optional int32 localDate (DATE);
                 }
                 """;
         assertEquals(expected, schema.toString());

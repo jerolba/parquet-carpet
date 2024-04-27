@@ -21,6 +21,7 @@ import static com.jerolba.carpet.impl.Parameterized.getParameterizedMap;
 import static com.jerolba.carpet.impl.write.UuidWrite.uuidToBinary;
 
 import java.lang.reflect.RecordComponent;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -58,6 +59,9 @@ public class CarpetRecordWriter {
 
             writer = buildBasicTypeWriter(type, f);
 
+            if (writer == null) {
+                writer = buildDateTypeWriter(type, f);
+            }
             if (writer == null) {
                 if (type.isRecord()) {
                     var recordWriter = new CarpetRecordWriter(recordConsumer, type, carpetConfiguration);
@@ -113,6 +117,14 @@ public class CarpetRecordWriter {
             return new EnumFieldWriter(f, type.getJavaType());
         } else if (type.isUuid()) {
             return new UuidFieldWriter(f);
+        }
+        return null;
+    }
+
+    private Consumer<Object> buildDateTypeWriter(Class<?> javaType, RecordField f) {
+        JavaType type = new JavaType(javaType);
+        if (type.isLocalDate()) {
+            return new LocalDateFieldWriter(f, recordConsumer);
         }
         return null;
     }
@@ -332,6 +344,32 @@ public class CarpetRecordWriter {
             }
         }
 
+    }
+
+    private static class LocalDateFieldWriter implements Consumer<Object> {
+
+        private final String fieldName;
+        private final int idx;
+        private final Function<Object, Object> accesor;
+        private final RecordConsumer recordConsumer;
+
+        LocalDateFieldWriter(RecordField recordField, RecordConsumer recordConsumer) {
+            this.fieldName = recordField.fieldName();
+            this.idx = recordField.idx();
+            this.accesor = Reflection.recordAccessor(recordField.targetClass(), recordField.recordComponent());
+            this.recordConsumer = recordConsumer;
+        }
+
+        @Override
+        public void accept(Object object) {
+            var value = accesor.apply(object);
+            if (value != null) {
+                long epochDay = ((LocalDate) value).toEpochDay();
+                recordConsumer.startField(fieldName, idx);
+                recordConsumer.addInteger((int) epochDay);
+                recordConsumer.endField(fieldName, idx);
+            }
+        }
     }
 
     private class RecordFieldWriter implements Consumer<Object> {

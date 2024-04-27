@@ -16,6 +16,7 @@
 package com.jerolba.carpet.impl.read;
 
 import static com.jerolba.carpet.impl.NotNullField.isNotNull;
+import static org.apache.parquet.schema.LogicalTypeAnnotation.dateType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.enumType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.intType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.stringType;
@@ -97,13 +98,17 @@ public class SchemaValidation {
         }
 
         LogicalTypeAnnotation logicalTypeAnnotation = primitiveType.getLogicalTypeAnnotation();
-        if (logicalTypeAnnotation != null) {
-            if (type.isShort() && logicalTypeAnnotation.equals(INT16)) {
-                return true;
-            }
-            if (type.isByte() && logicalTypeAnnotation.equals(INT8)) {
-                return true;
-            }
+        if (logicalTypeAnnotation == null) {
+            return throwInvalidConversionException(primitiveType, type);
+        }
+        if (type.isShort() && logicalTypeAnnotation.equals(INT16)) {
+            return true;
+        }
+        if (type.isByte() && logicalTypeAnnotation.equals(INT8)) {
+            return true;
+        }
+        if (type.isLocalDate() && logicalTypeAnnotation.equals(dateType())) {
+            return true;
         }
         return throwInvalidConversionException(primitiveType, type);
     }
