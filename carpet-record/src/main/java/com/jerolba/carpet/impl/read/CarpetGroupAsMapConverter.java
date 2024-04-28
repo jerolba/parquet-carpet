@@ -16,6 +16,7 @@
 package com.jerolba.carpet.impl.read;
 
 import static java.util.stream.Collectors.toCollection;
+import static org.apache.parquet.schema.LogicalTypeAnnotation.dateType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.enumType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.listType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.mapType;
@@ -49,6 +50,7 @@ import org.apache.parquet.schema.Type.Repetition;
 
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.impl.read.converter.BooleanGenericConverter;
+import com.jerolba.carpet.impl.read.converter.LocalDateConverter;
 import com.jerolba.carpet.impl.read.converter.StringConverter;
 import com.jerolba.carpet.impl.read.converter.ToByteGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToDoubleGenericConverter;
@@ -138,6 +140,9 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
                 case 16 -> new ToShortGenericConverter(consumer);
                 default -> new ToIntegerGenericConverter(consumer);
                 };
+            }
+            if (dateType().equals(logicalType)) {
+                return new LocalDateConverter(consumer);
             }
             return new ToIntegerGenericConverter(consumer);
         }
