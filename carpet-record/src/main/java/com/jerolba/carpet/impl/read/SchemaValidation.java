@@ -27,6 +27,8 @@ import java.lang.reflect.RecordComponent;
 import org.apache.parquet.schema.GroupType;
 import org.apache.parquet.schema.LogicalTypeAnnotation;
 import org.apache.parquet.schema.LogicalTypeAnnotation.IntLogicalTypeAnnotation;
+import org.apache.parquet.schema.LogicalTypeAnnotation.TimeLogicalTypeAnnotation;
+import org.apache.parquet.schema.LogicalTypeAnnotation.TimeUnit;
 import org.apache.parquet.schema.PrimitiveType;
 import org.apache.parquet.schema.Type;
 import org.apache.parquet.schema.Type.Repetition;
@@ -110,6 +112,10 @@ public class SchemaValidation {
         if (type.isLocalDate() && logicalTypeAnnotation.equals(dateType())) {
             return true;
         }
+        if (type.isLocalTime() && logicalTypeAnnotation instanceof TimeLogicalTypeAnnotation time
+                && time.getUnit() == TimeUnit.MILLIS) {
+            return true;
+        }
         return throwInvalidConversionException(primitiveType, type);
     }
 
@@ -121,6 +127,11 @@ public class SchemaValidation {
             if (type.isInteger() || type.isDouble() || type.isFloat() || type.isShort() || type.isByte()) {
                 return true;
             }
+        }
+        LogicalTypeAnnotation logicalTypeAnnotation = primitiveType.getLogicalTypeAnnotation();
+        if (type.isLocalTime() && logicalTypeAnnotation instanceof TimeLogicalTypeAnnotation time
+                && (time.getUnit() == TimeUnit.MICROS || time.getUnit() == TimeUnit.NANOS)) {
+            return true;
         }
         return throwInvalidConversionException(primitiveType, type);
     }

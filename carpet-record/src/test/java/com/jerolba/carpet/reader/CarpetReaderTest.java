@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -721,6 +722,37 @@ class CarpetReaderTest {
                 assertEquals(new LocalDateRecord(LocalDate.of(2022, 11, 21)), carpetReader.read());
                 assertEquals(new LocalDateRecord(LocalDate.of(1976, 1, 15)), carpetReader.read());
             }
+        }
+
+        @Nested
+        class TimeTypes {
+
+            @Test
+            void localTimeMillis() throws IOException {
+                Schema timeType = LogicalTypes.timeMillis().addToSchema(Schema.create(Schema.Type.INT));
+                Schema schema = SchemaBuilder.builder().record("LocalTime").fields()
+                        .name("value").type(timeType).noDefault()
+                        .endRecord();
+
+                var readerTest = new ParquetReaderTest(schema);
+                readerTest.writer(writer -> {
+                    Record record = new Record(schema);
+                    record.put("value", LocalTime.of(19, 12, 21, 123456789).toNanoOfDay() / 1_000_000L);
+                    writer.write(record);
+                    record = new Record(schema);
+                    record.put("value", LocalTime.of(23, 59, 59).toNanoOfDay() / 1_000_000L);
+                    writer.write(record);
+                });
+
+                record LocalTimeRecord(LocalTime value) {
+                }
+
+                try (var carpetReader = readerTest.getCarpetReader(LocalTimeRecord.class)) {
+                    assertEquals(new LocalTimeRecord(LocalTime.of(19, 12, 21, 123000000)), carpetReader.read());
+                    assertEquals(new LocalTimeRecord(LocalTime.of(23, 59, 59)), carpetReader.read());
+                }
+            }
+
         }
 
     }

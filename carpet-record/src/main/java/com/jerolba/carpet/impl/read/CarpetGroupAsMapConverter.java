@@ -44,6 +44,7 @@ import org.apache.parquet.io.api.GroupConverter;
 import org.apache.parquet.schema.GroupType;
 import org.apache.parquet.schema.LogicalTypeAnnotation;
 import org.apache.parquet.schema.LogicalTypeAnnotation.IntLogicalTypeAnnotation;
+import org.apache.parquet.schema.LogicalTypeAnnotation.TimeLogicalTypeAnnotation;
 import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
 import org.apache.parquet.schema.Type;
 import org.apache.parquet.schema.Type.Repetition;
@@ -51,6 +52,7 @@ import org.apache.parquet.schema.Type.Repetition;
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.impl.read.converter.BooleanGenericConverter;
 import com.jerolba.carpet.impl.read.converter.LocalDateConverter;
+import com.jerolba.carpet.impl.read.converter.LocalTimeConverter;
 import com.jerolba.carpet.impl.read.converter.StringConverter;
 import com.jerolba.carpet.impl.read.converter.ToByteGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToDoubleGenericConverter;
@@ -121,7 +123,7 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
             PrimitiveTypeName type = parquetField.asPrimitiveType().getPrimitiveTypeName();
             return switch (type) {
             case INT32 -> buildFromIntegerConverter(parquetField, consumer);
-            case INT64 -> new ToLongGenericConverter(consumer);
+            case INT64 -> buildFromLongConverter(parquetField, consumer);
             case FLOAT -> new ToFloatGenericConverter(consumer);
             case DOUBLE -> new ToDoubleGenericConverter(consumer);
             case BOOLEAN -> new BooleanGenericConverter(consumer);
@@ -144,7 +146,18 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
             if (dateType().equals(logicalType)) {
                 return new LocalDateConverter(consumer);
             }
+            if (logicalType instanceof TimeLogicalTypeAnnotation time) {
+                return new LocalTimeConverter(consumer, time.getUnit());
+            }
             return new ToIntegerGenericConverter(consumer);
+        }
+
+        private static Converter buildFromLongConverter(Type parquetField, Consumer<Object> consumer) {
+            LogicalTypeAnnotation logicalType = parquetField.getLogicalTypeAnnotation();
+            if (logicalType instanceof TimeLogicalTypeAnnotation time) {
+                return new LocalTimeConverter(consumer, time.getUnit());
+            }
+            return new ToLongGenericConverter(consumer);
         }
 
         private static Converter buildFromBinaryConverter(Type parquetField, Consumer<Object> consumer) {

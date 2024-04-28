@@ -17,16 +17,20 @@ package com.jerolba.carpet.impl.write;
 
 import com.jerolba.carpet.AnnotatedLevels;
 import com.jerolba.carpet.ColumnNamingStrategy;
+import com.jerolba.carpet.TimeUnit;
 
 public class CarpetWriteConfiguration {
 
     private final AnnotatedLevels annotatedLevels;
     private final ColumnNamingStrategy columnNamingStrategy;
+    private final TimeUnit defaultTimeUnit;
 
     public CarpetWriteConfiguration(AnnotatedLevels annotatedLevels,
-            ColumnNamingStrategy columnNamingStrategy) {
+            ColumnNamingStrategy columnNamingStrategy,
+            TimeUnit defaultTimeUnit) {
         this.annotatedLevels = annotatedLevels;
         this.columnNamingStrategy = columnNamingStrategy;
+        this.defaultTimeUnit = defaultTimeUnit;
     }
 
     public AnnotatedLevels annotatedLevels() {
@@ -35,6 +39,14 @@ public class CarpetWriteConfiguration {
 
     public ColumnNamingStrategy columnNamingStrategy() {
         return columnNamingStrategy;
+    }
+
+    public TimeUnit defaultTimeUnit() {
+        return defaultTimeUnit;
+    }
+
+    public boolean defaultTimeIsAdjustedToUTC() {
+        return true;
     }
 
 }

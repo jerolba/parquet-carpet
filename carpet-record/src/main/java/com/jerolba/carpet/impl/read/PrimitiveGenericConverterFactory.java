@@ -24,6 +24,7 @@ import java.util.function.Consumer;
 
 import org.apache.parquet.io.api.Converter;
 import org.apache.parquet.schema.LogicalTypeAnnotation;
+import org.apache.parquet.schema.LogicalTypeAnnotation.TimeLogicalTypeAnnotation;
 import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
 import org.apache.parquet.schema.Type;
 
@@ -32,6 +33,7 @@ import com.jerolba.carpet.impl.JavaType;
 import com.jerolba.carpet.impl.read.converter.BooleanGenericConverter;
 import com.jerolba.carpet.impl.read.converter.EnumConverter;
 import com.jerolba.carpet.impl.read.converter.StringConverter;
+import com.jerolba.carpet.impl.read.converter.LocalTimeConverter;
 import com.jerolba.carpet.impl.read.converter.ToByteGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToDoubleGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToFloatGenericConverter;
@@ -83,6 +85,10 @@ class PrimitiveGenericConverterFactory {
         PrimitiveTypeName primitive = schemaType.asPrimitiveType().getPrimitiveTypeName();
         if (primitive == PrimitiveTypeName.INT32 && logicalTypeAnnotation.equals(dateType()) && type.isLocalDate()) {
             return new LocalDateConverter(consumer);
+        }
+        if ((primitive == PrimitiveTypeName.INT32 || primitive == PrimitiveTypeName.INT64) && type.isLocalTime()
+                && logicalTypeAnnotation instanceof TimeLogicalTypeAnnotation time) {
+            return new LocalTimeConverter(consumer, time.getUnit());
         }
         throw new RecordTypeConversionException(
                 type.getTypeName() + " not compatible with " + schemaType.getName() + " collection");

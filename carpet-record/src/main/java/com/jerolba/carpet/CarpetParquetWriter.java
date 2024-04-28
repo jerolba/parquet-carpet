@@ -15,6 +15,8 @@
  */
 package com.jerolba.carpet;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -40,6 +42,7 @@ public class CarpetParquetWriter {
         private final Map<String, String> extraMetaData = new HashMap<>();
         private AnnotatedLevels annotatedLevels = AnnotatedLevels.THREE;
         private ColumnNamingStrategy columnNamingStrategy = ColumnNamingStrategy.FIELD_NAME;
+        private TimeUnit defaultTimeUnit = TimeUnit.MILLIS;
 
         private Builder(OutputFile file, Class<T> recordClass) {
             super(file);
@@ -62,19 +65,29 @@ public class CarpetParquetWriter {
         }
 
         public Builder<T> withLevelStructure(AnnotatedLevels annotatedLevels) {
+            requireNonNull(defaultTimeUnit, "Annotated levels can not be null");
             this.annotatedLevels = annotatedLevels;
             return self();
         }
 
         public Builder<T> withColumnNamingStrategy(ColumnNamingStrategy columnNamingStrategy) {
+            requireNonNull(defaultTimeUnit, "Column naming strategy can not be null");
             this.columnNamingStrategy = columnNamingStrategy;
+            return self();
+        }
+
+        public Builder<T> withDefaultTimeUnit(TimeUnit defaultTimeUnit) {
+            requireNonNull(defaultTimeUnit, "Default time unit can not be null");
+            this.defaultTimeUnit = defaultTimeUnit;
             return self();
         }
 
         @Override
         protected WriteSupport<T> getWriteSupport(Configuration conf) {
-            CarpetWriteConfiguration carpetCfg = new CarpetWriteConfiguration(annotatedLevels,
-                    columnNamingStrategy);
+            CarpetWriteConfiguration carpetCfg = new CarpetWriteConfiguration(
+                    annotatedLevels,
+                    columnNamingStrategy,
+                    defaultTimeUnit);
             return new CarpetWriterSupport<>(recordClass, extraMetaData, carpetCfg);
         }
 

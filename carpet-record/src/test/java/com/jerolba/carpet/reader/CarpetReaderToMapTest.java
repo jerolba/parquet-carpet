@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -93,17 +94,18 @@ class CarpetReaderToMapTest {
         @Test
         void convertRootGroupObjectToMap() throws IOException {
 
-            record MainTypeWrite(String id, LocalDate asLocalDate) {
+            record MainTypeWrite(String id, LocalDate asLocalDate, LocalTime asLocalTime) {
             }
 
             ParquetWriterTest<MainTypeWrite> writerTest = new ParquetWriterTest<>(MainTypeWrite.class);
-            var root = new MainTypeWrite("main", LocalDate.of(2024, 4, 28));
+            var root = new MainTypeWrite("main", LocalDate.of(2024, 4, 28), LocalTime.of(18, 44, 28, 123456789));
             writerTest.write(root);
 
             var reader = writerTest.getCarpetReader(Map.class);
             var expected = Map.of(
                     "id", "main",
-                    "asLocalDate", LocalDate.of(2024, 4, 28));
+                    "asLocalDate", LocalDate.of(2024, 4, 28),
+                    "asLocalTime", LocalTime.of(18, 44, 28, 123000000));
             Map<String, Object> actual = reader.read();
             assertEquals(expected, actual);
         }
