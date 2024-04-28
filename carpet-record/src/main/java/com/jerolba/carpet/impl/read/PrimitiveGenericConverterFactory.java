@@ -28,7 +28,7 @@ import org.apache.parquet.schema.Type;
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.impl.JavaType;
 import com.jerolba.carpet.impl.read.converter.BooleanGenericConverter;
-import com.jerolba.carpet.impl.read.converter.EnumGenericConverter;
+import com.jerolba.carpet.impl.read.converter.EnumConverter;
 import com.jerolba.carpet.impl.read.converter.StringGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToByteGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToDoubleGenericConverter;
@@ -108,7 +108,7 @@ class PrimitiveGenericConverterFactory {
                 return new StringGenericConverter(consumer);
             }
             if (type.isEnum()) {
-                return new EnumGenericConverter(consumer, type.getJavaType());
+                return new EnumConverter(consumer, type.getJavaType());
             }
             throw new RecordTypeConversionException(type.getTypeName() + " not compatible with String field");
         }
@@ -116,7 +116,7 @@ class PrimitiveGenericConverterFactory {
             if (type.isString()) {
                 return new StringGenericConverter(consumer);
             }
-            return new EnumGenericConverter(consumer, type.getJavaType());
+            return new EnumConverter(consumer, type.getJavaType());
         }
         throw new RecordTypeConversionException(
                 type.getTypeName() + " not compatible with " + schemaType.getName() + " field");

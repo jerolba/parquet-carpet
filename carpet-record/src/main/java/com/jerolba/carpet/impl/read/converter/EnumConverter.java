@@ -15,28 +15,26 @@
  */
 package com.jerolba.carpet.impl.read.converter;
 
+import java.util.function.Consumer;
+
 import org.apache.parquet.column.Dictionary;
 import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.io.api.PrimitiveConverter;
 
-import com.jerolba.carpet.impl.read.ReadReflection.ConstructorParams;
-
 public class EnumConverter extends PrimitiveConverter {
 
     private Enum<?>[] dict = null;
-    private final ConstructorParams constructor;
-    private final int idx;
+    private final Consumer<Object> listConsumer;
     private final Class<? extends Enum> asEnum;
 
-    public EnumConverter(ConstructorParams constructor, int idx, Class<?> type) {
-        this.constructor = constructor;
-        this.idx = idx;
+    public EnumConverter(Consumer<Object> listConsumer, Class<?> type) {
+        this.listConsumer = listConsumer;
         this.asEnum = type.asSubclass(Enum.class);
     }
 
     @Override
     public void addBinary(Binary value) {
-        constructor.c[idx] = convert(value);
+        listConsumer.accept(convert(value));
     }
 
     @Override
@@ -55,7 +53,7 @@ public class EnumConverter extends PrimitiveConverter {
 
     @Override
     public void addValueFromDictionary(int dictionaryId) {
-        constructor.c[idx] = dict[dictionaryId];
+        listConsumer.accept(dict[dictionaryId]);
     }
 
     private Enum<?> convert(Binary value) {

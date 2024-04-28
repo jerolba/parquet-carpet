@@ -117,7 +117,7 @@ class PrimitiveConverterFactory {
                 return new StringConverter(constructor, index);
             }
             if (type.isEnum()) {
-                return new EnumConverter(constructor, index, recordComponent.getType());
+                return new EnumConverter(obj -> constructor.set(index, obj), recordComponent.getType());
             }
             throw new RecordTypeConversionException(type.getTypeName() + " not compatible with String field");
         }
@@ -125,7 +125,7 @@ class PrimitiveConverterFactory {
             if (type.isString()) {
                 return new StringConverter(constructor, index);
             }
-            return new EnumConverter(constructor, index, recordComponent.getType());
+            return new EnumConverter(obj -> constructor.set(index, obj), recordComponent.getType());
         }
         throw new RecordTypeConversionException(
                 type.getTypeName() + " not compatible with " + recordComponent.getName() + " field");
