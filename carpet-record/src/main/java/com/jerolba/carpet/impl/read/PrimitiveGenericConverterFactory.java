@@ -36,8 +36,8 @@ import com.jerolba.carpet.impl.read.converter.ToFloatGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToIntegerGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToLongGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToShortGenericConverter;
-import com.jerolba.carpet.impl.read.converter.UuidToStringGenericConverter;
-import com.jerolba.carpet.impl.read.converter.UuidToUuidGenericConverter;
+import com.jerolba.carpet.impl.read.converter.UuidToStringConverter;
+import com.jerolba.carpet.impl.read.converter.UuidToUuidConverter;
 
 class PrimitiveGenericConverterFactory {
 
@@ -128,10 +128,10 @@ class PrimitiveGenericConverterFactory {
             throw new RecordTypeConversionException(schemaType + " deserialization not supported");
         }
         if (type.isString()) {
-            return new UuidToStringGenericConverter(consumer);
+            return new UuidToStringConverter(consumer);
         }
         if (type.isUuid()) {
-            return new UuidToUuidGenericConverter(consumer);
+            return new UuidToUuidConverter(consumer);
         }
         throw new RecordTypeConversionException(
                 type.getTypeName() + " not compatible with " + schemaType.getName() + " field");

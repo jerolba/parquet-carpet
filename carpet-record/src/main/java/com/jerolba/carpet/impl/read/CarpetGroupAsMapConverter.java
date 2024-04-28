@@ -56,7 +56,7 @@ import com.jerolba.carpet.impl.read.converter.ToFloatGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToIntegerGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToLongGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToShortGenericConverter;
-import com.jerolba.carpet.impl.read.converter.UuidToUuidGenericConverter;
+import com.jerolba.carpet.impl.read.converter.UuidToUuidConverter;
 
 public class CarpetGroupAsMapConverter extends GroupConverter {
 
@@ -157,7 +157,7 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
             if (!uuidType().equals(parquetField.getLogicalTypeAnnotation())) {
                 throw new RecordTypeConversionException(parquetField + " deserialization not supported");
             }
-            return new UuidToUuidGenericConverter(consumer);
+            return new UuidToUuidConverter(consumer);
         }
 
     }

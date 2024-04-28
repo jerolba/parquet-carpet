@@ -136,10 +136,10 @@ class PrimitiveConverterFactory {
             throw new RecordTypeConversionException(parquetField + " deserialization not supported");
         }
         if (type.isString()) {
-            return new UuidToStringConverter(constructor, index);
+            return new UuidToStringConverter(obj -> constructor.set(index, obj));
         }
         if (type.isUuid()) {
-            return new UuidToUuidConverter(constructor, index);
+            return new UuidToUuidConverter(obj -> constructor.set(index, obj));
         }
         throw new RecordTypeConversionException(
                 parquetField + " deserialization not supported for type " + type.getTypeName());
