@@ -23,6 +23,7 @@ import java.lang.reflect.RecordComponent;
 
 import org.apache.parquet.io.api.Converter;
 import org.apache.parquet.schema.LogicalTypeAnnotation;
+import org.apache.parquet.schema.LogicalTypeAnnotation.TimeLogicalTypeAnnotation;
 import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
 import org.apache.parquet.schema.Type;
 
@@ -33,6 +34,7 @@ import com.jerolba.carpet.impl.read.converter.BooleanConverter;
 import com.jerolba.carpet.impl.read.converter.EnumConverter;
 import com.jerolba.carpet.impl.read.converter.LocalDateConverter;
 import com.jerolba.carpet.impl.read.converter.StringConverter;
+import com.jerolba.carpet.impl.read.converter.LocalTimeConverter;
 import com.jerolba.carpet.impl.read.converter.ToByteConverter;
 import com.jerolba.carpet.impl.read.converter.ToDoubleConverter;
 import com.jerolba.carpet.impl.read.converter.ToFloatConverter;
@@ -59,7 +61,7 @@ class PrimitiveConverterFactory {
     public Converter buildConverters(Type parquetField) {
         PrimitiveTypeName type = parquetField.asPrimitiveType().getPrimitiveTypeName();
         return switch (type) {
-        case INT32, INT64 -> buildFromIntConverter();
+        case INT32, INT64 -> buildFromIntConverter(parquetField);
         case FLOAT, DOUBLE -> buildFromDecimalConverter();
         case BOOLEAN -> buildFromBooleanConverter();
         case BINARY -> buildFromBinaryConverter(parquetField);
@@ -69,7 +71,7 @@ class PrimitiveConverterFactory {
         };
     }
 
-    private Converter buildFromIntConverter() {
+    private Converter buildFromIntConverter(Type parquetField) {
         if (type.isInteger()) {
             return new ToIntegerConverter(constructor, index);
         }
@@ -90,6 +92,9 @@ class PrimitiveConverterFactory {
         }
         if (type.isLocalDate()) {
             return new LocalDateConverter(obj -> constructor.c[index] = obj);
+        }
+        if (type.isLocalTime() && parquetField.getLogicalTypeAnnotation() instanceof TimeLogicalTypeAnnotation time) {
+            return new LocalTimeConverter(obj -> constructor.c[index] = obj, time.getUnit());
         }
         throw new RecordTypeConversionException(
                 type.getTypeName() + " not compatible with " + recordComponent.getName() + " field");

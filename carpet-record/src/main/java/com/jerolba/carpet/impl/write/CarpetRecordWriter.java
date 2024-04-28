@@ -22,6 +22,7 @@ import static com.jerolba.carpet.impl.write.UuidWrite.uuidToBinary;
 
 import java.lang.reflect.RecordComponent;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -125,6 +126,13 @@ public class CarpetRecordWriter {
         JavaType type = new JavaType(javaType);
         if (type.isLocalDate()) {
             return new LocalDateFieldWriter(f, recordConsumer);
+        }
+        if (type.isLocalTime()) {
+            return switch (carpetConfiguration.defaultTimeUnit()) {
+            case MILLIS -> new LocalTimeIntFieldWriter(f, recordConsumer);
+            case MICROS -> new LocalTimeLongFieldWriter(f, recordConsumer, 1_000);
+            case NANOS -> new LocalTimeLongFieldWriter(f, recordConsumer, 1);
+            };
         }
         return null;
     }
@@ -367,6 +375,60 @@ public class CarpetRecordWriter {
                 long epochDay = ((LocalDate) value).toEpochDay();
                 recordConsumer.startField(fieldName, idx);
                 recordConsumer.addInteger((int) epochDay);
+                recordConsumer.endField(fieldName, idx);
+            }
+        }
+    }
+
+    private static class LocalTimeIntFieldWriter implements Consumer<Object> {
+
+        private final String fieldName;
+        private final int idx;
+        private final Function<Object, Object> accesor;
+        private final RecordConsumer recordConsumer;
+
+        LocalTimeIntFieldWriter(RecordField recordField, RecordConsumer recordConsumer) {
+            this.fieldName = recordField.fieldName();
+            this.idx = recordField.idx();
+            this.accesor = Reflection.recordAccessor(recordField.targetClass(), recordField.recordComponent());
+            this.recordConsumer = recordConsumer;
+        }
+
+        @Override
+        public void accept(Object object) {
+            var value = accesor.apply(object);
+            if (value != null) {
+                long milliOfDay = ((LocalTime) value).toNanoOfDay() / 1_000_000;
+                recordConsumer.startField(fieldName, idx);
+                recordConsumer.addInteger((int) milliOfDay);
+                recordConsumer.endField(fieldName, idx);
+            }
+        }
+    }
+
+    private static class LocalTimeLongFieldWriter implements Consumer<Object> {
+
+        private final String fieldName;
+        private final int idx;
+        private final Function<Object, Object> accesor;
+        private final RecordConsumer recordConsumer;
+        private final int factor;
+
+        LocalTimeLongFieldWriter(RecordField recordField, RecordConsumer recordConsumer, int factor) {
+            this.fieldName = recordField.fieldName();
+            this.idx = recordField.idx();
+            this.accesor = Reflection.recordAccessor(recordField.targetClass(), recordField.recordComponent());
+            this.recordConsumer = recordConsumer;
+            this.factor = factor;
+        }
+
+        @Override
+        public void accept(Object object) {
+            var value = accesor.apply(object);
+            if (value != null) {
+                long offsetOfDay = ((LocalTime) value).toNanoOfDay() / factor;
+                recordConsumer.startField(fieldName, idx);
+                recordConsumer.addLong(offsetOfDay);
                 recordConsumer.endField(fieldName, idx);
             }
         }

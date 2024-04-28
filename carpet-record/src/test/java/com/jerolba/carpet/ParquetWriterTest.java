@@ -42,6 +42,7 @@ public class ParquetWriterTest<T> {
     private String path;
     private AnnotatedLevels level = AnnotatedLevels.THREE;
     private ColumnNamingStrategy nameStrategy = ColumnNamingStrategy.FIELD_NAME;
+    private TimeUnit timeUnit = TimeUnit.MILLIS;
 
     public ParquetWriterTest(Class<T> type) {
         String fileName = type.getName() + ".parquet";
@@ -66,6 +67,11 @@ public class ParquetWriterTest<T> {
         return this;
     }
 
+    public ParquetWriterTest<T> withTimeUnit(TimeUnit timeUnit) {
+        this.timeUnit = timeUnit;
+        return this;
+    }
+
     public void write(T... values) throws IOException {
         write(List.of(values));
     }
@@ -76,6 +82,7 @@ public class ParquetWriterTest<T> {
                 .withLevelStructure(level)
                 .enableValidation()
                 .withColumnNamingStrategy(nameStrategy)
+                .withDefaultTimeUnit(timeUnit)
                 .build()) {
             for (var v : values) {
                 writer.write(v);

@@ -15,10 +15,14 @@
  */
 package com.jerolba.carpet.writer;
 
+import static com.jerolba.carpet.TimeUnit.MICROS;
+import static com.jerolba.carpet.TimeUnit.MILLIS;
+import static com.jerolba.carpet.TimeUnit.NANOS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -30,6 +34,7 @@ import org.junit.jupiter.api.Test;
 import com.jerolba.carpet.AnnotatedLevels;
 import com.jerolba.carpet.ColumnNamingStrategy;
 import com.jerolba.carpet.RecordTypeConversionException;
+import com.jerolba.carpet.TimeUnit;
 import com.jerolba.carpet.annotation.Alias;
 import com.jerolba.carpet.annotation.NotNull;
 import com.jerolba.carpet.impl.write.CarpetWriteConfiguration;
@@ -38,8 +43,9 @@ import com.jerolba.carpet.impl.write.JavaRecord2Schema;
 class JavaRecord2SchemaTest {
 
     private final ColumnNamingStrategy defaultNaming = ColumnNamingStrategy.FIELD_NAME;
+    private final TimeUnit defaultTimeUnit = MILLIS;
     private final CarpetWriteConfiguration default3Levels = new CarpetWriteConfiguration(AnnotatedLevels.THREE,
-            defaultNaming);
+            defaultNaming, defaultTimeUnit);
     private final JavaRecord2Schema defaultConfigSchema = new JavaRecord2Schema(default3Levels);
 
     @Test
@@ -116,16 +122,64 @@ class JavaRecord2SchemaTest {
 
     @Test
     void dateTypesRecordTest() {
-        record DateTypesRecord(LocalDate localDate) {
+        record DateTypesRecord(LocalDate localDate, LocalTime localTime) {
         }
 
         MessageType schema = defaultConfigSchema.createSchema(DateTypesRecord.class);
         String expected = """
                 message DateTypesRecord {
                   optional int32 localDate (DATE);
+                  optional int32 localTime (TIME(MILLIS,true));
                 }
                 """;
         assertEquals(expected, schema.toString());
+    }
+
+    @Nested
+    class TimeDefinition {
+
+        record TimeRecord(LocalTime localTime) {
+        }
+
+        @Test
+        void millis() {
+            var cfg = new CarpetWriteConfiguration(AnnotatedLevels.THREE, defaultNaming, MILLIS);
+            var schemaMapper = new JavaRecord2Schema(cfg);
+            MessageType schema = schemaMapper.createSchema(TimeRecord.class);
+            String expected = """
+                    message TimeRecord {
+                      optional int32 localTime (TIME(MILLIS,true));
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void micros() {
+            var cfg = new CarpetWriteConfiguration(AnnotatedLevels.THREE, defaultNaming, MICROS);
+            var schemaMapper = new JavaRecord2Schema(cfg);
+            MessageType schema = schemaMapper.createSchema(TimeRecord.class);
+            String expected = """
+                    message TimeRecord {
+                      optional int64 localTime (TIME(MICROS,true));
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nanos() {
+            var cfg = new CarpetWriteConfiguration(AnnotatedLevels.THREE, defaultNaming, NANOS);
+            var schemaMapper = new JavaRecord2Schema(cfg);
+            MessageType schema = schemaMapper.createSchema(TimeRecord.class);
+            String expected = """
+                    message TimeRecord {
+                      optional int64 localTime (TIME(NANOS,true));
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
     }
 
     @Nested
@@ -287,7 +341,7 @@ class JavaRecord2SchemaTest {
     class NestedCollection1Level {
 
         private final CarpetWriteConfiguration oneLevel = new CarpetWriteConfiguration(AnnotatedLevels.ONE,
-                defaultNaming);
+                defaultNaming, defaultTimeUnit);
         private final JavaRecord2Schema schemaFactory = new JavaRecord2Schema(oneLevel);
 
         @Test
@@ -369,7 +423,7 @@ class JavaRecord2SchemaTest {
     class NestedCollection2Level {
 
         private final CarpetWriteConfiguration twoLevel = new CarpetWriteConfiguration(AnnotatedLevels.TWO,
-                defaultNaming);
+                defaultNaming, defaultTimeUnit);
         private final JavaRecord2Schema schemaFactory = new JavaRecord2Schema(twoLevel);
 
         @Test
@@ -1256,7 +1310,7 @@ class JavaRecord2SchemaTest {
         class ToSnakeCase {
 
             private final CarpetWriteConfiguration snakeCase = new CarpetWriteConfiguration(AnnotatedLevels.THREE,
-                    ColumnNamingStrategy.SNAKE_CASE);
+                    ColumnNamingStrategy.SNAKE_CASE, defaultTimeUnit);
             private final JavaRecord2Schema java2Schema = new JavaRecord2Schema(snakeCase);
 
             @Test

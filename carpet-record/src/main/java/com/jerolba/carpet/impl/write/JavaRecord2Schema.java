@@ -22,6 +22,7 @@ import static org.apache.parquet.schema.LogicalTypeAnnotation.dateType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.enumType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.intType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.stringType;
+import static org.apache.parquet.schema.LogicalTypeAnnotation.timeType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.uuidType;
 import static org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName.BINARY;
 import static org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY;
@@ -37,6 +38,7 @@ import java.util.Set;
 
 import org.apache.parquet.schema.ConversionPatterns;
 import org.apache.parquet.schema.GroupType;
+import org.apache.parquet.schema.LogicalTypeAnnotation;
 import org.apache.parquet.schema.LogicalTypeAnnotation.UUIDLogicalTypeAnnotation;
 import org.apache.parquet.schema.MessageType;
 import org.apache.parquet.schema.PrimitiveType;
@@ -46,6 +48,7 @@ import org.apache.parquet.schema.Type.Repetition;
 import org.apache.parquet.schema.Types;
 
 import com.jerolba.carpet.RecordTypeConversionException;
+import com.jerolba.carpet.TimeUnit;
 import com.jerolba.carpet.impl.JavaType;
 import com.jerolba.carpet.impl.ParameterizedCollection;
 import com.jerolba.carpet.impl.ParameterizedMap;
@@ -244,7 +247,23 @@ public class JavaRecord2Schema {
         if (javaType.isLocalDate()) {
             return Types.primitive(PrimitiveTypeName.INT32, repetition).as(dateType()).named(name);
         }
+        if (javaType.isLocalTime()) {
+            var timeUnit = carpetConfiguration.defaultTimeUnit();
+            var timeType = timeType(carpetConfiguration.defaultTimeIsAdjustedToUTC(), toParquetTimeUnit(timeUnit));
+            return switch (timeUnit) {
+            case MILLIS -> Types.primitive(PrimitiveTypeName.INT32, repetition).as(timeType).named(name);
+            case MICROS, NANOS -> Types.primitive(PrimitiveTypeName.INT64, repetition).as(timeType).named(name);
+            };
+        }
         return null;
+    }
+
+    private static LogicalTypeAnnotation.TimeUnit toParquetTimeUnit(TimeUnit timeUnit) {
+        return switch (timeUnit) {
+        case MILLIS -> LogicalTypeAnnotation.TimeUnit.MILLIS;
+        case MICROS -> LogicalTypeAnnotation.TimeUnit.MICROS;
+        case NANOS -> LogicalTypeAnnotation.TimeUnit.NANOS;
+        };
     }
 
     private void validateNotVisitedRecord(Class<?> recordClass, Set<Class<?>> visited) {

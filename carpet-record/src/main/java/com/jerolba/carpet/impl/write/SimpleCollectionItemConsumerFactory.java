@@ -18,6 +18,7 @@ package com.jerolba.carpet.impl.write;
 import static com.jerolba.carpet.impl.write.UuidWrite.uuidToBinary;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.function.BiConsumer;
 
 import org.apache.parquet.io.api.Binary;
@@ -62,6 +63,13 @@ public class SimpleCollectionItemConsumerFactory {
         if (type.isLocalDate()) {
             return (consumer, v) -> consumer.addInteger((int) ((LocalDate) v).toEpochDay());
         }
+        if (type.isLocalTime()) {
+            return switch (carpetConfiguration.defaultTimeUnit()) {
+            case MILLIS -> (consumer, v) -> consumer.addInteger((int) (nanoTime(v) / 1_000_000L));
+            case MICROS -> (consumer, v) -> consumer.addLong(nanoTime(v) / 1_000L);
+            case NANOS -> (consumer, v) -> consumer.addLong(nanoTime(v));
+            };
+        }
         if (type.isRecord()) {
             var recordWriter = new CarpetRecordWriter(recordConsumer, type.getJavaType(), carpetConfiguration);
             return (consumer, v) -> {
@@ -71,5 +79,9 @@ public class SimpleCollectionItemConsumerFactory {
             };
         }
         return null;
+    }
+
+    private static long nanoTime(Object v) {
+        return ((LocalTime) v).toNanoOfDay();
     }
 }

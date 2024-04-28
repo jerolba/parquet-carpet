@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -38,6 +39,7 @@ import com.jerolba.carpet.CarpetWriter;
 import com.jerolba.carpet.FieldMatchingStrategy;
 import com.jerolba.carpet.ParquetWriterTest;
 import com.jerolba.carpet.RecordTypeConversionException;
+import com.jerolba.carpet.TimeUnit;
 import com.jerolba.carpet.annotation.Alias;
 import com.jerolba.carpet.io.FileSystemInputFile;
 import com.jerolba.carpet.io.FileSystemOutputFile;
@@ -615,6 +617,64 @@ class CarpetWriterTest {
             assertEquals(rec2, carpetReader.read());
         }
 
+        @Nested
+        class LocalTimeType {
+
+            record LocalTimeRecord(LocalTime value) {
+            }
+
+            LocalTimeRecord rec1 = new LocalTimeRecord(LocalTime.of(9, 30, 21, 100200300));
+            LocalTimeRecord rec2 = new LocalTimeRecord(LocalTime.of(23, 59, 59, 999999999));
+
+            @Test
+            void timeMillis() throws IOException {
+
+                var writerTest = new ParquetWriterTest<>(LocalTimeRecord.class)
+                        .withTimeUnit(TimeUnit.MILLIS);
+                writerTest.write(rec1, rec2);
+
+                var avroReader = writerTest.getAvroGenericRecordReader();
+                assertEquals((int) (rec1.value.toNanoOfDay() / 1000000), avroReader.read().get("value"));
+                assertEquals((int) (rec2.value.toNanoOfDay() / 1000000), avroReader.read().get("value"));
+
+                var carpetReader = writerTest.getCarpetReader();
+                assertEquals(LocalTime.of(9, 30, 21, 100000000), carpetReader.read().value());
+                assertEquals(LocalTime.of(23, 59, 59, 999000000), carpetReader.read().value());
+            }
+
+            @Test
+            void timeMicros() throws IOException {
+
+                var writerTest = new ParquetWriterTest<>(LocalTimeRecord.class)
+                        .withTimeUnit(TimeUnit.MICROS);
+                writerTest.write(rec1, rec2);
+
+                var avroReader = writerTest.getAvroGenericRecordReader();
+                assertEquals(rec1.value.toNanoOfDay() / 1000, avroReader.read().get("value"));
+                assertEquals(rec2.value.toNanoOfDay() / 1000, avroReader.read().get("value"));
+
+                var carpetReader = writerTest.getCarpetReader();
+                assertEquals(LocalTime.of(9, 30, 21, 100200000), carpetReader.read().value());
+                assertEquals(LocalTime.of(23, 59, 59, 999999000), carpetReader.read().value());
+            }
+
+            @Test
+            void timeNanos() throws IOException {
+
+                var writerTest = new ParquetWriterTest<>(LocalTimeRecord.class)
+                        .withTimeUnit(TimeUnit.NANOS);
+                writerTest.write(rec1, rec2);
+
+                var avroReader = writerTest.getAvroGenericRecordReader();
+                assertEquals(rec1.value.toNanoOfDay(), avroReader.read().get("value"));
+                assertEquals(rec2.value.toNanoOfDay(), avroReader.read().get("value"));
+
+                var carpetReader = writerTest.getCarpetReader();
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
+        }
+
     }
 
     @Nested
@@ -794,6 +854,56 @@ class CarpetWriterTest {
             var carpetReader = writerTest.getCarpetReader();
             assertEquals(rec1, carpetReader.read());
             assertEquals(rec2, carpetReader.read());
+        }
+
+        @Nested
+        class LocalTimeListWrite {
+
+            record LocalTimeList(List<LocalTime> values) {
+            }
+
+            LocalTimeList rec1 = new LocalTimeList(
+                    asList(LocalTime.of(8, 10, 23, 123456789), null, LocalTime.of(10, 0, 0, 0)));
+            LocalTimeList rec2 = new LocalTimeList(null);
+
+            @Test
+            void localTimeMillisList() throws IOException {
+                var writerTest = new ParquetWriterTest<>(LocalTimeList.class)
+                        .withTimeUnit(TimeUnit.MILLIS);
+                writerTest.write(rec1, rec2);
+
+                var carpetReader = writerTest.getCarpetReader();
+                LocalTimeList read1 = carpetReader.read();
+                assertEquals(LocalTime.of(8, 10, 23, 123000000), read1.values.get(0));
+                assertNull(read1.values.get(1));
+                assertEquals(LocalTime.of(10, 0, 0, 0), read1.values.get(2));
+                assertEquals(rec2, carpetReader.read());
+            }
+
+            @Test
+            void localTimeMicrosList() throws IOException {
+                var writerTest = new ParquetWriterTest<>(LocalTimeList.class)
+                        .withTimeUnit(TimeUnit.MICROS);
+                writerTest.write(rec1, rec2);
+
+                var carpetReader = writerTest.getCarpetReader();
+                LocalTimeList read1 = carpetReader.read();
+                assertEquals(LocalTime.of(8, 10, 23, 123456000), read1.values.get(0));
+                assertNull(read1.values.get(1));
+                assertEquals(LocalTime.of(10, 0, 0, 0), read1.values.get(2));
+                assertEquals(rec2, carpetReader.read());
+            }
+
+            @Test
+            void localTimeNanosList() throws IOException {
+                var writerTest = new ParquetWriterTest<>(LocalTimeList.class)
+                        .withTimeUnit(TimeUnit.NANOS);
+                writerTest.write(rec1, rec2);
+
+                var carpetReader = writerTest.getCarpetReader();
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
     }
