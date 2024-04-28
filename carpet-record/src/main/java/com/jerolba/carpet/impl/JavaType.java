@@ -81,6 +81,10 @@ public class JavaType {
         return type.isEnum();
     }
 
+    public boolean isLocalDate() {
+        return typeName.equals("java.time.LocalDate");
+    }
+
     public boolean isRecord() {
         return type.isRecord();
     }

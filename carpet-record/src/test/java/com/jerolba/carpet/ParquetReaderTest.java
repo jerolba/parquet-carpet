@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 
 import org.apache.avro.Schema;
+import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericData.Record;
 import org.apache.parquet.avro.AvroParquetWriter;
 import org.apache.parquet.hadoop.ParquetFileWriter.Mode;
@@ -57,9 +58,14 @@ public class ParquetReaderTest {
     }
 
     public void writer(WriterConsumer writerConsumer) throws IOException {
+        writerWithModel(GenericData.get(), writerConsumer);
+    }
+
+    public void writerWithModel(GenericData model, WriterConsumer writerConsumer) throws IOException {
         OutputFile output = new FileSystemOutputFile(new File(path));
         try (ParquetWriter<Record> writer = AvroParquetWriter.<Record>builder(output)
                 .withSchema(schema)
+                .withDataModel(model)
                 .withCompressionCodec(CompressionCodecName.SNAPPY)
                 .withValidation(true)
                 .withWriteMode(Mode.OVERWRITE)

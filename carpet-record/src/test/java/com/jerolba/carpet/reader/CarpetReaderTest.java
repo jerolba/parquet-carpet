@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -44,6 +45,8 @@ import org.apache.avro.LogicalTypes;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
 import org.apache.avro.SchemaBuilder.FieldAssembler;
+import org.apache.avro.data.TimeConversions;
+import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericData.Record;
 import org.apache.parquet.avro.AvroParquetWriter;
 import org.apache.parquet.avro.AvroWriteSupport;
@@ -684,6 +687,39 @@ class CarpetReaderTest {
             try (var carpetReader = readerTest.getCarpetReader(EnumNullObject.class)) {
                 assertEquals(new EnumNullObject(Category.one), carpetReader.read());
                 assertEquals(new EnumNullObject(null), carpetReader.read());
+            }
+        }
+
+    }
+
+    @Nested
+    class DateTypes {
+
+        @Test
+        void localDate() throws IOException {
+            Schema dateType = LogicalTypes.date().addToSchema(Schema.create(Schema.Type.INT));
+            Schema schema = SchemaBuilder.builder().record("LocalDate").fields()
+                    .name("value").type(dateType).noDefault()
+                    .endRecord();
+
+            GenericData genericDataModel = new GenericData();
+            genericDataModel.addLogicalTypeConversion(new TimeConversions.DateConversion());
+            var readerTest = new ParquetReaderTest(schema);
+            readerTest.writerWithModel(genericDataModel, writer -> {
+                Record record = new Record(schema);
+                record.put("value", LocalDate.of(2022, 11, 21));
+                writer.write(record);
+                record = new Record(schema);
+                record.put("value", LocalDate.of(1976, 1, 15));
+                writer.write(record);
+            });
+
+            record LocalDateRecord(LocalDate value) {
+            }
+
+            try (var carpetReader = readerTest.getCarpetReader(LocalDateRecord.class)) {
+                assertEquals(new LocalDateRecord(LocalDate.of(2022, 11, 21)), carpetReader.read());
+                assertEquals(new LocalDateRecord(LocalDate.of(1976, 1, 15)), carpetReader.read());
             }
         }
 
@@ -2423,19 +2459,164 @@ class CarpetReaderTest {
 
     }
 
-    @Test
-    void foooTypes() throws IOException {
+    @Nested
+    class Dictionary {
 
-        record FooType(String name, int id, Category category) {
+        @Nested
+        class StringDictionary {
+
+            @Test
+            void useDictionaryString() throws IOException {
+                Schema schema = schemaType("DictionaryString")
+                        .optionalString("value")
+                        .endRecord();
+
+                int differentValues = 30;
+                int totalRows = 10000;
+                var readerTest = new ParquetReaderTest(schema);
+                readerTest.writer(writer -> {
+                    for (int i = 0; i < totalRows; i++) {
+                        var it = 0;
+                        for (int j = 0; j < differentValues; j++) {
+                            Record record = new Record(schema);
+                            record.put("value", "STR_" + Integer.toString(it++));
+                            writer.write(record);
+                        }
+                    }
+                });
+
+                record StringRecord(String value) {
+                }
+
+                try (var carpetReader = readerTest.getCarpetReader(StringRecord.class)) {
+                    List<String> ref = new ArrayList<>();
+                    for (int j = 0; j < differentValues; j++) {
+                        ref.add(carpetReader.read().value);
+                    }
+                    for (int i = 0; i < totalRows - 1; i++) {
+                        for (int j = 0; j < differentValues; j++) {
+                            // Compare object references, not equals
+                            assertTrue(ref.get(j) == carpetReader.read().value);
+                        }
+                    }
+                }
+            }
+
+            @Test
+            void useDictionaryStringCollection() throws IOException {
+
+                int valuesPerRow = 25;
+                int totalRows = 1000;
+
+                var it = 0;
+                List<String> vals = new ArrayList<>();
+                for (int i = 0; i < valuesPerRow; i++) {
+                    vals.add("STR_" + Integer.toString(it++));
+                }
+
+                record CollectionString(int id, List<String> values) {
+                }
+
+                List<CollectionString> rows = new ArrayList<>();
+                for (int j = 0; j < totalRows; j++) {
+                    rows.add(new CollectionString(j, vals));
+                }
+
+                var writerTest = new ParquetWriterTest<>(CollectionString.class);
+                writerTest.write(rows);
+
+                var reader = writerTest.getCarpetReader();
+                List<String> ref = reader.read().values();
+                for (int i = 1; i < totalRows; i++) {
+                    CollectionString row = reader.read();
+                    for (int j = 0; j < valuesPerRow; j++) {
+                        // Compare object references, not equals
+                        assertTrue(ref.get(j) == row.values().get(j));
+                    }
+                }
+            }
         }
 
-        List<FooType> lst = new ArrayList<>();
-        for (int i = 0; i < 1000; i++) {
-            lst.add(new FooType(i + "", 10, Category.one));
+        @Nested
+        class LocaldateDictionary {
+
+            @Test
+            void useDictionaryLocalDate() throws IOException {
+                Schema dateType = LogicalTypes.date().addToSchema(Schema.create(Schema.Type.INT));
+                Schema schema = SchemaBuilder.builder().record("LocalDateDictionary").fields()
+                        .name("value").type(dateType).noDefault()
+                        .endRecord();
+
+                int differentValues = 30;
+                int totalRows = 10000;
+                GenericData genericDataModel = new GenericData();
+                genericDataModel.addLogicalTypeConversion(new TimeConversions.DateConversion());
+                var readerTest = new ParquetReaderTest(schema);
+                readerTest.writerWithModel(genericDataModel, writer -> {
+                    for (int i = 0; i < totalRows; i++) {
+                        var firstDate = LocalDate.of(2022, 11, 21);
+                        var it = firstDate;
+                        for (int j = 0; j < differentValues; j++) {
+                            Record record = new Record(schema);
+                            record.put("value", it);
+                            writer.write(record);
+                            it = it.plusDays(1);
+                        }
+                    }
+                });
+
+                record LocalDateRecord(LocalDate value) {
+                }
+
+                try (var carpetReader = readerTest.getCarpetReader(LocalDateRecord.class)) {
+                    List<LocalDate> ref = new ArrayList<>();
+                    for (int j = 0; j < differentValues; j++) {
+                        ref.add(carpetReader.read().value);
+                    }
+                    for (int i = 0; i < totalRows - 1; i++) {
+                        for (int j = 0; j < differentValues; j++) {
+                            // Compare object references, not equals
+                            assertTrue(ref.get(j) == carpetReader.read().value);
+                        }
+                    }
+                }
+            }
+
+            @Test
+            void useDictionaryLocalDateCollection() throws IOException {
+
+                int valuesPerRow = 25;
+                int totalRows = 1000;
+
+                var firstDate = LocalDate.of(2022, 11, 21);
+                var it = firstDate;
+                List<LocalDate> vals = new ArrayList<>();
+                for (int i = 0; i < valuesPerRow; i++) {
+                    vals.add(it);
+                }
+
+                record CollectionLocalDate(int id, List<LocalDate> dates) {
+                }
+
+                List<CollectionLocalDate> rows = new ArrayList<>();
+                for (int j = 0; j < totalRows; j++) {
+                    rows.add(new CollectionLocalDate(j, vals));
+                }
+
+                var writerTest = new ParquetWriterTest<>(CollectionLocalDate.class);
+                writerTest.write(rows);
+
+                var reader = writerTest.getCarpetReader();
+                List<LocalDate> ref = reader.read().dates();
+                for (int i = 1; i < totalRows; i++) {
+                    CollectionLocalDate row = reader.read();
+                    for (int j = 0; j < valuesPerRow; j++) {
+                        // Compare object references, not equals
+                        assertTrue(ref.get(j) == row.dates.get(j));
+                    }
+                }
+            }
         }
-        var writerTest = new ParquetWriterTest<>(FooType.class);
-        writerTest.write(lst);
-        var reader = writerTest.getCarpetReader();
 
     }
 

@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -592,6 +593,31 @@ class CarpetWriterTest {
     }
 
     @Nested
+    class DateTypes {
+
+        @Test
+        void localDate() throws IOException {
+
+            record LocalDateRecord(LocalDate value) {
+            }
+
+            var rec1 = new LocalDateRecord(LocalDate.of(2022, 11, 21));
+            var rec2 = new LocalDateRecord(LocalDate.of(1976, 1, 15));
+            var writerTest = new ParquetWriterTest<>(LocalDateRecord.class);
+            writerTest.write(rec1, rec2);
+
+            var avroReader = writerTest.getAvroGenericRecordReader();
+            assertEquals((int) rec1.value.toEpochDay(), avroReader.read().get("value"));
+            assertEquals((int) rec2.value.toEpochDay(), avroReader.read().get("value"));
+
+            var carpetReader = writerTest.getCarpetReader();
+            assertEquals(rec1, carpetReader.read());
+            assertEquals(rec2, carpetReader.read());
+        }
+
+    }
+
+    @Nested
     class InListTypes {
 
         @Test
@@ -747,6 +773,22 @@ class CarpetWriterTest {
             var rec1 = new UuidList(asList(UUID.randomUUID(), null, UUID.randomUUID()));
             var rec2 = new UuidList(null);
             var writerTest = new ParquetWriterTest<>(UuidList.class);
+            writerTest.write(rec1, rec2);
+
+            var carpetReader = writerTest.getCarpetReader();
+            assertEquals(rec1, carpetReader.read());
+            assertEquals(rec2, carpetReader.read());
+        }
+
+        @Test
+        void localDateList() throws IOException {
+
+            record LocalDateList(List<LocalDate> values) {
+            }
+
+            var rec1 = new LocalDateList(asList(LocalDate.of(2024, 1, 30), null, LocalDate.of(2024, 2, 20)));
+            var rec2 = new LocalDateList(null);
+            var writerTest = new ParquetWriterTest<>(LocalDateList.class);
             writerTest.write(rec1, rec2);
 
             var carpetReader = writerTest.getCarpetReader();

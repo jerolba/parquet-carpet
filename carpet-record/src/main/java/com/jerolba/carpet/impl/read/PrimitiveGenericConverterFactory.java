@@ -15,6 +15,7 @@
  */
 package com.jerolba.carpet.impl.read;
 
+import static org.apache.parquet.schema.LogicalTypeAnnotation.dateType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.enumType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.stringType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.uuidType;
@@ -22,6 +23,7 @@ import static org.apache.parquet.schema.LogicalTypeAnnotation.uuidType;
 import java.util.function.Consumer;
 
 import org.apache.parquet.io.api.Converter;
+import org.apache.parquet.schema.LogicalTypeAnnotation;
 import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
 import org.apache.parquet.schema.Type;
 
@@ -34,6 +36,7 @@ import com.jerolba.carpet.impl.read.converter.ToByteGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToDoubleGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToFloatGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToIntegerGenericConverter;
+import com.jerolba.carpet.impl.read.converter.LocalDateConverter;
 import com.jerolba.carpet.impl.read.converter.ToLongGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToShortGenericConverter;
 import com.jerolba.carpet.impl.read.converter.UuidToStringConverter;
@@ -74,6 +77,12 @@ class PrimitiveGenericConverterFactory {
         }
         if (type.isFloat()) {
             return new ToFloatGenericConverter(consumer);
+        }
+
+        LogicalTypeAnnotation logicalTypeAnnotation = schemaType.getLogicalTypeAnnotation();
+        PrimitiveTypeName primitive = schemaType.asPrimitiveType().getPrimitiveTypeName();
+        if (primitive == PrimitiveTypeName.INT32 && logicalTypeAnnotation.equals(dateType()) && type.isLocalDate()) {
+            return new LocalDateConverter(consumer);
         }
         throw new RecordTypeConversionException(
                 type.getTypeName() + " not compatible with " + schemaType.getName() + " collection");
