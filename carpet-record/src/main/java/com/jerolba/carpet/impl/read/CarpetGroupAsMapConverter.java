@@ -49,7 +49,7 @@ import org.apache.parquet.schema.Type.Repetition;
 
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.impl.read.converter.BooleanGenericConverter;
-import com.jerolba.carpet.impl.read.converter.StringGenericConverter;
+import com.jerolba.carpet.impl.read.converter.StringConverter;
 import com.jerolba.carpet.impl.read.converter.ToByteGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToDoubleGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToFloatGenericConverter;
@@ -145,10 +145,10 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
         private static Converter buildFromBinaryConverter(Type parquetField, Consumer<Object> consumer) {
             LogicalTypeAnnotation logicalType = parquetField.getLogicalTypeAnnotation();
             if (stringType().equals(logicalType)) {
-                return new StringGenericConverter(consumer);
+                return new StringConverter(consumer);
             }
             if (enumType().equals(logicalType)) {
-                return new StringGenericConverter(consumer);
+                return new StringConverter(consumer);
             }
             throw new RecordTypeConversionException(parquetField + " deserialization not supported");
         }

@@ -114,7 +114,7 @@ class PrimitiveConverterFactory {
         LogicalTypeAnnotation logicalType = parquetField.getLogicalTypeAnnotation();
         if (stringType().equals(logicalType)) {
             if (type.isString()) {
-                return new StringConverter(constructor, index);
+                return new StringConverter(obj -> constructor.set(index, obj));
             }
             if (type.isEnum()) {
                 return new EnumConverter(obj -> constructor.set(index, obj), recordComponent.getType());
@@ -123,7 +123,7 @@ class PrimitiveConverterFactory {
         }
         if (enumType().equals(logicalType)) {
             if (type.isString()) {
-                return new StringConverter(constructor, index);
+                return new StringConverter(obj -> constructor.set(index, obj));
             }
             return new EnumConverter(obj -> constructor.set(index, obj), recordComponent.getType());
         }

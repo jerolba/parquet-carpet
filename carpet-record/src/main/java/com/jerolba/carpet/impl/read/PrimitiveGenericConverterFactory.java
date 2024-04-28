@@ -29,7 +29,7 @@ import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.impl.JavaType;
 import com.jerolba.carpet.impl.read.converter.BooleanGenericConverter;
 import com.jerolba.carpet.impl.read.converter.EnumConverter;
-import com.jerolba.carpet.impl.read.converter.StringGenericConverter;
+import com.jerolba.carpet.impl.read.converter.StringConverter;
 import com.jerolba.carpet.impl.read.converter.ToByteGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToDoubleGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToFloatGenericConverter;
@@ -105,7 +105,7 @@ class PrimitiveGenericConverterFactory {
         var logicalType = schemaType.getLogicalTypeAnnotation();
         if (stringType().equals(logicalType)) {
             if (type.isString()) {
-                return new StringGenericConverter(consumer);
+                return new StringConverter(consumer);
             }
             if (type.isEnum()) {
                 return new EnumConverter(consumer, type.getJavaType());
@@ -114,7 +114,7 @@ class PrimitiveGenericConverterFactory {
         }
         if (enumType().equals(logicalType)) {
             if (type.isString()) {
-                return new StringGenericConverter(consumer);
+                return new StringConverter(consumer);
             }
             return new EnumConverter(consumer, type.getJavaType());
         }
