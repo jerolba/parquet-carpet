@@ -17,27 +17,24 @@ package com.jerolba.carpet.impl.read.converter;
 
 import java.nio.ByteBuffer;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import org.apache.parquet.column.Dictionary;
 import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.io.api.PrimitiveConverter;
 
-import com.jerolba.carpet.impl.read.ReadReflection.ConstructorParams;
-
 public class UuidToUuidConverter extends PrimitiveConverter {
 
     private UUID[] dict = null;
-    private final ConstructorParams constructor;
-    private final int idx;
+    private final Consumer<Object> listConsumer;
 
-    public UuidToUuidConverter(ConstructorParams constructor, int idx) {
-        this.constructor = constructor;
-        this.idx = idx;
+    public UuidToUuidConverter(Consumer<Object> listConsumer) {
+        this.listConsumer = listConsumer;
     }
 
     @Override
     public void addBinary(Binary value) {
-        constructor.c[idx] = convert(value);
+        listConsumer.accept(convert(value));
     }
 
     @Override
@@ -56,7 +53,7 @@ public class UuidToUuidConverter extends PrimitiveConverter {
 
     @Override
     public void addValueFromDictionary(int dictionaryId) {
-        constructor.c[idx] = dict[dictionaryId];
+        listConsumer.accept(dict[dictionaryId]);
     }
 
     private UUID convert(Binary value) {

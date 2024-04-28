@@ -114,18 +114,18 @@ class PrimitiveConverterFactory {
         LogicalTypeAnnotation logicalType = parquetField.getLogicalTypeAnnotation();
         if (stringType().equals(logicalType)) {
             if (type.isString()) {
-                return new StringConverter(constructor, index);
+                return new StringConverter(obj -> constructor.set(index, obj));
             }
             if (type.isEnum()) {
-                return new EnumConverter(constructor, index, recordComponent.getType());
+                return new EnumConverter(obj -> constructor.set(index, obj), recordComponent.getType());
             }
             throw new RecordTypeConversionException(type.getTypeName() + " not compatible with String field");
         }
         if (enumType().equals(logicalType)) {
             if (type.isString()) {
-                return new StringConverter(constructor, index);
+                return new StringConverter(obj -> constructor.set(index, obj));
             }
-            return new EnumConverter(constructor, index, recordComponent.getType());
+            return new EnumConverter(obj -> constructor.set(index, obj), recordComponent.getType());
         }
         throw new RecordTypeConversionException(
                 type.getTypeName() + " not compatible with " + recordComponent.getName() + " field");
@@ -136,10 +136,10 @@ class PrimitiveConverterFactory {
             throw new RecordTypeConversionException(parquetField + " deserialization not supported");
         }
         if (type.isString()) {
-            return new UuidToStringConverter(constructor, index);
+            return new UuidToStringConverter(obj -> constructor.set(index, obj));
         }
         if (type.isUuid()) {
-            return new UuidToUuidConverter(constructor, index);
+            return new UuidToUuidConverter(obj -> constructor.set(index, obj));
         }
         throw new RecordTypeConversionException(
                 parquetField + " deserialization not supported for type " + type.getTypeName());

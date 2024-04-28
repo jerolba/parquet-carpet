@@ -57,6 +57,10 @@ public class ReadReflection {
             }
         }
 
+        public void set(int idx, Object value) {
+            c[idx] = value;
+        }
+
         public void resetParams() {
             System.arraycopy(defaultParamsValues, 0, c, 0, defaultParamsValues.length);
         }

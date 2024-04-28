@@ -49,14 +49,14 @@ import org.apache.parquet.schema.Type.Repetition;
 
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.impl.read.converter.BooleanGenericConverter;
-import com.jerolba.carpet.impl.read.converter.StringGenericConverter;
+import com.jerolba.carpet.impl.read.converter.StringConverter;
 import com.jerolba.carpet.impl.read.converter.ToByteGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToDoubleGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToFloatGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToIntegerGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToLongGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToShortGenericConverter;
-import com.jerolba.carpet.impl.read.converter.UuidToUuidGenericConverter;
+import com.jerolba.carpet.impl.read.converter.UuidToUuidConverter;
 
 public class CarpetGroupAsMapConverter extends GroupConverter {
 
@@ -145,10 +145,10 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
         private static Converter buildFromBinaryConverter(Type parquetField, Consumer<Object> consumer) {
             LogicalTypeAnnotation logicalType = parquetField.getLogicalTypeAnnotation();
             if (stringType().equals(logicalType)) {
-                return new StringGenericConverter(consumer);
+                return new StringConverter(consumer);
             }
             if (enumType().equals(logicalType)) {
-                return new StringGenericConverter(consumer);
+                return new StringConverter(consumer);
             }
             throw new RecordTypeConversionException(parquetField + " deserialization not supported");
         }
@@ -157,7 +157,7 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
             if (!uuidType().equals(parquetField.getLogicalTypeAnnotation())) {
                 throw new RecordTypeConversionException(parquetField + " deserialization not supported");
             }
-            return new UuidToUuidGenericConverter(consumer);
+            return new UuidToUuidConverter(consumer);
         }
 
     }

@@ -28,16 +28,16 @@ import org.apache.parquet.schema.Type;
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.impl.JavaType;
 import com.jerolba.carpet.impl.read.converter.BooleanGenericConverter;
-import com.jerolba.carpet.impl.read.converter.EnumGenericConverter;
-import com.jerolba.carpet.impl.read.converter.StringGenericConverter;
+import com.jerolba.carpet.impl.read.converter.EnumConverter;
+import com.jerolba.carpet.impl.read.converter.StringConverter;
 import com.jerolba.carpet.impl.read.converter.ToByteGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToDoubleGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToFloatGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToIntegerGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToLongGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToShortGenericConverter;
-import com.jerolba.carpet.impl.read.converter.UuidToStringGenericConverter;
-import com.jerolba.carpet.impl.read.converter.UuidToUuidGenericConverter;
+import com.jerolba.carpet.impl.read.converter.UuidToStringConverter;
+import com.jerolba.carpet.impl.read.converter.UuidToUuidConverter;
 
 class PrimitiveGenericConverterFactory {
 
@@ -105,18 +105,18 @@ class PrimitiveGenericConverterFactory {
         var logicalType = schemaType.getLogicalTypeAnnotation();
         if (stringType().equals(logicalType)) {
             if (type.isString()) {
-                return new StringGenericConverter(consumer);
+                return new StringConverter(consumer);
             }
             if (type.isEnum()) {
-                return new EnumGenericConverter(consumer, type.getJavaType());
+                return new EnumConverter(consumer, type.getJavaType());
             }
             throw new RecordTypeConversionException(type.getTypeName() + " not compatible with String field");
         }
         if (enumType().equals(logicalType)) {
             if (type.isString()) {
-                return new StringGenericConverter(consumer);
+                return new StringConverter(consumer);
             }
-            return new EnumGenericConverter(consumer, type.getJavaType());
+            return new EnumConverter(consumer, type.getJavaType());
         }
         throw new RecordTypeConversionException(
                 type.getTypeName() + " not compatible with " + schemaType.getName() + " field");
@@ -128,10 +128,10 @@ class PrimitiveGenericConverterFactory {
             throw new RecordTypeConversionException(schemaType + " deserialization not supported");
         }
         if (type.isString()) {
-            return new UuidToStringGenericConverter(consumer);
+            return new UuidToStringConverter(consumer);
         }
         if (type.isUuid()) {
-            return new UuidToUuidGenericConverter(consumer);
+            return new UuidToUuidConverter(consumer);
         }
         throw new RecordTypeConversionException(
                 type.getTypeName() + " not compatible with " + schemaType.getName() + " field");
