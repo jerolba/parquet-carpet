@@ -735,12 +735,14 @@ class CarpetReaderTest {
                         .endRecord();
 
                 var readerTest = new ParquetReaderTest(schema);
-                readerTest.writer(writer -> {
+                GenericData genericDataModel = new GenericData();
+                genericDataModel.addLogicalTypeConversion(new TimeConversions.TimeMillisConversion());
+                readerTest.writerWithModel(genericDataModel, writer -> {
                     Record record = new Record(schema);
-                    record.put("value", LocalTime.of(19, 12, 21, 123456789).toNanoOfDay() / 1_000_000L);
+                    record.put("value", LocalTime.of(19, 12, 21, 123456789));
                     writer.write(record);
                     record = new Record(schema);
-                    record.put("value", LocalTime.of(23, 59, 59).toNanoOfDay() / 1_000_000L);
+                    record.put("value", LocalTime.of(23, 59, 59));
                     writer.write(record);
                 });
 
@@ -749,6 +751,35 @@ class CarpetReaderTest {
 
                 try (var carpetReader = readerTest.getCarpetReader(LocalTimeRecord.class)) {
                     assertEquals(new LocalTimeRecord(LocalTime.of(19, 12, 21, 123000000)), carpetReader.read());
+                    assertEquals(new LocalTimeRecord(LocalTime.of(23, 59, 59)), carpetReader.read());
+                }
+            }
+
+            @Test
+            void localTimeMicros() throws IOException {
+                Schema timeType = LogicalTypes.timeMicros()
+                        .addToSchema(Schema.create(Schema.Type.LONG));
+                Schema schema = SchemaBuilder.builder().record("LocalTime").fields()
+                        .name("value").type(timeType).noDefault()
+                        .endRecord();
+
+                var readerTest = new ParquetReaderTest(schema);
+                GenericData genericDataModel = new GenericData();
+                genericDataModel.addLogicalTypeConversion(new TimeConversions.TimeMicrosConversion());
+                readerTest.writerWithModel(genericDataModel, writer -> {
+                    Record record = new Record(schema);
+                    record.put("value", LocalTime.of(19, 12, 21, 123456789));
+                    writer.write(record);
+                    record = new Record(schema);
+                    record.put("value", LocalTime.of(23, 59, 59));
+                    writer.write(record);
+                });
+
+                record LocalTimeRecord(LocalTime value) {
+                }
+
+                try (var carpetReader = readerTest.getCarpetReader(LocalTimeRecord.class)) {
+                    assertEquals(new LocalTimeRecord(LocalTime.of(19, 12, 21, 123456000)), carpetReader.read());
                     assertEquals(new LocalTimeRecord(LocalTime.of(23, 59, 59)), carpetReader.read());
                 }
             }
