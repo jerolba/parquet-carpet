@@ -474,6 +474,21 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
             return this;
         }
 
+        /**
+         * Set the time unit resolution writing TIME or TIMESTAMP fields:
+         * <ul>
+         * <li>milliseconds</li>
+         * <li>microseconds</li>
+         * <li>nanoseconds</li>
+         *
+         * @param columnNamingStrategy an Enum configuring the strategy to use
+         * @return this builder for method chaining.
+         */
+        public Builder<T> withDefaultTimeUnit(TimeUnit defaultTimeUnit) {
+            builder.withDefaultTimeUnit(defaultTimeUnit);
+            return this;
+        }
+
         public CarpetWriter<T> build() throws IOException {
             return new CarpetWriter<>(builder.build());
         }

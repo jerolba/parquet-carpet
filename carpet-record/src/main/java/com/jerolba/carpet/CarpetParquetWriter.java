@@ -65,13 +65,13 @@ public class CarpetParquetWriter {
         }
 
         public Builder<T> withLevelStructure(AnnotatedLevels annotatedLevels) {
-            requireNonNull(defaultTimeUnit, "Annotated levels can not be null");
+            requireNonNull(annotatedLevels, "Annotated levels can not be null");
             this.annotatedLevels = annotatedLevels;
             return self();
         }
 
         public Builder<T> withColumnNamingStrategy(ColumnNamingStrategy columnNamingStrategy) {
-            requireNonNull(defaultTimeUnit, "Column naming strategy can not be null");
+            requireNonNull(columnNamingStrategy, "Column naming strategy can not be null");
             this.columnNamingStrategy = columnNamingStrategy;
             return self();
         }
