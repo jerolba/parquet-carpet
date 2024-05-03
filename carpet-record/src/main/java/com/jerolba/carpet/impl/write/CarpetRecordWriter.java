@@ -21,7 +21,9 @@ import static com.jerolba.carpet.impl.Parameterized.getParameterizedMap;
 import static com.jerolba.carpet.impl.write.UuidWrite.uuidToBinary;
 
 import java.lang.reflect.RecordComponent;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -33,9 +35,12 @@ import java.util.function.Function;
 import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.io.api.RecordConsumer;
 
+import com.jerolba.carpet.TimeUnit;
 import com.jerolba.carpet.impl.JavaType;
 import com.jerolba.carpet.impl.ParameterizedCollection;
 import com.jerolba.carpet.impl.ParameterizedMap;
+import com.jerolba.carpet.impl.write.InstantWrite.InstantToLong;
+import com.jerolba.carpet.impl.write.LocalDateTimeWrite.LocalDateTimeToLong;
 
 public class CarpetRecordWriter {
 
@@ -133,6 +138,12 @@ public class CarpetRecordWriter {
             case MICROS -> new LocalTimeLongFieldWriter(f, recordConsumer, 1_000);
             case NANOS -> new LocalTimeLongFieldWriter(f, recordConsumer, 1);
             };
+        }
+        if (type.isLocalDateTime()) {
+            return new LocalDateTimeFieldWriter(f, recordConsumer, carpetConfiguration.defaultTimeUnit());
+        }
+        if (type.isInstant()) {
+            return new InstantFieldWriter(f, recordConsumer, carpetConfiguration.defaultTimeUnit());
         }
         return null;
     }
@@ -429,6 +440,68 @@ public class CarpetRecordWriter {
                 long offsetOfDay = ((LocalTime) value).toNanoOfDay() / factor;
                 recordConsumer.startField(fieldName, idx);
                 recordConsumer.addLong(offsetOfDay);
+                recordConsumer.endField(fieldName, idx);
+            }
+        }
+    }
+
+    private static class LocalDateTimeFieldWriter implements Consumer<Object> {
+
+        private final String fieldName;
+        private final int idx;
+        private final Function<Object, Object> accesor;
+        private final RecordConsumer recordConsumer;
+        private final LocalDateTimeToLong mapper;
+
+        LocalDateTimeFieldWriter(RecordField recordField, RecordConsumer recordConsumer, TimeUnit timeUnit) {
+            this.fieldName = recordField.fieldName();
+            this.idx = recordField.idx();
+            this.accesor = Reflection.recordAccessor(recordField.targetClass(), recordField.recordComponent());
+            this.recordConsumer = recordConsumer;
+            this.mapper = switch (timeUnit) {
+            case MILLIS -> LocalDateTimeWrite::millisFromEpochFromLocalDateTime;
+            case MICROS -> LocalDateTimeWrite::microsFromEpochFromLocalDateTime;
+            case NANOS -> LocalDateTimeWrite::nanosFromEpochFromLocalDateTime;
+            };
+        }
+
+        @Override
+        public void accept(Object object) {
+            var value = accesor.apply(object);
+            if (value != null) {
+                recordConsumer.startField(fieldName, idx);
+                recordConsumer.addLong(mapper.map((LocalDateTime) value));
+                recordConsumer.endField(fieldName, idx);
+            }
+        }
+    }
+
+    private static class InstantFieldWriter implements Consumer<Object> {
+
+        private final String fieldName;
+        private final int idx;
+        private final Function<Object, Object> accesor;
+        private final RecordConsumer recordConsumer;
+        private final InstantToLong mapper;
+
+        InstantFieldWriter(RecordField recordField, RecordConsumer recordConsumer, TimeUnit timeUnit) {
+            this.fieldName = recordField.fieldName();
+            this.idx = recordField.idx();
+            this.accesor = Reflection.recordAccessor(recordField.targetClass(), recordField.recordComponent());
+            this.recordConsumer = recordConsumer;
+            this.mapper = switch (timeUnit) {
+            case MILLIS -> InstantWrite::millisFromEpochFromInstant;
+            case MICROS -> InstantWrite::microsFromEpochFromInstant;
+            case NANOS -> InstantWrite::nanosFromEpochFromInstant;
+            };
+        }
+
+        @Override
+        public void accept(Object object) {
+            var value = accesor.apply(object);
+            if (value != null) {
+                recordConsumer.startField(fieldName, idx);
+                recordConsumer.addLong(mapper.map((Instant) value));
                 recordConsumer.endField(fieldName, idx);
             }
         }

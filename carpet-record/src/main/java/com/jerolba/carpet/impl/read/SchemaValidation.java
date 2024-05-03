@@ -29,6 +29,7 @@ import org.apache.parquet.schema.LogicalTypeAnnotation;
 import org.apache.parquet.schema.LogicalTypeAnnotation.IntLogicalTypeAnnotation;
 import org.apache.parquet.schema.LogicalTypeAnnotation.TimeLogicalTypeAnnotation;
 import org.apache.parquet.schema.LogicalTypeAnnotation.TimeUnit;
+import org.apache.parquet.schema.LogicalTypeAnnotation.TimestampLogicalTypeAnnotation;
 import org.apache.parquet.schema.PrimitiveType;
 import org.apache.parquet.schema.Type;
 import org.apache.parquet.schema.Type.Repetition;
@@ -131,6 +132,11 @@ public class SchemaValidation {
         LogicalTypeAnnotation logicalTypeAnnotation = primitiveType.getLogicalTypeAnnotation();
         if (type.isLocalTime() && logicalTypeAnnotation instanceof TimeLogicalTypeAnnotation time
                 && (time.getUnit() == TimeUnit.MICROS || time.getUnit() == TimeUnit.NANOS)) {
+            return true;
+        }
+        if ((type.isLocalDateTime() || type.isInstant())
+                && logicalTypeAnnotation instanceof TimestampLogicalTypeAnnotation timeStamp) {
+            // TODO: add logic to fail about isAdjustedToUTC conversion
             return true;
         }
         return throwInvalidConversionException(primitiveType, type);

@@ -25,6 +25,7 @@ import java.util.function.Consumer;
 import org.apache.parquet.io.api.Converter;
 import org.apache.parquet.schema.LogicalTypeAnnotation;
 import org.apache.parquet.schema.LogicalTypeAnnotation.TimeLogicalTypeAnnotation;
+import org.apache.parquet.schema.LogicalTypeAnnotation.TimestampLogicalTypeAnnotation;
 import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
 import org.apache.parquet.schema.Type;
 
@@ -32,13 +33,15 @@ import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.impl.JavaType;
 import com.jerolba.carpet.impl.read.converter.BooleanGenericConverter;
 import com.jerolba.carpet.impl.read.converter.EnumConverter;
-import com.jerolba.carpet.impl.read.converter.StringConverter;
+import com.jerolba.carpet.impl.read.converter.InstantConverter;
+import com.jerolba.carpet.impl.read.converter.LocalDateConverter;
+import com.jerolba.carpet.impl.read.converter.LocalDateTimeConverter;
 import com.jerolba.carpet.impl.read.converter.LocalTimeConverter;
+import com.jerolba.carpet.impl.read.converter.StringConverter;
 import com.jerolba.carpet.impl.read.converter.ToByteGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToDoubleGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToFloatGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToIntegerGenericConverter;
-import com.jerolba.carpet.impl.read.converter.LocalDateConverter;
 import com.jerolba.carpet.impl.read.converter.ToLongGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToShortGenericConverter;
 import com.jerolba.carpet.impl.read.converter.UuidToStringConverter;
@@ -89,6 +92,13 @@ class PrimitiveGenericConverterFactory {
         if ((primitive == PrimitiveTypeName.INT32 || primitive == PrimitiveTypeName.INT64) && type.isLocalTime()
                 && logicalTypeAnnotation instanceof TimeLogicalTypeAnnotation time) {
             return new LocalTimeConverter(consumer, time.getUnit());
+        }
+        if (logicalTypeAnnotation instanceof TimestampLogicalTypeAnnotation timeStamp) {
+            if (type.isLocalDateTime()) {
+                return new LocalDateTimeConverter(consumer, timeStamp.getUnit());
+            } else if (type.isInstant()) {
+                return new InstantConverter(consumer, timeStamp.getUnit());
+            }
         }
         throw new RecordTypeConversionException(
                 type.getTypeName() + " not compatible with " + schemaType.getName() + " collection");

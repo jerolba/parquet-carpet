@@ -21,7 +21,9 @@ import static com.jerolba.carpet.TimeUnit.NANOS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
@@ -122,7 +124,7 @@ class JavaRecord2SchemaTest {
 
     @Test
     void dateTypesRecordTest() {
-        record DateTypesRecord(LocalDate localDate, LocalTime localTime) {
+        record DateTypesRecord(LocalDate localDate, LocalTime localTime, Instant instant, LocalDateTime localDateTime) {
         }
 
         MessageType schema = defaultConfigSchema.createSchema(DateTypesRecord.class);
@@ -130,6 +132,8 @@ class JavaRecord2SchemaTest {
                 message DateTypesRecord {
                   optional int32 localDate (DATE);
                   optional int32 localTime (TIME(MILLIS,true));
+                  optional int64 instant (TIMESTAMP(MILLIS,true));
+                  optional int64 localDateTime (TIMESTAMP(MILLIS,false));
                 }
                 """;
         assertEquals(expected, schema.toString());
@@ -180,6 +184,102 @@ class JavaRecord2SchemaTest {
             assertEquals(expected, schema.toString());
         }
 
+    }
+
+    @Nested
+    class TimeStampDefinition {
+
+        @Nested
+        class InstantDefinition {
+
+            record TimeStampRecord(Instant instant) {
+            }
+
+            @Test
+            void millis() {
+                var cfg = new CarpetWriteConfiguration(AnnotatedLevels.THREE, defaultNaming, MILLIS);
+                var schemaMapper = new JavaRecord2Schema(cfg);
+                MessageType schema = schemaMapper.createSchema(TimeStampRecord.class);
+                String expected = """
+                        message TimeStampRecord {
+                          optional int64 instant (TIMESTAMP(MILLIS,true));
+                        }
+                        """;
+                assertEquals(expected, schema.toString());
+            }
+
+            @Test
+            void micros() {
+                var cfg = new CarpetWriteConfiguration(AnnotatedLevels.THREE, defaultNaming, MICROS);
+                var schemaMapper = new JavaRecord2Schema(cfg);
+                MessageType schema = schemaMapper.createSchema(TimeStampRecord.class);
+                String expected = """
+                        message TimeStampRecord {
+                          optional int64 instant (TIMESTAMP(MICROS,true));
+                        }
+                        """;
+                assertEquals(expected, schema.toString());
+            }
+
+            @Test
+            void nanos() {
+                var cfg = new CarpetWriteConfiguration(AnnotatedLevels.THREE, defaultNaming, NANOS);
+                var schemaMapper = new JavaRecord2Schema(cfg);
+                MessageType schema = schemaMapper.createSchema(TimeStampRecord.class);
+                String expected = """
+                        message TimeStampRecord {
+                          optional int64 instant (TIMESTAMP(NANOS,true));
+                        }
+                        """;
+                assertEquals(expected, schema.toString());
+            }
+        }
+
+        @Nested
+        class LocalDateTimeDefinition {
+
+            record TimeStampRecord(LocalDateTime localdDateTime) {
+            }
+
+            @Test
+            void millis() {
+                var cfg = new CarpetWriteConfiguration(AnnotatedLevels.THREE, defaultNaming, MILLIS);
+                var schemaMapper = new JavaRecord2Schema(cfg);
+                MessageType schema = schemaMapper.createSchema(TimeStampRecord.class);
+                String expected = """
+                        message TimeStampRecord {
+                          optional int64 localdDateTime (TIMESTAMP(MILLIS,false));
+                        }
+                        """;
+                assertEquals(expected, schema.toString());
+            }
+
+            @Test
+            void micros() {
+                var cfg = new CarpetWriteConfiguration(AnnotatedLevels.THREE, defaultNaming, MICROS);
+                var schemaMapper = new JavaRecord2Schema(cfg);
+                MessageType schema = schemaMapper.createSchema(TimeStampRecord.class);
+                String expected = """
+                        message TimeStampRecord {
+                          optional int64 localdDateTime (TIMESTAMP(MICROS,false));
+                        }
+                        """;
+                assertEquals(expected, schema.toString());
+            }
+
+            @Test
+            void nanos() {
+                var cfg = new CarpetWriteConfiguration(AnnotatedLevels.THREE, defaultNaming, NANOS);
+                var schemaMapper = new JavaRecord2Schema(cfg);
+                MessageType schema = schemaMapper.createSchema(TimeStampRecord.class);
+                String expected = """
+                        message TimeStampRecord {
+                          optional int64 localdDateTime (TIMESTAMP(NANOS,false));
+                        }
+                        """;
+                assertEquals(expected, schema.toString());
+            }
+        }
     }
 
     @Nested
