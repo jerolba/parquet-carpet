@@ -45,13 +45,16 @@ import org.apache.parquet.schema.GroupType;
 import org.apache.parquet.schema.LogicalTypeAnnotation;
 import org.apache.parquet.schema.LogicalTypeAnnotation.IntLogicalTypeAnnotation;
 import org.apache.parquet.schema.LogicalTypeAnnotation.TimeLogicalTypeAnnotation;
+import org.apache.parquet.schema.LogicalTypeAnnotation.TimestampLogicalTypeAnnotation;
 import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
 import org.apache.parquet.schema.Type;
 import org.apache.parquet.schema.Type.Repetition;
 
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.impl.read.converter.BooleanGenericConverter;
+import com.jerolba.carpet.impl.read.converter.InstantConverter;
 import com.jerolba.carpet.impl.read.converter.LocalDateConverter;
+import com.jerolba.carpet.impl.read.converter.LocalDateTimeConverter;
 import com.jerolba.carpet.impl.read.converter.LocalTimeConverter;
 import com.jerolba.carpet.impl.read.converter.StringConverter;
 import com.jerolba.carpet.impl.read.converter.ToByteGenericConverter;
@@ -148,6 +151,13 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
             }
             if (logicalType instanceof TimeLogicalTypeAnnotation time) {
                 return new LocalTimeConverter(consumer, time.getUnit());
+            }
+            if (logicalType instanceof TimestampLogicalTypeAnnotation timeStamp) {
+                if (timeStamp.isAdjustedToUTC()) {
+                    return new InstantConverter(consumer, timeStamp.getUnit());
+                } else {
+                    return new LocalDateTimeConverter(consumer, timeStamp.getUnit());
+                }
             }
             return new ToIntegerGenericConverter(consumer);
         }

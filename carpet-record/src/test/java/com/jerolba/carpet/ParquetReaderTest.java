@@ -18,6 +18,8 @@ package com.jerolba.carpet;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
@@ -75,6 +77,9 @@ public class ParquetReaderTest {
     }
 
     public <T> ParquetReader<T> getCarpetReader(Class<T> readType, ReadFlag... flags) throws IOException {
+        // Every file must be readed to a Map
+        List<Map> list = new CarpetReader<>(new File(path), Map.class).toList();
+
         InputFile inputFile = new FileSystemInputFile(new File(path));
         Builder<T> builder = CarpetParquetReader.builder(inputFile, readType);
         for (ReadFlag f : flags) {

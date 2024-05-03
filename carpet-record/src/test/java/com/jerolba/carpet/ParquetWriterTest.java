@@ -91,8 +91,12 @@ public class ParquetWriterTest<T> {
     }
 
     public ParquetReader<GenericRecord> getAvroGenericRecordReader() throws IOException {
+        return getAvroGenericRecordReaderWithModel(GenericData.get());
+    }
+
+    public ParquetReader<GenericRecord> getAvroGenericRecordReaderWithModel(GenericData model) throws IOException {
         return AvroParquetReader.<GenericRecord>builder(new FileSystemInputFile(getTestFile()))
-                .withDataModel(GenericData.get())
+                .withDataModel(model)
                 .build();
     }
 

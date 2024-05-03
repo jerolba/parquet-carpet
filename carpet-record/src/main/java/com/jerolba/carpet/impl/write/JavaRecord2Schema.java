@@ -23,6 +23,7 @@ import static org.apache.parquet.schema.LogicalTypeAnnotation.enumType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.intType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.stringType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.timeType;
+import static org.apache.parquet.schema.LogicalTypeAnnotation.timestampType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.uuidType;
 import static org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName.BINARY;
 import static org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY;
@@ -254,6 +255,16 @@ public class JavaRecord2Schema {
             case MILLIS -> Types.primitive(PrimitiveTypeName.INT32, repetition).as(timeType).named(name);
             case MICROS, NANOS -> Types.primitive(PrimitiveTypeName.INT64, repetition).as(timeType).named(name);
             };
+        }
+        if (javaType.isLocalDateTime()) {
+            var timeUnit = carpetConfiguration.defaultTimeUnit();
+            var timeStampType = timestampType(false, toParquetTimeUnit(timeUnit));
+            return Types.primitive(PrimitiveTypeName.INT64, repetition).as(timeStampType).named(name);
+        }
+        if (javaType.isInstant()) {
+            var timeUnit = carpetConfiguration.defaultTimeUnit();
+            var timeStampType = timestampType(true, toParquetTimeUnit(timeUnit));
+            return Types.primitive(PrimitiveTypeName.INT64, repetition).as(timeStampType).named(name);
         }
         return null;
     }

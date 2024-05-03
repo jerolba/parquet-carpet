@@ -24,6 +24,7 @@ import java.lang.reflect.RecordComponent;
 import org.apache.parquet.io.api.Converter;
 import org.apache.parquet.schema.LogicalTypeAnnotation;
 import org.apache.parquet.schema.LogicalTypeAnnotation.TimeLogicalTypeAnnotation;
+import org.apache.parquet.schema.LogicalTypeAnnotation.TimestampLogicalTypeAnnotation;
 import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
 import org.apache.parquet.schema.Type;
 
@@ -32,9 +33,11 @@ import com.jerolba.carpet.impl.JavaType;
 import com.jerolba.carpet.impl.read.ReadReflection.ConstructorParams;
 import com.jerolba.carpet.impl.read.converter.BooleanConverter;
 import com.jerolba.carpet.impl.read.converter.EnumConverter;
+import com.jerolba.carpet.impl.read.converter.InstantConverter;
 import com.jerolba.carpet.impl.read.converter.LocalDateConverter;
-import com.jerolba.carpet.impl.read.converter.StringConverter;
+import com.jerolba.carpet.impl.read.converter.LocalDateTimeConverter;
 import com.jerolba.carpet.impl.read.converter.LocalTimeConverter;
+import com.jerolba.carpet.impl.read.converter.StringConverter;
 import com.jerolba.carpet.impl.read.converter.ToByteConverter;
 import com.jerolba.carpet.impl.read.converter.ToDoubleConverter;
 import com.jerolba.carpet.impl.read.converter.ToFloatConverter;
@@ -95,6 +98,13 @@ class PrimitiveConverterFactory {
         }
         if (type.isLocalTime() && parquetField.getLogicalTypeAnnotation() instanceof TimeLogicalTypeAnnotation time) {
             return new LocalTimeConverter(obj -> constructor.c[index] = obj, time.getUnit());
+        }
+        if (parquetField.getLogicalTypeAnnotation() instanceof TimestampLogicalTypeAnnotation timeStamp) {
+            if (type.isLocalDateTime()) {
+                return new LocalDateTimeConverter(obj -> constructor.c[index] = obj, timeStamp.getUnit());
+            } else if (type.isInstant()) {
+                return new InstantConverter(obj -> constructor.c[index] = obj, timeStamp.getUnit());
+            }
         }
         throw new RecordTypeConversionException(
                 type.getTypeName() + " not compatible with " + recordComponent.getName() + " field");

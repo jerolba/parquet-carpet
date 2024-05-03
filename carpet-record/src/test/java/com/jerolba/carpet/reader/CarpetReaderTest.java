@@ -25,8 +25,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -55,6 +58,7 @@ import org.apache.parquet.hadoop.ParquetWriter;
 import org.apache.parquet.io.InputFile;
 import org.apache.parquet.io.OutputFile;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -781,6 +785,149 @@ class CarpetReaderTest {
                 try (var carpetReader = readerTest.getCarpetReader(LocalTimeRecord.class)) {
                     assertEquals(new LocalTimeRecord(LocalTime.of(19, 12, 21, 123456000)), carpetReader.read());
                     assertEquals(new LocalTimeRecord(LocalTime.of(23, 59, 59)), carpetReader.read());
+                }
+            }
+
+        }
+
+        @Nested
+        class DateTimeTypes {
+
+            @Test
+            @Disabled("Waiting for 1.14.0 release")
+            void localDateTimeMillis() throws IOException {
+                Schema timeType = LogicalTypes.localTimestampMillis().addToSchema(Schema.create(Schema.Type.LONG));
+                Schema schema = SchemaBuilder.builder().record("LocalDateTime").fields()
+                        .name("value").type(timeType).noDefault()
+                        .endRecord();
+
+                var readerTest = new ParquetReaderTest(schema);
+                GenericData genericDataModel = new GenericData();
+                genericDataModel.addLogicalTypeConversion(new TimeConversions.LocalTimestampMillisConversion());
+                readerTest.writerWithModel(genericDataModel, writer -> {
+                    Record record = new Record(schema);
+                    record.put("value", LocalDateTime.of(2024, 5, 2, 19, 52, 21, 987654321));
+                    writer.write(record);
+                    record = new Record(schema);
+                    record.put("value", LocalDateTime.of(1976, 1, 15, 0, 14, 10, 123456789));
+                    writer.write(record);
+                });
+
+                record LocalDateTimeRecord(LocalDateTime value) {
+                }
+
+                try (var carpetReader = readerTest.getCarpetReader(LocalDateTimeRecord.class)) {
+                    assertEquals(new LocalDateTimeRecord(LocalDateTime.of(2024, 5, 2, 19, 52, 21, 987000000)),
+                            carpetReader.read());
+                    assertEquals(new LocalDateTimeRecord(LocalDateTime.of(1976, 1, 15, 0, 14, 10, 123000000)),
+                            carpetReader.read());
+                }
+            }
+
+            @Test
+            @Disabled("Waiting for 1.14.0 release")
+            void localDateTimeMicros() throws IOException {
+                Schema timeType = LogicalTypes.localTimestampMicros().addToSchema(Schema.create(Schema.Type.LONG));
+                Schema schema = SchemaBuilder.builder().record("LocalDateTime").fields()
+                        .name("value").type(timeType).noDefault()
+                        .endRecord();
+
+                var readerTest = new ParquetReaderTest(schema);
+                GenericData genericDataModel = new GenericData();
+                genericDataModel.addLogicalTypeConversion(new TimeConversions.LocalTimestampMicrosConversion());
+                readerTest.writerWithModel(genericDataModel, writer -> {
+                    Record record = new Record(schema);
+                    record.put("value", LocalDateTime.of(2024, 5, 2, 19, 52, 21, 987654321));
+                    writer.write(record);
+                    record = new Record(schema);
+                    record.put("value", LocalDateTime.of(1976, 1, 15, 0, 14, 10, 123456789));
+                    writer.write(record);
+                });
+
+                record LocalDateTimeRecord(LocalDateTime value) {
+                }
+
+                try (var carpetReader = readerTest.getCarpetReader(LocalDateTimeRecord.class)) {
+                    assertEquals(new LocalDateTimeRecord(LocalDateTime.of(2024, 5, 2, 19, 52, 21, 987654000)),
+                            carpetReader.read());
+                    assertEquals(new LocalDateTimeRecord(LocalDateTime.of(1976, 1, 15, 0, 14, 10, 123456000)),
+                            carpetReader.read());
+                }
+            }
+
+            @Test
+            void instantMillis() throws IOException {
+                Schema timeType = LogicalTypes.timestampMillis().addToSchema(Schema.create(Schema.Type.LONG));
+                Schema schema = SchemaBuilder.builder().record("Instant").fields()
+                        .name("value").type(timeType).noDefault()
+                        .endRecord();
+
+                var readerTest = new ParquetReaderTest(schema);
+                GenericData genericDataModel = new GenericData();
+                genericDataModel.addLogicalTypeConversion(new TimeConversions.TimestampMillisConversion());
+                readerTest.writerWithModel(genericDataModel, writer -> {
+                    Record record = new Record(schema);
+                    LocalDateTime local1 = LocalDateTime.of(2024, 5, 2, 19, 52, 21);
+                    record.put("value", Instant.ofEpochSecond(local1.toEpochSecond(ZoneOffset.ofHours(1)), 987654321));
+                    writer.write(record);
+                    record = new Record(schema);
+                    LocalDateTime local2 = LocalDateTime.of(1976, 1, 15, 0, 14, 10);
+                    record.put("value", Instant.ofEpochSecond(local2.toEpochSecond(ZoneOffset.ofHours(2)), 123456789));
+                    writer.write(record);
+                });
+
+                record LocalDateTimeRecord(Instant value) {
+                }
+
+                try (var carpetReader = readerTest.getCarpetReader(LocalDateTimeRecord.class)) {
+                    LocalDateTime local1 = LocalDateTime.of(2024, 5, 2, 18, 52, 21);
+                    assertEquals(
+                            new LocalDateTimeRecord(
+                                    Instant.ofEpochSecond(local1.toEpochSecond(ZoneOffset.UTC), 987000000)),
+                            carpetReader.read());
+                    LocalDateTime local2 = LocalDateTime.of(1976, 1, 14, 22, 14, 10);
+                    assertEquals(
+                            new LocalDateTimeRecord(
+                                    Instant.ofEpochSecond(local2.toEpochSecond(ZoneOffset.UTC), 123000000)),
+                            carpetReader.read());
+                }
+            }
+
+            @Test
+            void instantMicros() throws IOException {
+                Schema timeType = LogicalTypes.timestampMicros().addToSchema(Schema.create(Schema.Type.LONG));
+                Schema schema = SchemaBuilder.builder().record("Instant").fields()
+                        .name("value").type(timeType).noDefault()
+                        .endRecord();
+
+                var readerTest = new ParquetReaderTest(schema);
+                GenericData genericDataModel = new GenericData();
+                genericDataModel.addLogicalTypeConversion(new TimeConversions.TimestampMicrosConversion());
+                readerTest.writerWithModel(genericDataModel, writer -> {
+                    Record record = new Record(schema);
+                    LocalDateTime local1 = LocalDateTime.of(2024, 5, 2, 19, 52, 21);
+                    record.put("value", Instant.ofEpochSecond(local1.toEpochSecond(ZoneOffset.ofHours(1)), 987654321));
+                    writer.write(record);
+                    record = new Record(schema);
+                    LocalDateTime local2 = LocalDateTime.of(1976, 1, 15, 0, 14, 10);
+                    record.put("value", Instant.ofEpochSecond(local2.toEpochSecond(ZoneOffset.ofHours(2)), 123456789));
+                    writer.write(record);
+                });
+
+                record LocalDateTimeRecord(Instant value) {
+                }
+
+                try (var carpetReader = readerTest.getCarpetReader(LocalDateTimeRecord.class)) {
+                    LocalDateTime local1 = LocalDateTime.of(2024, 5, 2, 18, 52, 21);
+                    assertEquals(
+                            new LocalDateTimeRecord(
+                                    Instant.ofEpochSecond(local1.toEpochSecond(ZoneOffset.UTC), 987654000)),
+                            carpetReader.read());
+                    LocalDateTime local2 = LocalDateTime.of(1976, 1, 14, 22, 14, 10);
+                    assertEquals(
+                            new LocalDateTimeRecord(
+                                    Instant.ofEpochSecond(local2.toEpochSecond(ZoneOffset.UTC), 123456000)),
+                            carpetReader.read());
                 }
             }
 

@@ -89,6 +89,14 @@ public class JavaType {
         return typeName.equals("java.time.LocalTime");
     }
 
+    public boolean isLocalDateTime() {
+        return typeName.equals("java.time.LocalDateTime");
+    }
+
+    public boolean isInstant() {
+        return typeName.equals("java.time.Instant");
+    }
+
     public boolean isRecord() {
         return type.isRecord();
     }

@@ -16,6 +16,7 @@
 package com.jerolba.carpet.writer;
 
 import static com.jerolba.carpet.ColumnNamingStrategy.SNAKE_CASE;
+import static java.time.ZoneOffset.ofHours;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -23,14 +24,20 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.avro.data.TimeConversions;
+import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.parquet.hadoop.ParquetFileReader;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -675,6 +682,183 @@ class CarpetWriterTest {
             }
         }
 
+        @Nested
+        class InstantType {
+
+            record InstantRecord(Instant value) {
+            }
+
+            private final LocalDateTime local = LocalDateTime.of(2024, 5, 3, 15, 31, 11);
+            private final Instant instant1 = Instant.ofEpochSecond(local.toEpochSecond(ofHours(2)), 987654321);
+            private final Instant instant2 = Instant.ofEpochSecond(local.toEpochSecond(ofHours(-2)), 123456789);
+            private final InstantRecord rec1 = new InstantRecord(instant1);
+            private final InstantRecord rec2 = new InstantRecord(instant2);
+
+            @Test
+            void millis() throws IOException {
+                var writerTest = new ParquetWriterTest<>(InstantRecord.class)
+                        .withTimeUnit(TimeUnit.MILLIS);
+                writerTest.write(rec1, rec2);
+
+                Instant expected1 = Instant.ofEpochSecond(local.toEpochSecond(ofHours(2)), 987000000);
+                Instant expected2 = Instant.ofEpochSecond(local.toEpochSecond(ofHours(-2)), 123000000);
+
+                GenericData genericDataModel = new GenericData();
+                genericDataModel.addLogicalTypeConversion(new TimeConversions.TimestampMillisConversion());
+                var avroReader = writerTest.getAvroGenericRecordReaderWithModel(genericDataModel);
+                assertEquals(expected1, avroReader.read().get("value"));
+                assertEquals(expected2, avroReader.read().get("value"));
+
+                var carpetReader = writerTest.getCarpetReader();
+                assertEquals(expected1, carpetReader.read().value());
+                assertEquals(expected2, carpetReader.read().value());
+            }
+
+            @Test
+            void micros() throws IOException {
+                var writerTest = new ParquetWriterTest<>(InstantRecord.class)
+                        .withTimeUnit(TimeUnit.MICROS);
+                writerTest.write(rec1, rec2);
+
+                Instant expected1 = Instant.ofEpochSecond(local.toEpochSecond(ofHours(2)), 987654000);
+                Instant expected2 = Instant.ofEpochSecond(local.toEpochSecond(ofHours(-2)), 123456000);
+
+                GenericData genericDataModel = new GenericData();
+                genericDataModel.addLogicalTypeConversion(new TimeConversions.TimestampMicrosConversion());
+                var avroReader = writerTest.getAvroGenericRecordReaderWithModel(genericDataModel);
+                assertEquals(expected1, avroReader.read().get("value"));
+                assertEquals(expected2, avroReader.read().get("value"));
+
+                var carpetReader = writerTest.getCarpetReader();
+                assertEquals(expected1, carpetReader.read().value());
+                assertEquals(expected2, carpetReader.read().value());
+            }
+
+            @Test
+            void nanos() throws IOException {
+                var writerTest = new ParquetWriterTest<>(InstantRecord.class)
+                        .withTimeUnit(TimeUnit.NANOS);
+                writerTest.write(rec1, rec2);
+
+                Instant expected1 = Instant.ofEpochSecond(local.toEpochSecond(ofHours(2)), 987654321);
+                Instant expected2 = Instant.ofEpochSecond(local.toEpochSecond(ofHours(-2)), 123456789);
+
+                var carpetReader = writerTest.getCarpetReader();
+                assertEquals(expected1, carpetReader.read().value());
+                assertEquals(expected2, carpetReader.read().value());
+            }
+        }
+
+        @Nested
+        class LocalDateTimeType {
+
+            record LocalDateTimeRecord(LocalDateTime value) {
+            }
+
+            private final LocalDateTime local1 = LocalDateTime.of(2024, 5, 3, 15, 31, 11, 987654321);
+            private final LocalDateTime local2 = LocalDateTime.of(2024, 5, 3, 23, 59, 59, 123456789);
+            private final LocalDateTimeRecord rec1 = new LocalDateTimeRecord(local1);
+            private final LocalDateTimeRecord rec2 = new LocalDateTimeRecord(local2);
+
+            @Test
+            @Disabled("Waiting for 1.14.0 release")
+            void millis() throws IOException {
+                var writerTest = new ParquetWriterTest<>(LocalDateTimeRecord.class)
+                        .withTimeUnit(TimeUnit.MILLIS);
+                writerTest.write(rec1, rec2);
+
+                LocalDateTime expected1 = LocalDateTime.of(2024, 5, 3, 15, 31, 11, 987000000);
+                LocalDateTime expected2 = LocalDateTime.of(2024, 5, 3, 23, 59, 59, 123000000);
+
+                GenericData genericDataModel = new GenericData();
+                genericDataModel.addLogicalTypeConversion(new TimeConversions.LocalTimestampMillisConversion());
+                var avroReader = writerTest.getAvroGenericRecordReaderWithModel(genericDataModel);
+                assertEquals(expected1, avroReader.read().get("value"));
+                assertEquals(expected2, avroReader.read().get("value"));
+
+                var carpetReader = writerTest.getCarpetReader();
+                assertEquals(expected1, carpetReader.read().value());
+                assertEquals(expected2, carpetReader.read().value());
+            }
+
+            @Test
+            // Remove after 1.14.0 release
+            void millisByLong() throws IOException {
+                var writerTest = new ParquetWriterTest<>(LocalDateTimeRecord.class)
+                        .withTimeUnit(TimeUnit.MILLIS);
+                writerTest.write(rec1, rec2);
+
+                LocalDateTime expected1 = LocalDateTime.of(2024, 5, 3, 15, 31, 11, 987000000);
+                LocalDateTime expected2 = LocalDateTime.of(2024, 5, 3, 23, 59, 59, 123000000);
+
+                var avroReader = writerTest.getAvroGenericRecordReader();
+                assertEquals(expected1.toEpochSecond(ZoneOffset.UTC) * 1000 + 987, avroReader.read().get("value"));
+                assertEquals(expected2.toEpochSecond(ZoneOffset.UTC) * 1000 + 123, avroReader.read().get("value"));
+
+                var carpetReader = writerTest.getCarpetReader();
+                assertEquals(expected1, carpetReader.read().value());
+                assertEquals(expected2, carpetReader.read().value());
+            }
+
+            @Test
+            @Disabled("Waiting for 1.14.0 release")
+            void micros() throws IOException {
+                var writerTest = new ParquetWriterTest<>(LocalDateTimeRecord.class)
+                        .withTimeUnit(TimeUnit.MICROS);
+                writerTest.write(rec1, rec2);
+
+                LocalDateTime expected1 = LocalDateTime.of(2024, 5, 3, 15, 31, 11, 987654000);
+                LocalDateTime expected2 = LocalDateTime.of(2024, 5, 3, 23, 59, 59, 123456000);
+
+                GenericData genericDataModel = new GenericData();
+                genericDataModel.addLogicalTypeConversion(new TimeConversions.LocalTimestampMicrosConversion());
+                var avroReader = writerTest.getAvroGenericRecordReaderWithModel(genericDataModel);
+                assertEquals(expected1, avroReader.read().get("value"));
+                assertEquals(expected2, avroReader.read().get("value"));
+
+                var carpetReader = writerTest.getCarpetReader();
+                assertEquals(expected1, carpetReader.read().value());
+                assertEquals(expected2, carpetReader.read().value());
+            }
+
+            @Test
+            // Remove after 1.14.0 release
+            void microsByLong() throws IOException {
+                var writerTest = new ParquetWriterTest<>(LocalDateTimeRecord.class)
+                        .withTimeUnit(TimeUnit.MICROS);
+                writerTest.write(rec1, rec2);
+
+                LocalDateTime expected1 = LocalDateTime.of(2024, 5, 3, 15, 31, 11, 987654000);
+                LocalDateTime expected2 = LocalDateTime.of(2024, 5, 3, 23, 59, 59, 123456000);
+
+                var avroReader = writerTest.getAvroGenericRecordReader();
+                assertEquals(expected1.toEpochSecond(ZoneOffset.UTC) * 1_000_000 + 987654,
+                        avroReader.read().get("value"));
+                assertEquals(expected2.toEpochSecond(ZoneOffset.UTC) * 1_000_000 + 123456,
+                        avroReader.read().get("value"));
+
+                var carpetReader = writerTest.getCarpetReader();
+                assertEquals(expected1, carpetReader.read().value());
+                assertEquals(expected2, carpetReader.read().value());
+            }
+
+            @Test
+            void nanos() throws IOException {
+                var writerTest = new ParquetWriterTest<>(LocalDateTimeRecord.class)
+                        .withTimeUnit(TimeUnit.NANOS);
+                writerTest.write(rec1, rec2);
+
+                var avroReader = writerTest.getAvroGenericRecordReader();
+                assertEquals(local1.toEpochSecond(ZoneOffset.UTC) * 1_000_000_000 + 987654321,
+                        avroReader.read().get("value"));
+                assertEquals(local2.toEpochSecond(ZoneOffset.UTC) * 1_000_000_000 + 123456789,
+                        avroReader.read().get("value"));
+
+                var carpetReader = writerTest.getCarpetReader();
+                assertEquals(local1, carpetReader.read().value());
+                assertEquals(local2, carpetReader.read().value());
+            }
+        }
     }
 
     @Nested
@@ -906,6 +1090,49 @@ class CarpetWriterTest {
             }
         }
 
+        @Nested
+        class TimeStampListWrite {
+
+            @Test
+            void localDateTimeList() throws IOException {
+
+                record LocalDateTimeList(List<LocalDateTime> values) {
+                }
+
+                LocalDateTimeList rec1 = new LocalDateTimeList(
+                        asList(LocalDateTime.of(2024, 5, 3, 8, 10, 23, 123456789), null,
+                                LocalDateTime.of(1976, 1, 15, 10, 0, 0, 0)));
+                LocalDateTimeList rec2 = new LocalDateTimeList(null);
+
+                var writerTest = new ParquetWriterTest<>(LocalDateTimeList.class)
+                        .withTimeUnit(TimeUnit.NANOS);
+                writerTest.write(rec1, rec2);
+
+                var carpetReader = writerTest.getCarpetReader();
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
+
+            @Test
+            void intantList() throws IOException {
+
+                record InstantList(List<Instant> values) {
+                }
+
+                InstantList rec1 = new InstantList(asList(
+                        LocalDateTime.of(2024, 5, 3, 8, 10, 23, 123456789).toInstant(ZoneOffset.ofHours(3)), null,
+                        LocalDateTime.of(1976, 1, 15, 10, 0, 0, 0).toInstant(ZoneOffset.ofHours(2))));
+                InstantList rec2 = new InstantList(null);
+
+                var writerTest = new ParquetWriterTest<>(InstantList.class)
+                        .withTimeUnit(TimeUnit.NANOS);
+                writerTest.write(rec1, rec2);
+
+                var carpetReader = writerTest.getCarpetReader();
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
+        }
     }
 
     @Test
