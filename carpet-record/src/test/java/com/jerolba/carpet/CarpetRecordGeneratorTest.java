@@ -21,6 +21,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -56,6 +60,37 @@ class CarpetRecordGeneratorTest {
 
         List<String> classes = generateCode("/tmp/primitiveTypes.parquet");
         assertTrue(classes.contains("record Sample(byte a, short b, int c, long d, float e, double f, boolean g) {}"));
+    }
+
+    @Test
+    void dateAndTimeTypesMillis() throws IOException {
+
+        record Sample(LocalDate localDate, LocalTime localTime, LocalDateTime localDateTime, Instant instant) {
+        }
+
+        try (var writer = new CarpetWriter<>(new FileOutputStream("/tmp/dateTimeTypesMillis.parquet"), Sample.class)) {
+            writer.write(new Sample(LocalDate.now(), LocalTime.now(), LocalDateTime.now(), Instant.now()));
+        }
+
+        List<String> classes = generateCode("/tmp/dateTimeTypesMillis.parquet");
+        assertTrue(classes.contains(
+                "record Sample(LocalDate localDate, LocalTime localTime, LocalDateTime localDateTime, Instant instant) {}"));
+    }
+
+    @Test
+    void dateAndTimeTypesNanos() throws IOException {
+
+        record Sample(LocalDate localDate, LocalTime localTime, LocalDateTime localDateTime, Instant instant) {
+        }
+
+        try (var writer = new CarpetWriter.Builder<>(new FileOutputStream("/tmp/dateTimeTypesNanos.parquet"),
+                Sample.class).withDefaultTimeUnit(TimeUnit.NANOS).build()) {
+            writer.write(new Sample(LocalDate.now(), LocalTime.now(), LocalDateTime.now(), Instant.now()));
+        }
+
+        List<String> classes = generateCode("/tmp/dateTimeTypesNanos.parquet");
+        assertTrue(classes.contains(
+                "record Sample(LocalDate localDate, LocalTime localTime, LocalDateTime localDateTime, Instant instant) {}"));
     }
 
     @Test

@@ -36,7 +36,10 @@ import org.apache.parquet.hadoop.ParquetFileReader;
 import org.apache.parquet.io.InputFile;
 import org.apache.parquet.schema.GroupType;
 import org.apache.parquet.schema.LogicalTypeAnnotation;
+import org.apache.parquet.schema.LogicalTypeAnnotation.DateLogicalTypeAnnotation;
 import org.apache.parquet.schema.LogicalTypeAnnotation.IntLogicalTypeAnnotation;
+import org.apache.parquet.schema.LogicalTypeAnnotation.TimeLogicalTypeAnnotation;
+import org.apache.parquet.schema.LogicalTypeAnnotation.TimestampLogicalTypeAnnotation;
 import org.apache.parquet.schema.MessageType;
 import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
 import org.apache.parquet.schema.Type;
@@ -256,16 +259,20 @@ public class CarpetRecordGenerator {
     }
 
     private enum BasicTypes {
-        byteType("byte", "Byte"),
-        shortType("short", "Short"),
-        intType("int", "Integer"),
-        longType("long", "Long"),
-        floatType("float", "Float"),
-        doubleType("double", "Double"),
-        booleanType("boolean", "Boolean"),
-        stringType("String", "String"),
-        enumType("String", "String"),
-        uuidType("UUID", "UUID");
+        BYTE_TYPE("byte", "Byte"),
+        SHORT_TYPE("short", "Short"),
+        INT_TYPE("int", "Integer"),
+        LONG_TYPE("long", "Long"),
+        FLOAT_TYPE("float", "Float"),
+        DOUBLE_TYPE("double", "Double"),
+        BOOLEAN_TYPE("boolean", "Boolean"),
+        STRING_TYPE("String", "String"),
+        ENUM_TYPE("String", "String"),
+        UUID_TYPE("UUID", "UUID"),
+        LOCAL_DATE_TYPE("LocalDate", "LocalDate"),
+        LOCAL_TIME_TYPE("LocalTime", "LocalTime"),
+        LOCAL_DATE_TIME_TYPE("LocalDateTime", "LocalDateTime"),
+        INSTANT_TYPE("Instant", "Instant");
 
         private final String primitive;
         private final String object;
@@ -282,10 +289,10 @@ public class CarpetRecordGenerator {
             PrimitiveTypeName typeName = parquetField.asPrimitiveType().getPrimitiveTypeName();
             BasicTypes basicType = switch (typeName) {
             case INT32 -> buildFromIntegerConverter(parquetField);
-            case INT64 -> BasicTypes.longType;
-            case FLOAT -> BasicTypes.floatType;
-            case DOUBLE -> BasicTypes.doubleType;
-            case BOOLEAN -> BasicTypes.booleanType;
+            case INT64 -> buildFromLongConverter(parquetField);
+            case FLOAT -> BasicTypes.FLOAT_TYPE;
+            case DOUBLE -> BasicTypes.DOUBLE_TYPE;
+            case BOOLEAN -> BasicTypes.BOOLEAN_TYPE;
             case BINARY -> buildFromBinaryConverter(parquetField);
             case FIXED_LEN_BYTE_ARRAY -> buildFromByteArrayConverter(parquetField);
             case INT96 -> throw new RecordTypeConversionException(typeName + " deserialization not supported");
@@ -298,21 +305,44 @@ public class CarpetRecordGenerator {
             LogicalTypeAnnotation logicalType = parquetField.getLogicalTypeAnnotation();
             if (logicalType instanceof IntLogicalTypeAnnotation intType) {
                 return switch (intType.getBitWidth()) {
-                case 8 -> BasicTypes.byteType;
-                case 16 -> BasicTypes.shortType;
-                default -> BasicTypes.intType;
+                case 8 -> BasicTypes.BYTE_TYPE;
+                case 16 -> BasicTypes.SHORT_TYPE;
+                default -> BasicTypes.INT_TYPE;
                 };
             }
-            return BasicTypes.intType;
+            if (logicalType instanceof DateLogicalTypeAnnotation) {
+                return BasicTypes.LOCAL_DATE_TYPE;
+            }
+            if (logicalType instanceof TimeLogicalTypeAnnotation) {
+                return BasicTypes.LOCAL_TIME_TYPE;
+            }
+
+            return BasicTypes.INT_TYPE;
+        }
+
+        private static BasicTypes buildFromLongConverter(Type parquetField) {
+            LogicalTypeAnnotation logicalType = parquetField.getLogicalTypeAnnotation();
+            if (logicalType instanceof TimeLogicalTypeAnnotation) {
+                return BasicTypes.LOCAL_TIME_TYPE;
+            }
+            if (logicalType instanceof TimestampLogicalTypeAnnotation timestamp) {
+                if (timestamp.isAdjustedToUTC()) {
+                    return BasicTypes.INSTANT_TYPE;
+                } else {
+                    return BasicTypes.LOCAL_DATE_TIME_TYPE;
+                }
+            }
+
+            return BasicTypes.LONG_TYPE;
         }
 
         private static BasicTypes buildFromBinaryConverter(Type parquetField) {
             LogicalTypeAnnotation logicalType = parquetField.getLogicalTypeAnnotation();
             if (stringType().equals(logicalType)) {
-                return BasicTypes.stringType;
+                return BasicTypes.STRING_TYPE;
             }
             if (enumType().equals(logicalType)) {
-                return BasicTypes.enumType;
+                return BasicTypes.ENUM_TYPE;
             }
             throw new RecordTypeConversionException(parquetField + " deserialization not supported");
         }
@@ -321,7 +351,7 @@ public class CarpetRecordGenerator {
             if (!uuidType().equals(parquetField.getLogicalTypeAnnotation())) {
                 throw new RecordTypeConversionException(parquetField + " deserialization not supported");
             }
-            return BasicTypes.uuidType;
+            return BasicTypes.UUID_TYPE;
         }
 
     }
