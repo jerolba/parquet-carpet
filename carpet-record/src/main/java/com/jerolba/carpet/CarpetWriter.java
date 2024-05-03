@@ -441,7 +441,8 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
         /**
          * Add to writer metadata to include in the generated parquet file.
          *
-         * @param extraMetaData to add
+         * @param key   of the metadata to add
+         * @param value of the metadata to add
          * @return this builder for method chaining.
          */
         public Builder<T> withExtraMetaData(String key, String value) {
@@ -481,7 +482,7 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
          * <li>microseconds</li>
          * <li>nanoseconds</li>
          *
-         * @param columnNamingStrategy an Enum configuring the strategy to use
+         * @param defaultTimeUnit an Enum configuring the resolution to use
          * @return this builder for method chaining.
          */
         public Builder<T> withDefaultTimeUnit(TimeUnit defaultTimeUnit) {
