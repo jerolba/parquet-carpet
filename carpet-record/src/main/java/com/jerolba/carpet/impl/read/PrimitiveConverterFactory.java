@@ -23,6 +23,7 @@ import java.lang.reflect.RecordComponent;
 
 import org.apache.parquet.io.api.Converter;
 import org.apache.parquet.schema.LogicalTypeAnnotation;
+import org.apache.parquet.schema.LogicalTypeAnnotation.DecimalLogicalTypeAnnotation;
 import org.apache.parquet.schema.LogicalTypeAnnotation.TimeLogicalTypeAnnotation;
 import org.apache.parquet.schema.LogicalTypeAnnotation.TimestampLogicalTypeAnnotation;
 import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
@@ -32,6 +33,7 @@ import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.impl.JavaType;
 import com.jerolba.carpet.impl.read.ReadReflection.ConstructorParams;
 import com.jerolba.carpet.impl.read.converter.BooleanConverter;
+import com.jerolba.carpet.impl.read.converter.DecimalConverter;
 import com.jerolba.carpet.impl.read.converter.EnumConverter;
 import com.jerolba.carpet.impl.read.converter.InstantConverter;
 import com.jerolba.carpet.impl.read.converter.LocalDateConverter;
@@ -145,6 +147,9 @@ class PrimitiveConverterFactory {
                 return new StringConverter(obj -> constructor.set(index, obj));
             }
             return new EnumConverter(obj -> constructor.set(index, obj), recordComponent.getType());
+        }
+        if (logicalType instanceof DecimalLogicalTypeAnnotation decimalType) {
+            return new DecimalConverter(obj -> constructor.set(index, obj), decimalType.getScale());
         }
         throw new RecordTypeConversionException(
                 type.getTypeName() + " not compatible with " + recordComponent.getName() + " field");

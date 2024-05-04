@@ -73,6 +73,10 @@ public class JavaType {
         return typeName.equals("java.util.UUID");
     }
 
+    public boolean isBigDecimal() {
+        return typeName.equals("java.math.BigDecimal");
+    }
+
     public String getTypeName() {
         return typeName;
     }
