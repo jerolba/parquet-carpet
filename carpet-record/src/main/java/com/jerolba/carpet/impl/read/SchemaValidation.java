@@ -26,6 +26,7 @@ import java.lang.reflect.RecordComponent;
 
 import org.apache.parquet.schema.GroupType;
 import org.apache.parquet.schema.LogicalTypeAnnotation;
+import org.apache.parquet.schema.LogicalTypeAnnotation.DecimalLogicalTypeAnnotation;
 import org.apache.parquet.schema.LogicalTypeAnnotation.IntLogicalTypeAnnotation;
 import org.apache.parquet.schema.LogicalTypeAnnotation.TimeLogicalTypeAnnotation;
 import org.apache.parquet.schema.LogicalTypeAnnotation.TimeUnit;
@@ -176,6 +177,9 @@ public class SchemaValidation {
             return true;
         }
         if (enumType().equals(logicalType) && (type.isString() || type.isEnum())) {
+            return true;
+        }
+        if (logicalType instanceof DecimalLogicalTypeAnnotation && type.isBigDecimal()) {
             return true;
         }
         return throwInvalidConversionException(primitiveType, type);

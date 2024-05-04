@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -45,6 +46,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import org.apache.avro.Conversions.DecimalConversion;
 import org.apache.avro.LogicalTypes;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
@@ -483,6 +485,37 @@ class CarpetReaderTest {
             try (var carpetReader = CarpetParquetReader.builder(inputFile, UuidType.class).build()) {
                 assertEquals(new UuidType(uuid1), carpetReader.read());
                 assertEquals(new UuidType(uuid2), carpetReader.read());
+            }
+        }
+
+        @Test
+        void bigDecimal() throws IOException {
+            Schema decimal = LogicalTypes.decimal(15, 2).addToSchema(Schema.create(Schema.Type.BYTES));
+            Schema schema = SchemaBuilder.builder().record("BigDecimal").fields()
+                    .name("value").type(decimal).noDefault()
+                    .endRecord();
+
+            var bigDec1 = new BigDecimal("101201020.10");
+            var bigDec2 = new BigDecimal("1120102034234.10");
+
+            var readerTest = new ParquetReaderTest(schema);
+            GenericData genericDataModel = new GenericData();
+            genericDataModel.addLogicalTypeConversion(new DecimalConversion());
+            readerTest.writerWithModel(genericDataModel, writer -> {
+                Record record = new Record(schema);
+                record.put("value", bigDec1);
+                writer.write(record);
+                record = new Record(schema);
+                record.put("value", bigDec2);
+                writer.write(record);
+            });
+
+            record BigDecimalType(BigDecimal value) {
+            }
+
+            try (var carpetReader = readerTest.getCarpetReader(BigDecimalType.class)) {
+                assertEquals(new BigDecimalType(bigDec1), carpetReader.read());
+                assertEquals(new BigDecimalType(bigDec2), carpetReader.read());
             }
         }
 

@@ -24,6 +24,7 @@ import java.util.function.Consumer;
 
 import org.apache.parquet.io.api.Converter;
 import org.apache.parquet.schema.LogicalTypeAnnotation;
+import org.apache.parquet.schema.LogicalTypeAnnotation.DecimalLogicalTypeAnnotation;
 import org.apache.parquet.schema.LogicalTypeAnnotation.TimeLogicalTypeAnnotation;
 import org.apache.parquet.schema.LogicalTypeAnnotation.TimestampLogicalTypeAnnotation;
 import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
@@ -32,6 +33,7 @@ import org.apache.parquet.schema.Type;
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.impl.JavaType;
 import com.jerolba.carpet.impl.read.converter.BooleanGenericConverter;
+import com.jerolba.carpet.impl.read.converter.DecimalConverter;
 import com.jerolba.carpet.impl.read.converter.EnumConverter;
 import com.jerolba.carpet.impl.read.converter.InstantConverter;
 import com.jerolba.carpet.impl.read.converter.LocalDateConverter;
@@ -142,6 +144,9 @@ class PrimitiveGenericConverterFactory {
                 return new StringConverter(consumer);
             }
             return new EnumConverter(consumer, type.getJavaType());
+        }
+        if (logicalType instanceof DecimalLogicalTypeAnnotation decimalType) {
+            return new DecimalConverter(consumer, decimalType.getScale());
         }
         throw new RecordTypeConversionException(
                 type.getTypeName() + " not compatible with " + schemaType.getName() + " field");

@@ -43,6 +43,7 @@ import org.apache.parquet.io.api.Converter;
 import org.apache.parquet.io.api.GroupConverter;
 import org.apache.parquet.schema.GroupType;
 import org.apache.parquet.schema.LogicalTypeAnnotation;
+import org.apache.parquet.schema.LogicalTypeAnnotation.DecimalLogicalTypeAnnotation;
 import org.apache.parquet.schema.LogicalTypeAnnotation.IntLogicalTypeAnnotation;
 import org.apache.parquet.schema.LogicalTypeAnnotation.TimeLogicalTypeAnnotation;
 import org.apache.parquet.schema.LogicalTypeAnnotation.TimestampLogicalTypeAnnotation;
@@ -52,6 +53,7 @@ import org.apache.parquet.schema.Type.Repetition;
 
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.impl.read.converter.BooleanGenericConverter;
+import com.jerolba.carpet.impl.read.converter.DecimalConverter;
 import com.jerolba.carpet.impl.read.converter.InstantConverter;
 import com.jerolba.carpet.impl.read.converter.LocalDateConverter;
 import com.jerolba.carpet.impl.read.converter.LocalDateTimeConverter;
@@ -177,6 +179,9 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
             }
             if (enumType().equals(logicalType)) {
                 return new StringConverter(consumer);
+            }
+            if (logicalType instanceof DecimalLogicalTypeAnnotation decimalType) {
+                return new DecimalConverter(consumer, decimalType.getScale());
             }
             throw new RecordTypeConversionException(parquetField + " deserialization not supported");
         }
