@@ -54,6 +54,10 @@ class PrimitiveGenericConverterFactory {
     public static Converter buildPrimitiveGenericConverter(Type parquetField, Class<?> genericJavaType,
             Consumer<Object> consumer) {
         JavaType genericType = new JavaType(genericJavaType);
+        Converter fromLogicalType = buildFromLogicalTypeConverter(consumer, genericType, parquetField);
+        if (fromLogicalType != null) {
+            return fromLogicalType;
+        }
         PrimitiveTypeName type = parquetField.asPrimitiveType().getPrimitiveTypeName();
         return switch (type) {
         case INT32, INT64 -> genericBuildFromIntConverter(consumer, genericType, parquetField);
@@ -145,9 +149,6 @@ class PrimitiveGenericConverterFactory {
             }
             return new EnumConverter(consumer, type.getJavaType());
         }
-        if (logicalType instanceof DecimalLogicalTypeAnnotation decimalType) {
-            return new DecimalConverter(consumer, decimalType.getScale());
-        }
         throw new RecordTypeConversionException(
                 type.getTypeName() + " not compatible with " + schemaType.getName() + " field");
     }
@@ -165,6 +166,16 @@ class PrimitiveGenericConverterFactory {
         }
         throw new RecordTypeConversionException(
                 type.getTypeName() + " not compatible with " + schemaType.getName() + " field");
+    }
+
+    private static Converter buildFromLogicalTypeConverter(Consumer<Object> consumer, JavaType type,
+            Type schemaType) {
+        var logicalTypeAnnotation = schemaType.getLogicalTypeAnnotation();
+        var primitiveType = schemaType.asPrimitiveType();
+        if (logicalTypeAnnotation instanceof DecimalLogicalTypeAnnotation decimalType) {
+            return new DecimalConverter(consumer, primitiveType.getPrimitiveTypeName(), decimalType.getScale());
+        }
+        return null;
     }
 
 }

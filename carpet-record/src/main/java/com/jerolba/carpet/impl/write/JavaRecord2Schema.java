@@ -19,6 +19,7 @@ import static com.jerolba.carpet.impl.NotNullField.isNotNull;
 import static com.jerolba.carpet.impl.Parameterized.getParameterizedCollection;
 import static com.jerolba.carpet.impl.Parameterized.getParameterizedMap;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.dateType;
+import static org.apache.parquet.schema.LogicalTypeAnnotation.decimalType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.enumType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.intType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.stringType;
@@ -212,6 +213,9 @@ public class JavaRecord2Schema {
                     .length(UUIDLogicalTypeAnnotation.BYTES)
                     .named(name);
         }
+        if (javaType.isBigDecimal()) {
+            return decimalTypeItem(repetition, name);
+        }
         PrimitiveType dateTypeItems = dateTypeItems(javaType, repetition, name);
         if (dateTypeItems != null) {
             return dateTypeItems;
@@ -275,6 +279,22 @@ public class JavaRecord2Schema {
         case MICROS -> LogicalTypeAnnotation.TimeUnit.MICROS;
         case NANOS -> LogicalTypeAnnotation.TimeUnit.NANOS;
         };
+    }
+
+    private Type decimalTypeItem(Repetition repetition, String name) {
+        DecimalConfig decimalConfig = carpetConfiguration.decimalConfig();
+        if (decimalConfig == null) {
+            throw new RecordTypeConversionException("If BigDecimall is used, a Default Decimal configuration "
+                    + "must be provided in the setup of CarpetWriter builder");
+        }
+        var decimalType = decimalType(decimalConfig.scale(), decimalConfig.precision());
+        if (decimalConfig.precision() <= 9) {
+            return Types.primitive(PrimitiveTypeName.INT32, repetition).as(decimalType).named(name);
+        }
+        if (decimalConfig.precision() <= 18) {
+            return Types.primitive(PrimitiveTypeName.INT64, repetition).as(decimalType).named(name);
+        }
+        return Types.primitive(PrimitiveTypeName.BINARY, repetition).as(decimalType).named(name);
     }
 
     private void validateNotVisitedRecord(Class<?> recordClass, Set<Class<?>> visited) {

@@ -125,6 +125,10 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
     private static class PrimitiveConverterFactory {
 
         static Converter buildConverters(Type parquetField, Consumer<Object> consumer) {
+            Converter fromLogicalType = buildFromLogicalTypeConverter(parquetField, consumer);
+            if (fromLogicalType != null) {
+                return fromLogicalType;
+            }
             PrimitiveTypeName type = parquetField.asPrimitiveType().getPrimitiveTypeName();
             return switch (type) {
             case INT32 -> buildFromIntegerConverter(parquetField, consumer);
@@ -154,13 +158,6 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
             if (logicalType instanceof TimeLogicalTypeAnnotation time) {
                 return new LocalTimeConverter(consumer, time.getUnit());
             }
-            if (logicalType instanceof TimestampLogicalTypeAnnotation timeStamp) {
-                if (timeStamp.isAdjustedToUTC()) {
-                    return new InstantConverter(consumer, timeStamp.getUnit());
-                } else {
-                    return new LocalDateTimeConverter(consumer, timeStamp.getUnit());
-                }
-            }
             return new ToIntegerGenericConverter(consumer);
         }
 
@@ -168,6 +165,13 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
             LogicalTypeAnnotation logicalType = parquetField.getLogicalTypeAnnotation();
             if (logicalType instanceof TimeLogicalTypeAnnotation time) {
                 return new LocalTimeConverter(consumer, time.getUnit());
+            }
+            if (logicalType instanceof TimestampLogicalTypeAnnotation timeStamp) {
+                if (timeStamp.isAdjustedToUTC()) {
+                    return new InstantConverter(consumer, timeStamp.getUnit());
+                } else {
+                    return new LocalDateTimeConverter(consumer, timeStamp.getUnit());
+                }
             }
             return new ToLongGenericConverter(consumer);
         }
@@ -180,9 +184,6 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
             if (enumType().equals(logicalType)) {
                 return new StringConverter(consumer);
             }
-            if (logicalType instanceof DecimalLogicalTypeAnnotation decimalType) {
-                return new DecimalConverter(consumer, decimalType.getScale());
-            }
             throw new RecordTypeConversionException(parquetField + " deserialization not supported");
         }
 
@@ -193,6 +194,14 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
             return new UuidToUuidConverter(consumer);
         }
 
+        private static Converter buildFromLogicalTypeConverter(Type parquetField, Consumer<Object> consumer) {
+            var logicalTypeAnnotation = parquetField.getLogicalTypeAnnotation();
+            var primitiveType = parquetField.asPrimitiveType();
+            if (logicalTypeAnnotation instanceof DecimalLogicalTypeAnnotation decimalType) {
+                return new DecimalConverter(consumer, primitiveType.getPrimitiveTypeName(), decimalType.getScale());
+            }
+            return null;
+        }
     }
 
     private Converter createSingleLevelConverter(int idx, String name, Type parquetField, GroupMapHolder mapHolder) {

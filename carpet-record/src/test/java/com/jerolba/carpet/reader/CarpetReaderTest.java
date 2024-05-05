@@ -488,35 +488,71 @@ class CarpetReaderTest {
             }
         }
 
-        @Test
-        void bigDecimal() throws IOException {
-            Schema decimal = LogicalTypes.decimal(15, 2).addToSchema(Schema.create(Schema.Type.BYTES));
-            Schema schema = SchemaBuilder.builder().record("BigDecimal").fields()
-                    .name("value").type(decimal).noDefault()
-                    .endRecord();
+        @Nested
+        class ReadBigDecimal {
 
-            var bigDec1 = new BigDecimal("101201020.10");
-            var bigDec2 = new BigDecimal("1120102034234.10");
+            @Test
+            void bigDecimal() throws IOException {
+                Schema decimal = LogicalTypes.decimal(15, 2).addToSchema(Schema.create(Schema.Type.BYTES));
+                Schema schema = SchemaBuilder.builder().record("BigDecimal").fields()
+                        .name("value").type(decimal).noDefault()
+                        .endRecord();
 
-            var readerTest = new ParquetReaderTest(schema);
-            GenericData genericDataModel = new GenericData();
-            genericDataModel.addLogicalTypeConversion(new DecimalConversion());
-            readerTest.writerWithModel(genericDataModel, writer -> {
-                Record record = new Record(schema);
-                record.put("value", bigDec1);
-                writer.write(record);
-                record = new Record(schema);
-                record.put("value", bigDec2);
-                writer.write(record);
-            });
+                var bigDec1 = new BigDecimal("101201020.10");
+                var bigDec2 = new BigDecimal("1120102034234.10");
 
-            record BigDecimalType(BigDecimal value) {
+                var readerTest = new ParquetReaderTest(schema);
+                GenericData genericDataModel = new GenericData();
+                genericDataModel.addLogicalTypeConversion(new DecimalConversion());
+                readerTest.writerWithModel(genericDataModel, writer -> {
+                    Record record = new Record(schema);
+                    record.put("value", bigDec1);
+                    writer.write(record);
+                    record = new Record(schema);
+                    record.put("value", bigDec2);
+                    writer.write(record);
+                });
+
+                record BigDecimalType(BigDecimal value) {
+                }
+
+                try (var carpetReader = readerTest.getCarpetReader(BigDecimalType.class)) {
+                    assertEquals(new BigDecimalType(bigDec1), carpetReader.read());
+                    assertEquals(new BigDecimalType(bigDec2), carpetReader.read());
+                }
             }
 
-            try (var carpetReader = readerTest.getCarpetReader(BigDecimalType.class)) {
-                assertEquals(new BigDecimalType(bigDec1), carpetReader.read());
-                assertEquals(new BigDecimalType(bigDec2), carpetReader.read());
+            @Test
+            void fromFixedByteArray() throws IOException {
+                Schema decimal = LogicalTypes.decimal(15, 2).addToSchema(Schema.createFixed(null, null, null, 7));
+                Schema schema = SchemaBuilder.builder().record("BigDecimal").fields()
+                        .name("value").type(decimal).noDefault()
+                        .endRecord();
+
+                var bigDec1 = new BigDecimal("101201020.10");
+                var bigDec2 = new BigDecimal("1120102034234.10");
+
+                var readerTest = new ParquetReaderTest(schema);
+                GenericData genericDataModel = new GenericData();
+                genericDataModel.addLogicalTypeConversion(new DecimalConversion());
+                readerTest.writerWithModel(genericDataModel, writer -> {
+                    Record record = new Record(schema);
+                    record.put("value", bigDec1);
+                    writer.write(record);
+                    record = new Record(schema);
+                    record.put("value", bigDec2);
+                    writer.write(record);
+                });
+
+                record BigDecimalType(BigDecimal value) {
+                }
+
+                try (var carpetReader = readerTest.getCarpetReader(BigDecimalType.class)) {
+                    assertEquals(new BigDecimalType(bigDec1), carpetReader.read());
+                    assertEquals(new BigDecimalType(bigDec2), carpetReader.read());
+                }
             }
+
         }
 
         @Test
