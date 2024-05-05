@@ -20,7 +20,9 @@ import static com.jerolba.carpet.TimeUnit.MILLIS;
 import static com.jerolba.carpet.TimeUnit.NANOS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -40,6 +42,7 @@ import com.jerolba.carpet.TimeUnit;
 import com.jerolba.carpet.annotation.Alias;
 import com.jerolba.carpet.annotation.NotNull;
 import com.jerolba.carpet.impl.write.CarpetWriteConfiguration;
+import com.jerolba.carpet.impl.write.DecimalConfig;
 import com.jerolba.carpet.impl.write.JavaRecord2Schema;
 
 class JavaRecord2SchemaTest {
@@ -47,7 +50,7 @@ class JavaRecord2SchemaTest {
     private final ColumnNamingStrategy defaultNaming = ColumnNamingStrategy.FIELD_NAME;
     private final TimeUnit defaultTimeUnit = MILLIS;
     private final CarpetWriteConfiguration default3Levels = new CarpetWriteConfiguration(AnnotatedLevels.THREE,
-            defaultNaming, defaultTimeUnit);
+            defaultNaming, defaultTimeUnit, null);
     private final JavaRecord2Schema defaultConfigSchema = new JavaRecord2Schema(default3Levels);
 
     @Test
@@ -122,6 +125,155 @@ class JavaRecord2SchemaTest {
         assertEquals(expected, schema.toString());
     }
 
+    @Nested
+    class DecimalConfiguration {
+
+        CarpetWriteConfiguration config = new CarpetWriteConfiguration(AnnotatedLevels.THREE,
+                defaultNaming, defaultTimeUnit, new DecimalConfig(20, 4));
+        JavaRecord2Schema globalConfigSchema = new JavaRecord2Schema(config);
+
+        @Test
+        void recordField() {
+            record RecordFieldDecimal(BigDecimal value) {
+            }
+
+            MessageType schema = globalConfigSchema.createSchema(RecordFieldDecimal.class);
+            String expected = """
+                    message RecordFieldDecimal {
+                      optional binary value (DECIMAL(20,4));
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void intPrecision() {
+            record RecordFieldDecimal(BigDecimal value) {
+            }
+
+            CarpetWriteConfiguration intPrecisionConfig = new CarpetWriteConfiguration(AnnotatedLevels.THREE,
+                    defaultNaming, defaultTimeUnit, new DecimalConfig(9, 4));
+            JavaRecord2Schema globalConfigSchema = new JavaRecord2Schema(intPrecisionConfig);
+
+            MessageType schema = globalConfigSchema.createSchema(RecordFieldDecimal.class);
+            String expected = """
+                    message RecordFieldDecimal {
+                      optional int32 value (DECIMAL(9,4));
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void longPrecision() {
+            record RecordFieldDecimal(BigDecimal value) {
+            }
+
+            CarpetWriteConfiguration longPrecisionConfig = new CarpetWriteConfiguration(AnnotatedLevels.THREE,
+                    defaultNaming, defaultTimeUnit, new DecimalConfig(18, 8));
+            JavaRecord2Schema globalConfigSchema = new JavaRecord2Schema(longPrecisionConfig);
+
+            MessageType schema = globalConfigSchema.createSchema(RecordFieldDecimal.class);
+            String expected = """
+                    message RecordFieldDecimal {
+                      optional int64 value (DECIMAL(18,8));
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void invalidConfig() {
+            assertThrowsExactly(IllegalArgumentException.class, () -> new DecimalConfig(0, 8));
+            assertThrowsExactly(IllegalArgumentException.class, () -> new DecimalConfig(10, -1));
+            assertThrowsExactly(IllegalArgumentException.class, () -> new DecimalConfig(12, 13));
+        }
+
+        @Test
+        void collectionValue() {
+            record CollectionDecimalValue(List<BigDecimal> value) {
+            }
+
+            MessageType schema = globalConfigSchema.createSchema(CollectionDecimalValue.class);
+            String expected = """
+                    message CollectionDecimalValue {
+                      optional group value (LIST) {
+                        repeated group list {
+                          optional binary element (DECIMAL(20,4));
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedCollectionValue() {
+            record NestedCollectionDecimalValue(List<List<BigDecimal>> value) {
+            }
+
+            MessageType schema = globalConfigSchema.createSchema(NestedCollectionDecimalValue.class);
+            String expected = """
+                    message NestedCollectionDecimalValue {
+                      optional group value (LIST) {
+                        repeated group list {
+                          optional group element (LIST) {
+                            repeated group list {
+                              optional binary element (DECIMAL(20,4));
+                            }
+                          }
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void mapKeyAndValue() {
+            record MapKeyValueDecimals(Map<BigDecimal, BigDecimal> value) {
+            }
+
+            MessageType schema = globalConfigSchema.createSchema(MapKeyValueDecimals.class);
+            String expected = """
+                    message MapKeyValueDecimals {
+                      optional group value (MAP) {
+                        repeated group key_value {
+                          required binary key (DECIMAL(20,4));
+                          optional binary value (DECIMAL(20,4));
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedMapKeyAndValue() {
+            record NestedMapKeyValueDecimal(Map<BigDecimal, Map<BigDecimal, BigDecimal>> value) {
+            }
+
+            MessageType schema = globalConfigSchema.createSchema(NestedMapKeyValueDecimal.class);
+            String expected = """
+                    message NestedMapKeyValueDecimal {
+                      optional group value (MAP) {
+                        repeated group key_value {
+                          required binary key (DECIMAL(20,4));
+                          optional group value (MAP) {
+                            repeated group key_value {
+                              required binary key (DECIMAL(20,4));
+                              optional binary value (DECIMAL(20,4));
+                            }
+                          }
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+    }
+
     @Test
     void dateTypesRecordTest() {
         record DateTypesRecord(LocalDate localDate, LocalTime localTime, Instant instant, LocalDateTime localDateTime) {
@@ -147,7 +299,7 @@ class JavaRecord2SchemaTest {
 
         @Test
         void millis() {
-            var cfg = new CarpetWriteConfiguration(AnnotatedLevels.THREE, defaultNaming, MILLIS);
+            var cfg = new CarpetWriteConfiguration(AnnotatedLevels.THREE, defaultNaming, MILLIS, null);
             var schemaMapper = new JavaRecord2Schema(cfg);
             MessageType schema = schemaMapper.createSchema(TimeRecord.class);
             String expected = """
@@ -160,7 +312,7 @@ class JavaRecord2SchemaTest {
 
         @Test
         void micros() {
-            var cfg = new CarpetWriteConfiguration(AnnotatedLevels.THREE, defaultNaming, MICROS);
+            var cfg = new CarpetWriteConfiguration(AnnotatedLevels.THREE, defaultNaming, MICROS, null);
             var schemaMapper = new JavaRecord2Schema(cfg);
             MessageType schema = schemaMapper.createSchema(TimeRecord.class);
             String expected = """
@@ -173,7 +325,7 @@ class JavaRecord2SchemaTest {
 
         @Test
         void nanos() {
-            var cfg = new CarpetWriteConfiguration(AnnotatedLevels.THREE, defaultNaming, NANOS);
+            var cfg = new CarpetWriteConfiguration(AnnotatedLevels.THREE, defaultNaming, NANOS, null);
             var schemaMapper = new JavaRecord2Schema(cfg);
             MessageType schema = schemaMapper.createSchema(TimeRecord.class);
             String expected = """
@@ -197,7 +349,7 @@ class JavaRecord2SchemaTest {
 
             @Test
             void millis() {
-                var cfg = new CarpetWriteConfiguration(AnnotatedLevels.THREE, defaultNaming, MILLIS);
+                var cfg = new CarpetWriteConfiguration(AnnotatedLevels.THREE, defaultNaming, MILLIS, null);
                 var schemaMapper = new JavaRecord2Schema(cfg);
                 MessageType schema = schemaMapper.createSchema(TimeStampRecord.class);
                 String expected = """
@@ -210,7 +362,7 @@ class JavaRecord2SchemaTest {
 
             @Test
             void micros() {
-                var cfg = new CarpetWriteConfiguration(AnnotatedLevels.THREE, defaultNaming, MICROS);
+                var cfg = new CarpetWriteConfiguration(AnnotatedLevels.THREE, defaultNaming, MICROS, null);
                 var schemaMapper = new JavaRecord2Schema(cfg);
                 MessageType schema = schemaMapper.createSchema(TimeStampRecord.class);
                 String expected = """
@@ -223,7 +375,7 @@ class JavaRecord2SchemaTest {
 
             @Test
             void nanos() {
-                var cfg = new CarpetWriteConfiguration(AnnotatedLevels.THREE, defaultNaming, NANOS);
+                var cfg = new CarpetWriteConfiguration(AnnotatedLevels.THREE, defaultNaming, NANOS, null);
                 var schemaMapper = new JavaRecord2Schema(cfg);
                 MessageType schema = schemaMapper.createSchema(TimeStampRecord.class);
                 String expected = """
@@ -243,7 +395,7 @@ class JavaRecord2SchemaTest {
 
             @Test
             void millis() {
-                var cfg = new CarpetWriteConfiguration(AnnotatedLevels.THREE, defaultNaming, MILLIS);
+                var cfg = new CarpetWriteConfiguration(AnnotatedLevels.THREE, defaultNaming, MILLIS, null);
                 var schemaMapper = new JavaRecord2Schema(cfg);
                 MessageType schema = schemaMapper.createSchema(TimeStampRecord.class);
                 String expected = """
@@ -256,7 +408,7 @@ class JavaRecord2SchemaTest {
 
             @Test
             void micros() {
-                var cfg = new CarpetWriteConfiguration(AnnotatedLevels.THREE, defaultNaming, MICROS);
+                var cfg = new CarpetWriteConfiguration(AnnotatedLevels.THREE, defaultNaming, MICROS, null);
                 var schemaMapper = new JavaRecord2Schema(cfg);
                 MessageType schema = schemaMapper.createSchema(TimeStampRecord.class);
                 String expected = """
@@ -269,7 +421,7 @@ class JavaRecord2SchemaTest {
 
             @Test
             void nanos() {
-                var cfg = new CarpetWriteConfiguration(AnnotatedLevels.THREE, defaultNaming, NANOS);
+                var cfg = new CarpetWriteConfiguration(AnnotatedLevels.THREE, defaultNaming, NANOS, null);
                 var schemaMapper = new JavaRecord2Schema(cfg);
                 MessageType schema = schemaMapper.createSchema(TimeStampRecord.class);
                 String expected = """
@@ -441,7 +593,7 @@ class JavaRecord2SchemaTest {
     class NestedCollection1Level {
 
         private final CarpetWriteConfiguration oneLevel = new CarpetWriteConfiguration(AnnotatedLevels.ONE,
-                defaultNaming, defaultTimeUnit);
+                defaultNaming, defaultTimeUnit, null);
         private final JavaRecord2Schema schemaFactory = new JavaRecord2Schema(oneLevel);
 
         @Test
@@ -523,7 +675,7 @@ class JavaRecord2SchemaTest {
     class NestedCollection2Level {
 
         private final CarpetWriteConfiguration twoLevel = new CarpetWriteConfiguration(AnnotatedLevels.TWO,
-                defaultNaming, defaultTimeUnit);
+                defaultNaming, defaultTimeUnit, null);
         private final JavaRecord2Schema schemaFactory = new JavaRecord2Schema(twoLevel);
 
         @Test
@@ -1410,7 +1562,7 @@ class JavaRecord2SchemaTest {
         class ToSnakeCase {
 
             private final CarpetWriteConfiguration snakeCase = new CarpetWriteConfiguration(AnnotatedLevels.THREE,
-                    ColumnNamingStrategy.SNAKE_CASE, defaultTimeUnit);
+                    ColumnNamingStrategy.SNAKE_CASE, defaultTimeUnit, null);
             private final JavaRecord2Schema java2Schema = new JavaRecord2Schema(snakeCase);
 
             @Test

@@ -64,6 +64,10 @@ class PrimitiveConverterFactory {
     }
 
     public Converter buildConverters(Type parquetField) {
+        Converter fromLogicalType = buildFromLogicalTypeConverter(parquetField);
+        if (fromLogicalType != null) {
+            return fromLogicalType;
+        }
         PrimitiveTypeName type = parquetField.asPrimitiveType().getPrimitiveTypeName();
         return switch (type) {
         case INT32, INT64 -> buildFromIntConverter(parquetField);
@@ -148,9 +152,6 @@ class PrimitiveConverterFactory {
             }
             return new EnumConverter(obj -> constructor.set(index, obj), recordComponent.getType());
         }
-        if (logicalType instanceof DecimalLogicalTypeAnnotation decimalType) {
-            return new DecimalConverter(obj -> constructor.set(index, obj), decimalType.getScale());
-        }
         throw new RecordTypeConversionException(
                 type.getTypeName() + " not compatible with " + recordComponent.getName() + " field");
     }
@@ -167,6 +168,16 @@ class PrimitiveConverterFactory {
         }
         throw new RecordTypeConversionException(
                 parquetField + " deserialization not supported for type " + type.getTypeName());
+    }
+
+    private Converter buildFromLogicalTypeConverter(Type parquetField) {
+        var logicalTypeAnnotation = parquetField.getLogicalTypeAnnotation();
+        var primitiveType = parquetField.asPrimitiveType();
+        if (logicalTypeAnnotation instanceof DecimalLogicalTypeAnnotation decimalType) {
+            return new DecimalConverter(obj -> constructor.set(index, obj), primitiveType.getPrimitiveTypeName(),
+                    decimalType.getScale());
+        }
+        return null;
     }
 
 }

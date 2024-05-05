@@ -28,6 +28,7 @@ import org.apache.parquet.io.api.RecordConsumer;
 import org.apache.parquet.schema.MessageType;
 
 import com.jerolba.carpet.impl.write.CarpetWriteConfiguration;
+import com.jerolba.carpet.impl.write.DecimalConfig;
 import com.jerolba.carpet.impl.write.JavaRecord2Schema;
 
 public class CarpetParquetWriter {
@@ -43,6 +44,7 @@ public class CarpetParquetWriter {
         private AnnotatedLevels annotatedLevels = AnnotatedLevels.THREE;
         private ColumnNamingStrategy columnNamingStrategy = ColumnNamingStrategy.FIELD_NAME;
         private TimeUnit defaultTimeUnit = TimeUnit.MILLIS;
+        private DecimalConfig decimalConfig = null;
 
         private Builder(OutputFile file, Class<T> recordClass) {
             super(file);
@@ -82,12 +84,18 @@ public class CarpetParquetWriter {
             return self();
         }
 
+        public Builder<T> withDefaultDecimal(int precision, int scale) {
+            this.decimalConfig = new DecimalConfig(precision, scale);
+            return self();
+        }
+
         @Override
         protected WriteSupport<T> getWriteSupport(Configuration conf) {
             CarpetWriteConfiguration carpetCfg = new CarpetWriteConfiguration(
                     annotatedLevels,
                     columnNamingStrategy,
-                    defaultTimeUnit);
+                    defaultTimeUnit,
+                    decimalConfig);
             return new CarpetWriterSupport<>(recordClass, extraMetaData, carpetCfg);
         }
 

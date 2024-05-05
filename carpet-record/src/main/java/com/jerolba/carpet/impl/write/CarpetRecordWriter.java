@@ -123,6 +123,8 @@ public class CarpetRecordWriter {
             return new EnumFieldWriter(f, type.getJavaType());
         } else if (type.isUuid()) {
             return new UuidFieldWriter(f);
+        } else if (type.isBigDecimal()) {
+            return new BigDecimalFieldWriter(f, recordConsumer, carpetConfiguration.decimalConfig());
         }
         return null;
     }
@@ -505,6 +507,34 @@ public class CarpetRecordWriter {
                 recordConsumer.endField(fieldName, idx);
             }
         }
+    }
+
+    public static class BigDecimalFieldWriter implements Consumer<Object> {
+
+        private final String fieldName;
+        private final int idx;
+        private final Function<Object, Object> accesor;
+        private final RecordConsumer recordConsumer;
+        private final BigDecimalWrite bigDecimalWrite;
+
+        BigDecimalFieldWriter(RecordField recordField, RecordConsumer recordConsumer, DecimalConfig decimalConfig) {
+            this.fieldName = recordField.fieldName();
+            this.idx = recordField.idx();
+            this.accesor = Reflection.recordAccessor(recordField.targetClass(), recordField.recordComponent());
+            this.recordConsumer = recordConsumer;
+            this.bigDecimalWrite = new BigDecimalWrite(decimalConfig);
+        }
+
+        @Override
+        public void accept(Object object) {
+            var value = accesor.apply(object);
+            if (value != null) {
+                recordConsumer.startField(fieldName, idx);
+                bigDecimalWrite.write(recordConsumer, value);
+                recordConsumer.endField(fieldName, idx);
+            }
+        }
+
     }
 
     private class RecordFieldWriter implements Consumer<Object> {

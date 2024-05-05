@@ -91,6 +91,8 @@ public class SimpleCollectionItemConsumerFactory {
             case MICROS -> (consumer, v) -> consumer.addLong(microsFromEpochFromInstant((Instant) v));
             case NANOS -> (consumer, v) -> consumer.addLong(nanosFromEpochFromInstant((Instant) v));
             };
+        } else if (type.isBigDecimal()) {
+            return new BigDecimalWrite(carpetConfiguration.decimalConfig())::write;
         }
         if (type.isRecord()) {
             var recordWriter = new CarpetRecordWriter(recordConsumer, type.getJavaType(), carpetConfiguration);

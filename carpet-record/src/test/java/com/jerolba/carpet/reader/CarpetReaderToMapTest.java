@@ -22,8 +22,12 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -94,18 +98,26 @@ class CarpetReaderToMapTest {
         @Test
         void convertRootGroupObjectToMap() throws IOException {
 
-            record MainTypeWrite(String id, LocalDate asLocalDate, LocalTime asLocalTime) {
+            record MainTypeWrite(String id, LocalDate asLocalDate, LocalTime asLocalTime,
+                    LocalDateTime asLocalDateTime, Instant asInstant, BigDecimal asBigDecimal) {
             }
 
-            ParquetWriterTest<MainTypeWrite> writerTest = new ParquetWriterTest<>(MainTypeWrite.class);
-            var root = new MainTypeWrite("main", LocalDate.of(2024, 4, 28), LocalTime.of(18, 44, 28, 123456789));
+            ParquetWriterTest<MainTypeWrite> writerTest = new ParquetWriterTest<>(MainTypeWrite.class)
+                    .withDecimalConfig(20, 2);
+            var root = new MainTypeWrite("main", LocalDate.of(2024, 4, 28), LocalTime.of(18, 44, 28, 123456789),
+                    LocalDateTime.of(2024, 4, 28, 18, 44, 28, 123456789),
+                    LocalDateTime.of(2024, 4, 28, 18, 44, 28, 123456789).toInstant(ZoneOffset.ofHours(1)),
+                    new BigDecimal("1234567.12"));
             writerTest.write(root);
 
             var reader = writerTest.getCarpetReader(Map.class);
             var expected = Map.of(
                     "id", "main",
                     "asLocalDate", LocalDate.of(2024, 4, 28),
-                    "asLocalTime", LocalTime.of(18, 44, 28, 123000000));
+                    "asLocalTime", LocalTime.of(18, 44, 28, 123000000),
+                    "asLocalDateTime", LocalDateTime.of(2024, 4, 28, 18, 44, 28, 123000000),
+                    "asInstant", LocalDateTime.of(2024, 4, 28, 18, 44, 28, 123000000).toInstant(ZoneOffset.ofHours(1)),
+                    "asBigDecimal", new BigDecimal("1234567.12"));
             Map<String, Object> actual = reader.read();
             assertEquals(expected, actual);
         }

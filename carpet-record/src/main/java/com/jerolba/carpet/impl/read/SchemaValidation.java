@@ -32,6 +32,7 @@ import org.apache.parquet.schema.LogicalTypeAnnotation.TimeLogicalTypeAnnotation
 import org.apache.parquet.schema.LogicalTypeAnnotation.TimeUnit;
 import org.apache.parquet.schema.LogicalTypeAnnotation.TimestampLogicalTypeAnnotation;
 import org.apache.parquet.schema.PrimitiveType;
+import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
 import org.apache.parquet.schema.Type;
 import org.apache.parquet.schema.Type.Repetition;
 
@@ -65,6 +66,14 @@ public class SchemaValidation {
 
     public boolean validatePrimitiveCompatibility(PrimitiveType primitiveType, Class<?> javaType) {
         JavaType type = new JavaType(javaType);
+        LogicalTypeAnnotation logicalTypeAnnotation = primitiveType.getLogicalTypeAnnotation();
+        if (logicalTypeAnnotation != null) {
+            boolean valid = validLogicalTypeAnnotation(primitiveType, type);
+            if (valid) {
+                return true;
+            }
+        }
+
         return switch (primitiveType.getPrimitiveTypeName()) {
         case INT32 -> validInt32Source(primitiveType, type);
         case INT64 -> validInt64Source(primitiveType, type);
@@ -202,6 +211,20 @@ public class SchemaValidation {
             return true;
         }
         return throwInvalidConversionException(primitiveType, type);
+    }
+
+    private boolean validLogicalTypeAnnotation(PrimitiveType primitiveType, JavaType type) {
+        LogicalTypeAnnotation logicalType = primitiveType.getLogicalTypeAnnotation();
+
+        if (logicalType instanceof DecimalLogicalTypeAnnotation decimal && type.isBigDecimal()) {
+            var name = primitiveType.getPrimitiveTypeName();
+            return name == PrimitiveTypeName.INT32
+                    || name == PrimitiveTypeName.INT64
+                    || name == PrimitiveTypeName.BINARY
+                    || name == PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY;
+        }
+
+        return false;
     }
 
     private boolean throwInvalidConversionException(PrimitiveType primitiveType, JavaType type) {

@@ -21,9 +21,11 @@ import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -33,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.avro.Conversions.DecimalConversion;
 import org.apache.avro.data.TimeConversions;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
@@ -398,6 +401,99 @@ class CarpetWriterTest {
             var carpetReader = writerTest.getCarpetReader();
             assertEquals(rec1, carpetReader.read());
             assertEquals(rec2, carpetReader.read());
+        }
+
+        @Nested
+        class BigDecimalField {
+
+            record BigDecimalObject(BigDecimal value) {
+            }
+
+            @Test
+            void highPrecision() throws IOException {
+                var bigDec1 = new BigDecimal("12345678901234.56789");
+                var bigDec2 = new BigDecimal("98765432109876.54321");
+                var rec1 = new BigDecimalObject(bigDec1);
+                var rec2 = new BigDecimalObject(bigDec2);
+                var writerTest = new ParquetWriterTest<>(BigDecimalObject.class)
+                        .withDecimalConfig(20, 5);
+                writerTest.write(rec1, rec2);
+
+                GenericData genericDataModel = new GenericData();
+                genericDataModel.addLogicalTypeConversion(new DecimalConversion());
+                var avroReader = writerTest.getAvroGenericRecordReaderWithModel(genericDataModel);
+
+                assertEquals(bigDec1, avroReader.read().get("value"));
+                assertEquals(bigDec2, avroReader.read().get("value"));
+
+                var carpetReader = writerTest.getCarpetReader();
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
+
+            @Test
+            void mediumPrecision() throws IOException {
+                var bigDec1 = new BigDecimal("1234567890123.456");
+                var bigDec2 = new BigDecimal("9876543210987.654");
+                var rec1 = new BigDecimalObject(bigDec1);
+                var rec2 = new BigDecimalObject(bigDec2);
+                var writerTest = new ParquetWriterTest<>(BigDecimalObject.class)
+                        .withDecimalConfig(18, 3);
+                writerTest.write(rec1, rec2);
+
+                var carpetReader = writerTest.getCarpetReader();
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
+
+            @Test
+            void lowPrecision() throws IOException {
+                var bigDec1 = new BigDecimal("12345.6789");
+                var bigDec2 = new BigDecimal("98765.4321");
+                var rec1 = new BigDecimalObject(bigDec1);
+                var rec2 = new BigDecimalObject(bigDec2);
+                var writerTest = new ParquetWriterTest<>(BigDecimalObject.class)
+                        .withDecimalConfig(9, 4);
+                writerTest.write(rec1, rec2);
+
+                var carpetReader = writerTest.getCarpetReader();
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
+
+            @Test
+            void rescaling() throws IOException {
+                var bigDec1 = new BigDecimal("12345678901234.5");
+                var bigDec2 = new BigDecimal("98765432109876.5");
+                var rec1 = new BigDecimalObject(bigDec1);
+                var rec2 = new BigDecimalObject(bigDec2);
+                var writerTest = new ParquetWriterTest<>(BigDecimalObject.class)
+                        .withDecimalConfig(20, 5);
+                writerTest.write(rec1, rec2);
+
+                GenericData genericDataModel = new GenericData();
+                genericDataModel.addLogicalTypeConversion(new DecimalConversion());
+                var avroReader = writerTest.getAvroGenericRecordReaderWithModel(genericDataModel);
+
+                BigDecimal scaled1 = new BigDecimal("12345678901234.50000");
+                BigDecimal scaled2 = new BigDecimal("98765432109876.50000");
+                assertEquals(scaled1, avroReader.read().get("value"));
+                assertEquals(scaled2, avroReader.read().get("value"));
+
+                var carpetReader = writerTest.getCarpetReader();
+                assertEquals(scaled1, carpetReader.read().value());
+                assertEquals(scaled2, carpetReader.read().value());
+            }
+
+            @Test
+            void invalidRescaling() throws IOException {
+                var rec1 = new BigDecimalObject(new BigDecimal("12345678901234.5678"));
+                var writerTest = new ParquetWriterTest<>(BigDecimalObject.class)
+                        .withDecimalConfig(20, 2);
+                assertThrowsExactly(RecordTypeConversionException.class,
+                        () -> writerTest.write(rec1));
+            }
+
         }
 
         @Test
@@ -1132,6 +1228,24 @@ class CarpetWriterTest {
                 assertEquals(rec1, carpetReader.read());
                 assertEquals(rec2, carpetReader.read());
             }
+        }
+
+        @Test
+        void bigDecimalList() throws IOException {
+
+            record BigDecimalList(List<BigDecimal> values) {
+            }
+
+            var rec1 = new BigDecimalList(asList(new BigDecimal("1234567.123"), null, BigDecimal.TEN));
+            var rec2 = new BigDecimalList(null);
+            var writerTest = new ParquetWriterTest<>(BigDecimalList.class)
+                    .withDecimalConfig(20, 3);
+            writerTest.write(rec1, rec2);
+
+            var carpetReader = writerTest.getCarpetReader();
+            assertEquals(new BigDecimalList(asList(new BigDecimal("1234567.123"), null, new BigDecimal("10.000"))),
+                    carpetReader.read());
+            assertEquals(rec2, carpetReader.read());
         }
     }
 

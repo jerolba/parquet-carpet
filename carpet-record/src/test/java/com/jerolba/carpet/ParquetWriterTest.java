@@ -43,6 +43,8 @@ public class ParquetWriterTest<T> {
     private AnnotatedLevels level = AnnotatedLevels.THREE;
     private ColumnNamingStrategy nameStrategy = ColumnNamingStrategy.FIELD_NAME;
     private TimeUnit timeUnit = TimeUnit.MILLIS;
+    private Integer precision;
+    private Integer scale;
 
     public ParquetWriterTest(Class<T> type) {
         String fileName = type.getName() + ".parquet";
@@ -72,18 +74,27 @@ public class ParquetWriterTest<T> {
         return this;
     }
 
+    public ParquetWriterTest<T> withDecimalConfig(int precision, int scale) {
+        this.precision = precision;
+        this.scale = scale;
+        return this;
+    }
+
     public void write(T... values) throws IOException {
         write(List.of(values));
     }
 
     public void write(Collection<T> values) throws IOException {
         OutputStreamOutputFile output = new OutputStreamOutputFile(new FileOutputStream(path));
-        try (ParquetWriter<T> writer = CarpetParquetWriter.builder(output, type)
+        var builder = CarpetParquetWriter.builder(output, type)
                 .withLevelStructure(level)
                 .enableValidation()
                 .withColumnNamingStrategy(nameStrategy)
-                .withDefaultTimeUnit(timeUnit)
-                .build()) {
+                .withDefaultTimeUnit(timeUnit);
+        if (precision != null) {
+            builder = builder.withDefaultDecimal(precision, scale);
+        }
+        try (ParquetWriter<T> writer = builder.build()) {
             for (var v : values) {
                 writer.write(v);
             }

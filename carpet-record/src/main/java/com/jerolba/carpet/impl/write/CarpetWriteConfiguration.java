@@ -24,13 +24,16 @@ public class CarpetWriteConfiguration {
     private final AnnotatedLevels annotatedLevels;
     private final ColumnNamingStrategy columnNamingStrategy;
     private final TimeUnit defaultTimeUnit;
+    private final DecimalConfig decimalConfig;
 
     public CarpetWriteConfiguration(AnnotatedLevels annotatedLevels,
             ColumnNamingStrategy columnNamingStrategy,
-            TimeUnit defaultTimeUnit) {
+            TimeUnit defaultTimeUnit,
+            DecimalConfig decimalConfig) {
         this.annotatedLevels = annotatedLevels;
         this.columnNamingStrategy = columnNamingStrategy;
         this.defaultTimeUnit = defaultTimeUnit;
+        this.decimalConfig = decimalConfig;
     }
 
     public AnnotatedLevels annotatedLevels() {
@@ -43,6 +46,10 @@ public class CarpetWriteConfiguration {
 
     public TimeUnit defaultTimeUnit() {
         return defaultTimeUnit;
+    }
+
+    public DecimalConfig decimalConfig() {
+        return decimalConfig;
     }
 
     public boolean defaultTimeIsAdjustedToUTC() {
