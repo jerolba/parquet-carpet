@@ -67,24 +67,24 @@ public class SchemaValidation {
     public boolean validatePrimitiveCompatibility(PrimitiveType primitiveType, Class<?> javaType) {
         JavaType type = new JavaType(javaType);
         LogicalTypeAnnotation logicalTypeAnnotation = primitiveType.getLogicalTypeAnnotation();
-        if (logicalTypeAnnotation != null) {
-            boolean valid = validLogicalTypeAnnotation(primitiveType, type);
-            if (valid) {
-                return true;
-            }
+        if (logicalTypeAnnotation != null && validLogicalTypeAnnotation(primitiveType, type)) {
+            return true;
         }
 
-        return switch (primitiveType.getPrimitiveTypeName()) {
-        case INT32 -> validInt32Source(primitiveType, type);
-        case INT64 -> validInt64Source(primitiveType, type);
-        case FLOAT -> validFloatSource(primitiveType, type);
-        case DOUBLE -> validDoubleSource(primitiveType, type);
-        case BOOLEAN -> validBooleanSource(primitiveType, type);
-        case BINARY -> validBinarySource(primitiveType, type);
-        case FIXED_LEN_BYTE_ARRAY -> validFixedLenBinarySource(primitiveType, type);
-        case INT96 -> throw new RecordTypeConversionException(type + " deserialization not supported");
+        boolean valid = switch (primitiveType.getPrimitiveTypeName()) {
+        case INT32 -> validInt32Source(type);
+        case INT64 -> validInt64Source(type);
+        case FLOAT -> validFloatSource(type);
+        case DOUBLE -> validDoubleSource(type);
+        case BOOLEAN -> validBooleanSource(type);
+        case BINARY, FIXED_LEN_BYTE_ARRAY, INT96 -> throw new RecordTypeConversionException(
+                type + " deserialization not supported");
         default -> false;
         };
+        if (!valid) {
+            return throwInvalidConversionException(primitiveType, type);
+        }
+        return valid;
     }
 
     public boolean validateNullability(Type parquetType, RecordComponent recordComponent) {
@@ -100,105 +100,47 @@ public class SchemaValidation {
         return true;
     }
 
-    private boolean validInt32Source(PrimitiveType primitiveType, JavaType type) {
+    private boolean validInt32Source(JavaType type) {
         if (type.isInteger() || type.isLong() || type.isDouble()) {
             return true;
         }
         if (!failNarrowingPrimitiveConversion) {
-            if (type.isFloat() || type.isShort() || type.isByte()) {
-                return true;
-            }
+            return (type.isFloat() || type.isShort() || type.isByte());
         }
-
-        LogicalTypeAnnotation logicalTypeAnnotation = primitiveType.getLogicalTypeAnnotation();
-        if (logicalTypeAnnotation == null) {
-            return throwInvalidConversionException(primitiveType, type);
-        }
-        if (type.isShort() && logicalTypeAnnotation.equals(INT16)) {
-            return true;
-        }
-        if (type.isByte() && logicalTypeAnnotation.equals(INT8)) {
-            return true;
-        }
-        if (type.isLocalDate() && logicalTypeAnnotation.equals(dateType())) {
-            return true;
-        }
-        if (type.isLocalTime() && logicalTypeAnnotation instanceof TimeLogicalTypeAnnotation time
-                && time.getUnit() == TimeUnit.MILLIS) {
-            return true;
-        }
-        return throwInvalidConversionException(primitiveType, type);
+        return false;
     }
 
-    private boolean validInt64Source(PrimitiveType primitiveType, JavaType type) {
+    private boolean validInt64Source(JavaType type) {
         if (type.isLong()) {
             return true;
         }
         if (!failNarrowingPrimitiveConversion) {
-            if (type.isInteger() || type.isDouble() || type.isFloat() || type.isShort() || type.isByte()) {
-                return true;
-            }
+            return (type.isInteger() || type.isDouble() || type.isFloat() || type.isShort() || type.isByte());
         }
-        LogicalTypeAnnotation logicalTypeAnnotation = primitiveType.getLogicalTypeAnnotation();
-        if (type.isLocalTime() && logicalTypeAnnotation instanceof TimeLogicalTypeAnnotation time
-                && (time.getUnit() == TimeUnit.MICROS || time.getUnit() == TimeUnit.NANOS)) {
-            return true;
-        }
-        if ((type.isLocalDateTime() || type.isInstant())
-                && logicalTypeAnnotation instanceof TimestampLogicalTypeAnnotation timeStamp) {
-            // TODO: add logic to fail about isAdjustedToUTC conversion
-            return true;
-        }
-        return throwInvalidConversionException(primitiveType, type);
+        return false;
     }
 
-    private boolean validFloatSource(PrimitiveType primitiveType, JavaType type) {
+    private boolean validFloatSource(JavaType type) {
         if (type.isDouble() || type.isFloat()) {
             return true;
         }
         if (!failNarrowingPrimitiveConversion) {
         }
-        return throwInvalidConversionException(primitiveType, type);
+        return false;
     }
 
-    private boolean validDoubleSource(PrimitiveType primitiveType, JavaType type) {
+    private boolean validDoubleSource(JavaType type) {
         if (type.isDouble()) {
             return true;
         }
         if (!failNarrowingPrimitiveConversion) {
-            if (type.isFloat()) {
-                return true;
-            }
-        }
-        return throwInvalidConversionException(primitiveType, type);
-    }
-
-    private boolean validBooleanSource(PrimitiveType primitiveType, JavaType type) {
-        if (type.isBoolean()) {
-            return true;
-        }
-        return throwInvalidConversionException(primitiveType, type);
-    }
-
-    private boolean validBinarySource(PrimitiveType primitiveType, JavaType type) {
-        LogicalTypeAnnotation logicalType = primitiveType.getLogicalTypeAnnotation();
-        if (stringType().equals(logicalType) && (type.isString() || type.isEnum())) {
-            return true;
-        }
-        if (enumType().equals(logicalType) && (type.isString() || type.isEnum())) {
-            return true;
-        }
-        if (logicalType instanceof DecimalLogicalTypeAnnotation && type.isBigDecimal()) {
-            return true;
-        }
-        return throwInvalidConversionException(primitiveType, type);
-    }
-
-    private boolean validFixedLenBinarySource(PrimitiveType parquetType, JavaType javaType) {
-        if (uuidType().equals(parquetType.getLogicalTypeAnnotation())) {
-            return validUuidSource(parquetType, javaType);
+            return type.isFloat();
         }
         return false;
+    }
+
+    private boolean validBooleanSource(JavaType type) {
+        return type.isBoolean();
     }
 
     public static boolean isBasicSupportedType(JavaType type) {
@@ -206,24 +148,47 @@ public class SchemaValidation {
                 || type.isBoolean() || type.isShort() || type.isByte() || type.isEnum());
     }
 
-    private boolean validUuidSource(PrimitiveType primitiveType, JavaType type) {
-        if (type.isString() || type.isUuid()) {
-            return true;
-        }
-        return throwInvalidConversionException(primitiveType, type);
-    }
-
     private boolean validLogicalTypeAnnotation(PrimitiveType primitiveType, JavaType type) {
-        LogicalTypeAnnotation logicalType = primitiveType.getLogicalTypeAnnotation();
+        var logicalType = primitiveType.getLogicalTypeAnnotation();
+        var name = primitiveType.getPrimitiveTypeName();
 
-        if (logicalType instanceof DecimalLogicalTypeAnnotation decimal && type.isBigDecimal()) {
-            var name = primitiveType.getPrimitiveTypeName();
+        if (stringType().equals(logicalType) && (type.isString() || type.isEnum())) {
+            return name == PrimitiveTypeName.BINARY;
+        }
+        if (enumType().equals(logicalType) && (type.isString() || type.isEnum())) {
+            return name == PrimitiveTypeName.BINARY;
+        }
+        if (logicalType.equals(uuidType()) && (type.isString() || type.isUuid())) {
+            return name == PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY;
+        }
+        if (logicalType.equals(INT16) && type.isShort()) {
+            return name == PrimitiveTypeName.INT32;
+        }
+        if (type.isByte() && logicalType.equals(INT8)) {
+            return name == PrimitiveTypeName.INT32;
+        }
+        if (logicalType instanceof DecimalLogicalTypeAnnotation && type.isBigDecimal()) {
             return name == PrimitiveTypeName.INT32
                     || name == PrimitiveTypeName.INT64
                     || name == PrimitiveTypeName.BINARY
                     || name == PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY;
         }
-
+        if (type.isLocalDate() && logicalType.equals(dateType())) {
+            return name == PrimitiveTypeName.INT32;
+        }
+        if (type.isLocalTime() && logicalType instanceof TimeLogicalTypeAnnotation time) {
+            if (time.getUnit() == TimeUnit.MILLIS) {
+                return name == PrimitiveTypeName.INT32;
+            }
+            if (time.getUnit() == TimeUnit.MICROS || time.getUnit() == TimeUnit.NANOS) {
+                return name == PrimitiveTypeName.INT64;
+            }
+        }
+        if (logicalType instanceof TimestampLogicalTypeAnnotation timeStamp
+                && (type.isLocalDateTime() || type.isInstant())) {
+            // TODO: add logic to fail about isAdjustedToUTC conversion
+            return name == PrimitiveTypeName.INT64;
+        }
         return false;
     }
 
