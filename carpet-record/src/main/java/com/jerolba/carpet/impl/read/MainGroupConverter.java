@@ -49,7 +49,7 @@ class MainGroupConverter {
         this.columnToFieldMapper = columnToFieldMapper;
     }
 
-    CarpetGroupConverter newCarpetGroupConverter(GroupType schema, Class<?> groupClass,
+    GroupConverter newCarpetGroupConverter(GroupType schema, Class<?> groupClass,
             Consumer<Object> groupConsumer) {
         return new CarpetGroupConverter(schema, groupClass, groupConsumer);
     }

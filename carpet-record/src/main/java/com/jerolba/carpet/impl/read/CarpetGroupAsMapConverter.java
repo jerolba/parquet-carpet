@@ -15,13 +15,10 @@
  */
 package com.jerolba.carpet.impl.read;
 
+import static com.jerolba.carpet.impl.read.LogicalTypeConverters.buildFromLogicalTypeConverter;
 import static java.util.stream.Collectors.toCollection;
-import static org.apache.parquet.schema.LogicalTypeAnnotation.dateType;
-import static org.apache.parquet.schema.LogicalTypeAnnotation.enumType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.listType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.mapType;
-import static org.apache.parquet.schema.LogicalTypeAnnotation.stringType;
-import static org.apache.parquet.schema.LogicalTypeAnnotation.uuidType;
 
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
@@ -43,29 +40,16 @@ import org.apache.parquet.io.api.Converter;
 import org.apache.parquet.io.api.GroupConverter;
 import org.apache.parquet.schema.GroupType;
 import org.apache.parquet.schema.LogicalTypeAnnotation;
-import org.apache.parquet.schema.LogicalTypeAnnotation.DecimalLogicalTypeAnnotation;
-import org.apache.parquet.schema.LogicalTypeAnnotation.IntLogicalTypeAnnotation;
-import org.apache.parquet.schema.LogicalTypeAnnotation.TimeLogicalTypeAnnotation;
-import org.apache.parquet.schema.LogicalTypeAnnotation.TimestampLogicalTypeAnnotation;
 import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
 import org.apache.parquet.schema.Type;
 import org.apache.parquet.schema.Type.Repetition;
 
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.impl.read.converter.BooleanGenericConverter;
-import com.jerolba.carpet.impl.read.converter.DecimalConverter;
-import com.jerolba.carpet.impl.read.converter.InstantConverter;
-import com.jerolba.carpet.impl.read.converter.LocalDateConverter;
-import com.jerolba.carpet.impl.read.converter.LocalDateTimeConverter;
-import com.jerolba.carpet.impl.read.converter.LocalTimeConverter;
-import com.jerolba.carpet.impl.read.converter.StringConverter;
-import com.jerolba.carpet.impl.read.converter.ToByteGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToDoubleGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToFloatGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToIntegerGenericConverter;
 import com.jerolba.carpet.impl.read.converter.ToLongGenericConverter;
-import com.jerolba.carpet.impl.read.converter.ToShortGenericConverter;
-import com.jerolba.carpet.impl.read.converter.UuidToUuidConverter;
 
 public class CarpetGroupAsMapConverter extends GroupConverter {
 
@@ -94,7 +78,7 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
             return createSingleLevelConverter(idx, name, schemaField, mapHolder);
         }
         if (schemaField.isPrimitive()) {
-            return PrimitiveConverterFactory.buildConverters(schemaField, consumer);
+            return buildConverters(schemaField, consumer);
         }
         GroupType asGroupType = schemaField.asGroupType();
         LogicalTypeAnnotation logicalType = asGroupType.getLogicalTypeAnnotation();
@@ -122,93 +106,28 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
         groupConsumer.accept(mapHolder.getMap());
     }
 
-    private static class PrimitiveConverterFactory {
+    private static Converter buildConverters(Type parquetField, Consumer<Object> consumer) {
 
-        static Converter buildConverters(Type parquetField, Consumer<Object> consumer) {
-            Converter fromLogicalType = buildFromLogicalTypeConverter(parquetField, consumer);
-            if (fromLogicalType != null) {
-                return fromLogicalType;
-            }
-            PrimitiveTypeName type = parquetField.asPrimitiveType().getPrimitiveTypeName();
-            return switch (type) {
-            case INT32 -> buildFromIntegerConverter(parquetField, consumer);
-            case INT64 -> buildFromLongConverter(parquetField, consumer);
-            case FLOAT -> new ToFloatGenericConverter(consumer);
-            case DOUBLE -> new ToDoubleGenericConverter(consumer);
-            case BOOLEAN -> new BooleanGenericConverter(consumer);
-            case BINARY -> buildFromBinaryConverter(parquetField, consumer);
-            case FIXED_LEN_BYTE_ARRAY -> buildFromByteArrayConverter(parquetField, consumer);
-            case INT96 -> throw new RecordTypeConversionException(type + " deserialization not supported");
-            default -> throw new RecordTypeConversionException(type + " deserialization not supported");
-            };
+        Converter fromLogicalType = buildFromLogicalTypeConverter(null, parquetField, consumer);
+        if (fromLogicalType != null) {
+            return fromLogicalType;
         }
-
-        private static Converter buildFromIntegerConverter(Type parquetField, Consumer<Object> consumer) {
-            LogicalTypeAnnotation logicalType = parquetField.getLogicalTypeAnnotation();
-            if (logicalType instanceof IntLogicalTypeAnnotation intType) {
-                return switch (intType.getBitWidth()) {
-                case 8 -> new ToByteGenericConverter(consumer);
-                case 16 -> new ToShortGenericConverter(consumer);
-                default -> new ToIntegerGenericConverter(consumer);
-                };
-            }
-            if (dateType().equals(logicalType)) {
-                return new LocalDateConverter(consumer);
-            }
-            if (logicalType instanceof TimeLogicalTypeAnnotation time) {
-                return new LocalTimeConverter(consumer, time.getUnit());
-            }
-            return new ToIntegerGenericConverter(consumer);
-        }
-
-        private static Converter buildFromLongConverter(Type parquetField, Consumer<Object> consumer) {
-            LogicalTypeAnnotation logicalType = parquetField.getLogicalTypeAnnotation();
-            if (logicalType instanceof TimeLogicalTypeAnnotation time) {
-                return new LocalTimeConverter(consumer, time.getUnit());
-            }
-            if (logicalType instanceof TimestampLogicalTypeAnnotation timeStamp) {
-                if (timeStamp.isAdjustedToUTC()) {
-                    return new InstantConverter(consumer, timeStamp.getUnit());
-                } else {
-                    return new LocalDateTimeConverter(consumer, timeStamp.getUnit());
-                }
-            }
-            return new ToLongGenericConverter(consumer);
-        }
-
-        private static Converter buildFromBinaryConverter(Type parquetField, Consumer<Object> consumer) {
-            LogicalTypeAnnotation logicalType = parquetField.getLogicalTypeAnnotation();
-            if (stringType().equals(logicalType)) {
-                return new StringConverter(consumer);
-            }
-            if (enumType().equals(logicalType)) {
-                return new StringConverter(consumer);
-            }
-            throw new RecordTypeConversionException(parquetField + " deserialization not supported");
-        }
-
-        private static Converter buildFromByteArrayConverter(Type parquetField, Consumer<Object> consumer) {
-            if (!uuidType().equals(parquetField.getLogicalTypeAnnotation())) {
-                throw new RecordTypeConversionException(parquetField + " deserialization not supported");
-            }
-            return new UuidToUuidConverter(consumer);
-        }
-
-        private static Converter buildFromLogicalTypeConverter(Type parquetField, Consumer<Object> consumer) {
-            var logicalTypeAnnotation = parquetField.getLogicalTypeAnnotation();
-            var primitiveType = parquetField.asPrimitiveType();
-            if (logicalTypeAnnotation instanceof DecimalLogicalTypeAnnotation decimalType) {
-                return new DecimalConverter(consumer, primitiveType.getPrimitiveTypeName(), decimalType.getScale());
-            }
-            return null;
-        }
+        PrimitiveTypeName type = parquetField.asPrimitiveType().getPrimitiveTypeName();
+        return switch (type) {
+        case INT32 -> new ToIntegerGenericConverter(consumer);
+        case INT64 -> new ToLongGenericConverter(consumer);
+        case FLOAT -> new ToFloatGenericConverter(consumer);
+        case DOUBLE -> new ToDoubleGenericConverter(consumer);
+        case BOOLEAN -> new BooleanGenericConverter(consumer);
+        default -> throw new RecordTypeConversionException(type + " deserialization not supported");
+        };
     }
 
     private Converter createSingleLevelConverter(int idx, String name, Type parquetField, GroupMapHolder mapHolder) {
         Consumer<Object> consumer = v -> mapHolder.getList(idx, name).add(v);
 
         if (parquetField.isPrimitive()) {
-            return PrimitiveConverterFactory.buildConverters(parquetField, consumer);
+            return buildConverters(parquetField, consumer);
         }
         var asGroupType = parquetField.asGroupType();
         if (mapType().equals(asGroupType.getLogicalTypeAnnotation())) {
@@ -255,7 +174,7 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
 
     private static Converter createCollectionConverter(Class<?> mapClass, Type listElement, Consumer<Object> consumer) {
         if (listElement.isPrimitive()) {
-            return PrimitiveConverterFactory.buildConverters(listElement, consumer);
+            return buildConverters(listElement, consumer);
         }
         GroupType groupType = listElement.asGroupType();
         LogicalTypeAnnotation logicalType = listElement.getLogicalTypeAnnotation();
@@ -352,7 +271,7 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
             // Key
             Type mapKeyType = fields.get(0);
             if (mapKeyType.isPrimitive()) {
-                converterKey = PrimitiveConverterFactory.buildConverters(mapKeyType, this::consumeKey);
+                converterKey = buildConverters(mapKeyType, this::consumeKey);
             } else {
                 converterKey = new CarpetGroupAsMapConverter(mapClass, mapKeyType.asGroupType(), this::consumeKey);
             }
@@ -360,7 +279,7 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
             // Value
             Type mapValueType = fields.get(1);
             if (mapValueType.isPrimitive()) {
-                converterValue = PrimitiveConverterFactory.buildConverters(mapValueType, this::consumeValue);
+                converterValue = buildConverters(mapValueType, this::consumeValue);
             } else {
                 LogicalTypeAnnotation logicalType = mapValueType.getLogicalTypeAnnotation();
                 GroupType groupType = mapValueType.asGroupType();
