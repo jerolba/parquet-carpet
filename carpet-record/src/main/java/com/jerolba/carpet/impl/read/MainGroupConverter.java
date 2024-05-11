@@ -17,7 +17,7 @@ package com.jerolba.carpet.impl.read;
 
 import static com.jerolba.carpet.impl.Parameterized.getParameterizedCollection;
 import static com.jerolba.carpet.impl.Parameterized.getParameterizedMap;
-import static com.jerolba.carpet.impl.read.PrimitiveGenericConverterFactory.buildPrimitiveGenericConverter;
+import static com.jerolba.carpet.impl.read.PrimitiveConverterFactory.buildPrimitiveConverter;
 import static com.jerolba.carpet.impl.read.ReadReflection.collectionFactory;
 import static com.jerolba.carpet.impl.read.ReadReflection.mapFactory;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.listType;
@@ -70,36 +70,36 @@ class MainGroupConverter {
             for (var schemaField : schema.getFields()) {
                 String name = schemaField.getName();
                 var recordComponent = mapper.getRecordComponent(name);
-                converters[cont++] = converterFor(schemaField, constructor, mapper.getIndex(name), recordComponent);
+                int idx = mapper.getIndex(name);
+                Consumer<Object> consumer = value -> constructor.set(idx, value);
+                converters[cont++] = converterFor(schemaField, constructor, mapper.getIndex(name), consumer,
+                        recordComponent);
             }
         }
 
-        Converter converterFor(Type schemaField, ConstructorParams constructor, int index,
+        Converter converterFor(Type schemaField, ConstructorParams constructor, int index, Consumer<Object> consumer,
                 RecordComponent recordComponent) {
 
             if (schemaField.isRepetition(Repetition.REPEATED)) {
                 return createSingleLevelConverter(schemaField, constructor, index, recordComponent);
             }
             if (schemaField.isPrimitive()) {
-                var factory = new PrimitiveConverterFactory(constructor, index, recordComponent);
-                return factory.buildConverters(schemaField);
+                return buildPrimitiveConverter(schemaField, recordComponent.getType(), consumer);
             }
             GroupType asGroupType = schemaField.asGroupType();
             LogicalTypeAnnotation logicalType = asGroupType.getLogicalTypeAnnotation();
             if (listType().equals(logicalType)) {
                 var parameterized = getParameterizedCollection(recordComponent);
-                return new CarpetListConverter(asGroupType, parameterized, value -> constructor.c[index] = value);
+                return new CarpetListConverter(asGroupType, parameterized, consumer);
             }
             if (mapType().equals(logicalType)) {
                 var parameterized = getParameterizedMap(recordComponent);
-                return new CarpetMapConverter(asGroupType, parameterized, value -> constructor.c[index] = value);
+                return new CarpetMapConverter(asGroupType, parameterized, consumer);
             }
             if (Map.class.isAssignableFrom(recordComponent.getType())) {
-                return new CarpetGroupAsMapConverter(recordComponent.getType(), asGroupType,
-                        value -> constructor.c[index] = value);
+                return new CarpetGroupAsMapConverter(recordComponent.getType(), asGroupType, consumer);
             }
-            return new CarpetGroupConverter(asGroupType, recordComponent.getType(),
-                    value -> constructor.c[index] = value);
+            return new CarpetGroupConverter(asGroupType, recordComponent.getType(), consumer);
         }
 
         Object getCurrentRecord() {
@@ -193,7 +193,7 @@ class MainGroupConverter {
     Converter createCollectionConverter(Type listElement, ParameterizedCollection parameterized,
             Consumer<Object> consumer) {
         if (listElement.isPrimitive()) {
-            return buildPrimitiveGenericConverter(listElement, parameterized.getActualType(), consumer);
+            return buildPrimitiveConverter(listElement, parameterized.getActualType(), consumer);
         }
         LogicalTypeAnnotation logicalType = listElement.getLogicalTypeAnnotation();
         if (logicalType != null) {
@@ -265,7 +265,7 @@ class MainGroupConverter {
             Type mapKeyType = fields.get(0);
             Class<?> mapKeyActualType = parameterized.getKeyActualType();
             if (mapKeyType.isPrimitive()) {
-                converterKey = buildPrimitiveGenericConverter(mapKeyType, mapKeyActualType, this::consumeKey);
+                converterKey = buildPrimitiveConverter(mapKeyType, mapKeyActualType, this::consumeKey);
             } else {
                 converterKey = new CarpetGroupConverter(mapKeyType.asGroupType(), mapKeyActualType, this::consumeKey);
             }
@@ -273,7 +273,7 @@ class MainGroupConverter {
             // Value
             Type mapValueType = fields.get(1);
             if (mapValueType.isPrimitive()) {
-                converterValue = buildPrimitiveGenericConverter(mapValueType, parameterized.getValueActualType(),
+                converterValue = buildPrimitiveConverter(mapValueType, parameterized.getValueActualType(),
                         this::consumeValue);
                 return;
             }
@@ -353,14 +353,16 @@ class MainGroupConverter {
         var collectionFactory = collectionFactory(parameterized.getCollectionType());
 
         Consumer<Object> consumer = v -> {
-            if (constructor.c[index] == null) {
-                constructor.c[index] = collectionFactory.get();
+            Object currentCollection = constructor.get(index);
+            if (currentCollection == null) {
+                currentCollection = collectionFactory.get();
+                constructor.set(index, currentCollection);
             }
-            ((Collection) constructor.c[index]).add(v);
+            ((Collection) currentCollection).add(v);
         };
 
         if (parquetField.isPrimitive()) {
-            return buildPrimitiveGenericConverter(parquetField, parameterized.getActualType(), consumer);
+            return buildPrimitiveConverter(parquetField, parameterized.getActualType(), consumer);
         }
         var asGroupType = parquetField.asGroupType();
         if (parameterized.isMap()) {

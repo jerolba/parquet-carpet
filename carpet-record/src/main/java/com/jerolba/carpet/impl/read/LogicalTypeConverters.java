@@ -38,9 +38,9 @@ import com.jerolba.carpet.impl.read.converter.LocalDateConverter;
 import com.jerolba.carpet.impl.read.converter.LocalDateTimeConverter;
 import com.jerolba.carpet.impl.read.converter.LocalTimeConverter;
 import com.jerolba.carpet.impl.read.converter.StringConverter;
-import com.jerolba.carpet.impl.read.converter.ToByteGenericConverter;
-import com.jerolba.carpet.impl.read.converter.ToIntegerGenericConverter;
-import com.jerolba.carpet.impl.read.converter.ToShortGenericConverter;
+import com.jerolba.carpet.impl.read.converter.ToByteConverter;
+import com.jerolba.carpet.impl.read.converter.ToIntegerConverter;
+import com.jerolba.carpet.impl.read.converter.ToShortConverter;
 import com.jerolba.carpet.impl.read.converter.UuidToStringConverter;
 import com.jerolba.carpet.impl.read.converter.UuidToUuidConverter;
 
@@ -75,9 +75,9 @@ class LogicalTypeConverters {
 
         if (logicalTypeAnnotation instanceof IntLogicalTypeAnnotation intType) {
             return switch (intType.getBitWidth()) {
-            case 8 -> new ToByteGenericConverter(consumer);
-            case 16 -> new ToShortGenericConverter(consumer);
-            default -> new ToIntegerGenericConverter(consumer);
+            case 8 -> new ToByteConverter(consumer);
+            case 16 -> new ToShortConverter(consumer);
+            default -> new ToIntegerConverter(consumer);
             };
         }
 

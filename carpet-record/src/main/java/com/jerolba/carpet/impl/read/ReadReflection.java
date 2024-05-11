@@ -39,7 +39,7 @@ public class ReadReflection {
 
         private final Constructor<?> constructor;
         private final Object[] defaultParamsValues;
-        public final Object[] c;
+        private final Object[] c;
 
         public ConstructorParams(Class<?> recordClass) {
             constructor = findConstructor(recordClass);
@@ -59,6 +59,10 @@ public class ReadReflection {
 
         public void set(int idx, Object value) {
             c[idx] = value;
+        }
+
+        public Object get(int idx) {
+            return c[idx];
         }
 
         public void resetParams() {

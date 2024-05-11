@@ -24,17 +24,17 @@ import org.apache.parquet.io.api.PrimitiveConverter;
 public class EnumConverter extends PrimitiveConverter {
 
     private Enum<?>[] dict = null;
-    private final Consumer<Object> listConsumer;
+    private final Consumer<Object> consumer;
     private final Class<? extends Enum> asEnum;
 
-    public EnumConverter(Consumer<Object> listConsumer, Class<?> type) {
-        this.listConsumer = listConsumer;
+    public EnumConverter(Consumer<Object> consumer, Class<?> type) {
+        this.consumer = consumer;
         this.asEnum = type.asSubclass(Enum.class);
     }
 
     @Override
     public void addBinary(Binary value) {
-        listConsumer.accept(convert(value));
+        consumer.accept(convert(value));
     }
 
     @Override
@@ -53,7 +53,7 @@ public class EnumConverter extends PrimitiveConverter {
 
     @Override
     public void addValueFromDictionary(int dictionaryId) {
-        listConsumer.accept(dict[dictionaryId]);
+        consumer.accept(dict[dictionaryId]);
     }
 
     private Enum<?> convert(Binary value) {

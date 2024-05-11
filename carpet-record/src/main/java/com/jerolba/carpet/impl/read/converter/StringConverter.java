@@ -24,15 +24,15 @@ import org.apache.parquet.io.api.PrimitiveConverter;
 public class StringConverter extends PrimitiveConverter {
 
     private String[] dict = null;
-    private final Consumer<Object> listConsumer;
+    private final Consumer<Object> consumer;
 
-    public StringConverter(Consumer<Object> listConsumer) {
-        this.listConsumer = listConsumer;
+    public StringConverter(Consumer<Object> consumer) {
+        this.consumer = consumer;
     }
 
     @Override
     public void addBinary(Binary value) {
-        listConsumer.accept(convert(value));
+        consumer.accept(convert(value));
     }
 
     @Override
@@ -51,7 +51,7 @@ public class StringConverter extends PrimitiveConverter {
 
     @Override
     public void addValueFromDictionary(int dictionaryId) {
-        listConsumer.accept(dict[dictionaryId]);
+        consumer.accept(dict[dictionaryId]);
     }
 
     private String convert(Binary value) {

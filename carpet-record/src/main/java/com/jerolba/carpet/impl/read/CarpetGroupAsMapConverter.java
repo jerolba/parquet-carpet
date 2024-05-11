@@ -45,11 +45,11 @@ import org.apache.parquet.schema.Type;
 import org.apache.parquet.schema.Type.Repetition;
 
 import com.jerolba.carpet.RecordTypeConversionException;
-import com.jerolba.carpet.impl.read.converter.BooleanGenericConverter;
-import com.jerolba.carpet.impl.read.converter.ToDoubleGenericConverter;
-import com.jerolba.carpet.impl.read.converter.ToFloatGenericConverter;
-import com.jerolba.carpet.impl.read.converter.ToIntegerGenericConverter;
-import com.jerolba.carpet.impl.read.converter.ToLongGenericConverter;
+import com.jerolba.carpet.impl.read.converter.BooleanConverter;
+import com.jerolba.carpet.impl.read.converter.ToDoubleConverter;
+import com.jerolba.carpet.impl.read.converter.ToFloatConverter;
+import com.jerolba.carpet.impl.read.converter.ToIntegerConverter;
+import com.jerolba.carpet.impl.read.converter.ToLongConverter;
 
 public class CarpetGroupAsMapConverter extends GroupConverter {
 
@@ -114,11 +114,11 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
         }
         PrimitiveTypeName type = parquetField.asPrimitiveType().getPrimitiveTypeName();
         return switch (type) {
-        case INT32 -> new ToIntegerGenericConverter(consumer);
-        case INT64 -> new ToLongGenericConverter(consumer);
-        case FLOAT -> new ToFloatGenericConverter(consumer);
-        case DOUBLE -> new ToDoubleGenericConverter(consumer);
-        case BOOLEAN -> new BooleanGenericConverter(consumer);
+        case INT32 -> new ToIntegerConverter(consumer);
+        case INT64 -> new ToLongConverter(consumer);
+        case FLOAT -> new ToFloatConverter(consumer);
+        case DOUBLE -> new ToDoubleConverter(consumer);
+        case BOOLEAN -> new BooleanConverter(consumer);
         default -> throw new RecordTypeConversionException(type + " deserialization not supported");
         };
     }

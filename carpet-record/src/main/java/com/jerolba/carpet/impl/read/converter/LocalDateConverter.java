@@ -24,15 +24,15 @@ import org.apache.parquet.io.api.PrimitiveConverter;
 public class LocalDateConverter extends PrimitiveConverter {
 
     private LocalDate[] dict = null;
-    private final Consumer<Object> listConsumer;
+    private final Consumer<Object> consumer;
 
-    public LocalDateConverter(Consumer<Object> listConsumer) {
-        this.listConsumer = listConsumer;
+    public LocalDateConverter(Consumer<Object> consumer) {
+        this.consumer = consumer;
     }
 
     @Override
     public void addInt(int daysFromEpoch) {
-        listConsumer.accept(LocalDate.ofEpochDay(daysFromEpoch));
+        consumer.accept(LocalDate.ofEpochDay(daysFromEpoch));
     }
 
     @Override
@@ -51,7 +51,7 @@ public class LocalDateConverter extends PrimitiveConverter {
 
     @Override
     public void addValueFromDictionary(int dictionaryId) {
-        listConsumer.accept(dict[dictionaryId]);
+        consumer.accept(dict[dictionaryId]);
     }
 
     private LocalDate convert(int daysFromEpoch) {

@@ -17,7 +17,7 @@ package com.jerolba.carpet.impl.read;
 
 import static com.jerolba.carpet.impl.read.LogicalTypeConverters.buildFromLogicalTypeConverter;
 
-import java.lang.reflect.RecordComponent;
+import java.util.function.Consumer;
 
 import org.apache.parquet.io.api.Converter;
 import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
@@ -25,7 +25,6 @@ import org.apache.parquet.schema.Type;
 
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.impl.JavaType;
-import com.jerolba.carpet.impl.read.ReadReflection.ConstructorParams;
 import com.jerolba.carpet.impl.read.converter.BooleanConverter;
 import com.jerolba.carpet.impl.read.converter.ToByteConverter;
 import com.jerolba.carpet.impl.read.converter.ToDoubleConverter;
@@ -36,74 +35,63 @@ import com.jerolba.carpet.impl.read.converter.ToShortConverter;
 
 class PrimitiveConverterFactory {
 
-    private final RecordComponent recordComponent;
-    private final ConstructorParams constructor;
-    private final JavaType type;
-    private final int index;
+    public static Converter buildPrimitiveConverter(Type parquetField, Class<?> genericJavaType,
+            Consumer<Object> consumer) {
 
-    PrimitiveConverterFactory(ConstructorParams constructor, int index, RecordComponent recordComponent) {
-        this.recordComponent = recordComponent;
-        this.constructor = constructor;
-        this.index = index;
-        this.type = new JavaType(recordComponent);
-    }
-
-    public Converter buildConverters(Type parquetField) {
-
-        Converter fromLogicalType = buildFromLogicalTypeConverter(type, parquetField,
-                obj -> constructor.set(index, obj));
+        JavaType javaType = new JavaType(genericJavaType);
+        Converter fromLogicalType = buildFromLogicalTypeConverter(javaType, parquetField, consumer);
         if (fromLogicalType != null) {
             return fromLogicalType;
         }
-        PrimitiveTypeName primitiveType = parquetField.asPrimitiveType().getPrimitiveTypeName();
-        Converter converter = switch (primitiveType) {
-        case INT32, INT64 -> buildFromIntConverter();
-        case FLOAT, DOUBLE -> buildFromDecimalConverter();
-        case BOOLEAN -> buildFromBooleanConverter();
-        default -> throw new RecordTypeConversionException(primitiveType + " deserialization not supported");
+        PrimitiveTypeName type = parquetField.asPrimitiveType().getPrimitiveTypeName();
+        var converter = switch (type) {
+        case INT32, INT64 -> buildFromIntConverter(consumer, javaType);
+        case FLOAT, DOUBLE -> buildFromDecimalConverter(consumer, javaType);
+        case BOOLEAN -> buildFromBooleanConverter(consumer, javaType);
+        default -> throw new RecordTypeConversionException(type + " deserialization not supported");
         };
         if (converter == null) {
             throw new RecordTypeConversionException(
-                    this.type.getTypeName() + " not compatible with " + recordComponent.getName() + " field");
+                    genericJavaType.getTypeName() + " not compatible with " + parquetField.getName());
         }
         return converter;
     }
 
-    private Converter buildFromIntConverter() {
+    private static Converter buildFromIntConverter(Consumer<Object> consumer, JavaType type) {
         if (type.isInteger()) {
-            return new ToIntegerConverter(constructor, index);
+            return new ToIntegerConverter(consumer);
         }
         if (type.isLong()) {
-            return new ToLongConverter(constructor, index);
+            return new ToLongConverter(consumer);
         }
         if (type.isShort()) {
-            return new ToShortConverter(constructor, index);
+            return new ToShortConverter(consumer);
         }
         if (type.isByte()) {
-            return new ToByteConverter(constructor, index);
+            return new ToByteConverter(consumer);
         }
         if (type.isDouble()) {
-            return new ToDoubleConverter(constructor, index);
+            return new ToDoubleConverter(consumer);
         }
         if (type.isFloat()) {
-            return new ToFloatConverter(constructor, index);
+            return new ToFloatConverter(consumer);
         }
         return null;
     }
 
-    private Converter buildFromDecimalConverter() {
+    private static Converter buildFromDecimalConverter(Consumer<Object> consumer, JavaType type) {
         if (type.isFloat()) {
-            return new ToFloatConverter(constructor, index);
+            return new ToFloatConverter(consumer);
         }
         if (type.isDouble()) {
-            return new ToDoubleConverter(constructor, index);
+            return new ToDoubleConverter(consumer);
         }
         return null;
     }
 
-    private Converter buildFromBooleanConverter() {
+    private static Converter buildFromBooleanConverter(Consumer<Object> consumer, JavaType type) {
         if (type.isBoolean()) {
-            return new BooleanConverter(constructor, index);
+            return new BooleanConverter(consumer);
         }
         return null;
     }

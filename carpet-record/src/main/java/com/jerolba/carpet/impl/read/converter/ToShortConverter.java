@@ -15,28 +15,26 @@
  */
 package com.jerolba.carpet.impl.read.converter;
 
-import org.apache.parquet.io.api.PrimitiveConverter;
+import java.util.function.Consumer;
 
-import com.jerolba.carpet.impl.read.ReadReflection.ConstructorParams;
+import org.apache.parquet.io.api.PrimitiveConverter;
 
 public class ToShortConverter extends PrimitiveConverter {
 
-    private final ConstructorParams constructor;
-    private final int idx;
+    private final Consumer<Object> consumer;
 
-    public ToShortConverter(ConstructorParams constructor, int idx) {
-        this.constructor = constructor;
-        this.idx = idx;
-    }
-
-    @Override
-    public void addLong(long value) {
-        constructor.c[idx] = (short) value;
+    public ToShortConverter(Consumer<Object> consumer) {
+        this.consumer = consumer;
     }
 
     @Override
     public void addInt(int value) {
-        constructor.c[idx] = (short) value;
+        consumer.accept((short) value);
+    }
+
+    @Override
+    public void addLong(long value) {
+        consumer.accept((short) value);
     }
 
 }

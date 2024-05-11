@@ -15,38 +15,36 @@
  */
 package com.jerolba.carpet.impl.read.converter;
 
-import org.apache.parquet.io.api.PrimitiveConverter;
+import java.util.function.Consumer;
 
-import com.jerolba.carpet.impl.read.ReadReflection.ConstructorParams;
+import org.apache.parquet.io.api.PrimitiveConverter;
 
 public class ToFloatConverter extends PrimitiveConverter {
 
-    private final ConstructorParams constructor;
-    private final int idx;
+    private final Consumer<Object> consumer;
 
-    public ToFloatConverter(ConstructorParams constructor, int idx) {
-        this.constructor = constructor;
-        this.idx = idx;
+    public ToFloatConverter(Consumer<Object> consumer) {
+        this.consumer = consumer;
     }
 
     @Override
     public void addDouble(double value) {
-        constructor.c[idx] = (float) value;
+        consumer.accept((float) value);
     }
 
     @Override
     public void addFloat(float value) {
-        constructor.c[idx] = value;
-    }
-
-    @Override
-    public void addInt(int value) {
-        constructor.c[idx] = (float) value;
+        consumer.accept(value);
     }
 
     @Override
     public void addLong(long value) {
-        constructor.c[idx] = (float) value;
+        consumer.accept((float) value);
+    }
+
+    @Override
+    public void addInt(int value) {
+        consumer.accept((float) value);
     }
 
 }

@@ -15,23 +15,21 @@
  */
 package com.jerolba.carpet.impl.read.converter;
 
-import org.apache.parquet.io.api.PrimitiveConverter;
+import java.util.function.Consumer;
 
-import com.jerolba.carpet.impl.read.ReadReflection.ConstructorParams;
+import org.apache.parquet.io.api.PrimitiveConverter;
 
 public class BooleanConverter extends PrimitiveConverter {
 
-    private final ConstructorParams constructor;
-    private final int idx;
+    private final Consumer<Object> consumer;
 
-    public BooleanConverter(ConstructorParams constructor, int idx) {
-        this.constructor = constructor;
-        this.idx = idx;
+    public BooleanConverter(Consumer<Object> consumer) {
+        this.consumer = consumer;
     }
 
     @Override
     public void addBoolean(boolean value) {
-        constructor.c[idx] = value;
+        consumer.accept(value);
     }
 
 }

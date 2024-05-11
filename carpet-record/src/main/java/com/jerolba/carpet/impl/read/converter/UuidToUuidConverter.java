@@ -26,15 +26,15 @@ import org.apache.parquet.io.api.PrimitiveConverter;
 public class UuidToUuidConverter extends PrimitiveConverter {
 
     private UUID[] dict = null;
-    private final Consumer<Object> listConsumer;
+    private final Consumer<Object> consumer;
 
-    public UuidToUuidConverter(Consumer<Object> listConsumer) {
-        this.listConsumer = listConsumer;
+    public UuidToUuidConverter(Consumer<Object> consumer) {
+        this.consumer = consumer;
     }
 
     @Override
     public void addBinary(Binary value) {
-        listConsumer.accept(convert(value));
+        consumer.accept(convert(value));
     }
 
     @Override
@@ -53,7 +53,7 @@ public class UuidToUuidConverter extends PrimitiveConverter {
 
     @Override
     public void addValueFromDictionary(int dictionaryId) {
-        listConsumer.accept(dict[dictionaryId]);
+        consumer.accept(dict[dictionaryId]);
     }
 
     private UUID convert(Binary value) {
