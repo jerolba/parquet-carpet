@@ -37,14 +37,14 @@ You can include this library in your Java project using Maven:
 <dependency>
     <groupId>com.jerolba</groupId>
     <artifactId>carpet-record</artifactId>
-    <version>0.0.11</version>
+    <version>0.0.12</version>
 </dependency>
 ```
 
 or using Gradle:
 
 ```gradle
-implementation 'com.jerolba:carpet-record:0.0.11'
+implementation 'com.jerolba:carpet-record:0.0.12'
 ```
 
 Carpet includes only the essential transitive dependencies required for file read and write operations.
@@ -197,8 +197,12 @@ Main Java types are mapped to Parquet data types
 | String | binary (STRING) |
 | Enum | binary (ENUM) |
 | UUID | fixed_len_byte_array(16) (UUID) |
+| LocalDate | int32 (DATE) |
+| LocalTime | int32 (TIME(unit=MILLIS\|MICROS))<br>int64 (TIME(unit=NANOS)) |
+| LocalDateTime | int64 (TIMESTAMP(MILLIS\|MICROS\|NANOS, isAdjustedToUTC= false)) |
+| Instant | int64 (TIMESTAMP(MILLIS\|MICROS\|NANOS, isAdjustedToUTC= true)) |
+| BigDecimal | int32 (DECIMAL)  (precision <=9)  <br> int64 (DECIMAL)  (precision <=18) <br> binary (DECIMAL) <br> fixed_len_byte_array (DECIMAL) |
 
-While Parquet supports [Temporal Types](https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#temporal-types), they are still not implemented in Carpet. If you need to write a file with date/time, you can use epoch time represented as int64 or formated date as String.
 
 #### Nested records
 
@@ -546,7 +550,7 @@ Default `CarpetWriter` constructors cover default `ParquetWriter` configuration.
 List<MyRecord> data = calculateDataToPersist();
 
 try (OutputStream outputStream = new FileOutputStream("my_file.parquet")) {
-    try (ParquetWriter<MyRecord> writer = CarpetWriter.builder(outputStream, MyRecord.class)
+    try (CarpetWriter<MyRecord> writer = CarpetWriter.builder(outputStream, MyRecord.class)
         .withWriteMode(Mode.OVERWRITE)
         .withCompressionCodec(CompressionCodecName.GZIP)
         .withPageRowCountLimit(100_000)
@@ -554,6 +558,32 @@ try (OutputStream outputStream = new FileOutputStream("my_file.parquet")) {
         .build()) {
     writer.write(data);
 }
+```
+
+### BigDecimal precision and scale
+
+[DECIMAL](https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#decimal) type must configure which precision and scale to use persisting the values. For the time being, the configuration is global writting a file:
+
+```java
+ParquetWriter<MyRecord> writer = CarpetWriter.builder(outputStream, MyRecord.class)
+        .withDefaultDecimal(precision, scale);
+        .build()) {
+```
+
+There is no default value. If `BigDecimal` type is found but precision and scale is not configured Carpet throws an exception.
+
+### Time unit
+
+[TIME](https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#time) and [TIMESTAMP](https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#timestamp) supports to configure the decimal second unit.
+
+In Carpet the configuration is global writting a file, and by default it's configured as `MILLIS`.
+
+The global configuration can be overwritten in the CarpetWriter builder:
+
+```java
+ParquetWriter<MyRecord> writer = CarpetWriter.builder(outputStream, MyRecord.class)
+        .withDefaultTimeUnit(TimeUnit.MICROS);
+        .build()) {
 ```
 
 ### Column name conversion
