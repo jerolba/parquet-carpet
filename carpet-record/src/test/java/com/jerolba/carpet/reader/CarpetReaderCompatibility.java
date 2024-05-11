@@ -33,6 +33,7 @@ import org.apache.avro.util.Utf8;
 import org.apache.parquet.avro.AvroParquetReader;
 import org.apache.parquet.avro.AvroParquetWriter;
 import org.apache.parquet.avro.AvroWriteSupport;
+import org.apache.parquet.conf.PlainParquetConfiguration;
 import org.apache.parquet.hadoop.ParquetFileReader;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.apache.parquet.io.InputFile;
@@ -117,7 +118,8 @@ class CarpetReaderCompatibility {
                 @Test
                 void canBeReadByAvro() throws IOException {
                     InputFile inputFile = new FileSystemInputFile(file);
-                    try (var carpetReader = AvroParquetReader.<GenericRecord>builder(inputFile)
+                    try (var carpetReader = AvroParquetReader
+                            .<GenericRecord>builder(inputFile, new PlainParquetConfiguration())
                             .withDataModel(GenericData.get()).build()) {
                         GenericRecord record = carpetReader.read();
                         assertEquals("Apple", record.get("name").toString());
@@ -215,7 +217,8 @@ class CarpetReaderCompatibility {
                 @Test
                 void canBeReadByAvro() throws IOException {
                     InputFile inputFile = new FileSystemInputFile(file);
-                    try (var carpetReader = AvroParquetReader.<GenericRecord>builder(inputFile)
+                    try (var carpetReader = AvroParquetReader
+                            .<GenericRecord>builder(inputFile, new PlainParquetConfiguration())
                             .withDataModel(GenericData.get()).build()) {
                         GenericRecord record = carpetReader.read();
                         assertEquals("Apple", record.get("name").toString());
@@ -277,7 +280,8 @@ class CarpetReaderCompatibility {
                 @Test
                 void canBeReadByAvro() throws IOException {
                     InputFile inputFile = new FileSystemInputFile(file);
-                    try (var carpetReader = AvroParquetReader.<GenericRecord>builder(inputFile)
+                    try (var carpetReader = AvroParquetReader
+                            .<GenericRecord>builder(inputFile, new PlainParquetConfiguration())
                             .withDataModel(GenericData.get()).build()) {
                         GenericRecord record = carpetReader.read();
                         assertEquals("Apple", record.get("name").toString());
@@ -320,7 +324,8 @@ class CarpetReaderCompatibility {
                 void avroCollectionHasElementChild() throws IOException {
                     // Because schema is not added as metadata can not parse it correctly
                     InputFile inputFile = new FileSystemInputFile(file);
-                    try (var carpetReader = AvroParquetReader.<GenericRecord>builder(inputFile)
+                    try (var carpetReader = AvroParquetReader
+                            .<GenericRecord>builder(inputFile, new PlainParquetConfiguration())
                             .withDataModel(GenericData.get()).build()) {
                         GenericRecord record = carpetReader.read();
                         assertEquals("Apple", record.get("name").toString());
@@ -371,7 +376,7 @@ class CarpetReaderCompatibility {
             }
 
             // Avro can not parse inner list correctly
-            try (var carpetReader = AvroParquetReader.<GenericRecord>builder(inputFile)
+            try (var carpetReader = AvroParquetReader.<GenericRecord>builder(inputFile, new PlainParquetConfiguration())
                     .withDataModel(GenericData.get()).build()) {
                 GenericRecord record = carpetReader.read();
                 System.out.println(record);

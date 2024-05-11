@@ -25,6 +25,7 @@ import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericData.Record;
 import org.apache.parquet.avro.AvroParquetWriter;
+import org.apache.parquet.conf.PlainParquetConfiguration;
 import org.apache.parquet.hadoop.ParquetFileWriter.Mode;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
@@ -71,6 +72,7 @@ public class ParquetReaderTest {
                 .withCompressionCodec(CompressionCodecName.SNAPPY)
                 .withValidation(true)
                 .withWriteMode(Mode.OVERWRITE)
+                .withConf(new PlainParquetConfiguration())
                 .build()) {
             writerConsumer.accept(writer);
         }
