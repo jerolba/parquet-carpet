@@ -22,6 +22,9 @@ import static org.apache.parquet.schema.LogicalTypeAnnotation.listType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.mapType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.stringType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.uuidType;
+import static org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY;
+import static org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName.INT32;
+import static org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName.INT64;
 
 import java.io.File;
 import java.io.IOException;
@@ -308,22 +311,17 @@ public class CarpetRecordGenerator {
             return new BasicType(basicType, parquetField.isRepetition(Repetition.REQUIRED));
         }
 
-        public static BasicTypes buildFromLogicalType(Type parquetField) {
-            var logicalTypeAnnotation = parquetField.getLogicalTypeAnnotation();
-            if (logicalTypeAnnotation == null) {
+        static BasicTypes buildFromLogicalType(Type parquetField) {
+            var logicalType = parquetField.getLogicalTypeAnnotation();
+            if (logicalType == null) {
                 return null;
             }
-            var primitiveTypeName = parquetField.asPrimitiveType().getPrimitiveTypeName();
 
-            if (logicalTypeAnnotation.equals(stringType())) {
+            if (logicalType.equals(stringType()) || logicalType.equals(enumType())) {
                 return BasicTypes.STRING_TYPE;
             }
 
-            if (logicalTypeAnnotation.equals(enumType())) {
-                return BasicTypes.STRING_TYPE;
-            }
-
-            if (logicalTypeAnnotation instanceof IntLogicalTypeAnnotation intType) {
+            if (logicalType instanceof IntLogicalTypeAnnotation intType) {
                 return switch (intType.getBitWidth()) {
                 case 8 -> BasicTypes.BYTE_TYPE;
                 case 16 -> BasicTypes.SHORT_TYPE;
@@ -331,33 +329,31 @@ public class CarpetRecordGenerator {
                 };
             }
 
-            if (logicalTypeAnnotation.equals(uuidType())
-                    && primitiveTypeName == PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY) {
+            if (logicalType instanceof DecimalLogicalTypeAnnotation) {
+                return BasicTypes.DECIMAL_TYPE;
+            }
+
+            var primitiveTypeName = parquetField.asPrimitiveType().getPrimitiveTypeName();
+            if (logicalType.equals(uuidType()) && primitiveTypeName == FIXED_LEN_BYTE_ARRAY) {
                 return BasicTypes.UUID_TYPE;
             }
 
-            if (logicalTypeAnnotation.equals(dateType()) && primitiveTypeName == PrimitiveTypeName.INT32) {
+            if (logicalType.equals(dateType()) && primitiveTypeName == INT32) {
                 return BasicTypes.LOCAL_DATE_TYPE;
             }
 
-            if (logicalTypeAnnotation instanceof TimeLogicalTypeAnnotation time
-                    && (primitiveTypeName == PrimitiveTypeName.INT32 || primitiveTypeName == PrimitiveTypeName.INT64)) {
+            if (logicalType instanceof TimeLogicalTypeAnnotation
+                    && (primitiveTypeName == INT32 || primitiveTypeName == INT64)) {
                 return BasicTypes.LOCAL_TIME_TYPE;
             }
 
-            if (logicalTypeAnnotation instanceof TimestampLogicalTypeAnnotation timeStamp
-                    && primitiveTypeName == PrimitiveTypeName.INT64) {
+            if (logicalType instanceof TimestampLogicalTypeAnnotation timeStamp && primitiveTypeName == INT64) {
                 if (timeStamp.isAdjustedToUTC()) {
                     return BasicTypes.INSTANT_TYPE;
                 } else {
                     return BasicTypes.LOCAL_DATE_TIME_TYPE;
                 }
             }
-
-            if (logicalTypeAnnotation instanceof DecimalLogicalTypeAnnotation decimalType) {
-                return BasicTypes.DECIMAL_TYPE;
-            }
-
             return null;
         }
 

@@ -33,6 +33,9 @@ import com.jerolba.carpet.impl.write.JavaRecord2Schema;
 
 public class CarpetParquetWriter {
 
+    private CarpetParquetWriter() {
+    }
+
     public static <T> Builder<T> builder(OutputFile file, Class<T> recordClass) {
         return new Builder<>(file, recordClass);
     }

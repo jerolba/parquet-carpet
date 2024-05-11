@@ -31,6 +31,7 @@ import static org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName.FIXED_LE
 import static org.apache.parquet.schema.Type.Repetition.OPTIONAL;
 import static org.apache.parquet.schema.Type.Repetition.REPEATED;
 import static org.apache.parquet.schema.Type.Repetition.REQUIRED;
+import static org.apache.parquet.schema.Types.primitive;
 
 import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
@@ -198,18 +199,18 @@ public class JavaRecord2Schema {
         if (primitiveType != null) {
             return primitiveType;
         }
-        if (javaType.isString()) {
-            return Types.primitive(BINARY, repetition).as(stringType()).named(name);
-        }
         if (javaType.isRecord()) {
             List<Type> childFields = buildCompositeChild(type, visited);
             return new GroupType(repetition, name, childFields);
         }
+        if (javaType.isString()) {
+            return primitive(BINARY, repetition).as(stringType()).named(name);
+        }
         if (javaType.isEnum()) {
-            return Types.primitive(BINARY, repetition).as(enumType()).named(name);
+            return primitive(BINARY, repetition).as(enumType()).named(name);
         }
         if (javaType.isUuid()) {
-            return Types.primitive(FIXED_LEN_BYTE_ARRAY, repetition).as(uuidType())
+            return primitive(FIXED_LEN_BYTE_ARRAY, repetition).as(uuidType())
                     .length(UUIDLogicalTypeAnnotation.BYTES)
                     .named(name);
         }
@@ -225,50 +226,51 @@ public class JavaRecord2Schema {
 
     private PrimitiveType simpleTypeItems(JavaType javaType, Repetition repetition, String name) {
         if (javaType.isInteger()) {
-            return new PrimitiveType(repetition, PrimitiveTypeName.INT32, name);
+            return primitive(PrimitiveTypeName.INT32, repetition).named(name);
         }
         if (javaType.isLong()) {
-            return new PrimitiveType(repetition, PrimitiveTypeName.INT64, name);
+            return primitive(PrimitiveTypeName.INT64, repetition).named(name);
         }
         if (javaType.isFloat()) {
-            return new PrimitiveType(repetition, PrimitiveTypeName.FLOAT, name);
+            return primitive(PrimitiveTypeName.FLOAT, repetition).named(name);
         }
         if (javaType.isDouble()) {
-            return new PrimitiveType(repetition, PrimitiveTypeName.DOUBLE, name);
+            return primitive(PrimitiveTypeName.DOUBLE, repetition).named(name);
         }
         if (javaType.isBoolean()) {
-            return new PrimitiveType(repetition, PrimitiveTypeName.BOOLEAN, name);
+            return primitive(PrimitiveTypeName.BOOLEAN, repetition).named(name);
         }
         if (javaType.isShort()) {
-            return Types.primitive(PrimitiveTypeName.INT32, repetition).as(intType(16, true)).named(name);
+            return primitive(PrimitiveTypeName.INT32, repetition).as(intType(16, true)).named(name);
         }
         if (javaType.isByte()) {
-            return Types.primitive(PrimitiveTypeName.INT32, repetition).as(intType(8, true)).named(name);
+            return primitive(PrimitiveTypeName.INT32, repetition).as(intType(8, true)).named(name);
         }
         return null;
     }
 
     private PrimitiveType dateTypeItems(JavaType javaType, Repetition repetition, String name) {
         if (javaType.isLocalDate()) {
-            return Types.primitive(PrimitiveTypeName.INT32, repetition).as(dateType()).named(name);
+            return primitive(PrimitiveTypeName.INT32, repetition).as(dateType()).named(name);
         }
         if (javaType.isLocalTime()) {
             var timeUnit = carpetConfiguration.defaultTimeUnit();
             var timeType = timeType(carpetConfiguration.defaultTimeIsAdjustedToUTC(), toParquetTimeUnit(timeUnit));
-            return switch (timeUnit) {
-            case MILLIS -> Types.primitive(PrimitiveTypeName.INT32, repetition).as(timeType).named(name);
-            case MICROS, NANOS -> Types.primitive(PrimitiveTypeName.INT64, repetition).as(timeType).named(name);
+            var typeName = switch (timeUnit) {
+            case MILLIS -> PrimitiveTypeName.INT32;
+            case MICROS, NANOS -> PrimitiveTypeName.INT64;
             };
+            return primitive(typeName, repetition).as(timeType).named(name);
         }
         if (javaType.isLocalDateTime()) {
             var timeUnit = carpetConfiguration.defaultTimeUnit();
             var timeStampType = timestampType(false, toParquetTimeUnit(timeUnit));
-            return Types.primitive(PrimitiveTypeName.INT64, repetition).as(timeStampType).named(name);
+            return primitive(PrimitiveTypeName.INT64, repetition).as(timeStampType).named(name);
         }
         if (javaType.isInstant()) {
             var timeUnit = carpetConfiguration.defaultTimeUnit();
             var timeStampType = timestampType(true, toParquetTimeUnit(timeUnit));
-            return Types.primitive(PrimitiveTypeName.INT64, repetition).as(timeStampType).named(name);
+            return primitive(PrimitiveTypeName.INT64, repetition).as(timeStampType).named(name);
         }
         return null;
     }
@@ -289,12 +291,12 @@ public class JavaRecord2Schema {
         }
         var decimalType = decimalType(decimalConfig.scale(), decimalConfig.precision());
         if (decimalConfig.precision() <= 9) {
-            return Types.primitive(PrimitiveTypeName.INT32, repetition).as(decimalType).named(name);
+            return primitive(PrimitiveTypeName.INT32, repetition).as(decimalType).named(name);
         }
         if (decimalConfig.precision() <= 18) {
-            return Types.primitive(PrimitiveTypeName.INT64, repetition).as(decimalType).named(name);
+            return primitive(PrimitiveTypeName.INT64, repetition).as(decimalType).named(name);
         }
-        return Types.primitive(PrimitiveTypeName.BINARY, repetition).as(decimalType).named(name);
+        return primitive(PrimitiveTypeName.BINARY, repetition).as(decimalType).named(name);
     }
 
     private void validateNotVisitedRecord(Class<?> recordClass, Set<Class<?>> visited) {

@@ -20,6 +20,7 @@ import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.ParquetReader;
+import org.apache.parquet.hadoop.api.InitContext;
 import org.apache.parquet.hadoop.api.ReadSupport;
 import org.apache.parquet.io.InputFile;
 import org.apache.parquet.io.api.RecordMaterializer;
@@ -32,10 +33,13 @@ import com.jerolba.carpet.impl.read.SchemaValidation;
 
 public class CarpetParquetReader {
 
-    public static boolean DEFAULT_FAIL_ON_MISSING_COLUMN = true;
-    public static boolean DEFAULT_FAIL_ON_NULL_FOR_PRIMITIVES = false;
-    public static boolean DEFAULT_FAIL_NARROWING_PRIMITIVE_CONVERSION = false;
-    public static FieldMatchingStrategy DEFAULT_FIELD_MATCHING_STRATEGY = FieldMatchingStrategy.FIELD_NAME;
+    public static final boolean DEFAULT_FAIL_ON_MISSING_COLUMN = true;
+    public static final boolean DEFAULT_FAIL_ON_NULL_FOR_PRIMITIVES = false;
+    public static final boolean DEFAULT_FAIL_NARROWING_PRIMITIVE_CONVERSION = false;
+    public static final FieldMatchingStrategy DEFAULT_FIELD_MATCHING_STRATEGY = FieldMatchingStrategy.FIELD_NAME;
+
+    private CarpetParquetReader() {
+    }
 
     public static <T> Builder<T> builder(InputFile file, Class<T> readClass) {
         return new Builder<>(file, readClass);
@@ -142,16 +146,13 @@ public class CarpetParquetReader {
         }
 
         @Override
-        public ReadContext init(Configuration configuration,
-                Map<String, String> keyValueMetaData,
-                MessageType fileSchema) {
-
+        public ReadContext init(InitContext initContext) {
             var validation = new SchemaValidation(carpetConfiguration.isFailOnMissingColumn(),
                     carpetConfiguration.isFailNarrowingPrimitiveConversion(),
                     carpetConfiguration.isFailOnNullForPrimitives());
 
             SchemaFilter schemaFilter = new SchemaFilter(validation, columnToFieldMapper);
-            MessageType projection = schemaFilter.project(readClass, fileSchema);
+            MessageType projection = schemaFilter.project(readClass, initContext.getFileSchema());
             Map<String, String> metadata = new LinkedHashMap<>();
             return new ReadContext(projection, metadata);
         }

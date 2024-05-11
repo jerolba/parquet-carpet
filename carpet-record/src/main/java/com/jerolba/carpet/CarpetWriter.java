@@ -490,6 +490,11 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
             return this;
         }
 
+        /**
+         * Set Decimal precision and scale
+         *
+         * @return this builder for method chaining.
+         */
         public Builder<T> withDefaultDecimal(int precision, int scale) {
             builder.withDefaultDecimal(precision, scale);
             return this;
