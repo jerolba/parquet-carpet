@@ -15,9 +15,11 @@
  */
 package com.jerolba.carpet.reader;
 
+import static com.jerolba.carpet.ParquetReaderTest.getTestFilePath;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
@@ -37,6 +39,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import com.jerolba.carpet.CarpetParquetReader;
+import com.jerolba.carpet.CarpetReader;
+import com.jerolba.carpet.CarpetWriter;
 import com.jerolba.carpet.ParquetReaderTest;
 import com.jerolba.carpet.io.FileSystemInputFile;
 import com.jerolba.carpet.io.FileSystemOutputFile;
@@ -141,6 +145,44 @@ class CarpetReaderConversionTest {
             }
 
             @Test
+            void fromByteToLong() throws IOException {
+                var filePath = getTestFilePath("FromByteToLongConversion");
+
+                record FromByte(byte primitive, Byte object) {
+                }
+
+                try (var fos = new FileOutputStream(filePath)) {
+                    try (CarpetWriter<FromByte> writer = new CarpetWriter<>(fos, FromByte.class)) {
+                        writer.write(new FromByte((byte) 1, (byte) 2));
+                        writer.write(new FromByte((byte) 3, null));
+                    }
+                }
+
+                var toLongs = new CarpetReader<>(new File(filePath), ToLongConversion.class).toList();
+                assertEquals(new ToLongConversion(1L, 2L), toLongs.get(0));
+                assertEquals(new ToLongConversion(3L, null), toLongs.get(1));
+            }
+
+            @Test
+            void fromShortToLong() throws IOException {
+                var filePath = getTestFilePath("FromShortToLongConversion");
+
+                record FromShort(short primitive, Short object) {
+                }
+
+                try (var fos = new FileOutputStream(filePath)) {
+                    try (CarpetWriter<FromShort> writer = new CarpetWriter<>(fos, FromShort.class)) {
+                        writer.write(new FromShort((short) 1, (short) 2));
+                        writer.write(new FromShort((short) 3, null));
+                    }
+                }
+
+                var toLongs = new CarpetReader<>(new File(filePath), ToLongConversion.class).toList();
+                assertEquals(new ToLongConversion(1L, 2L), toLongs.get(0));
+                assertEquals(new ToLongConversion(3L, null), toLongs.get(1));
+            }
+
+            @Test
             void fromIntegerToLong() throws IOException {
                 var readerTest = fromInteger("FromIntegerToLongConversion");
                 try (var carpetReader = readerTest.getCarpetReader(ToLongConversion.class)) {
@@ -164,6 +206,44 @@ class CarpetReaderConversionTest {
         class ToInteger {
 
             record ToIntegerConversion(int primitive, Integer object) {
+            }
+
+            @Test
+            void fromByteToInteger() throws IOException {
+                var filePath = getTestFilePath("FromByteToIntegerConversion");
+
+                record FromByte(byte primitive, Byte object) {
+                }
+
+                try (var fos = new FileOutputStream(filePath)) {
+                    try (CarpetWriter<FromByte> writer = new CarpetWriter<>(fos, FromByte.class)) {
+                        writer.write(new FromByte((byte) 1, (byte) 2));
+                        writer.write(new FromByte((byte) 3, null));
+                    }
+                }
+
+                var toInts = new CarpetReader<>(new File(filePath), ToIntegerConversion.class).toList();
+                assertEquals(new ToIntegerConversion(1, 2), toInts.get(0));
+                assertEquals(new ToIntegerConversion(3, null), toInts.get(1));
+            }
+
+            @Test
+            void fromShortToInteger() throws IOException {
+                var filePath = getTestFilePath("FromShortToIntegerConversion");
+
+                record FromShort(short primitive, Short object) {
+                }
+
+                try (var fos = new FileOutputStream(filePath)) {
+                    try (CarpetWriter<FromShort> writer = new CarpetWriter<>(fos, FromShort.class)) {
+                        writer.write(new FromShort((short) 1, (short) 2));
+                        writer.write(new FromShort((short) 3, null));
+                    }
+                }
+
+                var toInts = new CarpetReader<>(new File(filePath), ToIntegerConversion.class).toList();
+                assertEquals(new ToIntegerConversion(1, 2), toInts.get(0));
+                assertEquals(new ToIntegerConversion(3, null), toInts.get(1));
             }
 
             @Test
@@ -193,6 +273,44 @@ class CarpetReaderConversionTest {
             }
 
             @Test
+            void fromByteToShort() throws IOException {
+                var filePath = getTestFilePath("FromByteToShortConversion");
+
+                record FromByte(byte primitive, Byte object) {
+                }
+
+                try (var fos = new FileOutputStream(filePath)) {
+                    try (CarpetWriter<FromByte> writer = new CarpetWriter<>(fos, FromByte.class)) {
+                        writer.write(new FromByte((byte) 1, (byte) 2));
+                        writer.write(new FromByte((byte) 3, null));
+                    }
+                }
+
+                var toLongs = new CarpetReader<>(new File(filePath), ToShortConversion.class).toList();
+                assertEquals(new ToShortConversion((short) 1, (short) 2), toLongs.get(0));
+                assertEquals(new ToShortConversion((short) 3, null), toLongs.get(1));
+            }
+
+            @Test
+            void fromShortToShort() throws IOException {
+                var filePath = getTestFilePath("FromShortToShortConversion");
+
+                record FromShort(short primitive, Short object) {
+                }
+
+                try (var fos = new FileOutputStream(filePath)) {
+                    try (CarpetWriter<FromShort> writer = new CarpetWriter<>(fos, FromShort.class)) {
+                        writer.write(new FromShort((short) 1, (short) 2));
+                        writer.write(new FromShort((short) 3, null));
+                    }
+                }
+
+                var toLongs = new CarpetReader<>(new File(filePath), ToShortConversion.class).toList();
+                assertEquals(new ToShortConversion((short) 1, (short) 2), toLongs.get(0));
+                assertEquals(new ToShortConversion((short) 3, null), toLongs.get(1));
+            }
+
+            @Test
             void fromIntegerToShort() throws IOException {
                 var readerTest = fromInteger("FromIntegerToShortConversion");
                 try (var carpetReader = readerTest.getCarpetReader(ToShortConversion.class)) {
@@ -216,6 +334,44 @@ class CarpetReaderConversionTest {
         class ToByte {
 
             record ToByteConversion(byte primitive, Byte object) {
+            }
+
+            @Test
+            void fromByteToByte() throws IOException {
+                var filePath = getTestFilePath("FromByteToByteConversion");
+
+                record FromByte(byte primitive, Byte object) {
+                }
+
+                try (var fos = new FileOutputStream(filePath)) {
+                    try (CarpetWriter<FromByte> writer = new CarpetWriter<>(fos, FromByte.class)) {
+                        writer.write(new FromByte((byte) 1, (byte) 2));
+                        writer.write(new FromByte((byte) 3, null));
+                    }
+                }
+
+                var toLongs = new CarpetReader<>(new File(filePath), ToByteConversion.class).toList();
+                assertEquals(new ToByteConversion((byte) 1, (byte) 2), toLongs.get(0));
+                assertEquals(new ToByteConversion((byte) 3, null), toLongs.get(1));
+            }
+
+            @Test
+            void fromShortToByte() throws IOException {
+                var filePath = getTestFilePath("FromShortToByteConversion");
+
+                record FromShort(short primitive, Short object) {
+                }
+
+                try (var fos = new FileOutputStream(filePath)) {
+                    try (CarpetWriter<FromShort> writer = new CarpetWriter<>(fos, FromShort.class)) {
+                        writer.write(new FromShort((short) 1, (short) 2));
+                        writer.write(new FromShort((short) 3, null));
+                    }
+                }
+
+                var toLongs = new CarpetReader<>(new File(filePath), ToByteConversion.class).toList();
+                assertEquals(new ToByteConversion((byte) 1, (byte) 2), toLongs.get(0));
+                assertEquals(new ToByteConversion((byte) 3, null), toLongs.get(1));
             }
 
             @Test
@@ -872,6 +1028,7 @@ class CarpetReaderConversionTest {
             }
             return file;
         }
+
     }
 
     private static FieldAssembler<Schema> schemaType(String type) {
