@@ -337,7 +337,8 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
         /**
          * Enable or disable BYTE_STREAM_SPLIT encoding for FLOAT and DOUBLE columns.
          *
-         * @param enable whether BYTE_STREAM_SPLIT encoding should be enabled
+         * @param enableByteStreamSplit whether BYTE_STREAM_SPLIT encoding should be
+         *                              enabled
          * @return this builder for method chaining.
          */
         public Builder<T> withByteStreamSplitEncoding(boolean enableByteStreamSplit) {
