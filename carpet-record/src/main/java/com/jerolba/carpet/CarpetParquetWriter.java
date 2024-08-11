@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.parquet.conf.ParquetConfiguration;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.apache.parquet.hadoop.api.WriteSupport;
 import org.apache.parquet.io.OutputFile;
@@ -54,6 +55,7 @@ public class CarpetParquetWriter {
             this.recordClass = recordClass;
         }
 
+        @Override
         public Builder<T> withExtraMetaData(Map<String, String> extraMetaData) {
             this.extraMetaData.putAll(extraMetaData);
             return this;
@@ -93,7 +95,16 @@ public class CarpetParquetWriter {
         }
 
         @Override
+        protected WriteSupport<T> getWriteSupport(ParquetConfiguration conf) {
+            return getWriteSupport();
+        }
+
+        @Override
         protected WriteSupport<T> getWriteSupport(Configuration conf) {
+            return getWriteSupport();
+        }
+
+        protected WriteSupport<T> getWriteSupport() {
             CarpetWriteConfiguration carpetCfg = new CarpetWriteConfiguration(
                     annotatedLevels,
                     columnNamingStrategy,

@@ -26,7 +26,11 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.parquet.bytes.ByteBufferAllocator;
 import org.apache.parquet.column.ParquetProperties.WriterVersion;
+import org.apache.parquet.compression.CompressionCodecFactory;
+import org.apache.parquet.conf.ParquetConfiguration;
+import org.apache.parquet.conf.PlainParquetConfiguration;
 import org.apache.parquet.crypto.FileEncryptionProperties;
 import org.apache.parquet.hadoop.ParquetFileWriter;
 import org.apache.parquet.hadoop.ParquetFileWriter.Mode;
@@ -146,6 +150,8 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
     public static class Builder<T> {
 
         private final CarpetParquetWriter.Builder<T> builder;
+        private boolean parquetConfProvided = false;
+        private boolean hadoopConfProvided = false;
 
         public Builder(OutputFile path, Class<T> recordClass) {
             builder = CarpetParquetWriter.builder(path, recordClass)
@@ -164,6 +170,19 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
          * @return this builder for method chaining.
          */
         public Builder<T> withConf(Configuration conf) {
+            hadoopConfProvided = true;
+            builder.withConf(conf);
+            return this;
+        }
+
+        /**
+         * Set the {@link ParquetConfiguration} used by the constructed writer.
+         *
+         * @param conf a {@code ParquetConfiguration}
+         * @return this builder for method chaining.
+         */
+        public Builder<T> withConf(ParquetConfiguration conf) {
+            parquetConfProvided = true;
             builder.withConf(conf);
             return this;
         }
@@ -189,6 +208,18 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
          */
         public Builder<T> withCompressionCodec(CompressionCodecName codecName) {
             builder.withCompressionCodec(codecName);
+            return this;
+        }
+
+        /**
+         * Set the {@link CompressionCodecFactory codec factory} used by the constructed
+         * writer.
+         *
+         * @param codecFactory a {@link CompressionCodecFactory}
+         * @return this builder for method chaining.
+         */
+        public Builder<T> withCodecFactory(CompressionCodecFactory codecFactory) {
+            builder.withCodecFactory(codecFactory);
             return this;
         }
 
@@ -303,6 +334,13 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
             return this;
         }
 
+        /**
+         * Enable or disable BYTE_STREAM_SPLIT encoding for FLOAT and DOUBLE columns.
+         *
+         * @param enableByteStreamSplit whether BYTE_STREAM_SPLIT encoding should be
+         *                              enabled
+         * @return this builder for method chaining.
+         */
         public Builder<T> withByteStreamSplitEncoding(boolean enableByteStreamSplit) {
             builder.withByteStreamSplitEncoding(enableByteStreamSplit);
             return this;
@@ -354,6 +392,18 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
         }
 
         /**
+         * Set max Bloom filter bytes for related columns.
+         *
+         * @param maxBloomFilterBytes the max bytes of a Bloom filter bitset for a
+         *                            column.
+         * @return this builder for method chaining
+         */
+        public Builder<T> withMaxBloomFilterBytes(int maxBloomFilterBytes) {
+            builder.withMaxBloomFilterBytes(maxBloomFilterBytes);
+            return this;
+        }
+
+        /**
          * Sets the NDV (number of distinct values) for the specified column.
          *
          * @param columnPath the path of the column (dot-string)
@@ -363,6 +413,35 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
          */
         public Builder<T> withBloomFilterNDV(String columnPath, long ndv) {
             builder.withBloomFilterNDV(columnPath, ndv);
+            return this;
+        }
+
+        public Builder<T> withBloomFilterFPP(String columnPath, double fpp) {
+            builder.withBloomFilterFPP(columnPath, fpp);
+            return this;
+        }
+
+        /**
+         * When NDV (number of distinct values) for a specified column is not set,
+         * whether to use `AdaptiveBloomFilter` to automatically adjust the BloomFilter
+         * size according to `parquet.bloom.filter.max.bytes`
+         *
+         * @param enabled whether to write bloom filter for the column
+         */
+        public Builder<T> withAdaptiveBloomFilterEnabled(boolean enabled) {
+            builder.withAdaptiveBloomFilterEnabled(enabled);
+            return this;
+        }
+
+        /**
+         * When `AdaptiveBloomFilter` is enabled, set how many bloom filter candidates
+         * to use.
+         *
+         * @param columnPath the path of the column (dot-string)
+         * @param number     the number of candidate
+         */
+        public Builder<T> withBloomFilterCandidateNumber(String columnPath, int number) {
+            builder.withBloomFilterCandidateNumber(columnPath, number);
             return this;
         }
 
@@ -414,6 +493,30 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
         }
 
         /**
+         * Sets the length to be used for truncating binary values in a binary column
+         * index.
+         *
+         * @param length the length to truncate to
+         * @return this builder for method chaining
+         */
+        public Builder<T> withColumnIndexTruncateLength(int length) {
+            builder.withColumnIndexTruncateLength(length);
+            return this;
+        }
+
+        /**
+         * Sets the length which the min/max binary values in row groups are truncated
+         * to.
+         *
+         * @param length the length to truncate to
+         * @return this builder for method chaining
+         */
+        public Builder<T> withStatisticsTruncateLength(int length) {
+            builder.withStatisticsTruncateLength(length);
+            return this;
+        }
+
+        /**
          * Set a property that will be available to the read path. For writers that use
          * a Hadoop configuration, this is the recommended way to add configuration
          * values.
@@ -447,6 +550,18 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
          */
         public Builder<T> withExtraMetaData(String key, String value) {
             builder.withExtraMetaData(key, value);
+            return this;
+        }
+
+        /**
+         * Sets the ByteBuffer allocator instance to be used for allocating memory for
+         * writing.
+         *
+         * @param allocator the allocator instance
+         * @return this builder for method chaining
+         */
+        public Builder<T> withAllocator(ByteBufferAllocator allocator) {
+            builder.withAllocator(allocator);
             return this;
         }
 
@@ -501,10 +616,13 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
         }
 
         public CarpetWriter<T> build() throws IOException {
-            return new CarpetWriter<>(builder.build());
+            return new CarpetWriter<>(buildWriter());
         }
 
         private ParquetWriter<T> buildWriter() throws IOException {
+            if (!parquetConfProvided && !hadoopConfProvided) {
+                builder.withConf(new PlainParquetConfiguration());
+            }
             return builder.build();
         }
 

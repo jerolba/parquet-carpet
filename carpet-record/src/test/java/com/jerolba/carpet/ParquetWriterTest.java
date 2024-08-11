@@ -26,6 +26,7 @@ import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.parquet.ParquetReadOptions;
 import org.apache.parquet.avro.AvroParquetReader;
+import org.apache.parquet.conf.PlainParquetConfiguration;
 import org.apache.parquet.hadoop.ParquetFileReader;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
@@ -106,7 +107,8 @@ public class ParquetWriterTest<T> {
     }
 
     public ParquetReader<GenericRecord> getAvroGenericRecordReaderWithModel(GenericData model) throws IOException {
-        return AvroParquetReader.<GenericRecord>builder(new FileSystemInputFile(getTestFile()))
+        return AvroParquetReader
+                .<GenericRecord>builder(new FileSystemInputFile(getTestFile()), new PlainParquetConfiguration())
                 .withDataModel(model)
                 .build();
     }
