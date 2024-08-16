@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jerolba.carpet.writer;
+package com.jerolba.carpet.impl.write;
 
 import static com.jerolba.carpet.TimeUnit.MICROS;
 import static com.jerolba.carpet.TimeUnit.MILLIS;

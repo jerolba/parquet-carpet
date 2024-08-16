@@ -28,7 +28,7 @@ import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.impl.ParameterizedCollection;
 import com.jerolba.carpet.impl.ParameterizedMap;
 
-public class OneLevelStructureWriter {
+class OneLevelStructureWriter {
 
     private final RecordConsumer recordConsumer;
     private final CarpetWriteConfiguration carpetConfiguration;

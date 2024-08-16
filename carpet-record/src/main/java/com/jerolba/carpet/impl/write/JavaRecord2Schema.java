@@ -56,7 +56,7 @@ import com.jerolba.carpet.impl.JavaType;
 import com.jerolba.carpet.impl.ParameterizedCollection;
 import com.jerolba.carpet.impl.ParameterizedMap;
 
-public class JavaRecord2Schema {
+class JavaRecord2Schema {
 
     private final CarpetWriteConfiguration carpetConfiguration;
     private final FieldToColumnMapper fieldToColumnMapper;

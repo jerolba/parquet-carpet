@@ -13,12 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jerolba.carpet;
+package com.jerolba.carpet.impl.write;
 
 import org.apache.parquet.io.api.RecordConsumer;
-
-import com.jerolba.carpet.impl.write.CarpetRecordWriter;
-import com.jerolba.carpet.impl.write.CarpetWriteConfiguration;
 
 class CarpetMessageWriter<T> {
 

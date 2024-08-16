@@ -25,7 +25,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.RecordComponent;
 import java.util.function.Function;
 
-public class Reflection {
+class Reflection {
 
     public static Function<Object, Object> recordAccessor(Class<?> targetClass, RecordComponent recordComponent) {
         MethodHandles.Lookup lookup = MethodHandles.lookup();
