@@ -18,20 +18,28 @@ package com.jerolba.carpet.impl.write;
 import static com.jerolba.carpet.impl.AliasField.getFieldName;
 import static com.jerolba.carpet.impl.Parameterized.getParameterizedCollection;
 import static com.jerolba.carpet.impl.Parameterized.getParameterizedMap;
+import static com.jerolba.carpet.impl.write.CollectionsWriters.MapRecordFieldWriter.writeKeyalueGroup;
+import static com.jerolba.carpet.impl.write.CollectionsWriters.ThreeLevelCollectionRecordFieldWriter.writeGroupElementThree;
+import static com.jerolba.carpet.impl.write.CollectionsWriters.TwoLevelCollectionRecordFieldWriter.writeGroupElementTwo;
+import static com.jerolba.carpet.impl.write.SimpleCollectionItemConsumerFactory.buildSimpleElementConsumer;
 
 import java.lang.reflect.RecordComponent;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 import org.apache.parquet.io.api.RecordConsumer;
 
+import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.impl.JavaType;
 import com.jerolba.carpet.impl.ParameterizedCollection;
 import com.jerolba.carpet.impl.ParameterizedMap;
+import com.jerolba.carpet.impl.write.CollectionsWriters.OneLevelCollectionFieldWriter;
+import com.jerolba.carpet.impl.write.CollectionsWriters.ThreeLevelCollectionRecordFieldWriter;
+import com.jerolba.carpet.impl.write.CollectionsWriters.TwoLevelCollectionRecordFieldWriter;
 import com.jerolba.carpet.impl.write.FieldsWriter.BigDecimalFieldWriter;
 import com.jerolba.carpet.impl.write.FieldsWriter.BooleanFieldWriter;
 import com.jerolba.carpet.impl.write.FieldsWriter.DoubleFieldWriter;
@@ -45,6 +53,7 @@ import com.jerolba.carpet.impl.write.FieldsWriter.LocalDateTimeFieldWriter;
 import com.jerolba.carpet.impl.write.FieldsWriter.LocalTimeIntFieldWriter;
 import com.jerolba.carpet.impl.write.FieldsWriter.LocalTimeLongFieldWriter;
 import com.jerolba.carpet.impl.write.FieldsWriter.LongFieldWriter;
+import com.jerolba.carpet.impl.write.FieldsWriter.RecordFieldWriter;
 import com.jerolba.carpet.impl.write.FieldsWriter.StringFieldWriter;
 import com.jerolba.carpet.impl.write.FieldsWriter.UuidFieldWriter;
 
@@ -60,7 +69,6 @@ public class CarpetRecordWriter {
         this.recordConsumer = recordConsumer;
         this.carpetConfiguration = carpetConfiguration;
 
-        // Preconditions: All fields are writable
         int idx = 0;
         for (RecordComponent attr : recordClass.getRecordComponents()) {
             String fieldName = getFieldName(attr);
@@ -70,20 +78,16 @@ public class CarpetRecordWriter {
             RecordField f = new ReflectionRecordField(recordClass, attr, fieldName, idx);
 
             writer = buildBasicTypeWriter(type, f);
-
-            if (writer == null) {
-                writer = buildDateTypeWriter(type, f);
-            }
             if (writer == null) {
                 if (type.isRecord()) {
                     var recordWriter = new CarpetRecordWriter(recordConsumer, type, carpetConfiguration);
-                    writer = new RecordFieldWriter(recordConsumer, f, recordWriter);
+                    writer = new RecordFieldWriter(recordConsumer, f, recordWriter::write);
                 } else if (Collection.class.isAssignableFrom(type)) {
                     ParameterizedCollection collectionClass = getParameterizedCollection(attr);
                     writer = createCollectionWriter(collectionClass, f);
                 } else if (Map.class.isAssignableFrom(type)) {
                     ParameterizedMap mapClass = getParameterizedMap(attr);
-                    writer = createMapWriter(mapClass, f);
+                    writer = createMapStructureWriter(mapClass, f);
                 } else {
                     throw new RuntimeException(type.getName() + " can not be serialized");
                 }
@@ -93,20 +97,18 @@ public class CarpetRecordWriter {
         }
     }
 
-    private Consumer<Object> createCollectionWriter(ParameterizedCollection collectionClass, RecordField f) {
-        return switch (carpetConfiguration.annotatedLevels()) {
-        case ONE -> new OneLevelStructureWriter(recordConsumer, carpetConfiguration)
-                .createCollectionWriter(collectionClass, f);
-        case TWO -> new TwoLevelStructureWriter(recordConsumer, carpetConfiguration)
-                .createCollectionWriter(collectionClass, f);
-        case THREE -> new ThreeLevelStructureWriter(recordConsumer, carpetConfiguration)
-                .createCollectionWriter(collectionClass, f);
-        };
+    public void write(Object record) {
+        for (var fieldWriter : fieldWriters) {
+            fieldWriter.accept(record);
+        }
     }
 
-    private Consumer<Object> createMapWriter(ParameterizedMap mapClass, RecordField f) {
-        return new MapStructureWriter(recordConsumer, carpetConfiguration).createMapWriter(mapClass, f);
-
+    private Consumer<Object> createCollectionWriter(ParameterizedCollection collectionClass, RecordField f) {
+        return switch (carpetConfiguration.annotatedLevels()) {
+        case ONE -> createOneLevelStructureWriter(collectionClass, f);
+        case TWO -> createTwoLevelStructureWriter(collectionClass, f);
+        case THREE -> createThreeLevelStructureWriter(collectionClass, f);
+        };
     }
 
     private Consumer<Object> buildBasicTypeWriter(Class<?> javaType, RecordField f) {
@@ -131,64 +133,148 @@ public class CarpetRecordWriter {
             return new UuidFieldWriter(recordConsumer, f);
         } else if (type.isBigDecimal()) {
             return new BigDecimalFieldWriter(recordConsumer, f, carpetConfiguration.decimalConfig());
-        }
-        return null;
-    }
-
-    private Consumer<Object> buildDateTypeWriter(Class<?> javaType, RecordField f) {
-        JavaType type = new JavaType(javaType);
-        if (type.isLocalDate()) {
+        } else if (type.isLocalDate()) {
             return new LocalDateFieldWriter(recordConsumer, f);
-        }
-        if (type.isLocalTime()) {
+        } else if (type.isLocalTime()) {
             return switch (carpetConfiguration.defaultTimeUnit()) {
             case MILLIS -> new LocalTimeIntFieldWriter(recordConsumer, f);
             case MICROS -> new LocalTimeLongFieldWriter(recordConsumer, f, 1_000);
             case NANOS -> new LocalTimeLongFieldWriter(recordConsumer, f, 1);
             };
-        }
-        if (type.isLocalDateTime()) {
+        } else if (type.isLocalDateTime()) {
             return new LocalDateTimeFieldWriter(recordConsumer, f, carpetConfiguration.defaultTimeUnit());
-        }
-        if (type.isInstant()) {
+        } else if (type.isInstant()) {
             return new InstantFieldWriter(recordConsumer, f, carpetConfiguration.defaultTimeUnit());
         }
         return null;
     }
 
-    public void write(Object record) {
-        for (var fieldWriter : fieldWriters) {
-            fieldWriter.accept(record);
+    private Consumer<Object> createOneLevelStructureWriter(ParameterizedCollection parametized, RecordField field) {
+        if (parametized.isCollection()) {
+            throw new RecordTypeConversionException(
+                    "Nested collection in a collection is not supported in single level structure codification");
         }
+        BiConsumer<RecordConsumer, Object> elemConsumer = null;
+        if (parametized.isMap()) {
+            ParameterizedMap parametizedChild = parametized.getParametizedAsMap();
+            Consumer<Object> childWriter = createMapStructureWriter(parametizedChild, null);
+            elemConsumer = (consumer, v) -> childWriter.accept(v);
+        } else {
+            Class<?> type = parametized.getActualType();
+            elemConsumer = buildSimpleElementConsumer(type, recordConsumer, carpetConfiguration);
+        }
+        if (elemConsumer == null) {
+            throw new RecordTypeConversionException("Unsuported type in collection");
+        }
+        return new OneLevelCollectionFieldWriter(recordConsumer, field, elemConsumer);
     }
 
-    private static class RecordFieldWriter implements Consumer<Object> {
-
-        private final RecordConsumer recordConsumer;
-        private final String fieldName;
-        private final int idx;
-        private final Function<Object, Object> accesor;
-        private final CarpetRecordWriter writer;
-
-        RecordFieldWriter(RecordConsumer recordConsumer, RecordField recordField, CarpetRecordWriter writer) {
-            this.recordConsumer = recordConsumer;
-            this.fieldName = recordField.fieldName();
-            this.idx = recordField.idx();
-            this.accesor = recordField.getAccessor();
-            this.writer = writer;
+    private Consumer<Object> createTwoLevelStructureWriter(ParameterizedCollection parametized,
+            RecordField recordField) {
+        BiConsumer<RecordConsumer, Object> elemConsumer = null;
+        if (parametized.isCollection()) {
+            ParameterizedCollection parametizedChild = parametized.getParametizedAsCollection();
+            Consumer<Object> childWriter = createTwoLevelStructureWriter(parametizedChild, null);
+            elemConsumer = (consumer, v) -> childWriter.accept(v);
+        } else if (parametized.isMap()) {
+            ParameterizedMap parametizedChild = parametized.getParametizedAsMap();
+            Consumer<Object> childWriter = createMapStructureWriter(parametizedChild, null);
+            elemConsumer = (consumer, v) -> childWriter.accept(v);
+        } else {
+            Class<?> type = parametized.getActualType();
+            elemConsumer = buildSimpleElementConsumer(type, recordConsumer, carpetConfiguration);
         }
-
-        @Override
-        public void accept(Object object) {
-            var value = accesor.apply(object);
-            if (value != null) {
-                recordConsumer.startField(fieldName, idx);
-                recordConsumer.startGroup();
-                writer.write(value);
-                recordConsumer.endGroup();
-                recordConsumer.endField(fieldName, idx);
+        if (elemConsumer == null) {
+            throw new RecordTypeConversionException("Unsuported type in collection");
+        }
+        if (recordField != null) {
+            return new TwoLevelCollectionRecordFieldWriter(recordConsumer, recordField, elemConsumer);
+        }
+        // We are referenced by other collection
+        var innerStructureWriter = elemConsumer;
+        return value -> {
+            Collection<?> coll = (Collection<?>) value;
+            if (coll != null && !coll.isEmpty()) {
+                writeGroupElementTwo(recordConsumer, innerStructureWriter, coll);
             }
+        };
+    }
+
+    private Consumer<Object> createThreeLevelStructureWriter(ParameterizedCollection parametized,
+            RecordField recordField) {
+        BiConsumer<RecordConsumer, Object> elemConsumer = null;
+        if (parametized.isCollection()) {
+            ParameterizedCollection parametizedChild = parametized.getParametizedAsCollection();
+            Consumer<Object> childWriter = createThreeLevelStructureWriter(parametizedChild, null);
+            elemConsumer = (consumer, v) -> childWriter.accept(v);
+        } else if (parametized.isMap()) {
+            ParameterizedMap parametizedChild = parametized.getParametizedAsMap();
+            Consumer<Object> childWriter = createMapStructureWriter(parametizedChild, null);
+            elemConsumer = (consumer, v) -> childWriter.accept(v);
+        } else {
+            Class<?> type = parametized.getActualType();
+            elemConsumer = buildSimpleElementConsumer(type, recordConsumer, carpetConfiguration);
         }
+        if (elemConsumer == null) {
+            throw new RecordTypeConversionException("Unsuported type in collection");
+        }
+        if (recordField != null) {
+            return new ThreeLevelCollectionRecordFieldWriter(recordConsumer, recordField, elemConsumer);
+        }
+        // We are referenced by other collection
+        var innerStructureWriter = elemConsumer;
+        return value -> {
+            Collection<?> coll = (Collection<?>) value;
+            if (coll != null) {
+                recordConsumer.startGroup();
+                if (!coll.isEmpty()) {
+                    writeGroupElementThree(recordConsumer, innerStructureWriter, coll);
+                }
+                recordConsumer.endGroup();
+            }
+        };
+    }
+
+    private Consumer<Object> createMapStructureWriter(ParameterizedMap parametized, RecordField recordField) {
+        // Key
+        BiConsumer<RecordConsumer, Object> elemKeyConsumer = null;
+        Class<?> keyType = parametized.getKeyActualType();
+        elemKeyConsumer = buildSimpleElementConsumer(keyType, recordConsumer, carpetConfiguration);
+
+        // Value
+        BiConsumer<RecordConsumer, Object> elemValueConsumer = null;
+        if (parametized.valueIsCollection()) {
+            ParameterizedCollection parametizedChild = parametized.getValueTypeAsCollection();
+            Consumer<Object> childWriter = createCollectionWriter(parametizedChild, null);
+            elemValueConsumer = (consumer, v) -> childWriter.accept(v);
+        } else if (parametized.valueIsMap()) {
+            ParameterizedMap parametizedChild = parametized.getValueTypeAsMap();
+            Consumer<Object> childWriter = createMapStructureWriter(parametizedChild, null);
+            elemValueConsumer = (consumer, v) -> childWriter.accept(v);
+        } else {
+            Class<?> valueType = parametized.getValueActualType();
+            elemValueConsumer = buildSimpleElementConsumer(valueType, recordConsumer, carpetConfiguration);
+        }
+        if (elemValueConsumer == null || elemKeyConsumer == null) {
+            throw new RecordTypeConversionException("Unsuported type in Map");
+        }
+        if (recordField != null) {
+            return new CollectionsWriters.MapRecordFieldWriter(recordConsumer, recordField, elemKeyConsumer,
+                    elemValueConsumer);
+        }
+        // We are referenced by other collection
+        var innerKeyStructureWriter = elemKeyConsumer;
+        var innerValueStructureWriter = elemValueConsumer;
+        return value -> {
+            Map<?, ?> map = (Map<?, ?>) value;
+            if (map != null) {
+                recordConsumer.startGroup();
+                if (!map.isEmpty()) {
+                    writeKeyalueGroup(recordConsumer, innerKeyStructureWriter, innerValueStructureWriter, map);
+                }
+                recordConsumer.endGroup();
+            }
+        };
     }
 
 }

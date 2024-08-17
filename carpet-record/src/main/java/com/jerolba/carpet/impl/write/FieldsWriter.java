@@ -434,4 +434,33 @@ class FieldsWriter {
         }
     }
 
+    public static class RecordFieldWriter implements Consumer<Object> {
+
+        private final RecordConsumer recordConsumer;
+        private final String fieldName;
+        private final int idx;
+        private final Function<Object, Object> accesor;
+        private final Consumer<Object> writer;
+
+        RecordFieldWriter(RecordConsumer recordConsumer, RecordField recordField, Consumer<Object> writer) {
+            this.recordConsumer = recordConsumer;
+            this.fieldName = recordField.fieldName();
+            this.idx = recordField.idx();
+            this.accesor = recordField.getAccessor();
+            this.writer = writer;
+        }
+
+        @Override
+        public void accept(Object object) {
+            var value = accesor.apply(object);
+            if (value != null) {
+                recordConsumer.startField(fieldName, idx);
+                recordConsumer.startGroup();
+                writer.accept(value);
+                recordConsumer.endGroup();
+                recordConsumer.endField(fieldName, idx);
+            }
+        }
+    }
+
 }
