@@ -92,7 +92,7 @@ class MapStructureWriter {
                 BiConsumer<RecordConsumer, Object> innerValueStructureWriter) {
             this.fieldName = recordField.fieldName();
             this.idx = recordField.idx();
-            this.accesor = Reflection.recordAccessor(recordField.targetClass(), recordField.recordComponent());
+            this.accesor = recordField.getAccessor();
             this.innerKeyStructureWriter = innerStructureWriter;
             this.innerValueStructureWriter = innerValueStructureWriter;
         }

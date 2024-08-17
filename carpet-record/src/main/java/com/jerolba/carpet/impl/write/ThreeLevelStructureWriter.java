@@ -85,7 +85,7 @@ class ThreeLevelStructureWriter {
                 BiConsumer<RecordConsumer, Object> innerStructureWriter) {
             this.fieldName = recordField.fieldName();
             this.idx = recordField.idx();
-            this.accesor = Reflection.recordAccessor(recordField.targetClass(), recordField.recordComponent());
+            this.accesor = recordField.getAccessor();
             this.innerStructureWriter = innerStructureWriter;
         }
 

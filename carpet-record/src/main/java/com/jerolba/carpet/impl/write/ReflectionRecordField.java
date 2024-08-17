@@ -15,14 +15,15 @@
  */
 package com.jerolba.carpet.impl.write;
 
+import java.lang.reflect.RecordComponent;
 import java.util.function.Function;
 
-interface RecordField {
+public record ReflectionRecordField(Class<?> targetClass, RecordComponent recordComponent, String fieldName, int idx)
+        implements RecordField {
 
-    String fieldName();
-
-    int idx();
-
-    Function<Object, Object> getAccessor();
+    @Override
+    public Function<Object, Object> getAccessor() {
+        return Reflection.recordAccessor(targetClass, recordComponent);
+    }
 
 }

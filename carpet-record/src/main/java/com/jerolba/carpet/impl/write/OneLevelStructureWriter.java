@@ -69,7 +69,7 @@ class OneLevelStructureWriter {
         OneLevelCollectionFieldWriter(RecordField recordField, BiConsumer<RecordConsumer, Object> consumer) {
             this.fieldName = recordField.fieldName();
             this.idx = recordField.idx();
-            this.accesor = Reflection.recordAccessor(recordField.targetClass(), recordField.recordComponent());
+            this.accesor = recordField.getAccessor();
             this.consumer = consumer;
         }
 
