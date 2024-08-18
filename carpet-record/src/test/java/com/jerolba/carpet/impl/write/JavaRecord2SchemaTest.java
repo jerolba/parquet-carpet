@@ -41,9 +41,6 @@ import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.TimeUnit;
 import com.jerolba.carpet.annotation.Alias;
 import com.jerolba.carpet.annotation.NotNull;
-import com.jerolba.carpet.impl.write.CarpetWriteConfiguration;
-import com.jerolba.carpet.impl.write.DecimalConfig;
-import com.jerolba.carpet.impl.write.JavaRecord2Schema;
 
 class JavaRecord2SchemaTest {
 

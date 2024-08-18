@@ -116,7 +116,7 @@ class CarpetWriterCollectionThreeLevelTest {
     }
 
     @Test
-    void consecutiveNe5stedCompositeCollection() throws IOException {
+    void consecutiveNestedCompositeCollection() throws IOException {
 
         record ChildRecord(String id, boolean active) {
         }
@@ -217,7 +217,7 @@ class CarpetWriterCollectionThreeLevelTest {
         var avroReader = writerTest.getAvroGenericRecordReader();
         GenericRecord avroRecord = avroReader.read();
         assertEquals(rec.name(), avroRecord.get("name").toString());
-        assertEquals(avroRecord.get("ids"), emptyList());
+        assertEquals(emptyList(), avroRecord.get("ids"));
 
         var carpetReader = writerTest.getCarpetReader();
         EmptyCollection expectedNullList = new EmptyCollection("foo", emptyList());
@@ -225,7 +225,7 @@ class CarpetWriterCollectionThreeLevelTest {
     }
 
     @Test
-    void emptyNestedCollectionAreNotSupported() throws IOException {
+    void emptyNestedCollectionIsSupported() throws IOException {
 
         record EmptyNestedCollection(String name, List<List<Integer>> ids) {
         }

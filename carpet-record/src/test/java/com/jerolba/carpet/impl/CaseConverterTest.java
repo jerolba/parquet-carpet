@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 class CaseConverterTest {
 
     @Test
-    public void camelToSnakeCaseTest() {
+    void camelToSnakeCaseTest() {
         assertEquals("html_parser", camelCaseToSnakeCase("HTMLParser"));
         assertEquals("foo", camelCaseToSnakeCase("FOO"));
         assertEquals("a", camelCaseToSnakeCase("a"));
@@ -41,7 +41,7 @@ class CaseConverterTest {
     }
 
     @Test
-    public void withNumbersTest() {
+    void withNumbersTest() {
         // invalid java fields
         assertEquals("1", camelCaseToSnakeCase("1"));
         assertEquals("123", camelCaseToSnakeCase("123"));
@@ -54,7 +54,7 @@ class CaseConverterTest {
     }
 
     @Test
-    public void withSomeKindOfSnakeCaseTest() {
+    void withSomeKindOfSnakeCaseTest() {
         assertEquals("some_name", camelCaseToSnakeCase("some_name"));
         assertEquals("some_name", camelCaseToSnakeCase("some_Name"));
         assertEquals("some_name", camelCaseToSnakeCase("Some_Name"));
@@ -74,14 +74,14 @@ class CaseConverterTest {
     }
 
     @Test
-    public void weirdCasesTest() {
+    void weirdCasesTest() {
         assertEquals(null, camelCaseToSnakeCase(null));
         assertEquals("", camelCaseToSnakeCase(""));
         assertEquals("_", camelCaseToSnakeCase("_"));
     }
 
     @Test
-    public void dolar() {
+    void dolar() {
         assertEquals("$", camelCaseToSnakeCase("$"));
         assertEquals("$a", camelCaseToSnakeCase("$a"));
         assertEquals("a$", camelCaseToSnakeCase("a$"));

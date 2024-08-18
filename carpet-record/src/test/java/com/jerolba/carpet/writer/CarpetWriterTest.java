@@ -486,7 +486,7 @@ class CarpetWriterTest {
             }
 
             @Test
-            void invalidRescaling() throws IOException {
+            void invalidRescaling() {
                 var rec1 = new BigDecimalObject(new BigDecimal("12345678901234.5678"));
                 var writerTest = new ParquetWriterTest<>(BigDecimalObject.class)
                         .withDecimalConfig(20, 2);
@@ -1344,7 +1344,7 @@ class CarpetWriterTest {
     class GenericFieldsAreNotSupported {
 
         @Test
-        void classWithGenericField() throws IOException {
+        void classWithGenericField() {
 
             record ClassWithGenericField<T>(String name, T value) {
             }

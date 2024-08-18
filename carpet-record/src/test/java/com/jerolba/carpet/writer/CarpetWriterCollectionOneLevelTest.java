@@ -78,7 +78,7 @@ class CarpetWriterCollectionOneLevelTest {
     }
 
     @Test
-    void consecutiveNestedCollectionsAreNotSupported() throws IOException {
+    void consecutiveNestedCollectionsAreNotSupported() {
 
         record ConsecutiveNestedCollection(String id, List<List<Integer>> values) {
         }
@@ -86,7 +86,6 @@ class CarpetWriterCollectionOneLevelTest {
         var rec = new ConsecutiveNestedCollection("foo", List.of(List.of(1, 2, 3)));
         assertThrows(RecordTypeConversionException.class, () -> {
             var writerTest = new ParquetWriterTest<>(ConsecutiveNestedCollection.class).withLevel(ONE);
-            ;
             writerTest.write(rec);
         });
     }

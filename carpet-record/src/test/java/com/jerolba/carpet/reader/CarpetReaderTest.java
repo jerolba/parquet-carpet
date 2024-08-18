@@ -1481,7 +1481,7 @@ class CarpetReaderTest {
         }
 
         @Test
-        void collectionPrimitiveNullValuesNotSupported() throws IOException {
+        void collectionPrimitiveNullValuesNotSupported() {
 
             record CollectionPrimitive(String name, List<Integer> sizes) {
             }
@@ -1599,7 +1599,7 @@ class CarpetReaderTest {
         }
 
         @Test
-        void collectionNestedCollectionPrimitive() throws IOException {
+        void collectionNestedCollectionPrimitive() {
 
             record CollectionNestedCollectionPrimitive(String name, List<List<Integer>> status) {
             }
@@ -1612,7 +1612,7 @@ class CarpetReaderTest {
         }
 
         @Test
-        void collectionNestedCollectionComposite() throws IOException {
+        void collectionNestedCollectionComposite() {
 
             record ChildItem(String id, boolean active) {
             }
@@ -1824,7 +1824,7 @@ class CarpetReaderTest {
         }
 
         @Test
-        void collectionPrimitiveNullValuesNotSupported() throws IOException {
+        void collectionPrimitiveNullValuesNotSupported() {
 
             record CollectionPrimitive(String name, List<Integer> sizes) {
             }

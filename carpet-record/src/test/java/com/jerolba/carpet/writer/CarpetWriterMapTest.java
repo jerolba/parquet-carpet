@@ -167,7 +167,7 @@ class CarpetWriterMapTest {
     }
 
     @Test
-    void mapRecordKeyNull() throws IOException {
+    void mapRecordKeyNull() {
 
         record ChildRecord(String id, boolean active) {
         }
@@ -423,7 +423,7 @@ class CarpetWriterMapTest {
         var avroReader = writerTest.getAvroGenericRecordReader();
         GenericRecord avroRecord = avroReader.read();
         assertEquals(rec.name(), avroRecord.get("name").toString());
-        assertEquals(avroRecord.get("ids"), emptyMap());
+        assertEquals(emptyMap(), avroRecord.get("ids"));
 
         var carpetReader = writerTest.getCarpetReader();
         EmptyMap expectedEmptyMap = new EmptyMap("foo", emptyMap());

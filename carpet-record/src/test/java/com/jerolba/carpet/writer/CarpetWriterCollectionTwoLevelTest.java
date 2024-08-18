@@ -220,7 +220,7 @@ class CarpetWriterCollectionTwoLevelTest {
     }
 
     @Test
-    void emptyNestedCollectionIsNotSupported() throws IOException {
+    void emptyNestedCollectionIsNotSupported() {
 
         record EmptyNestedCollection(String name, List<List<Integer>> ids) {
         }
