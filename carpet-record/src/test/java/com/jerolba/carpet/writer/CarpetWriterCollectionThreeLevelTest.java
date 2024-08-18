@@ -34,7 +34,7 @@ import org.junit.jupiter.api.Test;
 import com.jerolba.carpet.ParquetWriterTest;
 
 //Verification with Avro is done considering that parser can not read List > element structures correctly
-public class CarpetWriterCollectionThreeLevelTest {
+class CarpetWriterCollectionThreeLevelTest {
 
     @Test
     void simpleTypeCollection() throws IOException {

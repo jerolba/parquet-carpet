@@ -35,7 +35,7 @@ import org.junit.jupiter.api.Test;
 
 import com.jerolba.carpet.ParquetWriterTest;
 
-public class CarpetWriterCollectionTwoLevelTest {
+class CarpetWriterCollectionTwoLevelTest {
 
     @Test
     void simpleTypeCollection() throws IOException {

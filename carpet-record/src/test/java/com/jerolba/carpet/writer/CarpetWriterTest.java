@@ -1414,10 +1414,14 @@ class CarpetWriterTest {
             record = avroReader.read();
             assertEquals(rec2.name, record.get("name").toString());
             assertNull(record.get("child"));
+
+            var carpetReader = writerTest.getCarpetReader();
+            assertEquals(rec1, carpetReader.read());
+            assertEquals(rec2, carpetReader.read());
         }
 
         @Test
-        void compositeGenericNotSupported() throws IOException {
+        void compositeGenericNotSupported() {
 
             interface Some {
                 String id();
@@ -1447,7 +1451,7 @@ class CarpetWriterTest {
         }
 
         @Test
-        void recursiveCompositeNotSupported() throws IOException {
+        void recursiveCompositeNotSupported() {
 
             RercursiveMain tail = new RercursiveMain("Tail", null);
             RecursiveLoop child2 = new RecursiveLoop("Level 3", tail);
@@ -1495,6 +1499,11 @@ class CarpetWriterTest {
             GenericRecord record3 = avroReader.read();
             assertEquals(rec3.id, record3.get("id").toString());
             assertNull(record3.get("child"));
+
+            var carpetReader = writerTest.getCarpetReader();
+            assertEquals(rec1, carpetReader.read());
+            assertEquals(rec2, carpetReader.read());
+            assertEquals(rec3, carpetReader.read());
         }
 
     }

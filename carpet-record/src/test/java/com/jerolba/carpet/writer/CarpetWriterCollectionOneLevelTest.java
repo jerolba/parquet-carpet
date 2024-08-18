@@ -29,7 +29,7 @@ import com.jerolba.carpet.ParquetWriterTest;
 import com.jerolba.carpet.RecordTypeConversionException;
 
 //TODO: how can we verify that is correct with out using carpet reader?
-public class CarpetWriterCollectionOneLevelTest {
+class CarpetWriterCollectionOneLevelTest {
 
     @Test
     void simpleTypeCollection() throws IOException {
