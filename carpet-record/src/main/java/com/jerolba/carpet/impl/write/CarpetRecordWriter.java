@@ -71,13 +71,9 @@ public class CarpetRecordWriter {
 
         int idx = 0;
         for (RecordComponent attr : recordClass.getRecordComponents()) {
-            String fieldName = getFieldName(attr);
-
             Class<?> type = attr.getType();
-            Consumer<Object> writer = null;
-            RecordField f = new ReflectionRecordField(recordClass, attr, fieldName, idx);
-
-            writer = buildBasicTypeWriter(type, f);
+            RecordField f = new ReflectionRecordField(recordClass, attr, getFieldName(attr), idx);
+            Consumer<Object> writer = buildBasicTypeWriter(type, f);
             if (writer == null) {
                 if (type.isRecord()) {
                     var recordWriter = new CarpetRecordWriter(recordConsumer, type, carpetConfiguration);
