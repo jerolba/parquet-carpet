@@ -27,7 +27,7 @@ import org.apache.parquet.hadoop.api.WriteSupport;
 import org.apache.parquet.io.OutputFile;
 
 import com.jerolba.carpet.impl.write.CarpetWriteConfiguration;
-import com.jerolba.carpet.impl.write.CarpetWriterSupport;
+import com.jerolba.carpet.impl.write.CarpetWriteSupport;
 import com.jerolba.carpet.impl.write.DecimalConfig;
 
 public class CarpetParquetWriter {
@@ -108,7 +108,7 @@ public class CarpetParquetWriter {
                     columnNamingStrategy,
                     defaultTimeUnit,
                     decimalConfig);
-            return new CarpetWriterSupport<>(recordClass, extraMetaData, carpetCfg);
+            return new CarpetWriteSupport<>(recordClass, extraMetaData, carpetCfg);
         }
 
     }

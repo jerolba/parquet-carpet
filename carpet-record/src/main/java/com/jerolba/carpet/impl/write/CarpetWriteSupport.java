@@ -22,14 +22,14 @@ import org.apache.parquet.hadoop.api.WriteSupport;
 import org.apache.parquet.io.api.RecordConsumer;
 import org.apache.parquet.schema.MessageType;
 
-public class CarpetWriterSupport<T> extends WriteSupport<T> {
+public class CarpetWriteSupport<T> extends WriteSupport<T> {
 
     private final Class<T> recordClass;
     private final Map<String, String> extraMetaData;
     private final CarpetWriteConfiguration carpetConfiguration;
     private CarpetMessageWriter<T> carpetWriter;
 
-    public CarpetWriterSupport(Class<T> recordClass, Map<String, String> extraMetaData,
+    public CarpetWriteSupport(Class<T> recordClass, Map<String, String> extraMetaData,
             CarpetWriteConfiguration carpetConfiguration) {
         this.recordClass = recordClass;
         this.extraMetaData = extraMetaData;

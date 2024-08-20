@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jerolba.carpet;
+package com.jerolba.carpet.impl.read;
 
-class CarpetReadConfiguration {
+import com.jerolba.carpet.FieldMatchingStrategy;
+
+public class CarpetReadConfiguration {
 
     private final boolean failOnMissingColumn;
     private final boolean failNarrowingPrimitiveConversion;

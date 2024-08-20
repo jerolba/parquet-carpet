@@ -15,21 +15,12 @@
  */
 package com.jerolba.carpet;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-
-import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.ParquetReader;
-import org.apache.parquet.hadoop.api.InitContext;
 import org.apache.parquet.hadoop.api.ReadSupport;
 import org.apache.parquet.io.InputFile;
-import org.apache.parquet.io.api.RecordMaterializer;
-import org.apache.parquet.schema.MessageType;
 
-import com.jerolba.carpet.impl.read.CarpetMaterializer;
-import com.jerolba.carpet.impl.read.ColumnToFieldMapper;
-import com.jerolba.carpet.impl.read.SchemaFilter;
-import com.jerolba.carpet.impl.read.SchemaValidation;
+import com.jerolba.carpet.impl.read.CarpetReadConfiguration;
+import com.jerolba.carpet.impl.read.CarpetReadSupport;
 
 public class CarpetParquetReader {
 
@@ -123,38 +114,6 @@ public class CarpetParquetReader {
                     failOnNullForPrimitives,
                     fieldMatchingStrategy);
             return new CarpetReadSupport<>(readClass, configuration);
-        }
-
-    }
-
-    public static class CarpetReadSupport<T> extends ReadSupport<T> {
-
-        private final Class<T> readClass;
-        private final CarpetReadConfiguration carpetConfiguration;
-        private final ColumnToFieldMapper columnToFieldMapper;
-
-        public CarpetReadSupport(Class<T> readClass, CarpetReadConfiguration carpetConfiguration) {
-            this.readClass = readClass;
-            this.carpetConfiguration = carpetConfiguration;
-            this.columnToFieldMapper = new ColumnToFieldMapper(carpetConfiguration.fieldMatchingStrategy());
-        }
-
-        @Override
-        public RecordMaterializer<T> prepareForRead(Configuration configuration,
-                Map<String, String> keyValueMetaData, MessageType fileSchema, ReadContext readContext) {
-            return new CarpetMaterializer<>(readClass, readContext.getRequestedSchema(), columnToFieldMapper);
-        }
-
-        @Override
-        public ReadContext init(InitContext initContext) {
-            var validation = new SchemaValidation(carpetConfiguration.isFailOnMissingColumn(),
-                    carpetConfiguration.isFailNarrowingPrimitiveConversion(),
-                    carpetConfiguration.isFailOnNullForPrimitives());
-
-            SchemaFilter schemaFilter = new SchemaFilter(validation, columnToFieldMapper);
-            MessageType projection = schemaFilter.project(readClass, initContext.getFileSchema());
-            Map<String, String> metadata = new LinkedHashMap<>();
-            return new ReadContext(projection, metadata);
         }
 
     }
