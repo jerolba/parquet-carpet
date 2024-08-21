@@ -447,8 +447,7 @@ class CarpetReaderToMapTest {
             }
 
             @Test
-            // TODO: Review behavior: no attribute vs attribute with null value
-            void emptyListIsDeserializedAsNull() throws IOException {
+            void emptyListIsDeserializedAsEmpty() throws IOException {
 
                 record InnerRecord(String id, List<String> values) {
                 }
@@ -464,7 +463,7 @@ class CarpetReaderToMapTest {
                 }
 
                 var reader = writerTest.getCarpetReader(MainTypeRead.class);
-                var expected = new MainTypeRead("root", mapOf("id", "foo", "values", null));
+                var expected = new MainTypeRead("root", mapOf("id", "foo", "values", List.of()));
                 MainTypeRead actual = reader.read();
                 assertEquals(expected, actual);
             }

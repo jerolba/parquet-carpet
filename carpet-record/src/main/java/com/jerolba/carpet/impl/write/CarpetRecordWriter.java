@@ -190,7 +190,7 @@ public class CarpetRecordWriter {
         var innerStructureWriter = elemConsumer;
         return value -> {
             Collection<?> coll = (Collection<?>) value;
-            if (coll != null && !coll.isEmpty()) {
+            if (coll != null) {
                 writeGroupElementTwo(recordConsumer, innerStructureWriter, coll);
             }
         };

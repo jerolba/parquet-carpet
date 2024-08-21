@@ -17,7 +17,6 @@ package com.jerolba.carpet.impl.write;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -77,7 +76,7 @@ class CollectionsWriters {
         public void accept(Object object) {
             var value = accesor.apply(object);
             Collection<?> coll = (Collection<?>) value;
-            if (coll != null && !coll.isEmpty()) {
+            if (coll != null) {
                 recordConsumer.startField(fieldName, idx);
                 writeGroupElementTwo(recordConsumer, innerStructureWriter, coll);
                 recordConsumer.endField(fieldName, idx);
@@ -88,14 +87,16 @@ class CollectionsWriters {
                 BiConsumer<RecordConsumer, Object> innerStructureWriter, Collection<?> coll) {
 
             recordConsumer.startGroup();
-            recordConsumer.startField("element", 0);
-            for (var v : coll) {
-                if (v == null) {
-                    throw new NullPointerException("2-level list structures doesn't support null values");
+            if (!coll.isEmpty()) {
+                recordConsumer.startField("element", 0);
+                for (var v : coll) {
+                    if (v == null) {
+                        throw new NullPointerException("2-level list structures doesn't support null values");
+                    }
+                    innerStructureWriter.accept(recordConsumer, v);
                 }
-                innerStructureWriter.accept(recordConsumer, v);
+                recordConsumer.endField("element", 0);
             }
-            recordConsumer.endField("element", 0);
             recordConsumer.endGroup();
         }
 
@@ -151,14 +152,14 @@ class CollectionsWriters {
     }
 
     static class MapRecordFieldWriter implements Consumer<Object> {
-    
+
         private final RecordConsumer recordConsumer;
         private final String fieldName;
         private final int idx;
         private final Function<Object, Object> accesor;
         private final BiConsumer<RecordConsumer, Object> innerKeyStructureWriter;
         private final BiConsumer<RecordConsumer, Object> innerValueStructureWriter;
-    
+
         MapRecordFieldWriter(RecordConsumer recordConsumer, RecordField recordField,
                 BiConsumer<RecordConsumer, Object> innerStructureWriter,
                 BiConsumer<RecordConsumer, Object> innerValueStructureWriter) {
@@ -169,7 +170,7 @@ class CollectionsWriters {
             this.innerKeyStructureWriter = innerStructureWriter;
             this.innerValueStructureWriter = innerValueStructureWriter;
         }
-    
+
         @Override
         public void accept(Object object) {
             var value = (Map<?, ?>) accesor.apply(object);
@@ -183,11 +184,11 @@ class CollectionsWriters {
                 recordConsumer.endField(fieldName, idx);
             }
         }
-    
+
         static void writeKeyalueGroup(RecordConsumer recordConsumer,
                 BiConsumer<RecordConsumer, Object> keyStructureWriter,
                 BiConsumer<RecordConsumer, Object> valueStructureWriter, Map<?, ?> map) {
-    
+
             recordConsumer.startField("key_value", 0);
             for (var v : map.entrySet()) {
                 recordConsumer.startGroup();
@@ -206,7 +207,7 @@ class CollectionsWriters {
             }
             recordConsumer.endField("key_value", 0);
         }
-    
+
     }
 
 }
