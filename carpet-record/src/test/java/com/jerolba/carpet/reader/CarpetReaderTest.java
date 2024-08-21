@@ -1801,6 +1801,25 @@ class CarpetReaderTest {
         }
 
         @Test
+        void emptyCollection() throws IOException {
+
+            record EmptyCollection(String name, List<Integer> sizes) {
+            }
+
+            var rec1 = new EmptyCollection("foo", List.of(1, 2, 3));
+            var rec2 = new EmptyCollection("bar", List.of());
+            var rec3 = new EmptyCollection("baz", null);
+            var writerTest = new ParquetWriterTest<>(EmptyCollection.class)
+                    .withLevel(AnnotatedLevels.TWO);
+            writerTest.write(rec1, rec2, rec3);
+
+            var reader = writerTest.getCarpetReader();
+            assertEquals(rec1, reader.read());
+            assertEquals(rec2, reader.read());
+            assertEquals(rec3, reader.read());
+        }
+
+        @Test
         void collectionFilteredByProjection() throws IOException {
 
             record CollectionPrimitive(String name, int size, List<Integer> sizes) {
@@ -2148,6 +2167,24 @@ class CarpetReaderTest {
             var reader = writerTest.getCarpetReader();
             assertEquals(rec1, reader.read());
             assertEquals(rec2, reader.read());
+        }
+
+        @Test
+        void emptyCollection() throws IOException {
+
+            record EmptyCollection(String name, List<Integer> sizes) {
+            }
+
+            var rec1 = new EmptyCollection("foo", List.of(1, 2, 3));
+            var rec2 = new EmptyCollection("bar", List.of());
+            var rec3 = new EmptyCollection("baz", null);
+            var writerTest = new ParquetWriterTest<>(EmptyCollection.class);
+            writerTest.write(rec1, rec2, rec3);
+
+            var reader = writerTest.getCarpetReader();
+            assertEquals(rec1, reader.read());
+            assertEquals(rec2, reader.read());
+            assertEquals(rec3, reader.read());
         }
 
         @Test
