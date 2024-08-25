@@ -21,7 +21,7 @@ import static com.jerolba.carpet.impl.Parameterized.getParameterizedMap;
 import static com.jerolba.carpet.impl.write.CollectionsWriters.MapRecordFieldWriter.writeKeyalueGroup;
 import static com.jerolba.carpet.impl.write.CollectionsWriters.ThreeLevelCollectionRecordFieldWriter.writeGroupElementThree;
 import static com.jerolba.carpet.impl.write.CollectionsWriters.TwoLevelCollectionRecordFieldWriter.writeGroupElementTwo;
-import static com.jerolba.carpet.impl.write.SimpleCollectionItemConsumerFactory.buildSimpleElementConsumer;
+import static com.jerolba.carpet.impl.write.FieldsWriter.buildSimpleElementConsumer;
 
 import java.lang.reflect.RecordComponent;
 import java.util.ArrayList;
@@ -30,32 +30,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.apache.parquet.io.api.RecordConsumer;
 
 import com.jerolba.carpet.RecordTypeConversionException;
-import com.jerolba.carpet.impl.JavaType;
 import com.jerolba.carpet.impl.ParameterizedCollection;
 import com.jerolba.carpet.impl.ParameterizedMap;
 import com.jerolba.carpet.impl.write.CollectionsWriters.OneLevelCollectionFieldWriter;
 import com.jerolba.carpet.impl.write.CollectionsWriters.ThreeLevelCollectionRecordFieldWriter;
 import com.jerolba.carpet.impl.write.CollectionsWriters.TwoLevelCollectionRecordFieldWriter;
-import com.jerolba.carpet.impl.write.FieldsWriter.BigDecimalFieldWriter;
-import com.jerolba.carpet.impl.write.FieldsWriter.BooleanFieldWriter;
-import com.jerolba.carpet.impl.write.FieldsWriter.DoubleFieldWriter;
-import com.jerolba.carpet.impl.write.FieldsWriter.EnumFieldWriter;
-import com.jerolba.carpet.impl.write.FieldsWriter.FloatFieldWriter;
-import com.jerolba.carpet.impl.write.FieldsWriter.InstantFieldWriter;
-import com.jerolba.carpet.impl.write.FieldsWriter.IntegerCompatibleFieldWriter;
-import com.jerolba.carpet.impl.write.FieldsWriter.IntegerFieldWriter;
-import com.jerolba.carpet.impl.write.FieldsWriter.LocalDateFieldWriter;
-import com.jerolba.carpet.impl.write.FieldsWriter.LocalDateTimeFieldWriter;
-import com.jerolba.carpet.impl.write.FieldsWriter.LocalTimeIntFieldWriter;
-import com.jerolba.carpet.impl.write.FieldsWriter.LocalTimeLongFieldWriter;
-import com.jerolba.carpet.impl.write.FieldsWriter.LongFieldWriter;
-import com.jerolba.carpet.impl.write.FieldsWriter.RecordFieldWriter;
-import com.jerolba.carpet.impl.write.FieldsWriter.StringFieldWriter;
-import com.jerolba.carpet.impl.write.FieldsWriter.UuidFieldWriter;
 
 public class CarpetRecordWriter {
 
@@ -71,22 +55,21 @@ public class CarpetRecordWriter {
 
         int idx = 0;
         for (RecordComponent attr : recordClass.getRecordComponents()) {
-            Class<?> type = attr.getType();
             RecordField f = new ReflectionRecordField(recordClass, attr, getFieldName(attr), idx);
-            Consumer<Object> writer = buildBasicTypeWriter(type, f);
-            if (writer == null) {
-                if (type.isRecord()) {
-                    var recordWriter = new CarpetRecordWriter(recordConsumer, type, carpetConfiguration);
-                    writer = new RecordFieldWriter(recordConsumer, f, recordWriter::write);
-                } else if (Collection.class.isAssignableFrom(type)) {
-                    ParameterizedCollection collectionClass = getParameterizedCollection(attr);
-                    writer = createCollectionWriter(collectionClass, f);
-                } else if (Map.class.isAssignableFrom(type)) {
-                    ParameterizedMap mapClass = getParameterizedMap(attr);
-                    writer = createMapStructureWriter(mapClass, f);
-                } else {
-                    throw new RuntimeException(type.getName() + " can not be serialized");
-                }
+            Class<?> type = attr.getType();
+            Consumer<Object> writer = null;
+            BiConsumer<RecordConsumer, Object> basicTypeWriter = buildSimpleElementConsumer(type, recordConsumer,
+                    carpetConfiguration);
+            if (basicTypeWriter != null) {
+                writer = new FieldWriterConsumer(recordConsumer, f, basicTypeWriter);
+            } else if (Collection.class.isAssignableFrom(type)) {
+                ParameterizedCollection collectionClass = getParameterizedCollection(attr);
+                writer = createCollectionWriter(collectionClass, f);
+            } else if (Map.class.isAssignableFrom(type)) {
+                ParameterizedMap mapClass = getParameterizedMap(attr);
+                writer = createMapStructureWriter(mapClass, f);
+            } else {
+                throw new RuntimeException(type.getName() + " can not be serialized");
             }
             fieldWriters.add(writer);
             idx++;
@@ -105,44 +88,6 @@ public class CarpetRecordWriter {
         case TWO -> createTwoLevelStructureWriter(collectionClass, f);
         case THREE -> createThreeLevelStructureWriter(collectionClass, f);
         };
-    }
-
-    private Consumer<Object> buildBasicTypeWriter(Class<?> javaType, RecordField f) {
-        JavaType type = new JavaType(javaType);
-        if (type.isInteger()) {
-            return new IntegerFieldWriter(recordConsumer, f);
-        } else if (type.isString()) {
-            return new StringFieldWriter(recordConsumer, f);
-        } else if (type.isBoolean()) {
-            return new BooleanFieldWriter(recordConsumer, f);
-        } else if (type.isLong()) {
-            return new LongFieldWriter(recordConsumer, f);
-        } else if (type.isDouble()) {
-            return new DoubleFieldWriter(recordConsumer, f);
-        } else if (type.isFloat()) {
-            return new FloatFieldWriter(recordConsumer, f);
-        } else if (type.isShort() || type.isByte()) {
-            return new IntegerCompatibleFieldWriter(recordConsumer, f);
-        } else if (type.isEnum()) {
-            return new EnumFieldWriter(recordConsumer, f, type.getJavaType());
-        } else if (type.isUuid()) {
-            return new UuidFieldWriter(recordConsumer, f);
-        } else if (type.isBigDecimal()) {
-            return new BigDecimalFieldWriter(recordConsumer, f, carpetConfiguration.decimalConfig());
-        } else if (type.isLocalDate()) {
-            return new LocalDateFieldWriter(recordConsumer, f);
-        } else if (type.isLocalTime()) {
-            return switch (carpetConfiguration.defaultTimeUnit()) {
-            case MILLIS -> new LocalTimeIntFieldWriter(recordConsumer, f);
-            case MICROS -> new LocalTimeLongFieldWriter(recordConsumer, f, 1_000);
-            case NANOS -> new LocalTimeLongFieldWriter(recordConsumer, f, 1);
-            };
-        } else if (type.isLocalDateTime()) {
-            return new LocalDateTimeFieldWriter(recordConsumer, f, carpetConfiguration.defaultTimeUnit());
-        } else if (type.isInstant()) {
-            return new InstantFieldWriter(recordConsumer, f, carpetConfiguration.defaultTimeUnit());
-        }
-        return null;
     }
 
     private Consumer<Object> createOneLevelStructureWriter(ParameterizedCollection parametized, RecordField field) {
@@ -273,4 +218,31 @@ public class CarpetRecordWriter {
         };
     }
 
+    private static class FieldWriterConsumer implements Consumer<Object> {
+        private final RecordConsumer recordConsumer;
+        private final String fieldName;
+        private final int idx;
+        private final Function<Object, Object> accessor;
+        private final BiConsumer<RecordConsumer, Object> writer;
+
+        public FieldWriterConsumer(RecordConsumer recordConsumer, RecordField recordField,
+                BiConsumer<RecordConsumer, Object> writer) {
+            this.recordConsumer = recordConsumer;
+            this.fieldName = recordField.fieldName();
+            this.idx = recordField.idx();
+            this.accessor = recordField.getAccessor();
+            this.writer = writer;
+        }
+
+        @Override
+        public void accept(Object object) {
+            var value = accessor.apply(object);
+            if (value != null) {
+                recordConsumer.startField(fieldName, idx);
+                writer.accept(recordConsumer, value);
+                recordConsumer.endField(fieldName, idx);
+            }
+        }
+
+    }
 }
