@@ -15,18 +15,12 @@
  */
 package com.jerolba.carpet.impl.write;
 
-import static com.jerolba.carpet.impl.write.InstantWrite.microsFromEpochFromInstant;
-import static com.jerolba.carpet.impl.write.InstantWrite.millisFromEpochFromInstant;
-import static com.jerolba.carpet.impl.write.InstantWrite.nanosFromEpochFromInstant;
-import static com.jerolba.carpet.impl.write.LocalDateTimeWrite.microsFromEpochFromLocalDateTime;
-import static com.jerolba.carpet.impl.write.LocalDateTimeWrite.millisFromEpochFromLocalDateTime;
-import static com.jerolba.carpet.impl.write.LocalDateTimeWrite.nanosFromEpochFromLocalDateTime;
+import static com.jerolba.carpet.impl.write.TimeWrite.instantCosumer;
+import static com.jerolba.carpet.impl.write.TimeWrite.localDateTimeConsumer;
+import static com.jerolba.carpet.impl.write.TimeWrite.localTimeConsumer;
 import static com.jerolba.carpet.impl.write.UuidWrite.uuidToBinary;
 
-import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.function.BiConsumer;
 
 import org.apache.parquet.io.api.Binary;
@@ -75,25 +69,13 @@ class FieldsWriter {
             return (consumer, v) -> consumer.addInteger((int) ((LocalDate) v).toEpochDay());
         }
         if (type.isLocalTime()) {
-            return switch (carpetConfiguration.defaultTimeUnit()) {
-            case MILLIS -> (consumer, v) -> consumer.addInteger((int) (nanoTime(v) / 1_000_000L));
-            case MICROS -> (consumer, v) -> consumer.addLong(nanoTime(v) / 1_000L);
-            case NANOS -> (consumer, v) -> consumer.addLong(nanoTime(v));
-            };
+            return localTimeConsumer(carpetConfiguration.defaultTimeUnit());
         }
         if (type.isLocalDateTime()) {
-            return switch (carpetConfiguration.defaultTimeUnit()) {
-            case MILLIS -> (consumer, v) -> consumer.addLong(millisFromEpochFromLocalDateTime((LocalDateTime) v));
-            case MICROS -> (consumer, v) -> consumer.addLong(microsFromEpochFromLocalDateTime((LocalDateTime) v));
-            case NANOS -> (consumer, v) -> consumer.addLong(nanosFromEpochFromLocalDateTime((LocalDateTime) v));
-            };
+            return localDateTimeConsumer(carpetConfiguration.defaultTimeUnit());
         }
         if (type.isInstant()) {
-            return switch (carpetConfiguration.defaultTimeUnit()) {
-            case MILLIS -> (consumer, v) -> consumer.addLong(millisFromEpochFromInstant((Instant) v));
-            case MICROS -> (consumer, v) -> consumer.addLong(microsFromEpochFromInstant((Instant) v));
-            case NANOS -> (consumer, v) -> consumer.addLong(nanosFromEpochFromInstant((Instant) v));
-            };
+            return instantCosumer(carpetConfiguration.defaultTimeUnit());
         } else if (type.isBigDecimal()) {
             BigDecimalWrite bigDecimalWrite = new BigDecimalWrite(carpetConfiguration.decimalConfig());
             return bigDecimalWrite::write;
@@ -107,10 +89,6 @@ class FieldsWriter {
             };
         }
         return null;
-    }
-
-    private static long nanoTime(Object v) {
-        return ((LocalTime) v).toNanoOfDay();
     }
 
 }
