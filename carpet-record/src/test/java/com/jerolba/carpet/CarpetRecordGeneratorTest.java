@@ -16,6 +16,7 @@
 package com.jerolba.carpet;
 
 import static com.jerolba.carpet.CarpetRecordGenerator.generateCode;
+import static java.nio.file.Files.createTempFile;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -41,11 +42,12 @@ class CarpetRecordGeneratorTest {
         record Sample(String a, int b, Long c) {
         }
 
-        try (var writer = new CarpetWriter<>(new FileOutputStream("/tmp/simpleRecord.parquet"), Sample.class)) {
+        String filePath = newTempFile("simpleRecord");
+        try (var writer = new CarpetWriter<>(new FileOutputStream(filePath), Sample.class)) {
             writer.write(new Sample("A", 1, 2L));
         }
 
-        List<String> classes = generateCode("/tmp/simpleRecord.parquet");
+        List<String> classes = generateCode(filePath);
         assertTrue(classes.contains("record Sample(String a, int b, Long c) {}"));
     }
 
@@ -55,11 +57,12 @@ class CarpetRecordGeneratorTest {
         record Sample(byte a, short b, int c, long d, float e, double f, boolean g) {
         }
 
-        try (var writer = new CarpetWriter<>(new FileOutputStream("/tmp/primitiveTypes.parquet"), Sample.class)) {
+        String filePath = newTempFile("primitiveTypes");
+        try (var writer = new CarpetWriter<>(new FileOutputStream(filePath), Sample.class)) {
             writer.write(new Sample((byte) 1, (short) 2, 3, 4L, 5.0f, 6.0, true));
         }
 
-        List<String> classes = generateCode("/tmp/primitiveTypes.parquet");
+        List<String> classes = generateCode(filePath);
         assertTrue(classes.contains("record Sample(byte a, short b, int c, long d, float e, double f, boolean g) {}"));
     }
 
@@ -69,11 +72,12 @@ class CarpetRecordGeneratorTest {
         record Sample(LocalDate localDate, LocalTime localTime, LocalDateTime localDateTime, Instant instant) {
         }
 
-        try (var writer = new CarpetWriter<>(new FileOutputStream("/tmp/dateTimeTypesMillis.parquet"), Sample.class)) {
+        String filePath = newTempFile("dateTimeTypesMillis");
+        try (var writer = new CarpetWriter<>(new FileOutputStream(filePath), Sample.class)) {
             writer.write(new Sample(LocalDate.now(), LocalTime.now(), LocalDateTime.now(), Instant.now()));
         }
 
-        List<String> classes = generateCode("/tmp/dateTimeTypesMillis.parquet");
+        List<String> classes = generateCode(filePath);
         assertTrue(classes.contains(
                 "record Sample(LocalDate localDate, LocalTime localTime, LocalDateTime localDateTime, Instant instant) {}"));
     }
@@ -84,12 +88,13 @@ class CarpetRecordGeneratorTest {
         record Sample(LocalDate localDate, LocalTime localTime, LocalDateTime localDateTime, Instant instant) {
         }
 
-        try (var writer = new CarpetWriter.Builder<>(new FileOutputStream("/tmp/dateTimeTypesNanos.parquet"),
-                Sample.class).withDefaultTimeUnit(TimeUnit.NANOS).build()) {
+        String filePath = newTempFile("dateTimeTypesNanos");
+        try (var writer = new CarpetWriter.Builder<>(new FileOutputStream(filePath), Sample.class)
+                .withDefaultTimeUnit(TimeUnit.NANOS).build()) {
             writer.write(new Sample(LocalDate.now(), LocalTime.now(), LocalDateTime.now(), Instant.now()));
         }
 
-        List<String> classes = generateCode("/tmp/dateTimeTypesNanos.parquet");
+        List<String> classes = generateCode(filePath);
         assertTrue(classes.contains(
                 "record Sample(LocalDate localDate, LocalTime localTime, LocalDateTime localDateTime, Instant instant) {}"));
     }
@@ -105,13 +110,14 @@ class CarpetRecordGeneratorTest {
                 BigDecimal k) {
         }
 
-        try (var writer = new CarpetWriter.Builder<>(new FileOutputStream("/tmp/objectTypes.parquet"), Sample.class)
+        String filePath = newTempFile("objectTypes");
+        try (var writer = new CarpetWriter.Builder<>(new FileOutputStream(filePath), Sample.class)
                 .withDefaultDecimal(10, 2).build()) {
             writer.write(new Sample((byte) 1, (short) 2, 3, 4L, 5.0f, 6.0, true, "A", FromEnum.B, UUID.randomUUID(),
                     BigDecimal.TEN));
         }
 
-        List<String> classes = generateCode("/tmp/objectTypes.parquet");
+        List<String> classes = generateCode(filePath);
         assertTrue(classes.contains(
                 "record Sample(Byte a, Short b, Integer c, Long d, Float e, Double f, Boolean g, String h, String i, UUID j, BigDecimal k) {}"));
     }
@@ -126,11 +132,12 @@ class CarpetRecordGeneratorTest {
         record Sample(String a, FromEnum b) {
         }
 
-        try (var writer = new CarpetWriter<>(new FileOutputStream("/tmp/enumToString.parquet"), Sample.class)) {
+        String filePath = newTempFile("enumToString");
+        try (var writer = new CarpetWriter<>(new FileOutputStream(filePath), Sample.class)) {
             writer.write(new Sample("A", FromEnum.B));
         }
 
-        List<String> classes = generateCode("/tmp/enumToString.parquet");
+        List<String> classes = generateCode(filePath);
         assertTrue(classes.contains("record Sample(String a, String b) {}"));
     }
 
@@ -142,11 +149,12 @@ class CarpetRecordGeneratorTest {
         record Sample(String a, int b, Child name) {
         }
 
-        try (var writer = new CarpetWriter<>(new FileOutputStream("/tmp/nestedRecord.parquet"), Sample.class)) {
+        String filePath = newTempFile("nestedRecord");
+        try (var writer = new CarpetWriter<>(new FileOutputStream(filePath), Sample.class)) {
             writer.write(new Sample("A", 1, new Child((byte) 1, 23L)));
         }
 
-        List<String> classes = generateCode("/tmp/nestedRecord.parquet");
+        List<String> classes = generateCode(filePath);
         assertTrue(classes.contains("record Name(byte d, Long e) {}"));
         assertTrue(classes.contains("record Sample(String a, int b, Name name) {}"));
     }
@@ -161,31 +169,34 @@ class CarpetRecordGeneratorTest {
 
         @Test
         void oneLevel() throws IOException {
-            try (var writer = new CarpetWriter.Builder<>(new FileOutputStream("/tmp/nestedList1.parquet"),
-                    Sample.class).withLevelStructure(AnnotatedLevels.ONE).build()) {
+            String filePath = newTempFile("nestedList1");
+            try (var writer = new CarpetWriter.Builder<>(new FileOutputStream(filePath), Sample.class)
+                    .withLevelStructure(AnnotatedLevels.ONE).build()) {
                 writer.write(value);
             }
-            List<String> classes = generateCode("/tmp/nestedList1.parquet");
+            List<String> classes = generateCode(filePath);
             assertTrue(classes.contains("record Sample(String a, int b, List<Long> c) {}"));
         }
 
         @Test
         void twoLevel() throws IOException {
-            try (var writer = new CarpetWriter.Builder<>(new FileOutputStream("/tmp/nestedList2.parquet"),
-                    Sample.class).withLevelStructure(AnnotatedLevels.TWO).build()) {
+            String filePath = newTempFile("nestedList2");
+            try (var writer = new CarpetWriter.Builder<>(new FileOutputStream(filePath), Sample.class)
+                    .withLevelStructure(AnnotatedLevels.TWO).build()) {
                 writer.write(value);
             }
-            List<String> classes = generateCode("/tmp/nestedList2.parquet");
+            List<String> classes = generateCode(filePath);
             assertTrue(classes.contains("record Sample(String a, int b, List<Long> c) {}"));
         }
 
         @Test
         void threeLevel() throws IOException {
-            try (var writer = new CarpetWriter.Builder<>(new FileOutputStream("/tmp/nestedList3.parquet"),
-                    Sample.class).withLevelStructure(AnnotatedLevels.THREE).build()) {
+            String filePath = newTempFile("nestedList3");
+            try (var writer = new CarpetWriter.Builder<>(new FileOutputStream(filePath), Sample.class)
+                    .withLevelStructure(AnnotatedLevels.THREE).build()) {
                 writer.write(value);
             }
-            List<String> classes = generateCode("/tmp/nestedList3.parquet");
+            List<String> classes = generateCode(filePath);
             assertTrue(classes.contains("record Sample(String a, int b, List<Long> c) {}"));
         }
     }
@@ -203,36 +214,36 @@ class CarpetRecordGeneratorTest {
 
         @Test
         void oneLevel() throws IOException {
-            try (var writer = new CarpetWriter.Builder<>(
-                    new FileOutputStream("/tmp/nestedList1Child.parquet"), Sample.class)
-                            .withLevelStructure(AnnotatedLevels.ONE).build()) {
+            String filePath = newTempFile("nestedList1Child");
+            try (var writer = new CarpetWriter.Builder<>(new FileOutputStream(filePath), Sample.class)
+                    .withLevelStructure(AnnotatedLevels.ONE).build()) {
                 writer.write(value);
             }
-            List<String> classes = generateCode("/tmp/nestedList1Child.parquet");
+            List<String> classes = generateCode(filePath);
             assertTrue(classes.contains("record Sample(String a, int b, List<Child> child) {}"));
             assertTrue(classes.contains("record Child(String d, double e) {}"));
         }
 
         @Test
         void twoLevel() throws IOException {
-            try (var writer = new CarpetWriter.Builder<>(
-                    new FileOutputStream("/tmp/nestedList2Child.parquet"), Sample.class)
-                            .withLevelStructure(AnnotatedLevels.TWO).build()) {
+            String filePath = newTempFile("nestedList2Child");
+            try (var writer = new CarpetWriter.Builder<>(new FileOutputStream(filePath), Sample.class)
+                    .withLevelStructure(AnnotatedLevels.TWO).build()) {
                 writer.write(value);
             }
-            List<String> classes = generateCode("/tmp/nestedList2Child.parquet");
+            List<String> classes = generateCode(filePath);
             assertTrue(classes.contains("record Sample(String a, int b, List<Child> child) {}"));
             assertTrue(classes.contains("record Child(String d, double e) {}"));
         }
 
         @Test
         void threeLevel() throws IOException {
-            try (var writer = new CarpetWriter.Builder<>(
-                    new FileOutputStream("/tmp/nestedList3Child.parquet"), Sample.class)
-                            .withLevelStructure(AnnotatedLevels.THREE).build()) {
+            String filePath = newTempFile("nestedList3Child");
+            try (var writer = new CarpetWriter.Builder<>(new FileOutputStream(filePath), Sample.class)
+                    .withLevelStructure(AnnotatedLevels.THREE).build()) {
                 writer.write(value);
             }
-            List<String> classes = generateCode("/tmp/nestedList3Child.parquet");
+            List<String> classes = generateCode(filePath);
             assertTrue(classes.contains("record Sample(String a, int b, List<Child> child) {}"));
             assertTrue(classes.contains("record Child(String d, double e) {}"));
         }
@@ -251,36 +262,36 @@ class CarpetRecordGeneratorTest {
 
         @Test
         void oneLevel() throws IOException {
-            try (var writer = new CarpetWriter.Builder<>(
-                    new FileOutputStream("/tmp/nestedListMap1Child.parquet"), Sample.class)
-                            .withLevelStructure(AnnotatedLevels.ONE).build()) {
+            String filePath = newTempFile("nestedList3Child");
+            try (var writer = new CarpetWriter.Builder<>(new FileOutputStream(filePath), Sample.class)
+                    .withLevelStructure(AnnotatedLevels.ONE).build()) {
                 writer.write(value);
             }
-            List<String> classes = generateCode("/tmp/nestedListMap1Child.parquet");
+            List<String> classes = generateCode(filePath);
             assertTrue(classes.contains("record Sample(String a, int b, List<Map<String, Option>> option) {}"));
             assertTrue(classes.contains("record Option(String d, double e) {}"));
         }
 
         @Test
         void twoLevel() throws IOException {
-            try (var writer = new CarpetWriter.Builder<>(
-                    new FileOutputStream("/tmp/nestedListMap2Child.parquet"), Sample.class)
-                            .withLevelStructure(AnnotatedLevels.TWO).build()) {
+            String filePath = newTempFile("nestedListMap2Child");
+            try (var writer = new CarpetWriter.Builder<>(new FileOutputStream(filePath), Sample.class)
+                    .withLevelStructure(AnnotatedLevels.TWO).build()) {
                 writer.write(value);
             }
-            List<String> classes = generateCode("/tmp/nestedListMap2Child.parquet");
+            List<String> classes = generateCode(filePath);
             assertTrue(classes.contains("record Sample(String a, int b, List<Map<String, Option>> option) {}"));
             assertTrue(classes.contains("record Option(String d, double e) {}"));
         }
 
         @Test
         void threeLevel() throws IOException {
-            try (var writer = new CarpetWriter.Builder<>(
-                    new FileOutputStream("/tmp/nestedListMap3Child.parquet"), Sample.class)
-                            .withLevelStructure(AnnotatedLevels.THREE).build()) {
+            String filePath = newTempFile("nestedListMap3Child");
+            try (var writer = new CarpetWriter.Builder<>(new FileOutputStream(filePath), Sample.class)
+                    .withLevelStructure(AnnotatedLevels.THREE).build()) {
                 writer.write(value);
             }
-            List<String> classes = generateCode("/tmp/nestedListMap3Child.parquet");
+            List<String> classes = generateCode(filePath);
             assertTrue(classes.contains("record Sample(String a, int b, List<Map<String, Option>> option) {}"));
             assertTrue(classes.contains("record Option(String d, double e) {}"));
         }
@@ -296,23 +307,23 @@ class CarpetRecordGeneratorTest {
 
         @Test
         void twoLevel() throws IOException {
-            try (var writer = new CarpetWriter.Builder<>(
-                    new FileOutputStream("/tmp/nestedList2Child.parquet"), Sample.class)
-                            .withLevelStructure(AnnotatedLevels.TWO).build()) {
+            String filePath = newTempFile("nestedList2Child");
+            try (var writer = new CarpetWriter.Builder<>(new FileOutputStream(filePath), Sample.class)
+                    .withLevelStructure(AnnotatedLevels.TWO).build()) {
                 writer.write(value);
             }
-            List<String> classes = generateCode("/tmp/nestedList2Child.parquet");
+            List<String> classes = generateCode(filePath);
             assertTrue(classes.contains("record Sample(String a, int b, List<List<String>> child) {}"));
         }
 
         @Test
         void threeLevel() throws IOException {
-            try (var writer = new CarpetWriter.Builder<>(
-                    new FileOutputStream("/tmp/nestedList3Child.parquet"), Sample.class)
-                            .withLevelStructure(AnnotatedLevels.THREE).build()) {
+            String filePath = newTempFile("nestedList3Child");
+            try (var writer = new CarpetWriter.Builder<>(new FileOutputStream(filePath), Sample.class)
+                    .withLevelStructure(AnnotatedLevels.THREE).build()) {
                 writer.write(value);
             }
-            List<String> classes = generateCode("/tmp/nestedList3Child.parquet");
+            List<String> classes = generateCode(filePath);
             assertTrue(classes.contains("record Sample(String a, int b, List<List<String>> child) {}"));
         }
     }
@@ -330,24 +341,24 @@ class CarpetRecordGeneratorTest {
 
         @Test
         void twoLevel() throws IOException {
-            try (var writer = new CarpetWriter.Builder<>(
-                    new FileOutputStream("/tmp/nestedList2Child.parquet"), Sample.class)
-                            .withLevelStructure(AnnotatedLevels.TWO).build()) {
+            String filePath = newTempFile("nestedList2Child");
+            try (var writer = new CarpetWriter.Builder<>(new FileOutputStream(filePath), Sample.class)
+                    .withLevelStructure(AnnotatedLevels.TWO).build()) {
                 writer.write(value);
             }
-            List<String> classes = generateCode("/tmp/nestedList2Child.parquet");
+            List<String> classes = generateCode(filePath);
             assertTrue(classes.contains("record Sample(String a, int b, List<List<Child>> child) {}"));
             assertTrue(classes.contains("record Child(String d, double e) {}"));
         }
 
         @Test
         void threeLevel() throws IOException {
-            try (var writer = new CarpetWriter.Builder<>(
-                    new FileOutputStream("/tmp/nestedList3Child.parquet"), Sample.class)
-                            .withLevelStructure(AnnotatedLevels.THREE).build()) {
+            String filePath = newTempFile("nestedList3Child");
+            try (var writer = new CarpetWriter.Builder<>(new FileOutputStream(filePath), Sample.class)
+                    .withLevelStructure(AnnotatedLevels.THREE).build()) {
                 writer.write(value);
             }
-            List<String> classes = generateCode("/tmp/nestedList3Child.parquet");
+            List<String> classes = generateCode(filePath);
             assertTrue(classes.contains("record Sample(String a, int b, List<List<Child>> child) {}"));
             assertTrue(classes.contains("record Child(String d, double e) {}"));
         }
@@ -364,10 +375,11 @@ class CarpetRecordGeneratorTest {
 
             var value = new Sample("A", true, Map.of("B", 1, "C", 2));
 
-            try (var writer = new CarpetWriter<>(new FileOutputStream("/tmp/nestedMapSimple.parquet"), Sample.class)) {
+            String filePath = newTempFile("nestedMapSimple");
+            try (var writer = new CarpetWriter<>(new FileOutputStream(filePath), Sample.class)) {
                 writer.write(value);
             }
-            List<String> classes = generateCode("/tmp/nestedMapSimple.parquet");
+            List<String> classes = generateCode(filePath);
             assertTrue(classes.contains("record Sample(String a, boolean b, Map<String, Integer> myMap) {}"));
         }
 
@@ -382,10 +394,11 @@ class CarpetRecordGeneratorTest {
 
             var value = new Sample("A", true, Map.of("B", new Child("Z", 12L), "C", new Child("Y", 23L)));
 
-            try (var writer = new CarpetWriter<>(new FileOutputStream("/tmp/nestedMapRecordV.parquet"), Sample.class)) {
+            String filePath = newTempFile("nestedMapRecordV");
+            try (var writer = new CarpetWriter<>(new FileOutputStream(filePath), Sample.class)) {
                 writer.write(value);
             }
-            List<String> classes = generateCode("/tmp/nestedMapRecordV.parquet");
+            List<String> classes = generateCode(filePath);
             assertTrue(classes.contains("record Sample(String a, boolean b, Map<String, Cities> cities) {}"));
             assertTrue(classes.contains("record Cities(String c, Long d) {}"));
         }
@@ -401,10 +414,11 @@ class CarpetRecordGeneratorTest {
 
             var value = new Sample("A", true, Map.of(new Child("Z", 12L), "B", new Child("Y", 23L), "C"));
 
-            try (var writer = new CarpetWriter<>(new FileOutputStream("/tmp/nestedMapRecordK.parquet"), Sample.class)) {
+            String filePath = newTempFile("nestedMapRecordK");
+            try (var writer = new CarpetWriter<>(new FileOutputStream(filePath), Sample.class)) {
                 writer.write(value);
             }
-            List<String> classes = generateCode("/tmp/nestedMapRecordK.parquet");
+            List<String> classes = generateCode(filePath);
             assertTrue(classes.contains("record Sample(String a, boolean b, Map<CitiesKey, String> cities) {}"));
             assertTrue(classes.contains("record CitiesKey(String c, Long d) {}"));
         }
@@ -420,10 +434,11 @@ class CarpetRecordGeneratorTest {
 
             var value = new Sample("A", true, Map.of("B", List.of(new Child("Z", 12L), new Child("Y", 23L))));
 
-            try (var writer = new CarpetWriter<>(new FileOutputStream("/tmp/nestedMapListV.parquet"), Sample.class)) {
+            String filePath = newTempFile("nestedMapListV");
+            try (var writer = new CarpetWriter<>(new FileOutputStream(filePath), Sample.class)) {
                 writer.write(value);
             }
-            List<String> classes = generateCode("/tmp/nestedMapListV.parquet");
+            List<String> classes = generateCode(filePath);
             assertTrue(classes.contains("record Sample(String a, boolean b, Map<String, List<Cities>> cities) {}"));
             assertTrue(classes.contains("record Cities(String c, Long d) {}"));
         }
@@ -436,10 +451,11 @@ class CarpetRecordGeneratorTest {
 
             var value = new Sample("A", 1, Map.of("B", Map.of()));
 
-            try (var writer = new CarpetWriter<>(new FileOutputStream("/tmp/nestedMapMapV.parquet"), Sample.class)) {
+            String filePath = newTempFile("nestedMapMapV");
+            try (var writer = new CarpetWriter<>(new FileOutputStream(filePath), Sample.class)) {
                 writer.write(value);
             }
-            List<String> classes = generateCode("/tmp/nestedMapMapV.parquet");
+            List<String> classes = generateCode(filePath);
             assertTrue(classes.contains("record Sample(String a, int b, Map<String, Map<UUID, Integer>> cities) {}"));
         }
 
@@ -459,11 +475,11 @@ class CarpetRecordGeneratorTest {
 
             var value = new Sample("foo", new Child("a", 1.2f), new Child("b", 2.2f));
 
-            try (var writer = new CarpetWriter<>(new FileOutputStream("/tmp/repeatedInSameLevel.parquet"),
-                    Sample.class)) {
+            String filePath = newTempFile("repeatedInSameLevel");
+            try (var writer = new CarpetWriter<>(new FileOutputStream(filePath), Sample.class)) {
                 writer.write(value);
             }
-            List<String> classes = generateCode("/tmp/repeatedInSameLevel.parquet");
+            List<String> classes = generateCode(filePath);
             assertTrue(classes.contains("record Sample(String id, A a, A b) {}"));
             assertTrue(classes.contains("record A(String c, float d) {}"));
             assertEquals(2, classes.size());
@@ -483,17 +499,21 @@ class CarpetRecordGeneratorTest {
 
             var value = new Sample("foo", new Child("a", 1.2f), new Data(1L, new Child("b", 2.2f)));
 
-            try (var writer = new CarpetWriter<>(new FileOutputStream("/tmp/repeatedInDifferentSameLevel.parquet"),
-                    Sample.class)) {
+            String filePath = newTempFile("repeatedInDifferentSameLevel");
+            try (var writer = new CarpetWriter<>(new FileOutputStream(filePath), Sample.class)) {
                 writer.write(value);
             }
-            List<String> classes = generateCode("/tmp/repeatedInDifferentSameLevel.parquet");
+            List<String> classes = generateCode(filePath);
             assertTrue(classes.contains("record Sample(String id, A a, B b) {}"));
             assertTrue(classes.contains("record B(Long code, A d) {}"));
             assertTrue(classes.contains("record A(String c, float d) {}"));
             assertEquals(3, classes.size());
         }
 
+    }
+
+    private String newTempFile(String name) throws IOException {
+        return createTempFile(name, ".parquet").toString();
     }
 
 }

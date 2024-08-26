@@ -16,6 +16,7 @@
 package com.jerolba.carpet.writer;
 
 import static com.jerolba.carpet.ColumnNamingStrategy.SNAKE_CASE;
+import static java.nio.file.Files.createTempFile;
 import static java.time.ZoneOffset.ofHours;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -23,7 +24,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 
-import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -1660,7 +1660,7 @@ class CarpetWriterTest {
         record SomeEntity(int value) {
         }
 
-        var file = new File("/tmp/metadata.prquet");
+        var file = createTempFile("metadata", ".parquet").toFile();
         try (var writer = new CarpetWriter.Builder<>(new FileSystemOutputFile(file), SomeEntity.class)
                 .withExtraMetaData("someKey", "someValue")
                 .withExtraMetaData(Map.of("foo", "bar"))
