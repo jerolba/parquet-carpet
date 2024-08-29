@@ -15,6 +15,7 @@
  */
 package com.jerolba.carpet;
 
+import org.apache.parquet.conf.PlainParquetConfiguration;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.api.ReadSupport;
 import org.apache.parquet.io.InputFile;
@@ -45,7 +46,7 @@ public class CarpetParquetReader {
         private FieldMatchingStrategy fieldMatchingStrategy = DEFAULT_FIELD_MATCHING_STRATEGY;
 
         private Builder(InputFile file, Class<T> readClass) {
-            super(file);
+            super(file, new PlainParquetConfiguration());
             this.readClass = readClass;
         }
 

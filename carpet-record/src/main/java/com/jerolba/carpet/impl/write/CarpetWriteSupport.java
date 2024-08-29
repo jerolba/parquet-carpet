@@ -18,6 +18,7 @@ package com.jerolba.carpet.impl.write;
 import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.parquet.conf.ParquetConfiguration;
 import org.apache.parquet.hadoop.api.WriteSupport;
 import org.apache.parquet.io.api.RecordConsumer;
 import org.apache.parquet.schema.MessageType;
@@ -39,6 +40,13 @@ public class CarpetWriteSupport<T> extends WriteSupport<T> {
     @Override
     public String getName() {
         return recordClass.getName();
+    }
+
+    @Override
+    public WriteContext init(ParquetConfiguration configuration) {
+        JavaRecord2Schema javaRecord2Schema = new JavaRecord2Schema(carpetConfiguration);
+        MessageType schema = javaRecord2Schema.createSchema(recordClass);
+        return new WriteContext(schema, this.extraMetaData);
     }
 
     @Override
