@@ -21,7 +21,7 @@ import org.apache.parquet.io.api.GroupConverter;
 import org.apache.parquet.io.api.RecordMaterializer;
 import org.apache.parquet.schema.MessageType;
 
-public class CarpetMaterializer<T> extends RecordMaterializer<T> {
+class CarpetMaterializer<T> extends RecordMaterializer<T> {
 
     private final GroupConverter root;
     private T value;

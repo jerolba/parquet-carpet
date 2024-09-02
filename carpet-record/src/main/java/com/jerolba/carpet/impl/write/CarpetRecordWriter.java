@@ -40,7 +40,7 @@ import com.jerolba.carpet.impl.write.CollectionsWriters.OneLevelCollectionFieldW
 import com.jerolba.carpet.impl.write.CollectionsWriters.ThreeLevelCollectionRecordFieldWriter;
 import com.jerolba.carpet.impl.write.CollectionsWriters.TwoLevelCollectionRecordFieldWriter;
 
-public class CarpetRecordWriter {
+class CarpetRecordWriter {
 
     private final RecordConsumer recordConsumer;
     private final CarpetWriteConfiguration carpetConfiguration;
