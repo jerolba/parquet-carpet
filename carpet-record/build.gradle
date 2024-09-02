@@ -36,6 +36,7 @@ dependencies {
         exclude group: 'org.apache.avro', module: 'avro'
     }
     api("org.apache.hadoop:hadoop-common:${hadoopVersion}") {
+        exclude group: 'org.apache.hadoop', module: 'hadoop-auth'    
         exclude group: 'org.apache.avro', module: 'avro'
         exclude group: 'com.fasterxml.jackson.core', module: 'jackson-databind'
         exclude group: 'org.apache.kerby', module: 'kerb-core'
@@ -46,6 +47,9 @@ dependencies {
         exclude group: 'org.apache.httpcomponents', module: 'httpclient'
         exclude group: 'org.apache.commons', module: 'commons-text'
         exclude group: 'org.apache.commons', module: 'commons-math3'
+        exclude group: 'org.apache.commons', module: 'commons-configuration2'
+        exclude group: 'org.apache.commons', module: 'commons-compress'
+        exclude group: 'org.apache.commons', module: 'commons-lang3'
         exclude group: 'org.apache.zookeeper', module: 'zookeeper'
         exclude group: 'org.eclipse.jetty', module: 'jetty-server'
         exclude group: 'org.eclipse.jetty', module: 'jetty-servlet'
@@ -66,6 +70,7 @@ dependencies {
         exclude group: 'commons-net', module: 'commons-net'
         exclude group: 'commons-cli', module: 'commons-cli'
         exclude group: 'commons-pool', module: 'commons-pool'
+        exclude group: 'commons-logging', module: 'commons-logging'
         exclude group: 'ch.qos.reload4j', module: 'reload4j'
         exclude group: 'org.slf4j', module: 'slf4j-reload4j'
         exclude group: 'org.slf4j', module: 'slf4j-log4j12'
@@ -73,11 +78,9 @@ dependencies {
         exclude group: 'com.jcraft', module: 'jsch'
         exclude group: 'dnsjava', module: 'dnsjava'
         exclude group: 'com.github.pjfanning', module: 'jersey-json'
-
-        exclude group: 'org.apache.kerby', module: 'kerb-simplekdc'
-        exclude group: 'com.nimbusds', module: 'nimbus-jose-jwt'
-        exclude group: 'net.minidev', module: 'json-smart'
-        exclude group: 'org.apache.curator', module: 'curator-framework'
+        exclude group: 'io.dropwizard.metrics', module: 'metrics-core'
+        exclude group: 'com.google.code.gson', module: 'gson'
+        exclude group: 'com.google.re2j', module: 're2j'
     }
 
     testImplementation "org.apache.avro:avro:1.11.1"
@@ -101,19 +104,18 @@ configurations.implementation {
     exclude group: 'org.slf4j', module: 'slf4j-reload4j'
 
     //hadoop-common
-    //Following dependencies are needed for Path
-    //exclude group: 'org.apache.commons', module: 'commons-lang3'
-    //exclude group: 'commons-logging', module: 'commons-logging'
-    //exclude group: 'org.apache.commons', module: 'commons-configuration2'
-    //exclude group: 'org.apache.hadoop', module: 'hadoop-auth'
     exclude group: 'org.apache.kerby', module: 'kerb-core'
     exclude group: 'org.apache.curator', module: 'curator-recipes'
     exclude group: 'org.apache.curator', module: 'curator-client'
+    exclude group: 'org.apache.hadoop', module: 'hadoop-auth'
     exclude group: 'org.apache.hadoop', module: 'hadoop-annotations'
     exclude group: 'org.apache.hadoop.thirdparty', module: 'hadoop-shaded-protobuf_3_7'
     exclude group: 'org.apache.httpcomponents', module: 'httpclient'
     exclude group: 'org.apache.commons', module: 'commons-text'
     exclude group: 'org.apache.commons', module: 'commons-math3'
+    exclude group: 'org.apache.commons', module: 'commons-configuration2'
+    exclude group: 'org.apache.commons', module: 'commons-compress'
+    exclude group: 'org.apache.commons', module: 'commons-lang3'
     exclude group: 'org.apache.zookeeper', module: 'zookeeper'
     exclude group: 'org.eclipse.jetty', module: 'jetty-server'
     exclude group: 'org.eclipse.jetty', module: 'jetty-servlet'
@@ -134,18 +136,16 @@ configurations.implementation {
     exclude group: 'commons-net', module: 'commons-net'
     exclude group: 'commons-cli', module: 'commons-cli'
     exclude group: 'commons-pool', module: 'commons-pool'
+    exclude group: 'commons-logging', module: 'commons-logging'
     exclude group: 'ch.qos.reload4j', module: 'reload4j'
     exclude group: 'org.slf4j', module: 'slf4j-reload4j'
     exclude group: 'org.slf4j', module: 'slf4j-log4j12'
     exclude group: 'log4j', module: 'log4j'
     exclude group: 'com.jcraft', module: 'jsch'
     exclude group: 'dnsjava', module: 'dnsjava'
-    
-    //Following dependencies excluded from included hadoop-auth
-    exclude group: 'org.apache.kerby', module: 'kerb-simplekdc'
-    exclude group: 'com.nimbusds', module: 'nimbus-jose-jwt'
-    exclude group: 'net.minidev', module: 'json-smart'
-    exclude group: 'org.apache.curator', module: 'curator-framework'
+    exclude group: 'io.dropwizard.metrics', module: 'metrics-core'    
+    exclude group: 'com.google.code.gson', module: 'gson'
+    exclude group: 'com.google.re2j', module: 're2j'
 }
 
 configurations.all {

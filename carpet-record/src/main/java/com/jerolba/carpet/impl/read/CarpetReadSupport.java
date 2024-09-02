@@ -19,6 +19,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.parquet.conf.ParquetConfiguration;
 import org.apache.parquet.hadoop.api.InitContext;
 import org.apache.parquet.hadoop.api.ReadSupport;
 import org.apache.parquet.io.api.RecordMaterializer;
@@ -38,6 +39,12 @@ public class CarpetReadSupport<T> extends ReadSupport<T> {
 
     @Override
     public RecordMaterializer<T> prepareForRead(Configuration configuration,
+            Map<String, String> keyValueMetaData, MessageType fileSchema, ReadContext readContext) {
+        return new CarpetMaterializer<>(readClass, readContext.getRequestedSchema(), columnToFieldMapper);
+    }
+
+    @Override
+    public RecordMaterializer<T> prepareForRead(ParquetConfiguration configuration,
             Map<String, String> keyValueMetaData, MessageType fileSchema, ReadContext readContext) {
         return new CarpetMaterializer<>(readClass, readContext.getRequestedSchema(), columnToFieldMapper);
     }

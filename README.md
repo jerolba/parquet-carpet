@@ -17,7 +17,7 @@ A Java library for serializing and deserializing Parquet files efficiently using
 - Very simple API
 - Low level configuration of Parquet properties
 - Low overhead procesing files
-- Minimized `parquet-mr` and hadoop transitive dependencies
+- Minimized `parquet-java` and hadoop transitive dependencies
 
 
 ## Table of Contents
@@ -37,14 +37,14 @@ You can include this library in your Java project using Maven:
 <dependency>
     <groupId>com.jerolba</groupId>
     <artifactId>carpet-record</artifactId>
-    <version>0.1.0</version>
+    <version>0.2.0</version>
 </dependency>
 ```
 
 or using Gradle:
 
 ```gradle
-implementation 'com.jerolba:carpet-record:0.1.0'
+implementation 'com.jerolba:carpet-record:0.2.0'
 ```
 
 Carpet includes only the essential transitive dependencies required for file read and write operations.
@@ -632,7 +632,7 @@ List<SomeEntity> list = reader.toList();
 
 ### Low level Parquet classes
 
-Carpet is built on top of [parquet-mr](https://github.com/apache/parquet-mr/) library and supports creating a `ParquetWriter` and `ParquetReader`, and use it with third party libraries that work with parquet classes.
+Carpet is built on top of [parquet-java](https://github.com/apache/parquet-java/) library and supports creating a `ParquetWriter` and `ParquetReader`, and use it with third party libraries that work with parquet classes.
 
 #### ParquetWriter
 
@@ -664,17 +664,10 @@ try (ParquetReader<MyRecord> reader = CarpetParquetReader.builder(inputFile, MyR
 
 ### Local file system files
 
-`parquet-mr` defines `OutputFile` and `InputFile` interfaces, but it only provides `HadoopOutputFile` and `HadoopInputFile` implementations in `parquet-hadoop` library. These implementations can access to files located in Hadoop and local file system.
+`parquet-java` defines `OutputFile` and `InputFile` interfaces, with `HadoopOutputFile` and `HadoopInputFile` implementations to use with Hadoop. To work with local files Parquet Java recently added `LocalOutputFile` and `LocalInputFile` implementations.
 
-Recently, Parquet main project has [merged to master](https://github.com/apache/parquet-mr/pull/1111) non Hadoop implementations that don't require to add Hadoop dependencies. This code has not been released to a stable version.
+Until these classes where created, Carpet provided a local file implementation with `FileSystemOutputFile` and `FileSystemInputFile`. You can use either implementation.
 
-In the meantime, Carpet provides one local file implementation:
-
-```java
-InputFile inputFile = new FileSystemOutputFile(new File("my_file.parquet"));
-
-InputFile outputFile = new FileSystemInputFile(new File("my_file.parquet"));
-```
 
 ## Build
 
