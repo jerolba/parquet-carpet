@@ -21,6 +21,7 @@ import java.lang.invoke.CallSite;
 import java.lang.invoke.LambdaMetafactory;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.RecordComponent;
 import java.util.function.Function;
@@ -28,20 +29,27 @@ import java.util.function.Function;
 class Reflection {
 
     public static Function<Object, Object> recordAccessor(Class<?> targetClass, RecordComponent recordComponent) {
+        return fieldAccessor(targetClass, recordComponent.getName(), recordComponent.getType());
+    }
+
+    public static Function<Object, Object> recordAccessor(Class<?> targetClass, Field classField) {
+        return fieldAccessor(targetClass, classField.getName(), classField.getType());
+    }
+
+    private static Function<Object, Object> fieldAccessor(Class<?> targetClass, String name, Class<?> fieldType) {
         MethodHandles.Lookup lookup = MethodHandles.lookup();
         try {
-            MethodHandle findVirtual = lookup.findVirtual(targetClass, recordComponent.getName(),
-                    methodType(recordComponent.getType()));
+            MethodHandle findVirtual = lookup.findVirtual(targetClass, name, methodType(fieldType));
             CallSite site = LambdaMetafactory.metafactory(lookup,
                     "apply",
                     methodType(Function.class),
                     methodType(Object.class, Object.class),
                     findVirtual,
-                    methodType(recordComponent.getType(), targetClass));
+                    methodType(fieldType, targetClass));
             return (Function<Object, Object>) site.getTarget().invokeExact();
         } catch (IllegalAccessException e) {
             try {
-                Method m = targetClass.getDeclaredMethod(recordComponent.getName());
+                Method m = targetClass.getDeclaredMethod(name);
                 m.setAccessible(true);
                 MethodHandle pmh = lookup.unreflect(m);
                 return obj -> {
