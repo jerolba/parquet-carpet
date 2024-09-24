@@ -15,6 +15,7 @@
  */
 package com.jerolba.carpet.impl;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.RecordComponent;
 import java.lang.reflect.Type;
@@ -28,7 +29,11 @@ import com.jerolba.carpet.RecordTypeConversionException;
 public class Parameterized {
 
     public static ParameterizedCollection getParameterizedCollection(RecordComponent attr) {
-        return parametizeTo(attr, ParameterizedCollection::new);
+        return parametizeTo(attr.getGenericType(), ParameterizedCollection::new);
+    }
+
+    public static ParameterizedCollection getParameterizedCollection(Field attr) {
+        return parametizeTo(attr.getGenericType(), ParameterizedCollection::new);
     }
 
     public static boolean isCollection(Type type) {
@@ -36,7 +41,11 @@ public class Parameterized {
     }
 
     public static ParameterizedMap getParameterizedMap(RecordComponent attr) {
-        return parametizeTo(attr, ParameterizedMap::new);
+        return parametizeTo(attr.getGenericType(), ParameterizedMap::new);
+    }
+
+    public static ParameterizedMap getParameterizedMap(Field attr) {
+        return parametizeTo(attr.getGenericType(), ParameterizedMap::new);
     }
 
     public static boolean isMap(Type type) {
@@ -64,8 +73,8 @@ public class Parameterized {
         return false;
     }
 
-    private static <T> T parametizeTo(RecordComponent attr, BiFunction<Type, ParameterizedType, T> constructor) {
-        java.lang.reflect.Type genericType = attr.getGenericType();
+    private static <T> T parametizeTo(java.lang.reflect.Type genericType,
+            BiFunction<Type, ParameterizedType, T> constructor) {
         if (genericType instanceof TypeVariable<?>) {
             throw new RecordTypeConversionException(genericType.toString() + " generic types not supported");
         }
