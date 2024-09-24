@@ -26,7 +26,10 @@ import java.lang.reflect.Method;
 import java.lang.reflect.RecordComponent;
 import java.util.function.Function;
 
-class Reflection {
+public class Reflection {
+
+    private Reflection() {
+    }
 
     public static Function<Object, Object> recordAccessor(Class<?> targetClass, RecordComponent recordComponent) {
         return fieldAccessor(targetClass, recordComponent.getName(), recordComponent.getType());
