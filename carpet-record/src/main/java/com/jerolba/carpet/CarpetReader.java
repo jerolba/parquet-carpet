@@ -140,6 +140,8 @@ public class CarpetReader<T> implements Iterable<T> {
         CarpetReader<T> newInstace = new CarpetReader<>(inputFile, recordClass);
         newInstace.failOnMissingColumn = failOnMissingColumn;
         newInstace.failOnNullForPrimitives = failOnNullForPrimitives;
+        newInstace.failNarrowingPrimitiveConversion = failNarrowingPrimitiveConversion;
+        newInstace.fieldMatchingStrategy = fieldMatchingStrategy;
         return newInstace;
     }
 

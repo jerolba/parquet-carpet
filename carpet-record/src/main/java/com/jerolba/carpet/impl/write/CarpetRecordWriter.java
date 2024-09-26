@@ -36,6 +36,7 @@ import org.apache.parquet.io.api.RecordConsumer;
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.impl.ParameterizedCollection;
 import com.jerolba.carpet.impl.ParameterizedMap;
+import com.jerolba.carpet.impl.write.CollectionsWriters.MapRecordFieldWriter;
 import com.jerolba.carpet.impl.write.CollectionsWriters.OneLevelCollectionFieldWriter;
 import com.jerolba.carpet.impl.write.CollectionsWriters.ThreeLevelCollectionRecordFieldWriter;
 import com.jerolba.carpet.impl.write.CollectionsWriters.TwoLevelCollectionRecordFieldWriter;
@@ -199,8 +200,7 @@ class CarpetRecordWriter {
             throw new RecordTypeConversionException("Unsuported type in Map");
         }
         if (recordField != null) {
-            return new CollectionsWriters.MapRecordFieldWriter(recordConsumer, recordField, elemKeyConsumer,
-                    elemValueConsumer);
+            return new MapRecordFieldWriter(recordConsumer, recordField, elemKeyConsumer, elemValueConsumer);
         }
         // We are referenced by other collection
         var innerKeyStructureWriter = elemKeyConsumer;

@@ -517,7 +517,7 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
         }
 
         /**
-         * Set a property that will be available to the read path. For writers that use
+         * Sets a property that will be available to the read path. For writers that use
          * a Hadoop configuration, this is the recommended way to add configuration
          * values.
          *
@@ -531,7 +531,7 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
         }
 
         /**
-         * Add to writer metadata to include in the generated parquet file.
+         * Adds to writer metadata to include in the generated parquet file.
          *
          * @param extraMetaData to add
          * @return this builder for method chaining.
@@ -542,7 +542,7 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
         }
 
         /**
-         * Add to writer metadata to include in the generated parquet file.
+         * Adds to writer metadata to include in the generated parquet file.
          *
          * @param key   of the metadata to add
          * @param value of the metadata to add
@@ -566,10 +566,12 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
         }
 
         /**
-         * Set the type of collections type that will be generated following the
+         * Sets the type of collections type that will be generated following the
          * <a href=
          * "https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#lists">LogicalTypes
          * definition</a>
+         *
+         * If not configured, 3-level structure is used
          *
          * @param annotatedLevels an Enum configuring the number of levels
          * @return this builder for method chaining.
@@ -580,7 +582,8 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
         }
 
         /**
-         * Set the strategy to use generating message and record column names
+         * Sets the strategy to use generating parquet message and record field names in
+         * the schema
          *
          * @param columnNamingStrategy an Enum configuring the strategy to use
          * @return this builder for method chaining.
@@ -591,7 +594,7 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
         }
 
         /**
-         * Set the time unit resolution writing TIME or TIMESTAMP fields:
+         * Sets the time unit resolution writing TIME or TIMESTAMP fields:
          * <ul>
          * <li>milliseconds</li>
          * <li>microseconds</li>
@@ -606,8 +609,10 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
         }
 
         /**
-         * Set Decimal precision and scale
+         * Sets Decimal precision and scale
          *
+         * @param precision of the decimal number
+         * @param scale     of the decimal number
          * @return this builder for method chaining.
          */
         public Builder<T> withDefaultDecimal(int precision, int scale) {
