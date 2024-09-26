@@ -53,12 +53,25 @@ public class CarpetParquetWriter {
             this.recordClass = recordClass;
         }
 
+        /**
+         * Adds to writer metadata to include in the generated parquet file.
+         *
+         * @param extraMetaData to add
+         * @return this builder for method chaining.
+         */
         @Override
         public Builder<T> withExtraMetaData(Map<String, String> extraMetaData) {
             this.extraMetaData.putAll(extraMetaData);
             return this;
         }
 
+        /**
+         * Adds to writer metadata to include in the generated parquet file.
+         *
+         * @param key   of the metadata to add
+         * @param value of the metadata to add
+         * @return this builder for method chaining.
+         */
         public Builder<T> withExtraMetaData(String key, String value) {
             this.extraMetaData.put(key, value);
             return this;
@@ -69,24 +82,59 @@ public class CarpetParquetWriter {
             return this;
         }
 
+        /**
+         * Sets the type of collections type that will be generated following the
+         * <a href=
+         * "https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#lists">LogicalTypes
+         * definition</a>
+         *
+         * If not configured, 3-level structure is used
+         *
+         * @param annotatedLevels an Enum configuring the number of levels
+         * @return this builder for method chaining.
+         */
         public Builder<T> withLevelStructure(AnnotatedLevels annotatedLevels) {
             requireNonNull(annotatedLevels, "Annotated levels can not be null");
             this.annotatedLevels = annotatedLevels;
             return self();
         }
 
+        /**
+         * Sets the strategy to use generating parquet message and record field names in
+         * the schema
+         *
+         * @param columnNamingStrategy an Enum configuring the strategy to use
+         * @return this builder for method chaining.
+         */
         public Builder<T> withColumnNamingStrategy(ColumnNamingStrategy columnNamingStrategy) {
             requireNonNull(columnNamingStrategy, "Column naming strategy can not be null");
             this.columnNamingStrategy = columnNamingStrategy;
             return self();
         }
 
+        /**
+         * Sets the time unit resolution writing TIME or TIMESTAMP fields:
+         * <ul>
+         * <li>milliseconds</li>
+         * <li>microseconds</li>
+         * <li>nanoseconds</li>
+         *
+         * @param defaultTimeUnit an Enum configuring the resolution to use
+         * @return this builder for method chaining.
+         */
         public Builder<T> withDefaultTimeUnit(TimeUnit defaultTimeUnit) {
             requireNonNull(defaultTimeUnit, "Default time unit can not be null");
             this.defaultTimeUnit = defaultTimeUnit;
             return self();
         }
 
+        /**
+         * Sets Decimal precision and scale
+         *
+         * @param precision of the decimal number
+         * @param scale     of the decimal number
+         * @return this builder for method chaining.
+         */
         public Builder<T> withDefaultDecimal(int precision, int scale) {
             this.decimalConfig = new DecimalConfig(precision, scale);
             return self();
