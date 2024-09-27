@@ -15,7 +15,6 @@
  */
 package com.jerolba.carpet;
 
-import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -154,7 +153,7 @@ public class CarpetReader<T> implements Iterable<T> {
      * @throws UncheckedIOException if an I/O error occurs
      */
     @Override
-    public Iterator<T> iterator() {
+    public CloseableIterator<T> iterator() {
         return buildIterator();
     }
 
@@ -211,7 +210,7 @@ public class CarpetReader<T> implements Iterable<T> {
      *
      * @param <T> the type of the records in the Parquet file
      */
-    private class RecordIterator<T> implements Iterator<T>, Closeable {
+    private static class RecordIterator<T> implements CloseableIterator<T> {
 
         private final ParquetReader<T> reader;
         private T nextRecord;
