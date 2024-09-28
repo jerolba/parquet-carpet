@@ -42,7 +42,7 @@ import com.jerolba.carpet.impl.ParameterizedCollection;
 import com.jerolba.carpet.impl.ParameterizedMap;
 import com.jerolba.carpet.impl.read.ColumnToFieldMapper.NameMap;
 
-public class SchemaFilter {
+class SchemaFilter {
 
     private final SchemaValidation validation;
     private final ColumnToFieldMapper columnToFieldMapper;

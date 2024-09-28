@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jerolba.carpet.reader;
+package com.jerolba.carpet.impl.read;
 
 import static com.jerolba.carpet.FieldMatchingStrategy.FIELD_NAME;
 import static com.jerolba.carpet.FieldMatchingStrategy.SNAKE_CASE;
