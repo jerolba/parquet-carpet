@@ -21,7 +21,6 @@ dependencies {
     api "org.apache.parquet:parquet-common:${parquetVersion}"
     api "org.apache.parquet:parquet-column:${parquetVersion}"
     api "org.apache.parquet:parquet-hadoop:${parquetVersion}"
-    compileOnly ("org.apache.hadoop:hadoop-client:${hadoopVersion}")
     implementation("org.apache.hadoop:hadoop-mapreduce-client-core:${hadoopVersion}"){
         exclude group: 'com.fasterxml.jackson.core', module: 'jackson-databind'
         exclude group: 'org.apache.hadoop', module: 'hadoop-yarn-client'
@@ -29,6 +28,7 @@ dependencies {
         exclude group: 'org.apache.hadoop', module: 'hadoop-hdfs-client'
         exclude group: 'com.google.inject.extensions', module: 'guice-servlet'
         exclude group: 'io.netty', module: 'netty'
+        exclude group: 'io.netty', module: 'netty-all'
         exclude group: 'com.google.protobuf', module: 'protobuf-java'
         exclude group: 'javax.ws.rs', module: 'javax.ws.rs-api'
         exclude group: 'org.slf4j', module: 'slf4j-log4j12'
@@ -81,9 +81,17 @@ dependencies {
         exclude group: 'io.dropwizard.metrics', module: 'metrics-core'
         exclude group: 'com.google.code.gson', module: 'gson'
         exclude group: 'com.google.re2j', module: 're2j'
+        exclude group: 'org.apache.hadoop', module: 'hadoop-common'
+        exclude group: 'io.netty', module: 'netty-handler'
+        exclude group: 'io.netty', module: 'netty-transport-native-epoll'
+        exclude group: 'org.apache.hadoop.thirdparty', module: 'hadoop-shaded-protobuf_3_25'
+        exclude group: 'org.codehaus.jettison', module: 'jettison'
+        exclude group: 'org.bouncycastle', module: 'bcprov-jdk18on'
+        exclude group: 'jakarta.activation', module: 'jakarta.activation'
+        exclude group: 'jakarta.activation', module: 'jakarta.activation-api'
     }
 
-    testImplementation "org.apache.avro:avro:1.11.1"
+    testImplementation "org.apache.avro:avro:1.11.4"
 
     testImplementation 'org.apache.commons:commons-lang3:3.12.0'
     testImplementation "org.apache.parquet:parquet-avro:${parquetVersion}"

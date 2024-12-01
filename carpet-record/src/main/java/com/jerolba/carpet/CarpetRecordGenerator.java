@@ -36,6 +36,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.parquet.ParquetReadOptions;
+import org.apache.parquet.conf.PlainParquetConfiguration;
 import org.apache.parquet.hadoop.ParquetFileReader;
 import org.apache.parquet.io.InputFile;
 import org.apache.parquet.schema.GroupType;
@@ -84,7 +86,8 @@ public class CarpetRecordGenerator {
     private static class RecordCodeBuilder {
 
         private List<String> calculate(InputFile inputFile) throws IOException {
-            ParquetFileReader fileReader = ParquetFileReader.open(inputFile);
+            ParquetReadOptions readOptions = ParquetReadOptions.builder(new PlainParquetConfiguration()).build();
+            ParquetFileReader fileReader = ParquetFileReader.open(inputFile, readOptions);
             MessageType schema = fileReader.getFileMetaData().getSchema();
             SchemaInspector inspector = new SchemaInspector();
             RecordMetadata generated = inspector.inspectGroup(schema, schema.getName()).recordClass();
