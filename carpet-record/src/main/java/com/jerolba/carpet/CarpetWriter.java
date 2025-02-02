@@ -15,16 +15,14 @@
  */
 package com.jerolba.carpet;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.UncheckedIOException;
+import java.io.*;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import com.jerolba.carpet.io.FileSystemOutputFile;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.bytes.ByteBufferAllocator;
 import org.apache.parquet.column.ParquetProperties.WriterVersion;
@@ -147,6 +145,14 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
         writer.close();
     }
 
+    public static <T> Builder<T> builder(File file, Class<T> recordClass) {
+        return new Builder<>(new FileSystemOutputFile(file), recordClass);
+    }
+
+    public static <T> Builder<T> builder(OutputStream outputStream, Class<T> recordClass) {
+        return new Builder<>(outputStream, recordClass);
+    }
+
     public static class Builder<T> {
 
         private final CarpetParquetWriter.Builder<T> builder;
@@ -159,8 +165,8 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
                     .withCompressionCodec(CompressionCodecName.SNAPPY);
         }
 
-        public Builder(OutputStream outputSrream, Class<T> recordClass) {
-            this(new OutputStreamOutputFile(outputSrream), recordClass);
+        public Builder(OutputStream outputStream, Class<T> recordClass) {
+            this(new OutputStreamOutputFile(outputStream), recordClass);
         }
 
         /**

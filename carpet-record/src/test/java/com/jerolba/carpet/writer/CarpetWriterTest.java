@@ -19,11 +19,9 @@ import static com.jerolba.carpet.ColumnNamingStrategy.SNAKE_CASE;
 import static java.nio.file.Files.createTempFile;
 import static java.time.ZoneOffset.ofHours;
 import static java.util.Arrays.asList;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
+import static org.junit.jupiter.api.Assertions.*;
 
+import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -40,6 +38,8 @@ import org.apache.avro.data.TimeConversions;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.parquet.hadoop.ParquetFileReader;
+import org.apache.parquet.hadoop.ParquetFileWriter;
+import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -1674,4 +1674,24 @@ class CarpetWriterTest {
         assertEquals("bar", metadata.get("foo"));
     }
 
+    @Test
+    void testBuilder() throws IOException {
+        record MyRecord(String id, String name, int age) {
+        }
+
+        List<MyRecord> data = List.of(
+            new MyRecord("1", "John", 42),
+            new MyRecord("2", "Anna", 29)
+        );
+        File file = new File("build/my_file.parquet");
+        try (CarpetWriter<MyRecord> writer = CarpetWriter.builder(file, MyRecord.class)
+            .withWriteMode(ParquetFileWriter.Mode.OVERWRITE)
+            .withCompressionCodec(CompressionCodecName.GZIP)
+            .withPageRowCountLimit(100_000)
+            .withBloomFilterEnabled("name", true)
+            .build()) {
+            writer.write(data);
+        }
+        assertTrue(file.exists());
+    }
 }
