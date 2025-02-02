@@ -74,12 +74,12 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
      * Constructs a CarpetWriter that writes records of type T to the specified
      * OutputStream.
      *
-     * @param outputSrream An OutputStream to write to, of any type.
+     * @param outputStream An OutputStream to write to, of any type.
      * @param recordClass  The class of the records to write.
      * @throws IOException If an I/O error occurs while creating the Parquet writer.
      */
-    public CarpetWriter(OutputStream outputSrream, Class<T> recordClass) throws IOException {
-        OutputStreamOutputFile wrappedStream = new OutputStreamOutputFile(outputSrream);
+    public CarpetWriter(OutputStream outputStream, Class<T> recordClass) throws IOException {
+        OutputStreamOutputFile wrappedStream = new OutputStreamOutputFile(outputStream);
         this.writer = new Builder<>(wrappedStream, recordClass).buildWriter();
     }
 
@@ -159,8 +159,8 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
                     .withCompressionCodec(CompressionCodecName.SNAPPY);
         }
 
-        public Builder(OutputStream outputSrream, Class<T> recordClass) {
-            this(new OutputStreamOutputFile(outputSrream), recordClass);
+        public Builder(OutputStream outputStream, Class<T> recordClass) {
+            this(new OutputStreamOutputFile(outputStream), recordClass);
         }
 
         /**
