@@ -550,7 +550,7 @@ Default `CarpetWriter` constructors cover default `ParquetWriter` configuration.
 List<MyRecord> data = calculateDataToPersist();
 
 try (OutputStream outputStream = new FileOutputStream("my_file.parquet")) {
-    try (CarpetWriter<MyRecord> writer = CarpetWriter.builder(outputStream, MyRecord.class)
+    try (CarpetWriter<MyRecord> writer = new CarpetWriter.Builder<>(outputStream, MyRecord.class)
         .withWriteMode(Mode.OVERWRITE)
         .withCompressionCodec(CompressionCodecName.GZIP)
         .withPageRowCountLimit(100_000)
@@ -565,7 +565,7 @@ try (OutputStream outputStream = new FileOutputStream("my_file.parquet")) {
 [DECIMAL](https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#decimal) type must configure which precision and scale to use persisting the values. For the time being, the configuration is global writting a file:
 
 ```java
-ParquetWriter<MyRecord> writer = CarpetWriter.builder(outputStream, MyRecord.class)
+ParquetWriter<MyRecord> writer = new CarpetWriter.Builder<>(outputStream, MyRecord.class)
         .withDefaultDecimal(precision, scale);
         .build()) {
 ```
@@ -581,7 +581,7 @@ In Carpet the configuration is global writting a file, and by default it's confi
 The global configuration can be overwritten in the CarpetWriter builder:
 
 ```java
-ParquetWriter<MyRecord> writer = CarpetWriter.builder(outputStream, MyRecord.class)
+ParquetWriter<MyRecord> writer = new CarpetWriter.Builder<>(outputStream, MyRecord.class)
         .withDefaultTimeUnit(TimeUnit.MICROS);
         .build()) {
 ```
@@ -598,7 +598,7 @@ Writing a file, configure the property `columnNamingStrategy`:
 record MyRecord(long userCode, String userName){ }
 
 List<MyRecord> data = calculateDataToPersist();
-try (var writer = CarpetWriter.builder(outputStream, MyRecord.class)
+try (var writer = new CarpetWriter.Builder<>(outputStream, MyRecord.class)
     .withColumnNamingStrategy(ColumnNamingStrategy.SNAKE_CASE)
     .build()) {
   writer.write(data);
