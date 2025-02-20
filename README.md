@@ -562,15 +562,24 @@ try (OutputStream outputStream = new FileOutputStream("my_file.parquet")) {
 
 ### BigDecimal precision and scale
 
-[DECIMAL](https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#decimal) type must configure which precision and scale to use persisting the values. For the time being, the configuration is global writting a file:
+[DECIMAL](https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#decimal) type requires specifying both precision and scale when persisting values. Currently, this configuration is set globally when writing a file:
 
 ```java
-ParquetWriter<MyRecord> writer = new CarpetWriter.Builder<>(outputStream, MyRecord.class)
-        .withDefaultDecimal(precision, scale);
+try (ParquetWriter<MyRecord> writer = new CarpetWriter.Builder<>(outputStream, MyRecord.class)
+        .withDefaultDecimal(precision, scale)
         .build()) {
 ```
 
-There is no default value. If `BigDecimal` type is found but precision and scale is not configured Carpet throws an exception.
+There is no default value. If `BigDecimal` type is encountered but precision and scale are not configured, Carpet throws an exception.
+
+If a `BigDecimal` value has a higher scale than the configured scale, Carpet does not rescale it by default and instead throws an exception. To prevent this and automatically rescale values to the configured scale, you must specify the `RoundingMode` using the `withBigDecimalScaleAdjustment` method:
+
+```java
+try (ParquetWriter<MyRecord> writer = new CarpetWriter.Builder<>(outputStream, MyRecord.class)
+        .withDefaultDecimal(precision, scale)
+        .withBigDecimalScaleAdjustment(RoundingMode.HALF_UP)
+        .build()) {
+```
 
 ### Time unit
 
