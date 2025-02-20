@@ -625,7 +625,7 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
          * Sets the default scale for BigDecimal fields. This is used to adjust the
          * scale of the BigDecimal values to the desired scale.
          *
-         * @param scale the scale to use
+         * @param roundingMode to use
          * @return this builder for method chaining.
          */
         public Builder<T> withBigDecimalScaleAdjustment(RoundingMode roundingMode) {
