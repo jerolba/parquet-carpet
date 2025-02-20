@@ -18,6 +18,7 @@ package com.jerolba.carpet.impl.write;
 import static com.jerolba.carpet.TimeUnit.MICROS;
 import static com.jerolba.carpet.TimeUnit.MILLIS;
 import static com.jerolba.carpet.TimeUnit.NANOS;
+import static com.jerolba.carpet.impl.write.DecimalConfig.decimalConfig;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
@@ -126,7 +127,7 @@ class JavaRecord2SchemaTest {
     class DecimalConfiguration {
 
         CarpetWriteConfiguration config = new CarpetWriteConfiguration(AnnotatedLevels.THREE,
-                defaultNaming, defaultTimeUnit, new DecimalConfig(20, 4));
+                defaultNaming, defaultTimeUnit, decimalConfig().withPrecionAndScale(20, 4));
         JavaRecord2Schema globalConfigSchema = new JavaRecord2Schema(config);
 
         @Test
@@ -149,7 +150,7 @@ class JavaRecord2SchemaTest {
             }
 
             CarpetWriteConfiguration intPrecisionConfig = new CarpetWriteConfiguration(AnnotatedLevels.THREE,
-                    defaultNaming, defaultTimeUnit, new DecimalConfig(9, 4));
+                    defaultNaming, defaultTimeUnit, decimalConfig().withPrecionAndScale(9, 4));
             JavaRecord2Schema globalConfigSchema = new JavaRecord2Schema(intPrecisionConfig);
 
             MessageType schema = globalConfigSchema.createSchema(RecordFieldDecimal.class);
@@ -167,7 +168,7 @@ class JavaRecord2SchemaTest {
             }
 
             CarpetWriteConfiguration longPrecisionConfig = new CarpetWriteConfiguration(AnnotatedLevels.THREE,
-                    defaultNaming, defaultTimeUnit, new DecimalConfig(18, 8));
+                    defaultNaming, defaultTimeUnit, decimalConfig().withPrecionAndScale(18, 8));
             JavaRecord2Schema globalConfigSchema = new JavaRecord2Schema(longPrecisionConfig);
 
             MessageType schema = globalConfigSchema.createSchema(RecordFieldDecimal.class);
@@ -181,9 +182,9 @@ class JavaRecord2SchemaTest {
 
         @Test
         void invalidConfig() {
-            assertThrowsExactly(IllegalArgumentException.class, () -> new DecimalConfig(0, 8));
-            assertThrowsExactly(IllegalArgumentException.class, () -> new DecimalConfig(10, -1));
-            assertThrowsExactly(IllegalArgumentException.class, () -> new DecimalConfig(12, 13));
+            assertThrowsExactly(IllegalArgumentException.class, () -> decimalConfig().withPrecionAndScale(0, 8));
+            assertThrowsExactly(IllegalArgumentException.class, () -> decimalConfig().withPrecionAndScale(10, -1));
+            assertThrowsExactly(IllegalArgumentException.class, () -> decimalConfig().withPrecionAndScale(12, 13));
         }
 
         @Test

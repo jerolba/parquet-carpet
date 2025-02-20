@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -463,13 +464,11 @@ class CarpetWriterTest {
 
             @Test
             void rescaling() throws IOException {
-                var bigDec1 = new BigDecimal("12345678901234.5");
-                var bigDec2 = new BigDecimal("98765432109876.5");
-                var rec1 = new BigDecimalObject(bigDec1);
-                var rec2 = new BigDecimalObject(bigDec2);
                 var writerTest = new ParquetWriterTest<>(BigDecimalObject.class)
                         .withDecimalConfig(20, 5);
-                writerTest.write(rec1, rec2);
+                writerTest.write(
+                        new BigDecimalObject(new BigDecimal("12345678901234.5")),
+                        new BigDecimalObject(new BigDecimal("98765432109876.5")));
 
                 GenericData genericDataModel = new GenericData();
                 genericDataModel.addLogicalTypeConversion(new DecimalConversion());
@@ -492,6 +491,38 @@ class CarpetWriterTest {
                         .withDecimalConfig(20, 2);
                 assertThrowsExactly(RecordTypeConversionException.class,
                         () -> writerTest.write(rec1));
+            }
+
+            @Test
+            void invalidPrecision() {
+                var rec1 = new BigDecimalObject(new BigDecimal("12345678901234.5678"));
+                var writerTest = new ParquetWriterTest<>(BigDecimalObject.class)
+                        .withDecimalConfig(10, 4);
+                assertThrowsExactly(RecordTypeConversionException.class,
+                        () -> writerTest.write(rec1));
+            }
+
+            @Test
+            void allowScaleAdjustament() throws IOException {
+                var writerTest = new ParquetWriterTest<>(BigDecimalObject.class)
+                        .withBigDecimalScaleAdjustment(RoundingMode.HALF_UP)
+                        .withDecimalConfig(20, 2);
+                writerTest.write(
+                        new BigDecimalObject(new BigDecimal("12345678901234.5678")),
+                        new BigDecimalObject(new BigDecimal("12345678901234.1234")));
+
+                GenericData genericDataModel = new GenericData();
+                genericDataModel.addLogicalTypeConversion(new DecimalConversion());
+                var avroReader = writerTest.getAvroGenericRecordReaderWithModel(genericDataModel);
+
+                BigDecimal scaled1 = new BigDecimal("12345678901234.57");
+                BigDecimal scaled2 = new BigDecimal("12345678901234.12");
+                assertEquals(scaled1, avroReader.read().get("value"));
+                assertEquals(scaled2, avroReader.read().get("value"));
+
+                var carpetReader = writerTest.getCarpetReader();
+                assertEquals(scaled1, carpetReader.read().value());
+                assertEquals(scaled2, carpetReader.read().value());
             }
 
         }

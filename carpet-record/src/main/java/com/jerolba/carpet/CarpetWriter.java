@@ -19,6 +19,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
+import java.math.RoundingMode;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
@@ -617,6 +618,18 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
          */
         public Builder<T> withDefaultDecimal(int precision, int scale) {
             builder.withDefaultDecimal(precision, scale);
+            return this;
+        }
+
+        /**
+         * Sets the default scale for BigDecimal fields. This is used to adjust the
+         * scale of the BigDecimal values to the desired scale.
+         *
+         * @param scale the scale to use
+         * @return this builder for method chaining.
+         */
+        public Builder<T> withBigDecimalScaleAdjustment(RoundingMode roundingMode) {
+            builder.withBigDecimalScaleAdjustment(roundingMode);
             return this;
         }
 

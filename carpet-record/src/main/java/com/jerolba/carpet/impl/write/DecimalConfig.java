@@ -15,9 +15,37 @@
  */
 package com.jerolba.carpet.impl.write;
 
-public record DecimalConfig(int precision, int scale) {
+import java.math.RoundingMode;
 
-    public DecimalConfig {
+public class DecimalConfig {
+
+    private final Integer precision;
+    private final Integer scale;
+    private final RoundingMode roundingMode;
+
+    private DecimalConfig(Integer precision, Integer scale, RoundingMode roundingMode) {
+        this.precision = precision;
+        this.scale = scale;
+        this.roundingMode = roundingMode;
+    }
+
+    public Integer precision() {
+        return precision;
+    }
+
+    public Integer scale() {
+        return scale;
+    }
+
+    public RoundingMode roundingMode() {
+        return roundingMode;
+    }
+
+    public static DecimalConfig decimalConfig() {
+        return new DecimalConfig(null, null, null);
+    }
+
+    public DecimalConfig withPrecionAndScale(int precision, int scale) {
         if (precision <= 0) {
             throw new IllegalArgumentException("precision must be greater than 0");
         }
@@ -27,6 +55,15 @@ public record DecimalConfig(int precision, int scale) {
         if (scale > precision) {
             throw new IllegalArgumentException("scale must be less than or equal to the precision");
         }
+        return new DecimalConfig(precision, scale, roundingMode);
+    }
+
+    public DecimalConfig withRoundingMode(RoundingMode roundingMode) {
+        return new DecimalConfig(precision, scale, roundingMode);
+    }
+
+    public boolean arePrecisionAndScaleConfigured() {
+        return precision != null && scale != null;
     }
 
 }
