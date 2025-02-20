@@ -15,8 +15,10 @@
  */
 package com.jerolba.carpet;
 
+import static com.jerolba.carpet.impl.write.DecimalConfig.decimalConfig;
 import static java.util.Objects.requireNonNull;
 
+import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -46,7 +48,7 @@ public class CarpetParquetWriter {
         private AnnotatedLevels annotatedLevels = AnnotatedLevels.THREE;
         private ColumnNamingStrategy columnNamingStrategy = ColumnNamingStrategy.FIELD_NAME;
         private TimeUnit defaultTimeUnit = TimeUnit.MILLIS;
-        private DecimalConfig decimalConfig = null;
+        private DecimalConfig decimalConfig = decimalConfig();
 
         private Builder(OutputFile file, Class<T> recordClass) {
             super(file);
@@ -136,8 +138,19 @@ public class CarpetParquetWriter {
          * @return this builder for method chaining.
          */
         public Builder<T> withDefaultDecimal(int precision, int scale) {
-            this.decimalConfig = new DecimalConfig(precision, scale);
+            this.decimalConfig = decimalConfig.withPrecionAndScale(precision, scale);
             return self();
+        }
+
+        /**
+         * Sets the rounding mode to use when adjusting the scale of a BigDecimal
+         *
+         * @param roundingMode to use
+         * @return this builder for method chaining.
+         */
+        public Builder<T> withBigDecimalScaleAdjustment(RoundingMode roundingMode) {
+            this.decimalConfig = decimalConfig.withRoundingMode(roundingMode);
+            return this;
         }
 
         @Override

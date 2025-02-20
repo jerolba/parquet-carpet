@@ -285,7 +285,7 @@ class JavaRecord2Schema {
 
     private Type decimalTypeItem(Repetition repetition, String name) {
         DecimalConfig decimalConfig = carpetConfiguration.decimalConfig();
-        if (decimalConfig == null) {
+        if (!decimalConfig.arePrecisionAndScaleConfigured()) {
             throw new RecordTypeConversionException("If BigDecimall is used, a Default Decimal configuration "
                     + "must be provided in the setup of CarpetWriter builder");
         }

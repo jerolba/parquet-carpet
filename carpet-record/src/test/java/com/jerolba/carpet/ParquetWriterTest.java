@@ -18,6 +18,7 @@ package com.jerolba.carpet;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.util.Collection;
 import java.util.List;
@@ -46,6 +47,7 @@ public class ParquetWriterTest<T> {
     private TimeUnit timeUnit = TimeUnit.MILLIS;
     private Integer precision;
     private Integer scale;
+    private RoundingMode roundingMode;
 
     public ParquetWriterTest(Class<T> type) {
         String fileName = type.getName() + ".parquet";
@@ -81,6 +83,11 @@ public class ParquetWriterTest<T> {
         return this;
     }
 
+    public ParquetWriterTest<T> withBigDecimalScaleAdjustment(RoundingMode roundingMode) {
+        this.roundingMode = roundingMode;
+        return this;
+    }
+
     public void write(T... values) throws IOException {
         write(List.of(values));
     }
@@ -93,7 +100,8 @@ public class ParquetWriterTest<T> {
                 .withColumnNamingStrategy(nameStrategy)
                 .withDefaultTimeUnit(timeUnit);
         if (precision != null) {
-            builder = builder.withDefaultDecimal(precision, scale);
+            builder = builder.withDefaultDecimal(precision, scale)
+                    .withBigDecimalScaleAdjustment(roundingMode);
         }
         try (ParquetWriter<T> writer = builder.build()) {
             for (var v : values) {

@@ -15,6 +15,8 @@
  */
 package com.jerolba.carpet.impl.write;
 
+import static java.math.RoundingMode.UNNECESSARY;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
@@ -29,18 +31,20 @@ class BigDecimalWrite {
         INT, LONG, BINARY
     }
 
-    private final int precision;
-    private final int scale;
+    private final Integer precision;
+    private final Integer scale;
+    private final RoundingMode roundingMode;
     private final DecimalMapper mapper;
 
     public BigDecimalWrite(DecimalConfig decimalConfig) {
         this.precision = decimalConfig.precision();
         this.scale = decimalConfig.scale();
+        this.roundingMode = decimalConfig.roundingMode();
         this.mapper = calcMapper(decimalConfig.precision());
     }
 
     public void write(RecordConsumer recordConsumer, Object value) {
-        BigDecimal dec = rescaleIfPossible((BigDecimal) value);
+        BigDecimal dec = rescaleIfNeeded((BigDecimal) value);
         switch (mapper) {
         case INT:
             recordConsumer.addInteger(dec.unscaledValue().intValue());
@@ -66,13 +70,18 @@ class BigDecimalWrite {
     }
 
     // From org.apache.avro.Conversions$DecimalConversion::validate
-    private BigDecimal rescaleIfPossible(BigDecimal value) {
+    private BigDecimal rescaleIfNeeded(BigDecimal value) {
         int valueScale = value.scale();
         boolean scaleAdjusted = false;
         if (valueScale != scale) {
             try {
-                value = value.setScale(scale, RoundingMode.UNNECESSARY);
-                scaleAdjusted = true;
+                if (roundingMode != null) {
+                    value = value.setScale(scale, roundingMode);
+                    scaleAdjusted = true;
+                } else {
+                    value = value.setScale(scale, UNNECESSARY);
+                    scaleAdjusted = true;
+                }
             } catch (ArithmeticException aex) {
                 throw new RecordTypeConversionException(
                         "Cannot encode BigDecimal with scale " + valueScale + " as scale " + scale
