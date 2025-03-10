@@ -19,7 +19,7 @@ import java.util.function.Function;
 
 interface RecordField {
 
-    String fieldName();
+    String parquetFieldName();
 
     int idx();
 

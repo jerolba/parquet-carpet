@@ -25,10 +25,13 @@ import org.apache.parquet.io.api.RecordConsumer;
 
 class CollectionsWriters {
 
+    private CollectionsWriters() {
+    }
+
     static class OneLevelCollectionFieldWriter implements Consumer<Object> {
 
         private final RecordConsumer recordConsumer;
-        private final String fieldName;
+        private final String parquetFieldName;
         private final int idx;
         private final Function<Object, Object> accesor;
         private final BiConsumer<RecordConsumer, Object> consumer;
@@ -36,7 +39,7 @@ class CollectionsWriters {
         OneLevelCollectionFieldWriter(RecordConsumer recordConsumer, RecordField recordField,
                 BiConsumer<RecordConsumer, Object> consumer) {
             this.recordConsumer = recordConsumer;
-            this.fieldName = recordField.fieldName();
+            this.parquetFieldName = recordField.parquetFieldName();
             this.idx = recordField.idx();
             this.accesor = recordField.getAccessor();
             this.consumer = consumer;
@@ -46,11 +49,11 @@ class CollectionsWriters {
         public void accept(Object object) {
             Collection<?> coll = (Collection<?>) accesor.apply(object);
             if (coll != null && !coll.isEmpty()) {
-                recordConsumer.startField(fieldName, idx);
+                recordConsumer.startField(parquetFieldName, idx);
                 for (var v : coll) {
                     consumer.accept(recordConsumer, v);
                 }
-                recordConsumer.endField(fieldName, idx);
+                recordConsumer.endField(parquetFieldName, idx);
             }
         }
     }
@@ -58,7 +61,7 @@ class CollectionsWriters {
     static class TwoLevelCollectionRecordFieldWriter implements Consumer<Object> {
 
         private final RecordConsumer recordConsumer;
-        private final String fieldName;
+        private final String parquetFieldName;
         private final int idx;
         private final Function<Object, Object> accesor;
         private final BiConsumer<RecordConsumer, Object> innerStructureWriter;
@@ -66,7 +69,7 @@ class CollectionsWriters {
         TwoLevelCollectionRecordFieldWriter(RecordConsumer recordConsumer, RecordField recordField,
                 BiConsumer<RecordConsumer, Object> innerStructureWriter) {
             this.recordConsumer = recordConsumer;
-            this.fieldName = recordField.fieldName();
+            this.parquetFieldName = recordField.parquetFieldName();
             this.idx = recordField.idx();
             this.accesor = recordField.getAccessor();
             this.innerStructureWriter = innerStructureWriter;
@@ -77,9 +80,9 @@ class CollectionsWriters {
             var value = accesor.apply(object);
             Collection<?> coll = (Collection<?>) value;
             if (coll != null) {
-                recordConsumer.startField(fieldName, idx);
+                recordConsumer.startField(parquetFieldName, idx);
                 writeGroupElementTwo(recordConsumer, innerStructureWriter, coll);
-                recordConsumer.endField(fieldName, idx);
+                recordConsumer.endField(parquetFieldName, idx);
             }
         }
 
@@ -105,7 +108,7 @@ class CollectionsWriters {
     static class ThreeLevelCollectionRecordFieldWriter implements Consumer<Object> {
 
         private final RecordConsumer recordConsumer;
-        private final String fieldName;
+        private final String parquetFieldName;
         private final int idx;
         private final Function<Object, Object> accesor;
         private final BiConsumer<RecordConsumer, Object> innerStructureWriter;
@@ -113,7 +116,7 @@ class CollectionsWriters {
         ThreeLevelCollectionRecordFieldWriter(RecordConsumer recordConsumer, RecordField recordField,
                 BiConsumer<RecordConsumer, Object> innerStructureWriter) {
             this.recordConsumer = recordConsumer;
-            this.fieldName = recordField.fieldName();
+            this.parquetFieldName = recordField.parquetFieldName();
             this.idx = recordField.idx();
             this.accesor = recordField.getAccessor();
             this.innerStructureWriter = innerStructureWriter;
@@ -123,13 +126,13 @@ class CollectionsWriters {
         public void accept(Object object) {
             Collection<?> value = (Collection<?>) accesor.apply(object);
             if (value != null) {
-                recordConsumer.startField(fieldName, idx);
+                recordConsumer.startField(parquetFieldName, idx);
                 recordConsumer.startGroup();
                 if (!value.isEmpty()) {
                     writeGroupElementThree(recordConsumer, innerStructureWriter, value);
                 }
                 recordConsumer.endGroup();
-                recordConsumer.endField(fieldName, idx);
+                recordConsumer.endField(parquetFieldName, idx);
             }
         }
 
@@ -154,7 +157,7 @@ class CollectionsWriters {
     static class MapRecordFieldWriter implements Consumer<Object> {
 
         private final RecordConsumer recordConsumer;
-        private final String fieldName;
+        private final String parquetFieldName;
         private final int idx;
         private final Function<Object, Object> accesor;
         private final BiConsumer<RecordConsumer, Object> innerKeyStructureWriter;
@@ -164,7 +167,7 @@ class CollectionsWriters {
                 BiConsumer<RecordConsumer, Object> innerStructureWriter,
                 BiConsumer<RecordConsumer, Object> innerValueStructureWriter) {
             this.recordConsumer = recordConsumer;
-            this.fieldName = recordField.fieldName();
+            this.parquetFieldName = recordField.parquetFieldName();
             this.idx = recordField.idx();
             this.accesor = recordField.getAccessor();
             this.innerKeyStructureWriter = innerStructureWriter;
@@ -175,13 +178,13 @@ class CollectionsWriters {
         public void accept(Object object) {
             var value = (Map<?, ?>) accesor.apply(object);
             if (value != null) {
-                recordConsumer.startField(fieldName, idx);
+                recordConsumer.startField(parquetFieldName, idx);
                 recordConsumer.startGroup();
                 if (!value.isEmpty()) {
                     writeKeyalueGroup(recordConsumer, innerKeyStructureWriter, innerValueStructureWriter, value);
                 }
                 recordConsumer.endGroup();
-                recordConsumer.endField(fieldName, idx);
+                recordConsumer.endField(parquetFieldName, idx);
             }
         }
 

@@ -18,8 +18,8 @@ package com.jerolba.carpet.impl.write;
 import java.lang.reflect.RecordComponent;
 import java.util.function.Function;
 
-public record ReflectionRecordField(Class<?> targetClass, RecordComponent recordComponent, String fieldName, int idx)
-        implements RecordField {
+public record ReflectionRecordField(Class<?> targetClass, RecordComponent recordComponent, String parquetFieldName,
+        int idx) implements RecordField {
 
     @Override
     public Function<Object, Object> getAccessor() {
