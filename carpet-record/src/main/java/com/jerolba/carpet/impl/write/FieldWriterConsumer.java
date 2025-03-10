@@ -24,7 +24,7 @@ import org.apache.parquet.io.api.RecordConsumer;
 class FieldWriterConsumer implements Consumer<Object> {
 
     private final RecordConsumer recordConsumer;
-    private final String fieldName;
+    private final String parquetFieldName;
     private final int idx;
     private final Function<Object, Object> accessor;
     private final BiConsumer<RecordConsumer, Object> writer;
@@ -32,7 +32,7 @@ class FieldWriterConsumer implements Consumer<Object> {
     public FieldWriterConsumer(RecordConsumer recordConsumer, RecordField recordField,
             BiConsumer<RecordConsumer, Object> writer) {
         this.recordConsumer = recordConsumer;
-        this.fieldName = recordField.fieldName();
+        this.parquetFieldName = recordField.parquetFieldName();
         this.idx = recordField.idx();
         this.accessor = recordField.getAccessor();
         this.writer = writer;
@@ -42,9 +42,9 @@ class FieldWriterConsumer implements Consumer<Object> {
     public void accept(Object object) {
         var value = accessor.apply(object);
         if (value != null) {
-            recordConsumer.startField(fieldName, idx);
+            recordConsumer.startField(parquetFieldName, idx);
             writer.accept(recordConsumer, value);
-            recordConsumer.endField(fieldName, idx);
+            recordConsumer.endField(parquetFieldName, idx);
         }
     }
 

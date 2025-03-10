@@ -495,10 +495,8 @@ class JavaRecord2SchemaTest {
 
         @Test
         void transitiveRecursivityIsNotAllowed() {
-            record Recursive(long id, String name, Recursive child) {
-            }
-
-            assertThrows(RecordTypeConversionException.class, () -> schemaFactory.createSchema(Recursive.class));
+            assertThrows(RecordTypeConversionException.class,
+                    () -> schemaFactory.createSchema(RecursiveTransitive.class));
         }
 
         @Test
