@@ -27,6 +27,7 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.thirdparty.com.google.common.annotations.Beta;
 import org.apache.parquet.bytes.ByteBufferAllocator;
 import org.apache.parquet.column.ParquetProperties.WriterVersion;
 import org.apache.parquet.compression.CompressionCodecFactory;
@@ -40,6 +41,7 @@ import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.apache.parquet.io.OutputFile;
 
 import com.jerolba.carpet.io.OutputStreamOutputFile;
+import com.jerolba.carpet.model.WriteRecordModelType;
 
 /**
  * A Parquet file writer for writing java records of type T to a file or output
@@ -528,6 +530,7 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
          */
         public Builder<T> config(String property, String value) {
             builder.config(property, value);
+            parquetConfProvided = true;
             return this;
         }
 
@@ -630,6 +633,39 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
          */
         public Builder<T> withBigDecimalScaleAdjustment(RoundingMode roundingMode) {
             builder.withBigDecimalScaleAdjustment(roundingMode);
+            return this;
+        }
+
+        /**
+         * Configures the factory of the write data model to use, instead of default
+         * record convention. The factory receives all configuration to decide how to
+         * build the WriteRecordModelType.
+         *
+         * Experimental feature to support custom data models different from record,
+         * like classes or DataFrames
+         *
+         * @param writeModelFactory creates WriteRecordModelType given configuration
+         *                          specific to Carpet and Parquet
+         * @return this builder for method chaining.
+         */
+        @Beta
+        public Builder<T> withWriteRecordModel(WriteModelFactory<T> writeModelFactory) {
+            builder.withWriteRecordModel(writeModelFactory);
+            return this;
+        }
+
+        /**
+         * Configures write data model to use, instead of default record convention.
+         *
+         * Experimental feature to support custom data models different from record,
+         * like classes or DataFrames
+         *
+         * @param rootWriteRecordModel write record model to use
+         * @return this builder for method chaining.
+         */
+        @Beta
+        public Builder<T> withWriteRecordModel(WriteRecordModelType<T> rootWriteRecordModel) {
+            builder.withWriteRecordModel(rootWriteRecordModel);
             return this;
         }
 

@@ -37,6 +37,7 @@ import org.apache.parquet.schema.MessageType;
 import com.jerolba.carpet.CarpetParquetReader.Builder;
 import com.jerolba.carpet.io.FileSystemInputFile;
 import com.jerolba.carpet.io.OutputStreamOutputFile;
+import com.jerolba.carpet.model.WriteRecordModelType;
 
 public class ParquetWriterTest<T> {
 
@@ -92,13 +93,24 @@ public class ParquetWriterTest<T> {
         write(List.of(values));
     }
 
+    public void write(WriteRecordModelType<T> mapper, T... values) throws IOException {
+        write(mapper, List.of(values));
+    }
+
     public void write(Collection<T> values) throws IOException {
+        this.write(null, values);
+    }
+
+    public void write(WriteRecordModelType<T> mapper, Collection<T> values) throws IOException {
         OutputStreamOutputFile output = new OutputStreamOutputFile(new FileOutputStream(path));
         var builder = CarpetParquetWriter.builder(output, type)
                 .withLevelStructure(level)
                 .enableValidation()
                 .withColumnNamingStrategy(nameStrategy)
                 .withDefaultTimeUnit(timeUnit);
+        if (mapper != null) {
+            builder = builder.withWriteRecordModel(mapper);
+        }
         if (precision != null) {
             builder = builder.withDefaultDecimal(precision, scale)
                     .withBigDecimalScaleAdjustment(roundingMode);
@@ -143,9 +155,10 @@ public class ParquetWriterTest<T> {
 
     public MessageType getSchema() throws IOException {
         var options = ParquetReadOptions.builder().build();
-        ParquetFileReader reader = new ParquetFileReader(new FileSystemInputFile(getTestFile()), options);
-        FileMetaData metaData = reader.getFileMetaData();
-        return metaData.getSchema();
+        try (ParquetFileReader reader = new ParquetFileReader(new FileSystemInputFile(getTestFile()), options)) {
+            FileMetaData metaData = reader.getFileMetaData();
+            return metaData.getSchema();
+        }
     }
 
     public File getTestFile() {

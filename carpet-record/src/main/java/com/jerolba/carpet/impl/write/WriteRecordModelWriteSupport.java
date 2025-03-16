@@ -23,43 +23,47 @@ import org.apache.parquet.hadoop.api.WriteSupport;
 import org.apache.parquet.io.api.RecordConsumer;
 import org.apache.parquet.schema.MessageType;
 
-class CarpetWriteSupport<T> extends WriteSupport<T> {
+import com.jerolba.carpet.model.WriteRecordModelType;
 
-    private final Class<T> recordClass;
+class WriteRecordModelWriteSupport<T> extends WriteSupport<T> {
+
+    private final WriteRecordModelType<T> rootWriteRecordModel;
     private final Map<String, String> extraMetaData;
     private final CarpetWriteConfiguration carpetConfiguration;
-    private CarpetMessageWriter<T> carpetWriter;
+    private MessageWriter<T> messageWriter;
 
-    public CarpetWriteSupport(Class<T> recordClass, Map<String, String> extraMetaData,
+    WriteRecordModelWriteSupport(WriteRecordModelType<T> rootWriteRecordModel, Map<String, String> extraMetaData,
             CarpetWriteConfiguration carpetConfiguration) {
-        this.recordClass = recordClass;
+        this.rootWriteRecordModel = rootWriteRecordModel;
         this.extraMetaData = extraMetaData;
         this.carpetConfiguration = carpetConfiguration;
     }
 
     @Override
     public String getName() {
-        return recordClass.getName();
-    }
-
-    @Override
-    public WriteContext init(ParquetConfiguration configuration) {
-        JavaRecord2Schema javaRecord2Schema = new JavaRecord2Schema(carpetConfiguration);
-        MessageType schema = javaRecord2Schema.createSchema(recordClass);
-        return new WriteContext(schema, this.extraMetaData);
+        return rootWriteRecordModel.getClassType().getName();
     }
 
     @Override
     public WriteContext init(Configuration configuration) {
-        JavaRecord2Schema javaRecord2Schema = new JavaRecord2Schema(carpetConfiguration);
-        MessageType schema = javaRecord2Schema.createSchema(recordClass);
+        return initContext();
+    }
+
+    @Override
+    public WriteContext init(ParquetConfiguration configuration) {
+        return initContext();
+    }
+
+    private WriteContext initContext() {
+        WriteRecordModel2Schema modelRecord2Schema = new WriteRecordModel2Schema(carpetConfiguration);
+        MessageType schema = modelRecord2Schema.createSchema(rootWriteRecordModel);
         return new WriteContext(schema, this.extraMetaData);
     }
 
     @Override
     public void prepareForWrite(RecordConsumer recordConsumer) {
         try {
-            carpetWriter = new CarpetMessageWriter<>(recordConsumer, recordClass, carpetConfiguration);
+            messageWriter = new MessageWriter<>(recordConsumer, rootWriteRecordModel, carpetConfiguration);
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }
@@ -67,18 +71,18 @@ class CarpetWriteSupport<T> extends WriteSupport<T> {
 
     @Override
     public void write(T record) {
-        carpetWriter.write(record);
+        messageWriter.write(record);
     }
 
-    private static class CarpetMessageWriter<T> {
+    private static class MessageWriter<T> {
 
         private final RecordConsumer recordConsumer;
-        private final CarpetRecordWriter writer;
+        private final WriteRecordModelWriter writer;
 
-        CarpetMessageWriter(RecordConsumer recordConsumer, Class<T> recordClass,
+        MessageWriter(RecordConsumer recordConsumer, WriteRecordModelType<T> rootWriteRecordModel,
                 CarpetWriteConfiguration carpetConfiguration) {
             this.recordConsumer = recordConsumer;
-            this.writer = new CarpetRecordWriter(recordConsumer, recordClass, carpetConfiguration);
+            this.writer = new WriteRecordModelWriter(recordConsumer, rootWriteRecordModel, carpetConfiguration);
         }
 
         void write(T record) {

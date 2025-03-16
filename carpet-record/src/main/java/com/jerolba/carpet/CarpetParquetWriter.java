@@ -23,14 +23,17 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.thirdparty.com.google.common.annotations.Beta;
 import org.apache.parquet.conf.ParquetConfiguration;
+import org.apache.parquet.conf.PlainParquetConfiguration;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.apache.parquet.hadoop.api.WriteSupport;
 import org.apache.parquet.io.OutputFile;
 
 import com.jerolba.carpet.impl.write.CarpetWriteConfiguration;
-import com.jerolba.carpet.impl.write.CarpetWriteSupport;
 import com.jerolba.carpet.impl.write.DecimalConfig;
+import com.jerolba.carpet.impl.write.WriteSupportFactory;
+import com.jerolba.carpet.model.WriteRecordModelType;
 
 public class CarpetParquetWriter {
 
@@ -45,6 +48,7 @@ public class CarpetParquetWriter {
 
         private final Class<T> recordClass;
         private final Map<String, String> extraMetaData = new HashMap<>();
+        private WriteModelFactory<T> writeModelFactory;
         private AnnotatedLevels annotatedLevels = AnnotatedLevels.THREE;
         private ColumnNamingStrategy columnNamingStrategy = ColumnNamingStrategy.FIELD_NAME;
         private TimeUnit defaultTimeUnit = TimeUnit.MILLIS;
@@ -153,23 +157,57 @@ public class CarpetParquetWriter {
             return this;
         }
 
-        @Override
-        protected WriteSupport<T> getWriteSupport(ParquetConfiguration conf) {
-            return getWriteSupport();
+        /**
+         * Configures the factory of the write data model to use, instead of default
+         * record convention. The factory receives all configuration to decide how to
+         * build the WriteRecordModelType.
+         *
+         * Experimental feature to support custom data models different from record,
+         * like classes or DataFrames
+         *
+         * @param writeModelFactory creates WriteRecordModelType given configuration
+         *                          specific to Carpet and Parquet
+         * @return this builder for method chaining.
+         */
+        @Beta
+        public Builder<T> withWriteRecordModel(WriteModelFactory<T> writeModelFactory) {
+            this.writeModelFactory = writeModelFactory;
+            return self();
+        }
+
+        /**
+         * Configures write data model to use, instead of default record convention.
+         *
+         * Experimental feature to support custom data models different from record,
+         * like classes or DataFrames
+         *
+         * @param rootWriteRecordModel write record model to use
+         * @return this builder for method chaining.
+         */
+        @Beta
+        public Builder<T> withWriteRecordModel(WriteRecordModelType<T> rootWriteRecordModel) {
+            if (!rootWriteRecordModel.getClassType().equals(recordClass)) {
+                throw new IllegalArgumentException("Root Write record Model class ("
+                        + rootWriteRecordModel.getClassType() + ") is not equals to configured Carpet Writer class ("
+                        + recordClass + ")");
+            }
+            return withWriteRecordModel((writeClass, writeConfigurationContext) -> rootWriteRecordModel);
         }
 
         @Override
-        protected WriteSupport<T> getWriteSupport(Configuration conf) {
-            return getWriteSupport();
-        }
-
-        protected WriteSupport<T> getWriteSupport() {
+        protected WriteSupport<T> getWriteSupport(ParquetConfiguration parquetConfig) {
             CarpetWriteConfiguration carpetCfg = new CarpetWriteConfiguration(
                     annotatedLevels,
                     columnNamingStrategy,
                     defaultTimeUnit,
                     decimalConfig);
-            return new CarpetWriteSupport<>(recordClass, extraMetaData, carpetCfg);
+            return WriteSupportFactory.createWriteSupport(recordClass, extraMetaData,
+                    parquetConfig, carpetCfg, writeModelFactory);
+        }
+
+        @Override
+        protected WriteSupport<T> getWriteSupport(Configuration conf) {
+            return getWriteSupport(new PlainParquetConfiguration(conf.getPropsWithPrefix("")));
         }
 
     }
