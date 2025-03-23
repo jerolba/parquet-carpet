@@ -218,7 +218,7 @@ class CarpetWriterCollectionTwoLevelTest {
     }
 
     @Test
-    void emptyNestedCollectionsAreNotSupported() throws IOException {
+    void emptyNestedCollectionsAreSupported() throws IOException {
 
         record EmptyNestedCollection(String name, List<List<Integer>> ids) {
         }
@@ -230,7 +230,7 @@ class CarpetWriterCollectionTwoLevelTest {
         var avroReader = writerTest.getAvroGenericRecordReader();
         GenericRecord avroRecord = avroReader.read();
         assertEquals(rec.name(), avroRecord.get("name").toString());
-        assertEquals(List.of(emptyList()), avroRecord.get("ids"));
+        assertEquals(List.of(List.of()), avroRecord.get("ids"));
     }
 
     @Test
