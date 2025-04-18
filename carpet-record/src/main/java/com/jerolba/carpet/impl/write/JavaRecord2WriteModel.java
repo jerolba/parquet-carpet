@@ -45,15 +45,16 @@ public class JavaRecord2WriteModel {
     }
 
     public <T> WriteRecordModelType<T> createModel(Class<T> recordClass) {
-        return buildRecordModel(recordClass, new HashSet<>());
+        return buildRecordModel(recordClass, false, new HashSet<>());
     }
 
-    private <T> WriteRecordModelType<T> buildRecordModel(Class<T> classToModel, Set<Class<?>> visited) {
+    private <T> WriteRecordModelType<T> buildRecordModel(Class<T> classToModel, boolean isNotNull,
+            Set<Class<?>> visited) {
         visited = validateNotVisitedRecord(classToModel, visited);
 
         WriteRecordModelType<T> writeModel = writeRecordModel(classToModel);
         createRecordFields(writeModel, classToModel, visited);
-        return writeModel;
+        return isNotNull ? writeModel.notNull() : writeModel;
     }
 
     private <T> void createRecordFields(WriteRecordModelType<T> writeModel, Class<T> recordClass,
@@ -83,9 +84,9 @@ public class JavaRecord2WriteModel {
         }
     }
 
-    private FieldType simpleOrCompositeClass(Class<?> type, boolean isPrimitive, Set<Class<?>> visited) {
-        FieldType simple = buildSimpleType(type, isPrimitive);
-        return simple == null ? buildRecordModel(type, visited) : simple;
+    private FieldType simpleOrCompositeClass(Class<?> type, boolean isNotNull, Set<Class<?>> visited) {
+        FieldType simple = buildSimpleType(type, isNotNull);
+        return simple == null ? buildRecordModel(type, isNotNull, visited) : simple;
     }
 
     private FieldType createCollectionType(ParameterizedCollection parametized, Set<Class<?>> visited) {
@@ -130,61 +131,62 @@ public class JavaRecord2WriteModel {
         return visited;
     }
 
-    public static FieldType buildSimpleType(Class<?> type, boolean isPrimitive) {
+    public static FieldType buildSimpleType(Class<?> type, boolean isNotNull) {
         JavaType javaType = new JavaType(type);
-        FieldType javaPrimitiveType = javaPrimitiveTypes(javaType, isPrimitive);
-        return javaPrimitiveType != null ? javaPrimitiveType : javaTypes(type, javaType);
+        FieldType javaPrimitiveType = javaPrimitiveTypes(javaType, isNotNull);
+        return javaPrimitiveType != null ? javaPrimitiveType : javaTypes(type, javaType, isNotNull);
     }
 
-    private static FieldType javaPrimitiveTypes(JavaType javaType, boolean isPrimitive) {
+    private static FieldType javaPrimitiveTypes(JavaType javaType, boolean isNotNull) {
         if (javaType.isInteger()) {
-            return isPrimitive ? FieldTypes.INTEGER.notNull() : FieldTypes.INTEGER;
+            return isNotNull ? FieldTypes.INTEGER.notNull() : FieldTypes.INTEGER;
         }
         if (javaType.isLong()) {
-            return isPrimitive ? FieldTypes.LONG.notNull() : FieldTypes.LONG;
+            return isNotNull ? FieldTypes.LONG.notNull() : FieldTypes.LONG;
         }
         if (javaType.isFloat()) {
-            return isPrimitive ? FieldTypes.FLOAT.notNull() : FieldTypes.FLOAT;
+            return isNotNull ? FieldTypes.FLOAT.notNull() : FieldTypes.FLOAT;
         }
         if (javaType.isDouble()) {
-            return isPrimitive ? FieldTypes.DOUBLE.notNull() : FieldTypes.DOUBLE;
+            return isNotNull ? FieldTypes.DOUBLE.notNull() : FieldTypes.DOUBLE;
         }
         if (javaType.isBoolean()) {
-            return isPrimitive ? FieldTypes.BOOLEAN.notNull() : FieldTypes.BOOLEAN;
+            return isNotNull ? FieldTypes.BOOLEAN.notNull() : FieldTypes.BOOLEAN;
         }
         if (javaType.isShort()) {
-            return isPrimitive ? FieldTypes.SHORT.notNull() : FieldTypes.SHORT;
+            return isNotNull ? FieldTypes.SHORT.notNull() : FieldTypes.SHORT;
         }
         if (javaType.isByte()) {
-            return isPrimitive ? FieldTypes.BYTE.notNull() : FieldTypes.BYTE;
+            return isNotNull ? FieldTypes.BYTE.notNull() : FieldTypes.BYTE;
         }
         return null;
     }
 
-    private static FieldType javaTypes(Class<?> type, JavaType javaType) {
+    private static FieldType javaTypes(Class<?> type, JavaType javaType, boolean isNotNull) {
         if (javaType.isString()) {
-            return FieldTypes.STRING;
+            return isNotNull ? FieldTypes.STRING.notNull() : FieldTypes.STRING;
         }
         if (javaType.isEnum()) {
-            return new EnumType(false, (Class<? extends Enum<?>>) type);
+            EnumType enumType = new EnumType(false, (Class<? extends Enum<?>>) type);
+            return isNotNull ? enumType.notNull() : enumType;
         }
         if (javaType.isUuid()) {
-            return FieldTypes.UUID;
+            return isNotNull ? FieldTypes.UUID.notNull() : FieldTypes.UUID;
         }
         if (javaType.isBigDecimal()) {
-            return FieldTypes.BIG_DECIMAL;
+            return isNotNull ? FieldTypes.BIG_DECIMAL.notNull() : FieldTypes.BIG_DECIMAL;
         }
         if (javaType.isLocalDate()) {
-            return FieldTypes.LOCAL_DATE;
+            return isNotNull ? FieldTypes.LOCAL_DATE.notNull() : FieldTypes.LOCAL_DATE;
         }
         if (javaType.isLocalTime()) {
-            return FieldTypes.LOCAL_TIME;
+            return isNotNull ? FieldTypes.LOCAL_TIME.notNull() : FieldTypes.LOCAL_TIME;
         }
         if (javaType.isLocalDateTime()) {
-            return FieldTypes.LOCAL_DATE_TIME;
+            return isNotNull ? FieldTypes.LOCAL_DATE_TIME.notNull() : FieldTypes.LOCAL_DATE_TIME;
         }
         if (javaType.isInstant()) {
-            return FieldTypes.INSTANT;
+            return isNotNull ? FieldTypes.INSTANT.notNull() : FieldTypes.INSTANT;
         }
         return null;
     }

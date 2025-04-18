@@ -97,6 +97,7 @@ dependencies {
 
     testImplementation 'org.apache.commons:commons-lang3:3.12.0'
     testImplementation "org.apache.parquet:parquet-avro:${parquetVersion}"
+    testImplementation 'org.slf4j:slf4j-simple:1.7.36'
     testImplementation "org.junit.jupiter:junit-jupiter-api:${junitVersion}"
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
 }

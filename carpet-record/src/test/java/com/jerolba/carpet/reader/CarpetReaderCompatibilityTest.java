@@ -50,7 +50,7 @@ import com.jerolba.carpet.ParquetReaderTest;
 import com.jerolba.carpet.io.FileSystemInputFile;
 import com.jerolba.carpet.io.FileSystemOutputFile;
 
-class CarpetReaderCompatibility {
+class CarpetReaderCompatibilityTest {
 
     @Nested
     class AvroCollections {

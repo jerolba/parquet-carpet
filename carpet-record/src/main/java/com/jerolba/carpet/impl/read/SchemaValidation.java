@@ -77,8 +77,7 @@ public class SchemaValidation {
         case FLOAT -> validFloatSource(type);
         case DOUBLE -> validDoubleSource(type);
         case BOOLEAN -> validBooleanSource(type);
-        case BINARY, FIXED_LEN_BYTE_ARRAY, INT96 -> throw new RecordTypeConversionException(
-                type + " deserialization not supported");
+        case BINARY, FIXED_LEN_BYTE_ARRAY, INT96 -> throwInvalidConversionException(primitiveType, type);
         default -> false;
         };
         if (!valid) {
@@ -184,8 +183,7 @@ public class SchemaValidation {
                 return name == PrimitiveTypeName.INT64;
             }
         }
-        if (logicalType instanceof TimestampLogicalTypeAnnotation timeStamp
-                && (type.isLocalDateTime() || type.isInstant())) {
+        if (logicalType instanceof TimestampLogicalTypeAnnotation && (type.isLocalDateTime() || type.isInstant())) {
             // TODO: add logic to fail about isAdjustedToUTC conversion
             return name == PrimitiveTypeName.INT64;
         }
@@ -194,8 +192,7 @@ public class SchemaValidation {
 
     private boolean throwInvalidConversionException(PrimitiveType primitiveType, JavaType type) {
         throw new RecordTypeConversionException(
-                primitiveType.getPrimitiveTypeName().name() + " (" + primitiveType.getName()
-                        + ") can not be converted to " + type.getTypeName());
+                "Parquet '" + primitiveType + "' can not be converted to '" + type.getTypeName() + "'");
     }
 
     public static boolean isThreeLevel(Type child) {
