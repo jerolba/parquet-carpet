@@ -41,6 +41,7 @@ import org.apache.avro.data.TimeConversions;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.parquet.hadoop.ParquetFileReader;
+import org.apache.parquet.io.api.Binary;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -52,6 +53,7 @@ import com.jerolba.carpet.ParquetWriterTest;
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.TimeUnit;
 import com.jerolba.carpet.annotation.Alias;
+import com.jerolba.carpet.annotation.ParquetString;
 import com.jerolba.carpet.io.FileSystemInputFile;
 import com.jerolba.carpet.io.FileSystemOutputFile;
 
@@ -358,6 +360,26 @@ class CarpetWriterTest {
             var avroReader = writerTest.getAvroGenericRecordReader();
             assertEquals(rec1.value, avroReader.read().get("value").toString());
             assertEquals(rec2.value, avroReader.read().get("value").toString());
+
+            var carpetReader = writerTest.getCarpetReader();
+            assertEquals(rec1, carpetReader.read());
+            assertEquals(rec2, carpetReader.read());
+        }
+
+        @Test
+        void stringBinaryObject() throws IOException {
+
+            record StringObject(@ParquetString Binary value) {
+            }
+
+            var rec1 = new StringObject(Binary.fromString("Madrid"));
+            var rec2 = new StringObject(Binary.fromString("Zaragoza"));
+            var writerTest = new ParquetWriterTest<>(StringObject.class);
+            writerTest.write(rec1, rec2);
+
+            var avroReader = writerTest.getAvroGenericRecordReader();
+            assertEquals(rec1.value.toStringUsingUTF8(), avroReader.read().get("value").toString());
+            assertEquals(rec2.value.toStringUsingUTF8(), avroReader.read().get("value").toString());
 
             var carpetReader = writerTest.getCarpetReader();
             assertEquals(rec1, carpetReader.read());

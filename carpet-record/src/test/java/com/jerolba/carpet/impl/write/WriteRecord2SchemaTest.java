@@ -20,6 +20,7 @@ import static com.jerolba.carpet.TimeUnit.MILLIS;
 import static com.jerolba.carpet.TimeUnit.NANOS;
 import static com.jerolba.carpet.impl.write.DecimalConfig.decimalConfig;
 import static com.jerolba.carpet.model.FieldTypes.BIG_DECIMAL;
+import static com.jerolba.carpet.model.FieldTypes.BINARY;
 import static com.jerolba.carpet.model.FieldTypes.BOOLEAN;
 import static com.jerolba.carpet.model.FieldTypes.BYTE;
 import static com.jerolba.carpet.model.FieldTypes.DOUBLE;
@@ -49,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.schema.MessageType;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -57,6 +59,7 @@ import com.jerolba.carpet.AnnotatedLevels;
 import com.jerolba.carpet.ColumnNamingStrategy;
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.TimeUnit;
+import com.jerolba.carpet.model.BinaryType.BinaryLogicalType;
 import com.jerolba.carpet.model.WriteRecordModelType;
 
 class WriteRecord2SchemaTest {
@@ -150,6 +153,24 @@ class WriteRecord2SchemaTest {
                 message NotNullFieldRecord {
                   required int64 id;
                   required binary name (STRING);
+                }
+                """;
+        assertEquals(expected, schemaWithRootType(rootType).toString());
+    }
+
+    @Test
+    void binaryAsStringRecordTest() {
+        record SimpleRecord(long id, Binary name) {
+        }
+
+        var rootType = writeRecordModel(SimpleRecord.class)
+                .withField("id", LONG.notNull(), SimpleRecord::id)
+                .withField("name", BINARY.withLogicalType(BinaryLogicalType.STRING), SimpleRecord::name);
+
+        String expected = """
+                message SimpleRecord {
+                  required int64 id;
+                  optional binary name (STRING);
                 }
                 """;
         assertEquals(expected, schemaWithRootType(rootType).toString());

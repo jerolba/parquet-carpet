@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.schema.MessageType;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -42,6 +43,7 @@ import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.TimeUnit;
 import com.jerolba.carpet.annotation.Alias;
 import com.jerolba.carpet.annotation.NotNull;
+import com.jerolba.carpet.annotation.ParquetString;
 
 class JavaRecord2SchemaTest {
 
@@ -118,6 +120,22 @@ class JavaRecord2SchemaTest {
                 message NotNullFieldRecord {
                   required int64 id;
                   required binary name (STRING);
+                }
+                """;
+        assertEquals(expected, schema.toString());
+    }
+
+    @Test
+    void BinaryAsStringRecordTest() {
+        record SimpleRecord(long id, @ParquetString Binary name) {
+        }
+
+        MessageType schema = defaultConfigSchema.createSchema(SimpleRecord.class);
+
+        String expected = """
+                message SimpleRecord {
+                  required int64 id;
+                  optional binary name (STRING);
                 }
                 """;
         assertEquals(expected, schema.toString());

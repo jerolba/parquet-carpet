@@ -189,6 +189,12 @@ class WriteRecordModel2Schema {
         if (javaType.isString()) {
             return primitive(BINARY, repetition).as(stringType()).named(parquetFieldName);
         }
+        if (javaType.isBinary()) {
+            return switch (javaType.binaryLogicalType()) {
+            case STRING -> primitive(BINARY, repetition).as(stringType()).named(parquetFieldName);
+            default -> null;
+            };
+        }
         if (javaType.isEnum()) {
             return primitive(BINARY, repetition).as(enumType()).named(parquetFieldName);
         }

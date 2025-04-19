@@ -15,15 +15,29 @@
  */
 package com.jerolba.carpet.model;
 
-public sealed interface FieldType
-        permits BooleanType, ByteType, ShortType, IntegerType,
-        LongType, FloatType, DoubleType, StringType, BinaryType, EnumType,
-        UuidType, BigDecimalType, LocalDateType, LocalTimeType,
-        LocalDateTimeType, InstantType, CollectionType, ListType,
-        SetType, MapType, WriteRecordModelType {
+import org.apache.parquet.io.api.Binary;
 
-    boolean isNotNull();
+public record BinaryType(boolean isNotNull, BinaryLogicalType logicalType) implements FieldType {
 
-    Class<?> getClassType();
+    public enum BinaryLogicalType {
+        BSON, JSON, ENUM, STRING;
+    }
+
+    public BinaryType notNull() {
+        return new BinaryType(true, logicalType);
+    }
+
+    public BinaryType withLogicalType(BinaryLogicalType logicalType) {
+        return new BinaryType(isNotNull, logicalType);
+    }
+
+    public BinaryType asString() {
+        return new BinaryType(isNotNull, BinaryLogicalType.STRING);
+    }
+
+    @Override
+    public Class<Binary> getClassType() {
+        return Binary.class;
+    }
 
 }

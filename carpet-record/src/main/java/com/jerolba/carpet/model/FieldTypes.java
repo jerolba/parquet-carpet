@@ -25,6 +25,7 @@ public class FieldTypes {
     public static final FloatType FLOAT = new FloatType(false);
     public static final DoubleType DOUBLE = new DoubleType(false);
     public static final StringType STRING = new StringType(false);
+    public static final BinaryType BINARY = new BinaryType(false, null);
     public static final EnumTypeBuilder ENUM = new EnumTypeBuilder();
     public static final UuidType UUID = new UuidType(false);
     public static final BigDecimalType BIG_DECIMAL = new BigDecimalType(false);

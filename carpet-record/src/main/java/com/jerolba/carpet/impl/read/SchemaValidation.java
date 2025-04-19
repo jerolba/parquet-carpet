@@ -64,8 +64,7 @@ public class SchemaValidation {
         return true;
     }
 
-    public boolean validatePrimitiveCompatibility(PrimitiveType primitiveType, Class<?> javaType) {
-        JavaType type = new JavaType(javaType);
+    public boolean validatePrimitiveCompatibility(PrimitiveType primitiveType, JavaType type) {
         LogicalTypeAnnotation logicalTypeAnnotation = primitiveType.getLogicalTypeAnnotation();
         if (logicalTypeAnnotation != null && validLogicalTypeAnnotation(primitiveType, type)) {
             return true;
@@ -151,7 +150,7 @@ public class SchemaValidation {
         var logicalType = primitiveType.getLogicalTypeAnnotation();
         var name = primitiveType.getPrimitiveTypeName();
 
-        if (stringType().equals(logicalType) && (type.isString() || type.isEnum())) {
+        if (stringType().equals(logicalType) && (type.isString() || type.isEnum() || type.isBinary())) {
             return name == PrimitiveTypeName.BINARY;
         }
         if (enumType().equals(logicalType) && (type.isString() || type.isEnum())) {

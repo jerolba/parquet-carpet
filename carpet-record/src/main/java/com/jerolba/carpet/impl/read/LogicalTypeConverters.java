@@ -31,6 +31,7 @@ import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
 import org.apache.parquet.schema.Type;
 
 import com.jerolba.carpet.impl.JavaType;
+import com.jerolba.carpet.impl.read.converter.BinaryConverter;
 import com.jerolba.carpet.impl.read.converter.DecimalConverter;
 import com.jerolba.carpet.impl.read.converter.EnumConverter;
 import com.jerolba.carpet.impl.read.converter.InstantConverter;
@@ -57,6 +58,9 @@ class LogicalTypeConverters {
         if (logicalTypeAnnotation.equals(stringType())) {
             if (type == null || type.isString()) {
                 return new StringConverter(consumer);
+            }
+            if (type.isBinary()) {
+                return new BinaryConverter(consumer);
             }
             if (type.isEnum()) {
                 return new EnumConverter(consumer, type.getJavaType());

@@ -52,6 +52,7 @@ import org.apache.parquet.schema.Types;
 
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.TimeUnit;
+import com.jerolba.carpet.annotation.ParquetString;
 import com.jerolba.carpet.impl.JavaType;
 import com.jerolba.carpet.impl.ParameterizedCollection;
 import com.jerolba.carpet.impl.ParameterizedMap;
@@ -85,9 +86,9 @@ class JavaRecord2Schema {
             String fieldName = fieldToColumnMapper.getColumnName(attr);
             boolean notNull = type.isPrimitive() || isNotNull(attr);
             Repetition repetition = notNull ? REQUIRED : OPTIONAL;
-            JavaType javaType = new JavaType(type);
+            JavaType javaType = new JavaType(type, attr.getDeclaredAnnotations());
 
-            Type parquetType = buildType(type, visited, repetition, fieldName);
+            Type parquetType = buildType(javaType, visited, repetition, fieldName);
             if (parquetType != null) {
                 fields.add(parquetType);
             } else if (javaType.isCollection()) {
@@ -133,7 +134,7 @@ class JavaRecord2Schema {
         if (parametized.isMap()) {
             return createMapType(fieldName, parametized.getParametizedAsMap(), visited, REPEATED);
         }
-        return buildTypeElement(parametized.getActualType(), visited, REPEATED, fieldName);
+        return buildTypeElement(new JavaType(parametized.getActualType()), visited, REPEATED, fieldName);
     }
 
     private Type createCollectionTwoLevel(String fieldName, ParameterizedCollection parametized, Set<Class<?>> visited,
@@ -158,13 +159,13 @@ class JavaRecord2Schema {
         if (parametized.isMap()) {
             return createMapType("element", parametized.getParametizedAsMap(), visited, repetition);
         }
-        return buildTypeElement(parametized.getActualType(), visited, repetition, "element");
+        return buildTypeElement(new JavaType(parametized.getActualType()), visited, repetition, "element");
     }
 
     private Type createMapType(String fieldName, ParameterizedMap parametized, Set<Class<?>> visited,
             Repetition repetition) {
         Class<?> keyType = parametized.getKeyActualType();
-        Type nestedKey = buildTypeElement(keyType, visited, REQUIRED, "key");
+        Type nestedKey = buildTypeElement(new JavaType(keyType), visited, REQUIRED, "key");
 
         if (parametized.valueIsCollection()) {
             Type childCollection = createCollectionType("value", parametized.getValueTypeAsCollection(),
@@ -177,7 +178,7 @@ class JavaRecord2Schema {
         }
 
         Class<?> valueType = parametized.getValueActualType();
-        Type nestedValue = buildTypeElement(valueType, visited, OPTIONAL, "value");
+        Type nestedValue = buildTypeElement(new JavaType(valueType), visited, OPTIONAL, "value");
         if (nestedKey != null && nestedValue != null) {
             // TODO: what to change to support generation of older versions?
             return Types.map(repetition).key(nestedKey).value(nestedValue).named(fieldName);
@@ -185,27 +186,34 @@ class JavaRecord2Schema {
         throw new RecordTypeConversionException("Unsuported type in Map");
     }
 
-    private Type buildTypeElement(Class<?> type, Set<Class<?>> visited, Repetition repetition, String name) {
-        Type parquetType = buildType(type, visited, repetition, name);
+    private Type buildTypeElement(JavaType javaType, Set<Class<?>> visited, Repetition repetition, String name) {
+        Type parquetType = buildType(javaType, visited, repetition, name);
         if (parquetType == null) {
-            throw new RecordTypeConversionException("Unsuported type " + type);
+            throw new RecordTypeConversionException("Unsuported type " + javaType.getJavaType());
         }
         return parquetType;
     }
 
-    private Type buildType(Class<?> type, Set<Class<?>> visited, Repetition repetition, String name) {
-        JavaType javaType = new JavaType(type);
+    private Type buildType(JavaType javaType, Set<Class<?>> visited, Repetition repetition, String name) {
         PrimitiveType primitiveType = simpleTypeItems(javaType, repetition, name);
         if (primitiveType != null) {
             return primitiveType;
         }
         if (javaType.isRecord()) {
-            List<Type> childFields = buildCompositeChild(type, visited);
+            List<Type> childFields = buildCompositeChild(javaType.getJavaType(), visited);
             return new GroupType(repetition, name, childFields);
         }
         if (javaType.isString()) {
             return primitive(BINARY, repetition).as(stringType()).named(name);
         }
+        if (javaType.isBinary()) {
+            if (javaType.isAnnotatedWith(ParquetString.class)) {
+                return primitive(BINARY, repetition).as(stringType()).named(name);
+            }
+            throw new RecordTypeConversionException(
+                    name + " Binary must be annotated with the type of Parquet LogicalType to use");
+        }
+
         if (javaType.isEnum()) {
             return primitive(BINARY, repetition).as(enumType()).named(name);
         }

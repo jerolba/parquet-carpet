@@ -26,10 +26,13 @@ import java.util.Set;
 import java.util.function.Function;
 
 import com.jerolba.carpet.RecordTypeConversionException;
+import com.jerolba.carpet.annotation.ParquetString;
 import com.jerolba.carpet.impl.JavaType;
 import com.jerolba.carpet.impl.Parameterized;
 import com.jerolba.carpet.impl.ParameterizedCollection;
 import com.jerolba.carpet.impl.ParameterizedMap;
+import com.jerolba.carpet.model.BinaryType;
+import com.jerolba.carpet.model.BinaryType.BinaryLogicalType;
 import com.jerolba.carpet.model.EnumType;
 import com.jerolba.carpet.model.FieldType;
 import com.jerolba.carpet.model.FieldTypes;
@@ -66,7 +69,7 @@ public class JavaRecord2WriteModel {
                 throw new RecordTypeConversionException(genericType.toString() + " generic types not supported");
             }
             Class<?> type = attr.getType();
-            JavaType javaType = new JavaType(type);
+            JavaType javaType = new JavaType(type, attr.getDeclaredAnnotations());
             FieldType fieldType = null;
             if (javaType.isCollection()) {
                 var parameterizedCollection = Parameterized.getParameterizedCollection(attr);
@@ -76,7 +79,7 @@ public class JavaRecord2WriteModel {
                 fieldType = createMapType(parameterizedMap, visited);
             } else {
                 boolean notNull = type.isPrimitive() || isNotNull(attr);
-                fieldType = simpleOrCompositeClass(type, notNull, visited);
+                fieldType = simpleOrCompositeClass(javaType, notNull, visited);
             }
             String fieldName = fieldToColumnMapper.getColumnName(attr);
             Function<T, Object> recordAccessor = (Function<T, Object>) Reflection.recordAccessor(recordClass, attr);
@@ -84,9 +87,9 @@ public class JavaRecord2WriteModel {
         }
     }
 
-    private FieldType simpleOrCompositeClass(Class<?> type, boolean isNotNull, Set<Class<?>> visited) {
-        FieldType simple = buildSimpleType(type, isNotNull);
-        return simple == null ? buildRecordModel(type, isNotNull, visited) : simple;
+    private FieldType simpleOrCompositeClass(JavaType javaType, boolean isNotNull, Set<Class<?>> visited) {
+        FieldType simple = buildSimpleType(javaType, isNotNull);
+        return simple == null ? buildRecordModel(javaType.getJavaType(), isNotNull, visited) : simple;
     }
 
     private FieldType createCollectionType(ParameterizedCollection parametized, Set<Class<?>> visited) {
@@ -95,7 +98,7 @@ public class JavaRecord2WriteModel {
         } else if (parametized.isMap()) {
             return LIST.ofType(createMapType(parametized.getParametizedAsMap(), visited));
         }
-        return LIST.ofType(simpleOrCompositeClass(parametized.getActualType(), false, visited));
+        return LIST.ofType(simpleOrCompositeClass(new JavaType(parametized.getActualType()), false, visited));
     }
 
     private FieldType createMapType(ParameterizedMap parametized, Set<Class<?>> visited) {
@@ -103,7 +106,7 @@ public class JavaRecord2WriteModel {
         if (parametized.keyIsCollection() || parametized.keyIsMap()) {
             throw new RuntimeException("Maps with collections or maps as keys are not supported");
         }
-        FieldType nestedKey = simpleOrCompositeClass(keyType, false, visited);
+        FieldType nestedKey = simpleOrCompositeClass(new JavaType(keyType), false, visited);
 
         if (parametized.valueIsCollection()) {
             FieldType childCollection = createCollectionType(parametized.getValueTypeAsCollection(), visited);
@@ -112,7 +115,7 @@ public class JavaRecord2WriteModel {
             FieldType childMap = createMapType(parametized.getValueTypeAsMap(), visited);
             return MAP.ofTypes(nestedKey, childMap);
         }
-        FieldType nestedValue = simpleOrCompositeClass(parametized.getValueActualType(), false, visited);
+        FieldType nestedValue = simpleOrCompositeClass(new JavaType(parametized.getValueActualType()), false, visited);
         if (nestedKey != null && nestedValue != null) {
             return MAP.ofTypes(nestedKey, nestedValue);
         }
@@ -131,10 +134,9 @@ public class JavaRecord2WriteModel {
         return visited;
     }
 
-    public static FieldType buildSimpleType(Class<?> type, boolean isNotNull) {
-        JavaType javaType = new JavaType(type);
+    public static FieldType buildSimpleType(JavaType javaType, boolean isNotNull) {
         FieldType javaPrimitiveType = javaPrimitiveTypes(javaType, isNotNull);
-        return javaPrimitiveType != null ? javaPrimitiveType : javaTypes(type, javaType, isNotNull);
+        return javaPrimitiveType != null ? javaPrimitiveType : javaTypes(javaType, isNotNull);
     }
 
     private static FieldType javaPrimitiveTypes(JavaType javaType, boolean isNotNull) {
@@ -162,12 +164,21 @@ public class JavaRecord2WriteModel {
         return null;
     }
 
-    private static FieldType javaTypes(Class<?> type, JavaType javaType, boolean isNotNull) {
+    private static FieldType javaTypes(JavaType javaType, boolean isNotNull) {
         if (javaType.isString()) {
             return isNotNull ? FieldTypes.STRING.notNull() : FieldTypes.STRING;
         }
+        if (javaType.isBinary()) {
+            if (javaType.isAnnotatedWith(ParquetString.class)) {
+                BinaryType binary = FieldTypes.BINARY.withLogicalType(BinaryLogicalType.STRING);
+                return isNotNull ? binary.notNull() : binary;
+            }
+            throw new RecordTypeConversionException(
+                    "Binary must be annotated with the type of Parquet LogicalType to use");
+
+        }
         if (javaType.isEnum()) {
-            EnumType enumType = new EnumType(false, (Class<? extends Enum<?>>) type);
+            EnumType enumType = new EnumType(false, (Class<? extends Enum<?>>) javaType.getJavaType());
             return isNotNull ? enumType.notNull() : enumType;
         }
         if (javaType.isUuid()) {
