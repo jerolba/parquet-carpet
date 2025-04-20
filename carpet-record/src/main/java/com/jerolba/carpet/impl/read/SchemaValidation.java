@@ -16,6 +16,7 @@
 package com.jerolba.carpet.impl.read;
 
 import static com.jerolba.carpet.impl.NotNullField.isNotNull;
+import static org.apache.parquet.schema.LogicalTypeAnnotation.bsonType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.dateType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.enumType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.intType;
@@ -155,6 +156,9 @@ public class SchemaValidation {
             return name == PrimitiveTypeName.BINARY;
         }
         if (jsonType().equals(logicalType) && (type.isString() || type.isBinary())) {
+            return name == PrimitiveTypeName.BINARY;
+        }
+        if (bsonType().equals(logicalType) && type.isBinary()) {
             return name == PrimitiveTypeName.BINARY;
         }
         if (enumType().equals(logicalType) && (type.isString() || type.isEnum())) {

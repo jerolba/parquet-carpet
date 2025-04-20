@@ -54,6 +54,7 @@ import com.jerolba.carpet.ParquetWriterTest;
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.TimeUnit;
 import com.jerolba.carpet.annotation.Alias;
+import com.jerolba.carpet.annotation.ParquetBson;
 import com.jerolba.carpet.annotation.ParquetJson;
 import com.jerolba.carpet.annotation.ParquetString;
 import com.jerolba.carpet.io.FileSystemInputFile;
@@ -430,6 +431,32 @@ class CarpetWriterTest {
             var carpetReader = writerTest.getCarpetReader();
             assertEquals(rec1, carpetReader.read());
             assertEquals(rec2, carpetReader.read());
+        }
+
+        @Test
+        void bsonAsBinaryObject() throws IOException {
+
+            record JsonAsBinaryObject(@ParquetBson Binary value) {
+            }
+
+            byte[] bson = new byte[] {
+                    0x16, 0x00, 0x00, 0x00, // Total lenght (22 bytes) in little-endian
+                    0x02, // Data type: String (0x02)
+                    0x63, 0x69, 0x74, 0x79, 0x00, // "city" + null terminator
+                    0x07, 0x00, 0x00, 0x00, // string lenght (7 bytes) in little-endian
+                    0x4D, 0x61, 0x64, 0x72, 0x69, 0x64, 0x00, // "Madrid" + null terminator
+                    0x00 // document terminator
+            };
+            var rec = new JsonAsBinaryObject(Binary.fromConstantByteArray(bson));
+            var writerTest = new ParquetWriterTest<>(JsonAsBinaryObject.class);
+            writerTest.write(rec);
+
+            var avroReader = writerTest.getAvroGenericRecordReader();
+            ByteBuffer asByteBuffer = (ByteBuffer) avroReader.read().get("value");
+            assertEquals(rec.value, Binary.fromReusedByteBuffer(asByteBuffer));
+
+            var carpetReader = writerTest.getCarpetReader();
+            assertEquals(rec, carpetReader.read());
         }
 
         @Test

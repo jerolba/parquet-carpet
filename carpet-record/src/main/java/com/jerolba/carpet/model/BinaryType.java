@@ -35,6 +35,10 @@ public record BinaryType(boolean isNotNull, BinaryLogicalType logicalType) imple
         return new BinaryType(isNotNull, BinaryLogicalType.JSON);
     }
 
+    public BinaryType asBson() {
+        return new BinaryType(isNotNull, BinaryLogicalType.BSON);
+    }
+
     @Override
     public Class<Binary> getClassType() {
         return Binary.class;

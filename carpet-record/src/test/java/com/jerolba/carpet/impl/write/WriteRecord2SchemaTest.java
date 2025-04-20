@@ -253,6 +253,47 @@ class WriteRecord2SchemaTest {
     }
 
     @Nested
+    class BsonType {
+
+        @Test
+        void bsonFieldFromBinary() {
+            record BsonRecord(long id, Binary value) {
+            }
+
+            var rootType = writeRecordModel(BsonRecord.class)
+                    .withField("id", LONG.notNull(), BsonRecord::id)
+                    .withField("value", BINARY.asBson(), BsonRecord::value);
+
+            String expected = """
+                    message BsonRecord {
+                      required int64 id;
+                      optional binary value (BSON);
+                    }
+                    """;
+            assertEquals(expected, schemaWithRootType(rootType).toString());
+        }
+
+        @Test
+        void notNullBsonFieldFromBinary() {
+            record BsonRecord(long id, Binary value) {
+            }
+
+            var rootType = writeRecordModel(BsonRecord.class)
+                    .withField("id", LONG.notNull(), BsonRecord::id)
+                    .withField("value", BINARY.asBson().notNull(), BsonRecord::value);
+
+            String expected = """
+                    message BsonRecord {
+                      required int64 id;
+                      required binary value (BSON);
+                    }
+                    """;
+            assertEquals(expected, schemaWithRootType(rootType).toString());
+        }
+
+    }
+
+    @Nested
     class DecimalConfiguration {
 
         @Test

@@ -15,6 +15,7 @@
  */
 package com.jerolba.carpet.impl.read;
 
+import static org.apache.parquet.schema.LogicalTypeAnnotation.bsonType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.dateType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.enumType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.jsonType;
@@ -75,6 +76,10 @@ class LogicalTypeConverters {
             if (type.isBinary()) {
                 return new BinaryConverter(consumer);
             }
+        }
+
+        if (logicalTypeAnnotation.equals(bsonType()) && type.isBinary()) {
+            return new BinaryConverter(consumer);
         }
 
         if (logicalTypeAnnotation.equals(enumType())) {

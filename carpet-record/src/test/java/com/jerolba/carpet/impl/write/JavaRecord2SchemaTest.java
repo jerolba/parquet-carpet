@@ -43,6 +43,7 @@ import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.TimeUnit;
 import com.jerolba.carpet.annotation.Alias;
 import com.jerolba.carpet.annotation.NotNull;
+import com.jerolba.carpet.annotation.ParquetBson;
 import com.jerolba.carpet.annotation.ParquetJson;
 import com.jerolba.carpet.annotation.ParquetString;
 
@@ -198,6 +199,40 @@ class JavaRecord2SchemaTest {
                     message JsonRecord {
                       required int64 id;
                       required binary value (JSON);
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+    }
+
+    @Nested
+    class BsonType {
+
+        @Test
+        void bsonFieldFromBinary() {
+            record BsonRecord(long id, @ParquetBson Binary value) {
+            }
+            MessageType schema = defaultConfigSchema.createSchema(BsonRecord.class);
+            String expected = """
+                    message BsonRecord {
+                      required int64 id;
+                      optional binary value (BSON);
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void notNullBsonFieldFromBinary() {
+            record BsonRecord(long id, @ParquetBson @NotNull Binary value) {
+            }
+
+            MessageType schema = defaultConfigSchema.createSchema(BsonRecord.class);
+            String expected = """
+                    message BsonRecord {
+                      required int64 id;
+                      required binary value (BSON);
                     }
                     """;
             assertEquals(expected, schema.toString());

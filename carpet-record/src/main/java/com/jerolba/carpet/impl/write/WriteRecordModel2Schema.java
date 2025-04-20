@@ -15,6 +15,7 @@
  */
 package com.jerolba.carpet.impl.write;
 
+import static org.apache.parquet.schema.LogicalTypeAnnotation.bsonType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.dateType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.decimalType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.enumType;
@@ -198,6 +199,7 @@ class WriteRecordModel2Schema {
             return switch (javaType.binaryLogicalType()) {
             case STRING -> primitive(BINARY, repetition).as(stringType()).named(parquetFieldName);
             case JSON -> primitive(BINARY, repetition).as(jsonType()).named(parquetFieldName);
+            case BSON -> primitive(BINARY, repetition).as(bsonType()).named(parquetFieldName);
             default -> null;
             };
         }

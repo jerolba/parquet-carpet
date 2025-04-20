@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.function.Function;
 
 import com.jerolba.carpet.RecordTypeConversionException;
+import com.jerolba.carpet.annotation.ParquetBson;
 import com.jerolba.carpet.annotation.ParquetJson;
 import com.jerolba.carpet.annotation.ParquetString;
 import com.jerolba.carpet.impl.JavaType;
@@ -179,6 +180,9 @@ public class JavaRecord2WriteModel {
                 return isNotNull ? binary.notNull() : binary;
             } else if (javaType.isAnnotatedWith(ParquetJson.class)) {
                 BinaryType binary = FieldTypes.BINARY.asJson();
+                return isNotNull ? binary.notNull() : binary;
+            } else if (javaType.isAnnotatedWith(ParquetBson.class)) {
+                BinaryType binary = FieldTypes.BINARY.asBson();
                 return isNotNull ? binary.notNull() : binary;
             }
             throw new RecordTypeConversionException(
