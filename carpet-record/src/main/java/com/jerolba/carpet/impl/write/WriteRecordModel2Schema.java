@@ -19,6 +19,7 @@ import static org.apache.parquet.schema.LogicalTypeAnnotation.dateType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.decimalType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.enumType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.intType;
+import static org.apache.parquet.schema.LogicalTypeAnnotation.jsonType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.stringType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.timeType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.timestampType;
@@ -51,6 +52,7 @@ import com.jerolba.carpet.TimeUnit;
 import com.jerolba.carpet.model.CollectionType;
 import com.jerolba.carpet.model.FieldType;
 import com.jerolba.carpet.model.MapType;
+import com.jerolba.carpet.model.StringType.StringLogicalType;
 import com.jerolba.carpet.model.WriteRecordModelType;
 
 class WriteRecordModel2Schema {
@@ -187,11 +189,15 @@ class WriteRecordModel2Schema {
             return primitiveType;
         }
         if (javaType.isString()) {
+            if (javaType.stringLogicalType() == StringLogicalType.JSON) {
+                return primitive(BINARY, repetition).as(jsonType()).named(parquetFieldName);
+            }
             return primitive(BINARY, repetition).as(stringType()).named(parquetFieldName);
         }
         if (javaType.isBinary()) {
             return switch (javaType.binaryLogicalType()) {
             case STRING -> primitive(BINARY, repetition).as(stringType()).named(parquetFieldName);
+            case JSON -> primitive(BINARY, repetition).as(jsonType()).named(parquetFieldName);
             default -> null;
             };
         }

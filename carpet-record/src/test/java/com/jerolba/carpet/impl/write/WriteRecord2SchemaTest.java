@@ -59,7 +59,6 @@ import com.jerolba.carpet.AnnotatedLevels;
 import com.jerolba.carpet.ColumnNamingStrategy;
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.TimeUnit;
-import com.jerolba.carpet.model.BinaryType.BinaryLogicalType;
 import com.jerolba.carpet.model.WriteRecordModelType;
 
 class WriteRecord2SchemaTest {
@@ -165,7 +164,7 @@ class WriteRecord2SchemaTest {
 
         var rootType = writeRecordModel(SimpleRecord.class)
                 .withField("id", LONG.notNull(), SimpleRecord::id)
-                .withField("name", BINARY.withLogicalType(BinaryLogicalType.STRING), SimpleRecord::name);
+                .withField("name", BINARY.asString(), SimpleRecord::name);
 
         String expected = """
                 message SimpleRecord {
@@ -174,6 +173,83 @@ class WriteRecord2SchemaTest {
                 }
                 """;
         assertEquals(expected, schemaWithRootType(rootType).toString());
+    }
+
+    @Nested
+    class JsonType {
+
+        @Test
+        void jsonFieldFromString() {
+            record JsonRecord(long id, String value) {
+            }
+
+            var rootType = writeRecordModel(JsonRecord.class)
+                    .withField("id", LONG.notNull(), JsonRecord::id)
+                    .withField("value", STRING.asJson(), JsonRecord::value);
+
+            String expected = """
+                    message JsonRecord {
+                      required int64 id;
+                      optional binary value (JSON);
+                    }
+                    """;
+            assertEquals(expected, schemaWithRootType(rootType).toString());
+        }
+
+        @Test
+        void notNullJsonFieldFromString() {
+            record JsonRecord(long id, String value) {
+            }
+
+            var rootType = writeRecordModel(JsonRecord.class)
+                    .withField("id", LONG.notNull(), JsonRecord::id)
+                    .withField("value", STRING.asJson().notNull(), JsonRecord::value);
+
+            String expected = """
+                    message JsonRecord {
+                      required int64 id;
+                      required binary value (JSON);
+                    }
+                    """;
+            assertEquals(expected, schemaWithRootType(rootType).toString());
+        }
+
+        @Test
+        void jsonFieldFromBinary() {
+            record JsonRecord(long id, Binary value) {
+            }
+
+            var rootType = writeRecordModel(JsonRecord.class)
+                    .withField("id", LONG.notNull(), JsonRecord::id)
+                    .withField("value", BINARY.asJson(), JsonRecord::value);
+
+            String expected = """
+                    message JsonRecord {
+                      required int64 id;
+                      optional binary value (JSON);
+                    }
+                    """;
+            assertEquals(expected, schemaWithRootType(rootType).toString());
+        }
+
+        @Test
+        void notNullJsonFieldFromBinary() {
+            record JsonRecord(long id, Binary value) {
+            }
+
+            var rootType = writeRecordModel(JsonRecord.class)
+                    .withField("id", LONG.notNull(), JsonRecord::id)
+                    .withField("value", BINARY.asJson().notNull(), JsonRecord::value);
+
+            String expected = """
+                    message JsonRecord {
+                      required int64 id;
+                      required binary value (JSON);
+                    }
+                    """;
+            assertEquals(expected, schemaWithRootType(rootType).toString());
+        }
+
     }
 
     @Nested

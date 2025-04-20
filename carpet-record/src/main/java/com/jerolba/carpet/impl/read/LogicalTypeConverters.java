@@ -17,6 +17,7 @@ package com.jerolba.carpet.impl.read;
 
 import static org.apache.parquet.schema.LogicalTypeAnnotation.dateType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.enumType;
+import static org.apache.parquet.schema.LogicalTypeAnnotation.jsonType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.stringType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.uuidType;
 
@@ -64,6 +65,15 @@ class LogicalTypeConverters {
             }
             if (type.isEnum()) {
                 return new EnumConverter(consumer, type.getJavaType());
+            }
+        }
+
+        if (logicalTypeAnnotation.equals(jsonType())) {
+            if (type == null || type.isString()) {
+                return new StringConverter(consumer);
+            }
+            if (type.isBinary()) {
+                return new BinaryConverter(consumer);
             }
         }
 

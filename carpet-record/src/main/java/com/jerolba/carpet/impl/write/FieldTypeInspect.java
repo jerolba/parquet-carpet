@@ -35,6 +35,7 @@ import com.jerolba.carpet.model.MapType;
 import com.jerolba.carpet.model.SetType;
 import com.jerolba.carpet.model.ShortType;
 import com.jerolba.carpet.model.StringType;
+import com.jerolba.carpet.model.StringType.StringLogicalType;
 import com.jerolba.carpet.model.UuidType;
 import com.jerolba.carpet.model.WriteRecordModelType;
 
@@ -130,4 +131,11 @@ class FieldTypeInspect {
         }
     }
 
+    public StringLogicalType stringLogicalType() {
+        if (fieldType instanceof StringType string) {
+            return string.logicalType();
+        } else {
+            throw new IllegalStateException("Field type is not a string type");
+        }
+    }
 }

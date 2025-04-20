@@ -26,16 +26,17 @@ import java.util.Set;
 import java.util.function.Function;
 
 import com.jerolba.carpet.RecordTypeConversionException;
+import com.jerolba.carpet.annotation.ParquetJson;
 import com.jerolba.carpet.annotation.ParquetString;
 import com.jerolba.carpet.impl.JavaType;
 import com.jerolba.carpet.impl.Parameterized;
 import com.jerolba.carpet.impl.ParameterizedCollection;
 import com.jerolba.carpet.impl.ParameterizedMap;
 import com.jerolba.carpet.model.BinaryType;
-import com.jerolba.carpet.model.BinaryType.BinaryLogicalType;
 import com.jerolba.carpet.model.EnumType;
 import com.jerolba.carpet.model.FieldType;
 import com.jerolba.carpet.model.FieldTypes;
+import com.jerolba.carpet.model.StringType;
 import com.jerolba.carpet.model.WriteRecordModelType;
 
 public class JavaRecord2WriteModel {
@@ -166,11 +167,18 @@ public class JavaRecord2WriteModel {
 
     private static FieldType javaTypes(JavaType javaType, boolean isNotNull) {
         if (javaType.isString()) {
-            return isNotNull ? FieldTypes.STRING.notNull() : FieldTypes.STRING;
+            StringType type = isNotNull ? FieldTypes.STRING.notNull() : FieldTypes.STRING;
+            if (javaType.isAnnotatedWith(ParquetJson.class)) {
+                type = type.asJson();
+            }
+            return type;
         }
         if (javaType.isBinary()) {
             if (javaType.isAnnotatedWith(ParquetString.class)) {
-                BinaryType binary = FieldTypes.BINARY.withLogicalType(BinaryLogicalType.STRING);
+                BinaryType binary = FieldTypes.BINARY.asString();
+                return isNotNull ? binary.notNull() : binary;
+            } else if (javaType.isAnnotatedWith(ParquetJson.class)) {
+                BinaryType binary = FieldTypes.BINARY.asJson();
                 return isNotNull ? binary.notNull() : binary;
             }
             throw new RecordTypeConversionException(

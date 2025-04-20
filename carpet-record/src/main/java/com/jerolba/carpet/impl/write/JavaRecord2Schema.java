@@ -22,6 +22,7 @@ import static org.apache.parquet.schema.LogicalTypeAnnotation.dateType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.decimalType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.enumType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.intType;
+import static org.apache.parquet.schema.LogicalTypeAnnotation.jsonType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.stringType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.timeType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.timestampType;
@@ -52,6 +53,7 @@ import org.apache.parquet.schema.Types;
 
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.TimeUnit;
+import com.jerolba.carpet.annotation.ParquetJson;
 import com.jerolba.carpet.annotation.ParquetString;
 import com.jerolba.carpet.impl.JavaType;
 import com.jerolba.carpet.impl.ParameterizedCollection;
@@ -204,11 +206,16 @@ class JavaRecord2Schema {
             return new GroupType(repetition, name, childFields);
         }
         if (javaType.isString()) {
+            if (javaType.isAnnotatedWith(ParquetJson.class)) {
+                return primitive(BINARY, repetition).as(jsonType()).named(name);
+            }
             return primitive(BINARY, repetition).as(stringType()).named(name);
         }
         if (javaType.isBinary()) {
             if (javaType.isAnnotatedWith(ParquetString.class)) {
                 return primitive(BINARY, repetition).as(stringType()).named(name);
+            } else if (javaType.isAnnotatedWith(ParquetJson.class)) {
+                return primitive(BINARY, repetition).as(jsonType()).named(name);
             }
             throw new RecordTypeConversionException(
                     name + " Binary must be annotated with the type of Parquet LogicalType to use");

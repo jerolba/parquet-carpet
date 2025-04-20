@@ -59,6 +59,7 @@ import org.apache.parquet.avro.AvroWriteSupport;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.apache.parquet.io.InputFile;
 import org.apache.parquet.io.OutputFile;
+import org.apache.parquet.io.api.Binary;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
@@ -73,6 +74,7 @@ import com.jerolba.carpet.ParquetWriterTest;
 import com.jerolba.carpet.ReadFlag;
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.annotation.Alias;
+import com.jerolba.carpet.annotation.ParquetString;
 import com.jerolba.carpet.io.FileSystemInputFile;
 import com.jerolba.carpet.io.FileSystemOutputFile;
 
@@ -427,6 +429,29 @@ class CarpetReaderTest {
             try (var carpetReader = readerTest.getCarpetReader(StringObject.class)) {
                 assertEquals(new StringObject("Madrid"), carpetReader.read());
                 assertEquals(new StringObject("Zaragoza"), carpetReader.read());
+            }
+        }
+
+        @Test
+        void stringAsBinaryObject() throws IOException {
+            Schema schema = schemaType("StringAsBinaryObject").optionalString("value").endRecord();
+
+            var readerTest = new ParquetReaderTest(schema);
+            readerTest.writer(writer -> {
+                Record record = new Record(schema);
+                record.put("value", "Madrid");
+                writer.write(record);
+                record = new Record(schema);
+                record.put("value", "Zaragoza");
+                writer.write(record);
+            });
+
+            record StringAsBinaryObject(@ParquetString Binary value) {
+            }
+
+            try (var carpetReader = readerTest.getCarpetReader(StringAsBinaryObject.class)) {
+                assertEquals(new StringAsBinaryObject(Binary.fromString("Madrid")), carpetReader.read());
+                assertEquals(new StringAsBinaryObject(Binary.fromString("Zaragoza")), carpetReader.read());
             }
         }
 

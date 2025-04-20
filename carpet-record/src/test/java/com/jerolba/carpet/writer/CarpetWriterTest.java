@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -53,6 +54,7 @@ import com.jerolba.carpet.ParquetWriterTest;
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.TimeUnit;
 import com.jerolba.carpet.annotation.Alias;
+import com.jerolba.carpet.annotation.ParquetJson;
 import com.jerolba.carpet.annotation.ParquetString;
 import com.jerolba.carpet.io.FileSystemInputFile;
 import com.jerolba.carpet.io.FileSystemOutputFile;
@@ -380,6 +382,50 @@ class CarpetWriterTest {
             var avroReader = writerTest.getAvroGenericRecordReader();
             assertEquals(rec1.value.toStringUsingUTF8(), avroReader.read().get("value").toString());
             assertEquals(rec2.value.toStringUsingUTF8(), avroReader.read().get("value").toString());
+
+            var carpetReader = writerTest.getCarpetReader();
+            assertEquals(rec1, carpetReader.read());
+            assertEquals(rec2, carpetReader.read());
+        }
+
+        @Test
+        void jsonAsStringObject() throws IOException {
+
+            record JsonAsStringObject(@ParquetJson String value) {
+            }
+
+            var rec1 = new JsonAsStringObject("{\"city\": \"Madrid\"}");
+            var rec2 = new JsonAsStringObject("{\"city\": \"Zaragoza\"}");
+            var writerTest = new ParquetWriterTest<>(JsonAsStringObject.class);
+            writerTest.write(rec1, rec2);
+
+            var avroReader = writerTest.getAvroGenericRecordReader();
+            ByteBuffer asByteBuffer1 = (ByteBuffer) avroReader.read().get("value");
+            assertEquals(rec1.value, new String(asByteBuffer1.array()));
+            ByteBuffer asByteBuffer2 = (ByteBuffer) avroReader.read().get("value");
+            assertEquals(rec2.value, new String(asByteBuffer2.array()));
+
+            var carpetReader = writerTest.getCarpetReader();
+            assertEquals(rec1, carpetReader.read());
+            assertEquals(rec2, carpetReader.read());
+        }
+
+        @Test
+        void jsonAsBinaryObject() throws IOException {
+
+            record JsonAsBinaryObject(@ParquetJson Binary value) {
+            }
+
+            var rec1 = new JsonAsBinaryObject(Binary.fromString("{\"city\": \"Madrid\"}"));
+            var rec2 = new JsonAsBinaryObject(Binary.fromString("{\"city\": \"Zaragoza\"}"));
+            var writerTest = new ParquetWriterTest<>(JsonAsBinaryObject.class);
+            writerTest.write(rec1, rec2);
+
+            var avroReader = writerTest.getAvroGenericRecordReader();
+            ByteBuffer asByteBuffer1 = (ByteBuffer) avroReader.read().get("value");
+            assertEquals(rec1.value, Binary.fromReusedByteBuffer(asByteBuffer1));
+            ByteBuffer asByteBuffer2 = (ByteBuffer) avroReader.read().get("value");
+            assertEquals(rec2.value, Binary.fromReusedByteBuffer(asByteBuffer2));
 
             var carpetReader = writerTest.getCarpetReader();
             assertEquals(rec1, carpetReader.read());

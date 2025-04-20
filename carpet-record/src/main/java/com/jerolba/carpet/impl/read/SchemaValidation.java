@@ -19,6 +19,7 @@ import static com.jerolba.carpet.impl.NotNullField.isNotNull;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.dateType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.enumType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.intType;
+import static org.apache.parquet.schema.LogicalTypeAnnotation.jsonType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.stringType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.uuidType;
 
@@ -151,6 +152,9 @@ public class SchemaValidation {
         var name = primitiveType.getPrimitiveTypeName();
 
         if (stringType().equals(logicalType) && (type.isString() || type.isEnum() || type.isBinary())) {
+            return name == PrimitiveTypeName.BINARY;
+        }
+        if (jsonType().equals(logicalType) && (type.isString() || type.isBinary())) {
             return name == PrimitiveTypeName.BINARY;
         }
         if (enumType().equals(logicalType) && (type.isString() || type.isEnum())) {

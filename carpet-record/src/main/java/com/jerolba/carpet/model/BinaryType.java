@@ -27,12 +27,12 @@ public record BinaryType(boolean isNotNull, BinaryLogicalType logicalType) imple
         return new BinaryType(true, logicalType);
     }
 
-    public BinaryType withLogicalType(BinaryLogicalType logicalType) {
-        return new BinaryType(isNotNull, logicalType);
-    }
-
     public BinaryType asString() {
         return new BinaryType(isNotNull, BinaryLogicalType.STRING);
+    }
+
+    public BinaryType asJson() {
+        return new BinaryType(isNotNull, BinaryLogicalType.JSON);
     }
 
     @Override

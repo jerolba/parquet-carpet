@@ -43,6 +43,7 @@ import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.TimeUnit;
 import com.jerolba.carpet.annotation.Alias;
 import com.jerolba.carpet.annotation.NotNull;
+import com.jerolba.carpet.annotation.ParquetJson;
 import com.jerolba.carpet.annotation.ParquetString;
 
 class JavaRecord2SchemaTest {
@@ -139,6 +140,69 @@ class JavaRecord2SchemaTest {
                 }
                 """;
         assertEquals(expected, schema.toString());
+    }
+
+    @Nested
+    class JsonType {
+
+        @Test
+        void jsonFieldFromString() {
+            record JsonRecord(long id, @ParquetJson String value) {
+            }
+            MessageType schema = defaultConfigSchema.createSchema(JsonRecord.class);
+            String expected = """
+                    message JsonRecord {
+                      required int64 id;
+                      optional binary value (JSON);
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void notNullJsonFieldFromString() {
+            record JsonRecord(long id, @ParquetJson @NotNull String value) {
+            }
+
+            MessageType schema = defaultConfigSchema.createSchema(JsonRecord.class);
+            String expected = """
+                    message JsonRecord {
+                      required int64 id;
+                      required binary value (JSON);
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void jsonFieldFromBinary() {
+            record JsonRecord(long id, @ParquetJson Binary value) {
+            }
+            MessageType schema = defaultConfigSchema.createSchema(JsonRecord.class);
+            String expected = """
+                    message JsonRecord {
+                      required int64 id;
+                      optional binary value (JSON);
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void notNullJsonFieldFromBinary() {
+            record JsonRecord(long id, @ParquetJson @NotNull Binary value) {
+            }
+
+            MessageType schema = defaultConfigSchema.createSchema(JsonRecord.class);
+            String expected = """
+                    message JsonRecord {
+                      required int64 id;
+                      required binary value (JSON);
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
     }
 
     @Nested
