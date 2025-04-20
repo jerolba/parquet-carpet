@@ -665,6 +665,22 @@ class JavaRecord2SchemaTest {
             assertEquals(expected, schema.toString());
         }
 
+        @Test
+        void enumAsString() {
+            record WithStringEnum(long id, String name, @ParquetString Status status) {
+            }
+
+            MessageType schema = defaultConfigSchema.createSchema(WithStringEnum.class);
+            String expected = """
+                    message WithStringEnum {
+                      required int64 id;
+                      optional binary name (STRING);
+                      optional binary status (STRING);
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
     }
 
     @Nested

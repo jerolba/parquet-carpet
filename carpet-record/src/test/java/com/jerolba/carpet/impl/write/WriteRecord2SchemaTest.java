@@ -59,6 +59,7 @@ import com.jerolba.carpet.AnnotatedLevels;
 import com.jerolba.carpet.ColumnNamingStrategy;
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.TimeUnit;
+import com.jerolba.carpet.annotation.ParquetString;
 import com.jerolba.carpet.model.WriteRecordModelType;
 
 class WriteRecord2SchemaTest {
@@ -768,18 +769,37 @@ class WriteRecord2SchemaTest {
             var rootType = writeRecordModel(WithNotNullEnum.class)
                     .withField("id", LONG.notNull(), WithNotNullEnum::id)
                     .withField("name", STRING, WithNotNullEnum::name)
-                    .withField("state", ENUM.ofType(Status.class).notNull(), WithNotNullEnum::status);
+                    .withField("status", ENUM.ofType(Status.class).notNull(), WithNotNullEnum::status);
 
             String expected = """
                     message WithNotNullEnum {
                       required int64 id;
                       optional binary name (STRING);
-                      required binary state (ENUM);
+                      required binary status (ENUM);
                     }
                     """;
             assertEquals(expected, schemaWithRootType(rootType).toString());
         }
 
+        @Test
+        void enumAsString() {
+            record WithStringEnum(long id, String name, @ParquetString Status status) {
+            }
+
+            var rootType = writeRecordModel(WithStringEnum.class)
+                    .withField("id", LONG.notNull(), WithStringEnum::id)
+                    .withField("name", STRING, WithStringEnum::name)
+                    .withField("status", STRING, WithStringEnum::status);
+
+            String expected = """
+                    message WithStringEnum {
+                      required int64 id;
+                      optional binary name (STRING);
+                      optional binary status (STRING);
+                    }
+                    """;
+            assertEquals(expected, schemaWithRootType(rootType).toString());
+        }
     }
 
     @Nested

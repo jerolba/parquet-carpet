@@ -226,6 +226,9 @@ class JavaRecord2Schema {
         }
 
         if (javaType.isEnum()) {
+            if (javaType.isAnnotatedWith(ParquetString.class)) {
+                return primitive(BINARY, repetition).as(stringType()).named(name);
+            }
             return primitive(BINARY, repetition).as(enumType()).named(name);
         }
         if (javaType.isUuid()) {

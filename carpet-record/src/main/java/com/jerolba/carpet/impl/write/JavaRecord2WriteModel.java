@@ -190,6 +190,10 @@ public class JavaRecord2WriteModel {
 
         }
         if (javaType.isEnum()) {
+            if (javaType.isAnnotatedWith(ParquetString.class)) {
+                BinaryType binary = FieldTypes.BINARY.asString();
+                return isNotNull ? binary.notNull() : binary;
+            }
             EnumType enumType = new EnumType(false, (Class<? extends Enum<?>>) javaType.getJavaType());
             return isNotNull ? enumType.notNull() : enumType;
         }

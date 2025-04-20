@@ -480,6 +480,33 @@ class CarpetWriterTest {
         }
 
         @Test
+        void enumAsStringObject() throws IOException {
+
+            record EnumObject(@ParquetString Category value) {
+            }
+
+            var rec1 = new EnumObject(Category.one);
+            var rec2 = new EnumObject(Category.two);
+            var writerTest = new ParquetWriterTest<>(EnumObject.class);
+            writerTest.write(rec1, rec2);
+
+            var avroReader = writerTest.getAvroGenericRecordReader();
+            assertEquals(rec1.value.name(), avroReader.read().get("value").toString());
+            assertEquals(rec2.value.name(), avroReader.read().get("value").toString());
+
+            var carpetReader = writerTest.getCarpetReader();
+            assertEquals(rec1, carpetReader.read());
+            assertEquals(rec2, carpetReader.read());
+
+            record EnumStringObject(String value) {
+            }
+
+            var carpetReaderString = writerTest.getCarpetReader(EnumStringObject.class);
+            assertEquals(new EnumStringObject("one"), carpetReaderString.read());
+            assertEquals(new EnumStringObject("two"), carpetReaderString.read());
+        }
+
+        @Test
         void uuidObject() throws IOException {
 
             record UuidObject(UUID value) {
