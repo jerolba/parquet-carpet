@@ -77,6 +77,22 @@ class WriteFiles {
         }
     }
 
+
+    @Test
+    void writeBinaryFields() throws IOException {
+        record Employee(long id, String name, byte[] bytes) {
+        }
+
+        var outputFile = new FileSystemOutputFile(temporalFile("SimpleRecord"));
+        try (CarpetWriter<Employee> writer = new CarpetWriter<>(outputFile, Employee.class)) {
+
+            // row by row
+            writer.write(new Employee(1, "John", new byte[] { 1, 2, 3 }));
+            writer.write(new Employee(2, "Ana", new byte[] { 4, 5, 6 }));
+        }
+    }
+
+
     /**
      * Records with nested complex data structures are supported
      *

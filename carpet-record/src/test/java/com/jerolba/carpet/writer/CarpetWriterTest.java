@@ -19,6 +19,7 @@ import static com.jerolba.carpet.ColumnNamingStrategy.SNAKE_CASE;
 import static java.nio.file.Files.createTempFile;
 import static java.time.ZoneOffset.ofHours;
 import static java.util.Arrays.asList;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -35,6 +36,7 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.nio.ByteBuffer;
 
 import org.apache.avro.Conversions.DecimalConversion;
 import org.apache.avro.data.TimeConversions;
@@ -362,6 +364,26 @@ class CarpetWriterTest {
             var carpetReader = writerTest.getCarpetReader();
             assertEquals(rec1, carpetReader.read());
             assertEquals(rec2, carpetReader.read());
+        }
+
+        @Test
+        void byteArrayObject() throws IOException {
+
+            record ByteArrayObject(byte[] value) {
+            }
+
+            var rec1 = new ByteArrayObject(new byte[] { 1, 2, 3 });
+            var rec2 = new ByteArrayObject(new byte[] { -1, -2, 0 });
+            var writerTest = new ParquetWriterTest<>(ByteArrayObject.class);
+            writerTest.write(rec1, rec2);
+
+            var avroReader = writerTest.getAvroGenericRecordReader();
+            assertEquals(ByteBuffer.wrap(rec1.value), avroReader.read().get("value"));
+            assertEquals(ByteBuffer.wrap(rec2.value), avroReader.read().get("value"));
+
+            var carpetReader = writerTest.getCarpetReader();
+            assertArrayEquals(rec1.value, carpetReader.read().value);
+            assertArrayEquals(rec2.value, carpetReader.read().value);
         }
 
         @Test

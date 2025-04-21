@@ -41,6 +41,10 @@ public class JavaType {
         return typeName.equals("java.lang.String");
     }
 
+    public boolean isByteArray() {
+        return typeName.equals("[B");
+    }
+
     public boolean isInteger() {
         return (typeName.equals("int") || typeName.equals("java.lang.Integer"));
     }

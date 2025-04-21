@@ -457,6 +457,45 @@ class SchemaFilterTest {
     }
 
     @Nested
+    class FieldByteArrayConversion {
+
+        @Test
+        void fieldRequired() {
+            Type field = Types.primitive(BINARY, REQUIRED).as(stringType()).named("value");
+            GroupType groupType = new MessageType("foo", field);
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+
+            record NotNullByteArray(@NotNull byte[] value) {
+            }
+            assertEquals(groupType, filter.project(NotNullByteArray.class, groupType));
+
+            record NullableByteArray(byte[] value) {
+            }
+            assertEquals(groupType, filter.project(NullableByteArray.class, groupType));
+        }
+
+        @Test
+        void fieldOptional() {
+            Type field = Types.primitive(BINARY, OPTIONAL).named("value");
+            GroupType groupType = new MessageType("foo", field);
+            SchemaFilter filterDefault = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            SchemaFilter filterFailOnNotNullable = new SchemaFilter(failOnNullForPrimitives, defaultFieldMapper);
+
+            record NotNullByteArray(@NotNull byte[] value) {
+            }
+            assertEquals(groupType, filterDefault.project(NotNullByteArray.class, groupType));
+            assertThrows(RecordTypeConversionException.class,
+                    () -> filterFailOnNotNullable.project(NotNullByteArray.class, groupType));
+
+            record NullableByteArray(byte[] value) {
+            }
+            assertEquals(groupType, filterDefault.project(NullableByteArray.class, groupType));
+            assertEquals(groupType, filterFailOnNotNullable.project(NullableByteArray.class, groupType));
+        }
+
+    }
+
+    @Nested
     class FieldUuidConversion {
 
         @Test

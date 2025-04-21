@@ -209,6 +209,9 @@ class JavaRecord2Schema {
         if (javaType.isEnum()) {
             return primitive(BINARY, repetition).as(enumType()).named(name);
         }
+        if (javaType.isByteArray()) {
+            return primitive(BINARY, repetition).named(name);
+        }
         if (javaType.isUuid()) {
             return primitive(FIXED_LEN_BYTE_ARRAY, repetition).as(uuidType())
                     .length(UUIDLogicalTypeAnnotation.BYTES)

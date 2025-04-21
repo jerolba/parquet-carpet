@@ -77,7 +77,8 @@ public class SchemaValidation {
         case FLOAT -> validFloatSource(type);
         case DOUBLE -> validDoubleSource(type);
         case BOOLEAN -> validBooleanSource(type);
-        case BINARY, FIXED_LEN_BYTE_ARRAY, INT96 -> throwInvalidConversionException(primitiveType, type);
+        case BINARY, FIXED_LEN_BYTE_ARRAY -> validByteArraySource(type);
+        case INT96 -> throwInvalidConversionException(primitiveType, type);
         default -> false;
         };
         if (!valid) {
@@ -140,6 +141,10 @@ public class SchemaValidation {
 
     private boolean validBooleanSource(JavaType type) {
         return type.isBoolean();
+    }
+
+    private boolean validByteArraySource(JavaType type) {
+        return type.isByteArray();
     }
 
     public static boolean isBasicSupportedType(JavaType type) {
