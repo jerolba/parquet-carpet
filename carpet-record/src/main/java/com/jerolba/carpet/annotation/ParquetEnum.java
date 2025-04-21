@@ -13,29 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jerolba.carpet.model;
+package com.jerolba.carpet.annotation;
 
-public record StringType(boolean isNotNull, StringLogicalType logicalType) implements FieldType {
+import static java.lang.annotation.ElementType.RECORD_COMPONENT;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
-    public enum StringLogicalType {
-        JSON, ENUM, STRING;
-    }
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
-    public StringType notNull() {
-        return new StringType(true, logicalType);
-    }
-
-    public StringType asJson() {
-        return new StringType(isNotNull, StringLogicalType.JSON);
-    }
-
-    public StringType asEnum() {
-        return new StringType(isNotNull, StringLogicalType.ENUM);
-    }
-
-    @Override
-    public Class<String> getClassType() {
-        return String.class;
-    }
+@Retention(RUNTIME)
+@Target(RECORD_COMPONENT)
+public @interface ParquetEnum {
 
 }

@@ -74,6 +74,7 @@ import com.jerolba.carpet.ParquetWriterTest;
 import com.jerolba.carpet.ReadFlag;
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.annotation.Alias;
+import com.jerolba.carpet.annotation.ParquetEnum;
 import com.jerolba.carpet.annotation.ParquetString;
 import com.jerolba.carpet.io.FileSystemInputFile;
 import com.jerolba.carpet.io.FileSystemOutputFile;
@@ -477,6 +478,31 @@ class CarpetReaderTest {
             try (var carpetReader = readerTest.getCarpetReader(EnumObject.class)) {
                 assertEquals(new EnumObject(Category.one), carpetReader.read());
                 assertEquals(new EnumObject(Category.two), carpetReader.read());
+            }
+        }
+
+        @Test
+        void enumToBinaryObject() throws IOException {
+            Schema schema = schemaType("EnumObject").name("value").type().nullable()
+                    .enumeration("Category").symbols("one", "two", "three").noDefault()
+                    .endRecord();
+
+            var readerTest = new ParquetReaderTest(schema);
+            readerTest.writer(writer -> {
+                Record record = new Record(schema);
+                record.put("value", "one");
+                writer.write(record);
+                record = new Record(schema);
+                record.put("value", "two");
+                writer.write(record);
+            });
+
+            record BinaryFromEnumObject(@ParquetEnum Binary value) {
+            }
+
+            try (var carpetReader = readerTest.getCarpetReader(BinaryFromEnumObject.class)) {
+                assertEquals(new BinaryFromEnumObject(Binary.fromString("one")), carpetReader.read());
+                assertEquals(new BinaryFromEnumObject(Binary.fromString("two")), carpetReader.read());
             }
         }
 

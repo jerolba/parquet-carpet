@@ -15,10 +15,19 @@
  */
 package com.jerolba.carpet.model;
 
-public record EnumType(boolean isNotNull, Class<? extends Enum<?>> enumClass) implements FieldType {
+public record EnumType(boolean isNotNull, Class<? extends Enum<?>> enumClass, EnumLogicalType logicalType)
+        implements FieldType {
+
+    public enum EnumLogicalType {
+        JSON, ENUM, STRING;
+    }
 
     public EnumType notNull() {
-        return new EnumType(true, enumClass);
+        return new EnumType(true, enumClass, logicalType);
+    }
+
+    public EnumType asString() {
+        return new EnumType(isNotNull, enumClass, EnumLogicalType.STRING);
     }
 
     @Override

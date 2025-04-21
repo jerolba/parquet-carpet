@@ -86,6 +86,9 @@ class LogicalTypeConverters {
             if (type == null || type.isString()) {
                 return new StringConverter(consumer);
             }
+            if (type.isBinary()) {
+                return new BinaryConverter(consumer);
+            }
             if (type.isEnum()) {
                 return new EnumConverter(consumer, type.getJavaType());
             }

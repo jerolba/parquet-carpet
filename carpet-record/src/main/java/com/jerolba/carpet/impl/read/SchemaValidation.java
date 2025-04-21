@@ -161,7 +161,7 @@ public class SchemaValidation {
         if (bsonType().equals(logicalType) && type.isBinary()) {
             return name == PrimitiveTypeName.BINARY;
         }
-        if (enumType().equals(logicalType) && (type.isString() || type.isEnum())) {
+        if (enumType().equals(logicalType) && (type.isString() || type.isEnum() || type.isBinary())) {
             return name == PrimitiveTypeName.BINARY;
         }
         if (logicalType.equals(uuidType()) && (type.isString() || type.isUuid())) {

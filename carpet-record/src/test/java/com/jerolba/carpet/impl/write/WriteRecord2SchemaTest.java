@@ -59,7 +59,6 @@ import com.jerolba.carpet.AnnotatedLevels;
 import com.jerolba.carpet.ColumnNamingStrategy;
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.TimeUnit;
-import com.jerolba.carpet.annotation.ParquetString;
 import com.jerolba.carpet.model.WriteRecordModelType;
 
 class WriteRecord2SchemaTest {
@@ -783,19 +782,59 @@ class WriteRecord2SchemaTest {
 
         @Test
         void enumAsString() {
-            record WithStringEnum(long id, String name, @ParquetString Status status) {
+            record WithStringEnum(long id, String name, Status status) {
             }
 
             var rootType = writeRecordModel(WithStringEnum.class)
                     .withField("id", LONG.notNull(), WithStringEnum::id)
                     .withField("name", STRING, WithStringEnum::name)
-                    .withField("status", STRING, WithStringEnum::status);
+                    .withField("status", ENUM.ofType(Status.class).asString(), WithStringEnum::status);
 
             String expected = """
                     message WithStringEnum {
                       required int64 id;
                       optional binary name (STRING);
                       optional binary status (STRING);
+                    }
+                    """;
+            assertEquals(expected, schemaWithRootType(rootType).toString());
+        }
+
+        @Test
+        void stringAsEnum() {
+            record WithStringEnum(long id, String name, String status) {
+            }
+
+            var rootType = writeRecordModel(WithStringEnum.class)
+                    .withField("id", LONG.notNull(), WithStringEnum::id)
+                    .withField("name", STRING, WithStringEnum::name)
+                    .withField("status", STRING.asEnum(), WithStringEnum::status);
+
+            String expected = """
+                    message WithStringEnum {
+                      required int64 id;
+                      optional binary name (STRING);
+                      optional binary status (ENUM);
+                    }
+                    """;
+            assertEquals(expected, schemaWithRootType(rootType).toString());
+        }
+
+        @Test
+        void binaryAsEnum() {
+            record WithBinaryEnum(long id, String name, Binary status) {
+            }
+
+            var rootType = writeRecordModel(WithBinaryEnum.class)
+                    .withField("id", LONG.notNull(), WithBinaryEnum::id)
+                    .withField("name", STRING, WithBinaryEnum::name)
+                    .withField("status", BINARY.asEnum(), WithBinaryEnum::status);
+
+            String expected = """
+                    message WithBinaryEnum {
+                      required int64 id;
+                      optional binary name (STRING);
+                      optional binary status (ENUM);
                     }
                     """;
             assertEquals(expected, schemaWithRootType(rootType).toString());

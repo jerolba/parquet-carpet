@@ -55,6 +55,7 @@ import org.apache.parquet.schema.Types;
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.TimeUnit;
 import com.jerolba.carpet.annotation.ParquetBson;
+import com.jerolba.carpet.annotation.ParquetEnum;
 import com.jerolba.carpet.annotation.ParquetJson;
 import com.jerolba.carpet.annotation.ParquetString;
 import com.jerolba.carpet.impl.JavaType;
@@ -210,12 +211,16 @@ class JavaRecord2Schema {
         if (javaType.isString()) {
             if (javaType.isAnnotatedWith(ParquetJson.class)) {
                 return primitive(BINARY, repetition).as(jsonType()).named(name);
+            } else if (javaType.isAnnotatedWith(ParquetEnum.class)) {
+                return primitive(BINARY, repetition).as(enumType()).named(name);
             }
             return primitive(BINARY, repetition).as(stringType()).named(name);
         }
         if (javaType.isBinary()) {
             if (javaType.isAnnotatedWith(ParquetString.class)) {
                 return primitive(BINARY, repetition).as(stringType()).named(name);
+            } else if (javaType.isAnnotatedWith(ParquetEnum.class)) {
+                return primitive(BINARY, repetition).as(enumType()).named(name);
             } else if (javaType.isAnnotatedWith(ParquetJson.class)) {
                 return primitive(BINARY, repetition).as(jsonType()).named(name);
             } else if (javaType.isAnnotatedWith(ParquetBson.class)) {

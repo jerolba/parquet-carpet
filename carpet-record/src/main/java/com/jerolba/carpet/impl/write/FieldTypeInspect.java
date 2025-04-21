@@ -22,6 +22,7 @@ import com.jerolba.carpet.model.BooleanType;
 import com.jerolba.carpet.model.ByteType;
 import com.jerolba.carpet.model.DoubleType;
 import com.jerolba.carpet.model.EnumType;
+import com.jerolba.carpet.model.EnumType.EnumLogicalType;
 import com.jerolba.carpet.model.FieldType;
 import com.jerolba.carpet.model.FloatType;
 import com.jerolba.carpet.model.InstantType;
@@ -82,7 +83,7 @@ class FieldTypeInspect {
     public boolean isBinary() {
         return fieldType instanceof BinaryType;
     }
-	
+
     public boolean isEnum() {
         return fieldType instanceof EnumType;
     }
@@ -138,4 +139,13 @@ class FieldTypeInspect {
             throw new IllegalStateException("Field type is not a string type");
         }
     }
+
+    public EnumLogicalType enumLogicalType() {
+        if (fieldType instanceof EnumType enumType) {
+            return enumType.logicalType();
+        } else {
+            throw new IllegalStateException("Field type is not a enum type");
+        }
+    }
+
 }

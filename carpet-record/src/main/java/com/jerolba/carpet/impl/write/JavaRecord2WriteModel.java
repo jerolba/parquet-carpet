@@ -27,6 +27,7 @@ import java.util.function.Function;
 
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.annotation.ParquetBson;
+import com.jerolba.carpet.annotation.ParquetEnum;
 import com.jerolba.carpet.annotation.ParquetJson;
 import com.jerolba.carpet.annotation.ParquetString;
 import com.jerolba.carpet.impl.JavaType;
@@ -171,12 +172,17 @@ public class JavaRecord2WriteModel {
             StringType type = isNotNull ? FieldTypes.STRING.notNull() : FieldTypes.STRING;
             if (javaType.isAnnotatedWith(ParquetJson.class)) {
                 type = type.asJson();
+            } else if (javaType.isAnnotatedWith(ParquetEnum.class)) {
+                type = type.asEnum();
             }
             return type;
         }
         if (javaType.isBinary()) {
             if (javaType.isAnnotatedWith(ParquetString.class)) {
                 BinaryType binary = FieldTypes.BINARY.asString();
+                return isNotNull ? binary.notNull() : binary;
+            } else if (javaType.isAnnotatedWith(ParquetEnum.class)) {
+                BinaryType binary = FieldTypes.BINARY.asEnum();
                 return isNotNull ? binary.notNull() : binary;
             } else if (javaType.isAnnotatedWith(ParquetJson.class)) {
                 BinaryType binary = FieldTypes.BINARY.asJson();
@@ -194,7 +200,7 @@ public class JavaRecord2WriteModel {
                 BinaryType binary = FieldTypes.BINARY.asString();
                 return isNotNull ? binary.notNull() : binary;
             }
-            EnumType enumType = new EnumType(false, (Class<? extends Enum<?>>) javaType.getJavaType());
+            EnumType enumType = FieldTypes.ENUM.ofType((Class<? extends Enum<?>>) javaType.getJavaType());
             return isNotNull ? enumType.notNull() : enumType;
         }
         if (javaType.isUuid()) {

@@ -31,6 +31,10 @@ public record BinaryType(boolean isNotNull, BinaryLogicalType logicalType) imple
         return new BinaryType(isNotNull, BinaryLogicalType.STRING);
     }
 
+    public BinaryType asEnum() {
+        return new BinaryType(isNotNull, BinaryLogicalType.ENUM);
+    }
+
     public BinaryType asJson() {
         return new BinaryType(isNotNull, BinaryLogicalType.JSON);
     }

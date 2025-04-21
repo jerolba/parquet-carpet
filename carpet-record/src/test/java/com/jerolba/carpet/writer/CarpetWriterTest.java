@@ -55,6 +55,7 @@ import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.TimeUnit;
 import com.jerolba.carpet.annotation.Alias;
 import com.jerolba.carpet.annotation.ParquetBson;
+import com.jerolba.carpet.annotation.ParquetEnum;
 import com.jerolba.carpet.annotation.ParquetJson;
 import com.jerolba.carpet.annotation.ParquetString;
 import com.jerolba.carpet.io.FileSystemInputFile;
@@ -436,7 +437,7 @@ class CarpetWriterTest {
         @Test
         void bsonAsBinaryObject() throws IOException {
 
-            record JsonAsBinaryObject(@ParquetBson Binary value) {
+            record BsonAsBinaryObject(@ParquetBson Binary value) {
             }
 
             byte[] bson = new byte[] {
@@ -447,8 +448,8 @@ class CarpetWriterTest {
                     0x4D, 0x61, 0x64, 0x72, 0x69, 0x64, 0x00, // "Madrid" + null terminator
                     0x00 // document terminator
             };
-            var rec = new JsonAsBinaryObject(Binary.fromConstantByteArray(bson));
-            var writerTest = new ParquetWriterTest<>(JsonAsBinaryObject.class);
+            var rec = new BsonAsBinaryObject(Binary.fromConstantByteArray(bson));
+            var writerTest = new ParquetWriterTest<>(BsonAsBinaryObject.class);
             writerTest.write(rec);
 
             var avroReader = writerTest.getAvroGenericRecordReader();
@@ -504,6 +505,60 @@ class CarpetWriterTest {
             var carpetReaderString = writerTest.getCarpetReader(EnumStringObject.class);
             assertEquals(new EnumStringObject("one"), carpetReaderString.read());
             assertEquals(new EnumStringObject("two"), carpetReaderString.read());
+        }
+
+        @Test
+        void stringAsEnumObject() throws IOException {
+
+            record EnumAsStringObject(@ParquetEnum String value) {
+            }
+
+            var rec1 = new EnumAsStringObject("one");
+            var rec2 = new EnumAsStringObject("two");
+            var writerTest = new ParquetWriterTest<>(EnumAsStringObject.class);
+            writerTest.write(rec1, rec2);
+
+            var avroReader = writerTest.getAvroGenericRecordReader();
+            assertEquals(rec1.value, avroReader.read().get("value").toString());
+            assertEquals(rec2.value, avroReader.read().get("value").toString());
+
+            var carpetReader = writerTest.getCarpetReader();
+            assertEquals(rec1, carpetReader.read());
+            assertEquals(rec2, carpetReader.read());
+
+            record EnumObject(Category value) {
+            }
+
+            var carpetReaderString = writerTest.getCarpetReader(EnumObject.class);
+            assertEquals(new EnumObject(Category.one), carpetReaderString.read());
+            assertEquals(new EnumObject(Category.two), carpetReaderString.read());
+        }
+
+        @Test
+        void binaryAsEnumObject() throws IOException {
+
+            record EnumAsBinaryObject(@ParquetEnum Binary value) {
+            }
+
+            var rec1 = new EnumAsBinaryObject(Binary.fromString("one"));
+            var rec2 = new EnumAsBinaryObject(Binary.fromString("two"));
+            var writerTest = new ParquetWriterTest<>(EnumAsBinaryObject.class);
+            writerTest.write(rec1, rec2);
+
+            var avroReader = writerTest.getAvroGenericRecordReader();
+            assertEquals(rec1.value.toStringUsingUTF8(), avroReader.read().get("value").toString());
+            assertEquals(rec2.value.toStringUsingUTF8(), avroReader.read().get("value").toString());
+
+            var carpetReader = writerTest.getCarpetReader();
+            assertEquals(rec1, carpetReader.read());
+            assertEquals(rec2, carpetReader.read());
+
+            record EnumObject(Category value) {
+            }
+
+            var carpetReaderString = writerTest.getCarpetReader(EnumObject.class);
+            assertEquals(new EnumObject(Category.one), carpetReaderString.read());
+            assertEquals(new EnumObject(Category.two), carpetReaderString.read());
         }
 
         @Test

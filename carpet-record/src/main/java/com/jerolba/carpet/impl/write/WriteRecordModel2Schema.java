@@ -51,6 +51,7 @@ import org.apache.parquet.schema.Types;
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.TimeUnit;
 import com.jerolba.carpet.model.CollectionType;
+import com.jerolba.carpet.model.EnumType.EnumLogicalType;
 import com.jerolba.carpet.model.FieldType;
 import com.jerolba.carpet.model.MapType;
 import com.jerolba.carpet.model.StringType.StringLogicalType;
@@ -192,18 +193,24 @@ class WriteRecordModel2Schema {
         if (javaType.isString()) {
             if (javaType.stringLogicalType() == StringLogicalType.JSON) {
                 return primitive(BINARY, repetition).as(jsonType()).named(parquetFieldName);
+            } else if (javaType.stringLogicalType() == StringLogicalType.ENUM) {
+                return primitive(BINARY, repetition).as(enumType()).named(parquetFieldName);
             }
             return primitive(BINARY, repetition).as(stringType()).named(parquetFieldName);
         }
         if (javaType.isBinary()) {
             return switch (javaType.binaryLogicalType()) {
             case STRING -> primitive(BINARY, repetition).as(stringType()).named(parquetFieldName);
+            case ENUM -> primitive(BINARY, repetition).as(enumType()).named(parquetFieldName);
             case JSON -> primitive(BINARY, repetition).as(jsonType()).named(parquetFieldName);
             case BSON -> primitive(BINARY, repetition).as(bsonType()).named(parquetFieldName);
             default -> null;
             };
         }
         if (javaType.isEnum()) {
+            if (javaType.enumLogicalType() == EnumLogicalType.STRING) {
+                return primitive(BINARY, repetition).as(stringType()).named(parquetFieldName);
+            }
             return primitive(BINARY, repetition).as(enumType()).named(parquetFieldName);
         }
         if (javaType.isUuid()) {

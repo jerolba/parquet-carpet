@@ -44,6 +44,7 @@ import com.jerolba.carpet.TimeUnit;
 import com.jerolba.carpet.annotation.Alias;
 import com.jerolba.carpet.annotation.NotNull;
 import com.jerolba.carpet.annotation.ParquetBson;
+import com.jerolba.carpet.annotation.ParquetEnum;
 import com.jerolba.carpet.annotation.ParquetJson;
 import com.jerolba.carpet.annotation.ParquetString;
 import com.jerolba.carpet.model.WriteRecordModelType;
@@ -662,6 +663,38 @@ class JavaRecordMapper2SchemaTest {
                       required int64 id;
                       optional binary name (STRING);
                       optional binary status (STRING);
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void stringAsEnum() {
+            record WithStringEnum(long id, String name, @ParquetEnum String status) {
+            }
+
+            MessageType schema = class2Model2Schema(WithStringEnum.class);
+            String expected = """
+                    message WithStringEnum {
+                      required int64 id;
+                      optional binary name (STRING);
+                      optional binary status (ENUM);
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void binaryAsEnum() {
+            record WithBinaryEnum(long id, String name, @ParquetEnum Binary status) {
+            }
+
+            MessageType schema = class2Model2Schema(WithBinaryEnum.class);
+            String expected = """
+                    message WithBinaryEnum {
+                      required int64 id;
+                      optional binary name (STRING);
+                      optional binary status (ENUM);
                     }
                     """;
             assertEquals(expected, schema.toString());
