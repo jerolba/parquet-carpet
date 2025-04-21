@@ -34,6 +34,7 @@ import org.apache.parquet.hadoop.BadConfigurationException;
 import org.apache.parquet.hadoop.ParquetFileWriter.Mode;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
+import org.apache.parquet.io.api.Binary;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -79,16 +80,16 @@ class WriteFiles {
 
 
     @Test
-    void writeBinaryFields() throws IOException {
-        record Employee(long id, String name, byte[] bytes) {
+    void writeBinaryField() throws IOException {
+        record Employee(long id, String name, Binary bytes) {
         }
 
-        var outputFile = new FileSystemOutputFile(temporalFile("SimpleRecord"));
+        var outputFile = new FileSystemOutputFile(temporalFile("BinaryRecord"));
         try (CarpetWriter<Employee> writer = new CarpetWriter<>(outputFile, Employee.class)) {
 
             // row by row
-            writer.write(new Employee(1, "John", new byte[] { 1, 2, 3 }));
-            writer.write(new Employee(2, "Ana", new byte[] { 4, 5, 6 }));
+            writer.write(new Employee(1, "John", Binary.fromConstantByteArray(new byte[] { 1, 2, 3 })));
+            writer.write(new Employee(2, "Ana", Binary.fromConstantByteArray(new byte[] { 4, 5, 6 })));
         }
     }
 

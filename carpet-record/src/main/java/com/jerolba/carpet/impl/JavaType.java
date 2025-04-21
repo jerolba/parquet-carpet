@@ -41,8 +41,8 @@ public class JavaType {
         return typeName.equals("java.lang.String");
     }
 
-    public boolean isByteArray() {
-        return typeName.equals("[B");
+    public boolean isBinary() {
+        return typeName.equals("org.apache.parquet.io.api.Binary");
     }
 
     public boolean isInteger() {

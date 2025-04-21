@@ -43,6 +43,7 @@ import org.apache.avro.data.TimeConversions;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.parquet.hadoop.ParquetFileReader;
+import org.apache.parquet.io.api.Binary;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -367,23 +368,23 @@ class CarpetWriterTest {
         }
 
         @Test
-        void byteArrayObject() throws IOException {
+        void binaryObject() throws IOException {
 
-            record ByteArrayObject(byte[] value) {
+            record BinaryObject(Binary value) {
             }
 
-            var rec1 = new ByteArrayObject(new byte[] { 1, 2, 3 });
-            var rec2 = new ByteArrayObject(new byte[] { -1, -2, 0 });
-            var writerTest = new ParquetWriterTest<>(ByteArrayObject.class);
+            var rec1 = new BinaryObject(Binary.fromConstantByteArray(new byte[] { 1, 2, 3 }));
+            var rec2 = new BinaryObject(Binary.fromConstantByteArray(new byte[] { -1, -2, 0 }));
+            var writerTest = new ParquetWriterTest<>(BinaryObject.class);
             writerTest.write(rec1, rec2);
 
             var avroReader = writerTest.getAvroGenericRecordReader();
-            assertEquals(ByteBuffer.wrap(rec1.value), avroReader.read().get("value"));
-            assertEquals(ByteBuffer.wrap(rec2.value), avroReader.read().get("value"));
+            assertEquals(rec1.value.toByteBuffer(), avroReader.read().get("value"));
+            assertEquals(rec2.value.toByteBuffer(), avroReader.read().get("value"));
 
             var carpetReader = writerTest.getCarpetReader();
-            assertArrayEquals(rec1.value, carpetReader.read().value);
-            assertArrayEquals(rec2.value, carpetReader.read().value);
+            assertEquals(rec1.value, carpetReader.read().value);
+            assertEquals(rec2.value, carpetReader.read().value);
         }
 
         @Test

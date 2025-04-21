@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.schema.ConversionPatterns;
 import org.apache.parquet.schema.GroupType;
 import org.apache.parquet.schema.LogicalTypeAnnotation.UUIDLogicalTypeAnnotation;
@@ -457,7 +458,7 @@ class SchemaFilterTest {
     }
 
     @Nested
-    class FieldByteArrayConversion {
+    class FieldBinaryConversion {
 
         @Test
         void fieldRequired() {
@@ -465,13 +466,13 @@ class SchemaFilterTest {
             GroupType groupType = new MessageType("foo", field);
             SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
 
-            record NotNullByteArray(@NotNull byte[] value) {
+            record NotNullBinary(@NotNull Binary value) {
             }
-            assertEquals(groupType, filter.project(NotNullByteArray.class, groupType));
+            assertEquals(groupType, filter.project(NotNullBinary.class, groupType));
 
-            record NullableByteArray(byte[] value) {
+            record NullableBinary(Binary value) {
             }
-            assertEquals(groupType, filter.project(NullableByteArray.class, groupType));
+            assertEquals(groupType, filter.project(NullableBinary.class, groupType));
         }
 
         @Test
@@ -481,16 +482,16 @@ class SchemaFilterTest {
             SchemaFilter filterDefault = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
             SchemaFilter filterFailOnNotNullable = new SchemaFilter(failOnNullForPrimitives, defaultFieldMapper);
 
-            record NotNullByteArray(@NotNull byte[] value) {
+            record NotNullBinary(@NotNull Binary value) {
             }
-            assertEquals(groupType, filterDefault.project(NotNullByteArray.class, groupType));
+            assertEquals(groupType, filterDefault.project(NotNullBinary.class, groupType));
             assertThrows(RecordTypeConversionException.class,
-                    () -> filterFailOnNotNullable.project(NotNullByteArray.class, groupType));
+                    () -> filterFailOnNotNullable.project(NotNullBinary.class, groupType));
 
-            record NullableByteArray(byte[] value) {
+            record NullableBinary(Binary value) {
             }
-            assertEquals(groupType, filterDefault.project(NullableByteArray.class, groupType));
-            assertEquals(groupType, filterFailOnNotNullable.project(NullableByteArray.class, groupType));
+            assertEquals(groupType, filterDefault.project(NullableBinary.class, groupType));
+            assertEquals(groupType, filterFailOnNotNullable.project(NullableBinary.class, groupType));
         }
 
     }

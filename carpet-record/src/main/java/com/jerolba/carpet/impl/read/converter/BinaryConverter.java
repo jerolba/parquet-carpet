@@ -21,18 +21,18 @@ import org.apache.parquet.column.Dictionary;
 import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.io.api.PrimitiveConverter;
 
-public class ByteArrayConverter extends PrimitiveConverter {
+public class BinaryConverter extends PrimitiveConverter {
 
-    private byte[][] dict = null;
+    private Binary[] dict = null;
     private final Consumer<Object> consumer;
 
-    public ByteArrayConverter(Consumer<Object> consumer) {
+    public BinaryConverter(Consumer<Object> consumer) {
         this.consumer = consumer;
     }
 
     @Override
     public void addBinary(Binary value) {
-        consumer.accept(convert(value));
+        consumer.accept(value);
     }
 
     @Override
@@ -43,9 +43,9 @@ public class ByteArrayConverter extends PrimitiveConverter {
     @Override
     public void setDictionary(Dictionary dictionary) {
         int maxId = dictionary.getMaxId();
-        dict = new byte[maxId + 1][];
+        dict = new Binary[maxId + 1];
         for (int i = 0; i <= maxId; i++) {
-            dict[i] = convert(dictionary.decodeToBinary(i));
+            dict[i] = dictionary.decodeToBinary(i);
         }
     }
 
@@ -54,7 +54,5 @@ public class ByteArrayConverter extends PrimitiveConverter {
         consumer.accept(dict[dictionaryId]);
     }
 
-    private byte[] convert(Binary value) {
-        return value.getBytes(); // TODO don't know it getBytesUnsafe can be used here
-    }
+
 }

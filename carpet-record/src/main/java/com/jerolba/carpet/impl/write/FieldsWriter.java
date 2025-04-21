@@ -43,8 +43,8 @@ class FieldsWriter {
         if (type.isString()) {
             return (consumer, v) -> consumer.addBinary(Binary.fromString((String) v));
         }
-        if (type.isByteArray()) {
-            return (consumer, v) -> consumer.addBinary(Binary.fromConstantByteArray((byte[]) v));
+        if (type.isBinary()) {
+            return (consumer, v) -> consumer.addBinary((Binary)v);
         }
         if (type.isBoolean()) {
             return (consumer, v) -> consumer.addBoolean((Boolean) v);
