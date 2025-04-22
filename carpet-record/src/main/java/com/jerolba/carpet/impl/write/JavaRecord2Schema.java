@@ -51,6 +51,7 @@ import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
 import org.apache.parquet.schema.Type;
 import org.apache.parquet.schema.Type.Repetition;
 import org.apache.parquet.schema.Types;
+import org.apache.parquet.schema.Types.PrimitiveBuilder;
 
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.TimeUnit;
@@ -217,17 +218,17 @@ class JavaRecord2Schema {
             return primitive(BINARY, repetition).as(stringType()).named(name);
         }
         if (javaType.isBinary()) {
+            PrimitiveBuilder<PrimitiveType> binary = primitive(BINARY, repetition);
             if (javaType.isAnnotatedWith(ParquetString.class)) {
-                return primitive(BINARY, repetition).as(stringType()).named(name);
+                binary = binary.as(stringType());
             } else if (javaType.isAnnotatedWith(ParquetEnum.class)) {
-                return primitive(BINARY, repetition).as(enumType()).named(name);
+                binary = binary.as(enumType());
             } else if (javaType.isAnnotatedWith(ParquetJson.class)) {
-                return primitive(BINARY, repetition).as(jsonType()).named(name);
+                binary = binary.as(jsonType());
             } else if (javaType.isAnnotatedWith(ParquetBson.class)) {
-                return primitive(BINARY, repetition).as(bsonType()).named(name);
+                binary = binary.as(bsonType());
             }
-            throw new RecordTypeConversionException(
-                    name + " Binary must be annotated with the type of Parquet LogicalType to use");
+            return binary.named(name);
         }
 
         if (javaType.isEnum()) {

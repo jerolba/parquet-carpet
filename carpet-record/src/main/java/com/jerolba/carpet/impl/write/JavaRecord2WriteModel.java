@@ -178,22 +178,17 @@ public class JavaRecord2WriteModel {
             return type;
         }
         if (javaType.isBinary()) {
+            BinaryType binary = FieldTypes.BINARY;
             if (javaType.isAnnotatedWith(ParquetString.class)) {
-                BinaryType binary = FieldTypes.BINARY.asString();
-                return isNotNull ? binary.notNull() : binary;
+                binary = binary.asString();
             } else if (javaType.isAnnotatedWith(ParquetEnum.class)) {
-                BinaryType binary = FieldTypes.BINARY.asEnum();
-                return isNotNull ? binary.notNull() : binary;
+                binary = binary.asEnum();
             } else if (javaType.isAnnotatedWith(ParquetJson.class)) {
-                BinaryType binary = FieldTypes.BINARY.asJson();
-                return isNotNull ? binary.notNull() : binary;
+                binary = binary.asJson();
             } else if (javaType.isAnnotatedWith(ParquetBson.class)) {
-                BinaryType binary = FieldTypes.BINARY.asBson();
-                return isNotNull ? binary.notNull() : binary;
+                binary = binary.asBson();
             }
-            throw new RecordTypeConversionException(
-                    "Binary must be annotated with the type of Parquet LogicalType to use");
-
+            return isNotNull ? binary.notNull() : binary;
         }
         if (javaType.isEnum()) {
             if (javaType.isAnnotatedWith(ParquetString.class)) {

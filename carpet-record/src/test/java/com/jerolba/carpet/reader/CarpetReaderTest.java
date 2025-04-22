@@ -18,6 +18,7 @@ package com.jerolba.carpet.reader;
 import static com.jerolba.carpet.FieldMatchingStrategy.BEST_EFFORT;
 import static com.jerolba.carpet.FieldMatchingStrategy.FIELD_NAME;
 import static com.jerolba.carpet.FieldMatchingStrategy.SNAKE_CASE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -453,6 +454,29 @@ class CarpetReaderTest {
             try (var carpetReader = readerTest.getCarpetReader(StringAsBinaryObject.class)) {
                 assertEquals(new StringAsBinaryObject(Binary.fromString("Madrid")), carpetReader.read());
                 assertEquals(new StringAsBinaryObject(Binary.fromString("Zaragoza")), carpetReader.read());
+            }
+        }
+
+        @Test
+        void binaryObject() throws IOException {
+            Schema schema = schemaType("BinaryObject").optionalBytes("value").endRecord();
+
+            var readerTest = new ParquetReaderTest(schema);
+            readerTest.writer(writer -> {
+                Record record = new Record(schema);
+                record.put("value", "Madrid".getBytes(UTF_8));
+                writer.write(record);
+                record = new Record(schema);
+                record.put("value", "Zaragoza".getBytes(UTF_8));
+                writer.write(record);
+            });
+
+            record BinaryObject(Binary value) {
+            }
+
+            try (var carpetReader = readerTest.getCarpetReader(BinaryObject.class)) {
+                assertEquals(new BinaryObject(Binary.fromString("Madrid")), carpetReader.read());
+                assertEquals(new BinaryObject(Binary.fromString("Zaragoza")), carpetReader.read());
             }
         }
 

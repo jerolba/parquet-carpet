@@ -129,7 +129,7 @@ class JavaRecordMapper2SchemaTest {
     }
 
     @Test
-    void BinaryAsStringRecordTest() {
+    void binaryAsStringRecordTest() {
         record SimpleRecord(long id, @ParquetString Binary name) {
         }
 
@@ -139,6 +139,22 @@ class JavaRecordMapper2SchemaTest {
                 message SimpleRecord {
                   required int64 id;
                   optional binary name (STRING);
+                }
+                """;
+        assertEquals(expected, schema.toString());
+    }
+
+    @Test
+    void unannotatedBinaryHasNoLogicalType() {
+        record SimpleRecord(long id, Binary data) {
+        }
+
+        MessageType schema = class2Model2Schema(SimpleRecord.class);
+
+        String expected = """
+                message SimpleRecord {
+                  required int64 id;
+                  optional binary data;
                 }
                 """;
         assertEquals(expected, schema.toString());

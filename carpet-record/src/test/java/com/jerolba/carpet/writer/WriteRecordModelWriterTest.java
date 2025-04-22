@@ -526,6 +526,28 @@ class WriteRecordModelWriterTest {
         }
 
         @Test
+        void justBinaryObject() throws IOException {
+
+            record JustBinaryObject(Binary value) {
+            }
+
+            var mapper = writeRecordModel(JustBinaryObject.class)
+                    .withField("value", BINARY, JustBinaryObject::value);
+
+            byte[] byteArray = new byte[] { 0x01, 0x02, 0x03, 0x04 };
+            var rec = new JustBinaryObject(Binary.fromConstantByteArray(byteArray));
+            var writerTest = new ParquetWriterTest<>(JustBinaryObject.class);
+            writerTest.write(mapper, rec);
+
+            var avroReader = writerTest.getAvroGenericRecordReader();
+            ByteBuffer asByteBuffer = (ByteBuffer) avroReader.read().get("value");
+            assertEquals(rec.value, Binary.fromReusedByteBuffer(asByteBuffer));
+
+            var carpetReader = writerTest.getCarpetReader();
+            assertEquals(rec, carpetReader.read());
+        }
+
+        @Test
         void enumObject() throws IOException {
 
             record EnumObject(Category value) {

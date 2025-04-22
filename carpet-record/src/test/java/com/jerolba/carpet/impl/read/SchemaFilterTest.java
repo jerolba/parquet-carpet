@@ -19,8 +19,10 @@ import static com.jerolba.carpet.FieldMatchingStrategy.FIELD_NAME;
 import static com.jerolba.carpet.FieldMatchingStrategy.SNAKE_CASE;
 import static org.apache.parquet.schema.ConversionPatterns.listOfElements;
 import static org.apache.parquet.schema.ConversionPatterns.listType;
+import static org.apache.parquet.schema.LogicalTypeAnnotation.bsonType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.enumType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.intType;
+import static org.apache.parquet.schema.LogicalTypeAnnotation.jsonType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.stringType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.uuidType;
 import static org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName.BINARY;
@@ -37,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.schema.ConversionPatterns;
 import org.apache.parquet.schema.GroupType;
 import org.apache.parquet.schema.LogicalTypeAnnotation.UUIDLogicalTypeAnnotation;
@@ -52,9 +55,6 @@ import com.jerolba.carpet.CarpetMissingColumnException;
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.annotation.Alias;
 import com.jerolba.carpet.annotation.NotNull;
-import com.jerolba.carpet.impl.read.ColumnToFieldMapper;
-import com.jerolba.carpet.impl.read.SchemaFilter;
-import com.jerolba.carpet.impl.read.SchemaValidation;
 
 class SchemaFilterTest {
 
@@ -452,6 +452,134 @@ class SchemaFilterTest {
             }
             assertEquals(groupType, filterDefault.project(NullableString.class, groupType));
             assertEquals(groupType, filterFailOnNotNullable.project(NullableString.class, groupType));
+        }
+
+        @Test
+        void stringFromEnum() {
+            Type field = Types.primitive(BINARY, OPTIONAL).as(enumType()).named("value");
+            GroupType groupType = new MessageType("foo", field);
+            SchemaFilter filterDefault = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+
+            record StringObject(String value) {
+            }
+            assertEquals(groupType, filterDefault.project(StringObject.class, groupType));
+        }
+
+    }
+
+    @Nested
+    class FieldJsonConversion {
+
+        @Test
+        void fieldRequired() {
+            Type field = Types.primitive(BINARY, REQUIRED).as(jsonType()).named("value");
+            GroupType groupType = new MessageType("foo", field);
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+
+            record NotNullJson(@NotNull String value) {
+            }
+            assertEquals(groupType, filter.project(NotNullJson.class, groupType));
+
+            record NullableJson(String value) {
+            }
+            assertEquals(groupType, filter.project(NullableJson.class, groupType));
+        }
+
+        @Test
+        void fieldOptional() {
+            Type field = Types.primitive(BINARY, OPTIONAL).as(jsonType()).named("value");
+            GroupType groupType = new MessageType("foo", field);
+            SchemaFilter filterDefault = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            SchemaFilter filterFailOnNotNullable = new SchemaFilter(failOnNullForPrimitives, defaultFieldMapper);
+
+            record NotNullJson(@NotNull String value) {
+            }
+            assertEquals(groupType, filterDefault.project(NotNullJson.class, groupType));
+            assertThrows(RecordTypeConversionException.class,
+                    () -> filterFailOnNotNullable.project(NotNullJson.class, groupType));
+
+            record NullableJson(String value) {
+            }
+            assertEquals(groupType, filterDefault.project(NullableJson.class, groupType));
+            assertEquals(groupType, filterFailOnNotNullable.project(NullableJson.class, groupType));
+        }
+
+    }
+
+    @Nested
+    class FieldBsonConversion {
+
+        @Test
+        void fieldRequired() {
+            Type field = Types.primitive(BINARY, REQUIRED).as(bsonType()).named("value");
+            GroupType groupType = new MessageType("foo", field);
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+
+            record NotNullBson(@NotNull Binary value) {
+            }
+            assertEquals(groupType, filter.project(NotNullBson.class, groupType));
+
+            record NullableBson(Binary value) {
+            }
+            assertEquals(groupType, filter.project(NullableBson.class, groupType));
+        }
+
+        @Test
+        void fieldOptional() {
+            Type field = Types.primitive(BINARY, OPTIONAL).as(bsonType()).named("value");
+            GroupType groupType = new MessageType("foo", field);
+            SchemaFilter filterDefault = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            SchemaFilter filterFailOnNotNullable = new SchemaFilter(failOnNullForPrimitives, defaultFieldMapper);
+
+            record NotNullBson(@NotNull Binary value) {
+            }
+            assertEquals(groupType, filterDefault.project(NotNullBson.class, groupType));
+            assertThrows(RecordTypeConversionException.class,
+                    () -> filterFailOnNotNullable.project(NotNullBson.class, groupType));
+
+            record NullableBson(Binary value) {
+            }
+            assertEquals(groupType, filterDefault.project(NullableBson.class, groupType));
+            assertEquals(groupType, filterFailOnNotNullable.project(NullableBson.class, groupType));
+        }
+
+    }
+
+    @Nested
+    class FieldBinaryConversion {
+
+        @Test
+        void fieldRequired() {
+            Type field = Types.primitive(BINARY, REQUIRED).named("value");
+            GroupType groupType = new MessageType("foo", field);
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+
+            record NotNullBinary(@NotNull Binary value) {
+            }
+            assertEquals(groupType, filter.project(NotNullBinary.class, groupType));
+
+            record NullableBinary(Binary value) {
+            }
+            assertEquals(groupType, filter.project(NullableBinary.class, groupType));
+        }
+
+        @Test
+        void fieldOptional() {
+            Type field = Types.primitive(BINARY, OPTIONAL).named("value");
+            GroupType groupType = new MessageType("foo", field);
+            SchemaFilter filterDefault = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            SchemaFilter filterFailOnNotNullable = new SchemaFilter(failOnNullForPrimitives, defaultFieldMapper);
+
+            record NotNullBinary(@NotNull Binary value) {
+            }
+            assertEquals(groupType, filterDefault.project(NotNullBinary.class, groupType));
+            assertThrows(RecordTypeConversionException.class,
+                    () -> filterFailOnNotNullable.project(NotNullBinary.class, groupType));
+
+            record NullableBinary(Binary value) {
+            }
+            assertEquals(groupType, filterDefault.project(NullableBinary.class, groupType));
+            assertEquals(groupType, filterFailOnNotNullable.project(NullableBinary.class, groupType));
         }
 
     }

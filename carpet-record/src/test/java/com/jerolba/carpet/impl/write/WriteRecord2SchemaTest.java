@@ -175,6 +175,24 @@ class WriteRecord2SchemaTest {
         assertEquals(expected, schemaWithRootType(rootType).toString());
     }
 
+    @Test
+    void unannotatedBinaryHasNoLogicalType() {
+        record SimpleRecord(long id, Binary name) {
+        }
+
+        var rootType = writeRecordModel(SimpleRecord.class)
+                .withField("id", LONG.notNull(), SimpleRecord::id)
+                .withField("data", BINARY, SimpleRecord::name);
+
+        String expected = """
+                message SimpleRecord {
+                  required int64 id;
+                  optional binary data;
+                }
+                """;
+        assertEquals(expected, schemaWithRootType(rootType).toString());
+    }
+
     @Nested
     class JsonType {
 
