@@ -78,8 +78,10 @@ class LogicalTypeConverters {
             }
         }
 
-        if (logicalTypeAnnotation.equals(bsonType()) && type.isBinary()) {
-            return new BinaryConverter(consumer);
+        if (logicalTypeAnnotation.equals(bsonType())) {
+            if (type == null || type.isBinary()) {
+                return new BinaryConverter(consumer);
+            }
         }
 
         if (logicalTypeAnnotation.equals(enumType())) {

@@ -506,6 +506,31 @@ class CarpetReaderTest {
         }
 
         @Test
+        void enumToStringObject() throws IOException {
+            Schema schema = schemaType("EnumObject").name("value").type().nullable()
+                    .enumeration("Category").symbols("one", "two", "three").noDefault()
+                    .endRecord();
+
+            var readerTest = new ParquetReaderTest(schema);
+            readerTest.writer(writer -> {
+                Record record = new Record(schema);
+                record.put("value", "one");
+                writer.write(record);
+                record = new Record(schema);
+                record.put("value", "two");
+                writer.write(record);
+            });
+
+            record StringFromEnumObject(String value) {
+            }
+
+            try (var carpetReader = readerTest.getCarpetReader(StringFromEnumObject.class)) {
+                assertEquals(new StringFromEnumObject("one"), carpetReader.read());
+                assertEquals(new StringFromEnumObject("two"), carpetReader.read());
+            }
+        }
+
+        @Test
         void enumToBinaryObject() throws IOException {
             Schema schema = schemaType("EnumObject").name("value").type().nullable()
                     .enumeration("Category").symbols("one", "two", "three").noDefault()
