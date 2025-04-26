@@ -121,7 +121,8 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
         case DOUBLE -> new ToDoubleConverter(consumer);
         case BOOLEAN -> new BooleanConverter(consumer);
         case BINARY -> new BinaryConverter(consumer);
-        default -> throw new RecordTypeConversionException(type + " deserialization not supported");
+        case FIXED_LEN_BYTE_ARRAY, INT96 -> throw new RecordTypeConversionException(
+                type + " deserialization not supported");
         };
     }
 

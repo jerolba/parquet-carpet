@@ -50,7 +50,8 @@ class PrimitiveConverterFactory {
         case FLOAT, DOUBLE -> buildFromDecimalConverter(consumer, javaType);
         case BOOLEAN -> buildFromBooleanConverter(consumer, javaType);
         case BINARY -> buildFromBinaryConverter(consumer, javaType);
-        default -> throw new RecordTypeConversionException(type + " deserialization not supported");
+        case FIXED_LEN_BYTE_ARRAY, INT96 -> throw new RecordTypeConversionException(
+                type + " deserialization not supported");
         };
         if (converter == null) {
             throw new RecordTypeConversionException(

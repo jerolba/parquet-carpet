@@ -160,13 +160,13 @@ public class SchemaValidation {
         if (stringType().equals(logicalType) && (type.isString() || type.isEnum() || type.isBinary())) {
             return name == PrimitiveTypeName.BINARY;
         }
+        if (enumType().equals(logicalType) && (type.isString() || type.isEnum() || type.isBinary())) {
+            return name == PrimitiveTypeName.BINARY;
+        }
         if (jsonType().equals(logicalType) && (type.isString() || type.isBinary())) {
             return name == PrimitiveTypeName.BINARY;
         }
         if (bsonType().equals(logicalType) && type.isBinary()) {
-            return name == PrimitiveTypeName.BINARY;
-        }
-        if (enumType().equals(logicalType) && (type.isString() || type.isEnum() || type.isBinary())) {
             return name == PrimitiveTypeName.BINARY;
         }
         if (logicalType.equals(uuidType()) && (type.isString() || type.isUuid())) {

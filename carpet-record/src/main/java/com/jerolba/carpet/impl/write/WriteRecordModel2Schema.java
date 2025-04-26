@@ -15,18 +15,18 @@
  */
 package com.jerolba.carpet.impl.write;
 
+import static com.jerolba.carpet.impl.write.SchemaBuilder.buildDecimalTypeItem;
+import static com.jerolba.carpet.impl.write.SchemaBuilder.buildInstantType;
+import static com.jerolba.carpet.impl.write.SchemaBuilder.buildLocalDateTimeType;
+import static com.jerolba.carpet.impl.write.SchemaBuilder.buildLocalDateType;
+import static com.jerolba.carpet.impl.write.SchemaBuilder.buildLocalTimeType;
+import static com.jerolba.carpet.impl.write.SchemaBuilder.buildUuidType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.bsonType;
-import static org.apache.parquet.schema.LogicalTypeAnnotation.dateType;
-import static org.apache.parquet.schema.LogicalTypeAnnotation.decimalType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.enumType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.intType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.jsonType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.stringType;
-import static org.apache.parquet.schema.LogicalTypeAnnotation.timeType;
-import static org.apache.parquet.schema.LogicalTypeAnnotation.timestampType;
-import static org.apache.parquet.schema.LogicalTypeAnnotation.uuidType;
 import static org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName.BINARY;
-import static org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY;
 import static org.apache.parquet.schema.Type.Repetition.OPTIONAL;
 import static org.apache.parquet.schema.Type.Repetition.REPEATED;
 import static org.apache.parquet.schema.Type.Repetition.REQUIRED;
@@ -39,17 +39,14 @@ import java.util.Set;
 
 import org.apache.parquet.schema.ConversionPatterns;
 import org.apache.parquet.schema.GroupType;
-import org.apache.parquet.schema.LogicalTypeAnnotation;
-import org.apache.parquet.schema.LogicalTypeAnnotation.UUIDLogicalTypeAnnotation;
 import org.apache.parquet.schema.MessageType;
-import org.apache.parquet.schema.PrimitiveType;
 import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
 import org.apache.parquet.schema.Type;
 import org.apache.parquet.schema.Type.Repetition;
 import org.apache.parquet.schema.Types;
 
 import com.jerolba.carpet.RecordTypeConversionException;
-import com.jerolba.carpet.TimeUnit;
+import com.jerolba.carpet.model.BinaryType.BinaryLogicalType;
 import com.jerolba.carpet.model.CollectionType;
 import com.jerolba.carpet.model.EnumType.EnumLogicalType;
 import com.jerolba.carpet.model.FieldType;
@@ -186,52 +183,80 @@ class WriteRecordModel2Schema {
             Set<WriteRecordModelType<?>> visited) {
 
         FieldTypeInspect javaType = new FieldTypeInspect(type);
-        PrimitiveType primitiveType = buildIfPrimitiveType(javaType, repetition, parquetFieldName);
-        if (primitiveType != null) {
-            return primitiveType;
-        }
-        if (javaType.isString()) {
-            if (javaType.stringLogicalType() == StringLogicalType.JSON) {
-                return primitive(BINARY, repetition).as(jsonType()).named(parquetFieldName);
-            } else if (javaType.stringLogicalType() == StringLogicalType.ENUM) {
-                return primitive(BINARY, repetition).as(enumType()).named(parquetFieldName);
-            }
-            return primitive(BINARY, repetition).as(stringType()).named(parquetFieldName);
-        }
-        if (javaType.isBinary()) {
-            if (javaType.binaryLogicalType() == null) {
-                return primitive(BINARY, repetition).named(parquetFieldName);
-            }
-            return switch (javaType.binaryLogicalType()) {
-            case STRING -> primitive(BINARY, repetition).as(stringType()).named(parquetFieldName);
-            case ENUM -> primitive(BINARY, repetition).as(enumType()).named(parquetFieldName);
-            case JSON -> primitive(BINARY, repetition).as(jsonType()).named(parquetFieldName);
-            case BSON -> primitive(BINARY, repetition).as(bsonType()).named(parquetFieldName);
-            default -> null;
-            };
-        }
-        if (javaType.isEnum()) {
-            if (javaType.enumLogicalType() == EnumLogicalType.STRING) {
-                return primitive(BINARY, repetition).as(stringType()).named(parquetFieldName);
-            }
-            return primitive(BINARY, repetition).as(enumType()).named(parquetFieldName);
-        }
-        if (javaType.isUuid()) {
-            return primitive(FIXED_LEN_BYTE_ARRAY, repetition).as(uuidType())
-                    .length(UUIDLogicalTypeAnnotation.BYTES).named(parquetFieldName);
-        }
-        if (javaType.isBigDecimal()) {
-            return buildDecimalTypeItem(repetition, parquetFieldName);
-        }
-        PrimitiveType dateTypeItems = buildIfDateType(javaType, repetition, parquetFieldName);
-        if (dateTypeItems != null) {
-            return dateTypeItems;
-        }
-        if (type instanceof WriteRecordModelType<?> childWriteRecordType) {
+        if (javaType.isInteger()) {
+            return primitive(PrimitiveTypeName.INT32, repetition).named(parquetFieldName);
+        } else if (javaType.isLong()) {
+            return primitive(PrimitiveTypeName.INT64, repetition).named(parquetFieldName);
+        } else if (javaType.isFloat()) {
+            return primitive(PrimitiveTypeName.FLOAT, repetition).named(parquetFieldName);
+        } else if (javaType.isDouble()) {
+            return primitive(PrimitiveTypeName.DOUBLE, repetition).named(parquetFieldName);
+        } else if (javaType.isBoolean()) {
+            return primitive(PrimitiveTypeName.BOOLEAN, repetition).named(parquetFieldName);
+        } else if (javaType.isShort()) {
+            return primitive(PrimitiveTypeName.INT32, repetition).as(intType(16, true)).named(parquetFieldName);
+        } else if (javaType.isByte()) {
+            return primitive(PrimitiveTypeName.INT32, repetition).as(intType(8, true)).named(parquetFieldName);
+        } else if (javaType.isString()) {
+            return buildStringType(javaType.stringLogicalType(), repetition, parquetFieldName);
+        } else if (javaType.isBinary()) {
+            return buildBinaryType(javaType.binaryLogicalType(), repetition, parquetFieldName);
+        } else if (javaType.isEnum()) {
+            return buildEnumType(javaType.enumLogicalType(), repetition, parquetFieldName);
+        } else if (javaType.isUuid()) {
+            return buildUuidType(repetition, parquetFieldName);
+        } else if (javaType.isBigDecimal()) {
+            return buildDecimalTypeItem(repetition, parquetFieldName, carpetConfiguration.decimalConfig());
+        } else if (javaType.isLocalDate()) {
+            return buildLocalDateType(repetition, parquetFieldName);
+        } else if (javaType.isLocalTime()) {
+            return buildLocalTimeType(repetition, parquetFieldName,
+                    carpetConfiguration.defaultTimeUnit(), carpetConfiguration.defaultTimeIsAdjustedToUTC());
+        } else if (javaType.isLocalDateTime()) {
+            return buildLocalDateTimeType(repetition, parquetFieldName, carpetConfiguration.defaultTimeUnit());
+        } else if (javaType.isInstant()) {
+            return buildInstantType(repetition, parquetFieldName, carpetConfiguration.defaultTimeUnit());
+        } else if (type instanceof WriteRecordModelType<?> childWriteRecordType) {
             List<Type> childFields = buildChildFields(childWriteRecordType, visited);
             return new GroupType(repetition, parquetFieldName, childFields);
         }
         return null;
+    }
+
+    private Type buildStringType(StringLogicalType stringLogicalType, Repetition repetition, String parquetFieldName) {
+        var binary = primitive(BINARY, repetition);
+        if (stringLogicalType == null) {
+            return binary.as(stringType()).named(parquetFieldName);
+        }
+        return switch (stringLogicalType) {
+        case JSON -> binary.as(jsonType()).named(parquetFieldName);
+        case ENUM -> binary.as(enumType()).named(parquetFieldName);
+        case STRING -> binary.as(stringType()).named(parquetFieldName);
+        };
+    }
+
+    private Type buildBinaryType(BinaryLogicalType binaryLogicalType, Repetition repetition, String parquetFieldName) {
+        var binary = primitive(BINARY, repetition);
+        if (binaryLogicalType == null) {
+            return binary.named(parquetFieldName);
+        }
+        return switch (binaryLogicalType) {
+        case STRING -> binary.as(stringType()).named(parquetFieldName);
+        case ENUM -> binary.as(enumType()).named(parquetFieldName);
+        case JSON -> binary.as(jsonType()).named(parquetFieldName);
+        case BSON -> binary.as(bsonType()).named(parquetFieldName);
+        };
+    }
+
+    private Type buildEnumType(EnumLogicalType logicalType, Repetition repetition, String parquetFieldName) {
+        var binary = primitive(BINARY, repetition);
+        if (logicalType == null) {
+            return binary.as(enumType()).named(parquetFieldName);
+        }
+        return switch (logicalType) {
+        case STRING -> binary.as(stringType()).named(parquetFieldName);
+        case ENUM -> binary.as(enumType()).named(parquetFieldName);
+        };
     }
 
     private List<Type> buildChildFields(WriteRecordModelType<?> writeRecordType, Set<WriteRecordModelType<?>> visited) {
@@ -239,82 +264,6 @@ class WriteRecordModel2Schema {
         List<Type> fields = createGroupFields(writeRecordType, visited);
         visited.remove(writeRecordType);
         return fields;
-    }
-
-    private PrimitiveType buildIfPrimitiveType(FieldTypeInspect javaType, Repetition repetition, String name) {
-        if (javaType.isInteger()) {
-            return primitive(PrimitiveTypeName.INT32, repetition).named(name);
-        }
-        if (javaType.isLong()) {
-            return primitive(PrimitiveTypeName.INT64, repetition).named(name);
-        }
-        if (javaType.isFloat()) {
-            return primitive(PrimitiveTypeName.FLOAT, repetition).named(name);
-        }
-        if (javaType.isDouble()) {
-            return primitive(PrimitiveTypeName.DOUBLE, repetition).named(name);
-        }
-        if (javaType.isBoolean()) {
-            return primitive(PrimitiveTypeName.BOOLEAN, repetition).named(name);
-        }
-        if (javaType.isShort()) {
-            return primitive(PrimitiveTypeName.INT32, repetition).as(intType(16, true)).named(name);
-        }
-        if (javaType.isByte()) {
-            return primitive(PrimitiveTypeName.INT32, repetition).as(intType(8, true)).named(name);
-        }
-        return null;
-    }
-
-    private PrimitiveType buildIfDateType(FieldTypeInspect javaType, Repetition repetition, String name) {
-        if (javaType.isLocalDate()) {
-            return primitive(PrimitiveTypeName.INT32, repetition).as(dateType()).named(name);
-        }
-        if (javaType.isLocalTime()) {
-            TimeUnit timeUnit = carpetConfiguration.defaultTimeUnit();
-            boolean isAdjustedToUTC = carpetConfiguration.defaultTimeIsAdjustedToUTC();
-            LogicalTypeAnnotation timeType = timeType(isAdjustedToUTC, toParquetTimeUnit(timeUnit));
-            var typeName = switch (timeUnit) {
-            case MILLIS -> PrimitiveTypeName.INT32;
-            case MICROS, NANOS -> PrimitiveTypeName.INT64;
-            };
-            return primitive(typeName, repetition).as(timeType).named(name);
-        }
-        if (javaType.isLocalDateTime()) {
-            TimeUnit timeUnit = carpetConfiguration.defaultTimeUnit();
-            var timeStampType = timestampType(false, toParquetTimeUnit(timeUnit));
-            return primitive(PrimitiveTypeName.INT64, repetition).as(timeStampType).named(name);
-        }
-        if (javaType.isInstant()) {
-            TimeUnit timeUnit = carpetConfiguration.defaultTimeUnit();
-            var timeStampType = timestampType(true, toParquetTimeUnit(timeUnit));
-            return primitive(PrimitiveTypeName.INT64, repetition).as(timeStampType).named(name);
-        }
-        return null;
-    }
-
-    private LogicalTypeAnnotation.TimeUnit toParquetTimeUnit(TimeUnit timeUnit) {
-        return switch (timeUnit) {
-        case MILLIS -> LogicalTypeAnnotation.TimeUnit.MILLIS;
-        case MICROS -> LogicalTypeAnnotation.TimeUnit.MICROS;
-        case NANOS -> LogicalTypeAnnotation.TimeUnit.NANOS;
-        };
-    }
-
-    private Type buildDecimalTypeItem(Repetition repetition, String name) {
-        DecimalConfig decimalConfig = carpetConfiguration.decimalConfig();
-        if (decimalConfig == null) {
-            throw new RecordTypeConversionException("If BigDecimall is used, a Default Decimal configuration "
-                    + "must be provided in the setup of CarpetWriter builder");
-        }
-        var decimalType = decimalType(decimalConfig.scale(), decimalConfig.precision());
-        if (decimalConfig.precision() <= 9) {
-            return primitive(PrimitiveTypeName.INT32, repetition).as(decimalType).named(name);
-        }
-        if (decimalConfig.precision() <= 18) {
-            return primitive(PrimitiveTypeName.INT64, repetition).as(decimalType).named(name);
-        }
-        return primitive(PrimitiveTypeName.BINARY, repetition).as(decimalType).named(name);
     }
 
     private void validateNotVisitedRecord(WriteRecordModelType<?> recordClass, Set<WriteRecordModelType<?>> visited) {

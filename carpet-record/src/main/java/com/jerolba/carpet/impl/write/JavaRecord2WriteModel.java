@@ -138,11 +138,6 @@ public class JavaRecord2WriteModel {
     }
 
     public static FieldType buildSimpleType(JavaType javaType, boolean isNotNull) {
-        FieldType javaPrimitiveType = javaPrimitiveTypes(javaType, isNotNull);
-        return javaPrimitiveType != null ? javaPrimitiveType : javaTypes(javaType, isNotNull);
-    }
-
-    private static FieldType javaPrimitiveTypes(JavaType javaType, boolean isNotNull) {
         if (javaType.isInteger()) {
             return isNotNull ? FieldTypes.INTEGER.notNull() : FieldTypes.INTEGER;
         }
@@ -164,39 +159,14 @@ public class JavaRecord2WriteModel {
         if (javaType.isByte()) {
             return isNotNull ? FieldTypes.BYTE.notNull() : FieldTypes.BYTE;
         }
-        return null;
-    }
-
-    private static FieldType javaTypes(JavaType javaType, boolean isNotNull) {
         if (javaType.isString()) {
-            StringType type = isNotNull ? FieldTypes.STRING.notNull() : FieldTypes.STRING;
-            if (javaType.isAnnotatedWith(ParquetJson.class)) {
-                type = type.asJson();
-            } else if (javaType.isAnnotatedWith(ParquetEnum.class)) {
-                type = type.asEnum();
-            }
-            return type;
+            return stringType(javaType, isNotNull);
         }
         if (javaType.isBinary()) {
-            BinaryType binary = FieldTypes.BINARY;
-            if (javaType.isAnnotatedWith(ParquetString.class)) {
-                binary = binary.asString();
-            } else if (javaType.isAnnotatedWith(ParquetEnum.class)) {
-                binary = binary.asEnum();
-            } else if (javaType.isAnnotatedWith(ParquetJson.class)) {
-                binary = binary.asJson();
-            } else if (javaType.isAnnotatedWith(ParquetBson.class)) {
-                binary = binary.asBson();
-            }
-            return isNotNull ? binary.notNull() : binary;
+            return binaryType(javaType, isNotNull);
         }
         if (javaType.isEnum()) {
-            if (javaType.isAnnotatedWith(ParquetString.class)) {
-                BinaryType binary = FieldTypes.BINARY.asString();
-                return isNotNull ? binary.notNull() : binary;
-            }
-            EnumType enumType = FieldTypes.ENUM.ofType((Class<? extends Enum<?>>) javaType.getJavaType());
-            return isNotNull ? enumType.notNull() : enumType;
+            return enumType(javaType, isNotNull);
         }
         if (javaType.isUuid()) {
             return isNotNull ? FieldTypes.UUID.notNull() : FieldTypes.UUID;
@@ -217,6 +187,39 @@ public class JavaRecord2WriteModel {
             return isNotNull ? FieldTypes.INSTANT.notNull() : FieldTypes.INSTANT;
         }
         return null;
+    }
+
+    private static FieldType stringType(JavaType javaType, boolean isNotNull) {
+        StringType type = isNotNull ? FieldTypes.STRING.notNull() : FieldTypes.STRING;
+        if (javaType.isAnnotatedWith(ParquetJson.class)) {
+            type = type.asJson();
+        } else if (javaType.isAnnotatedWith(ParquetEnum.class)) {
+            type = type.asEnum();
+        }
+        return type;
+    }
+
+    private static FieldType binaryType(JavaType javaType, boolean isNotNull) {
+        BinaryType binary = isNotNull ? FieldTypes.BINARY.notNull() : FieldTypes.BINARY;
+        if (javaType.isAnnotatedWith(ParquetString.class)) {
+            binary = binary.asString();
+        } else if (javaType.isAnnotatedWith(ParquetJson.class)) {
+            binary = binary.asJson();
+        } else if (javaType.isAnnotatedWith(ParquetEnum.class)) {
+            binary = binary.asEnum();
+        } else if (javaType.isAnnotatedWith(ParquetBson.class)) {
+            binary = binary.asBson();
+        }
+        return binary;
+    }
+
+    private static FieldType enumType(JavaType javaType, boolean isNotNull) {
+        if (javaType.isAnnotatedWith(ParquetString.class)) {
+            BinaryType binary = FieldTypes.BINARY.asString();
+            return isNotNull ? binary.notNull() : binary;
+        }
+        EnumType enumType = FieldTypes.ENUM.ofType((Class<? extends Enum<?>>) javaType.getJavaType());
+        return isNotNull ? enumType.notNull() : enumType;
     }
 
 }

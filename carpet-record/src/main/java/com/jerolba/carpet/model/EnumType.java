@@ -19,7 +19,7 @@ public record EnumType(boolean isNotNull, Class<? extends Enum<?>> enumClass, En
         implements FieldType {
 
     public enum EnumLogicalType {
-        JSON, ENUM, STRING;
+        ENUM, STRING;
     }
 
     public EnumType notNull() {

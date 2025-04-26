@@ -48,65 +48,92 @@ import com.jerolba.carpet.impl.read.converter.UuidToUuidConverter;
 
 class LogicalTypeConverters {
 
-    public static Converter buildFromLogicalTypeConverter(JavaType type, Type parquetField,
-            Consumer<Object> consumer) {
+    /**
+     * Build a converter from the logical type annotation of a Parquet field.
+     *
+     * Creates a converter only if the logical type annotation is not null.
+     * Otherwise, returns null.
+     *
+     * @param type         The Java type to convert to.
+     * @param parquetField The Parquet field to convert from.
+     * @param consumer     The consumer to receive the converted value.
+     * @return A converter that converts the Parquet field to the Java type, or null
+     *         if no conversion is possible.
+     */
+    public static Converter buildFromLogicalTypeConverter(JavaType type, Type parquetField, Consumer<Object> consumer) {
         var logicalTypeAnnotation = parquetField.getLogicalTypeAnnotation();
         if (logicalTypeAnnotation == null) {
             return null;
         }
-        var primitiveType = parquetField.asPrimitiveType();
         var primitiveTypeName = parquetField.asPrimitiveType().getPrimitiveTypeName();
-
         if (logicalTypeAnnotation.equals(stringType())) {
-            if (type == null || type.isString()) {
-                return new StringConverter(consumer);
-            }
-            if (type.isBinary()) {
-                return new BinaryConverter(consumer);
-            }
-            if (type.isEnum()) {
-                return new EnumConverter(consumer, type.getJavaType());
-            }
+            return converterForStringOrEnumType(type, consumer);
+        } else if (logicalTypeAnnotation.equals(enumType())) {
+            return converterForStringOrEnumType(type, consumer);
+        } else if (logicalTypeAnnotation instanceof IntLogicalTypeAnnotation intType) {
+            return converterForIntType(type, consumer, intType);
+        } else if (logicalTypeAnnotation.equals(dateType())) {
+            return converterForDateType(type, consumer, primitiveTypeName);
+        } else if (logicalTypeAnnotation instanceof TimeLogicalTypeAnnotation time) {
+            return converterForTimestampType(type, consumer, primitiveTypeName, time);
+        } else if (logicalTypeAnnotation instanceof TimestampLogicalTypeAnnotation timeStamp) {
+            return converterForTimestampType(type, consumer, primitiveTypeName, timeStamp);
+        } else if (logicalTypeAnnotation instanceof DecimalLogicalTypeAnnotation decimalType) {
+            return converterForDecimalType(type, consumer, primitiveTypeName, decimalType);
+        } else if (logicalTypeAnnotation.equals(uuidType())) {
+            return converterForUuidType(type, consumer, primitiveTypeName);
+        } else if (logicalTypeAnnotation.equals(jsonType())) {
+            return converterForJsonType(type, consumer);
+        } else if (logicalTypeAnnotation.equals(bsonType())) {
+            return converterForBsonType(type, consumer);
         }
+        return null;
+    }
 
-        if (logicalTypeAnnotation.equals(jsonType())) {
-            if (type == null || type.isString()) {
-                return new StringConverter(consumer);
-            }
-            if (type.isBinary()) {
-                return new BinaryConverter(consumer);
-            }
+    private static Converter converterForStringOrEnumType(JavaType type, Consumer<Object> consumer) {
+        if (type == null || type.isString()) {
+            return new StringConverter(consumer);
         }
-
-        if (logicalTypeAnnotation.equals(bsonType())) {
-            if (type == null || type.isBinary()) {
-                return new BinaryConverter(consumer);
-            }
+        if (type.isBinary()) {
+            return new BinaryConverter(consumer);
         }
-
-        if (logicalTypeAnnotation.equals(enumType())) {
-            if (type == null || type.isString()) {
-                return new StringConverter(consumer);
-            }
-            if (type.isBinary()) {
-                return new BinaryConverter(consumer);
-            }
-            if (type.isEnum()) {
-                return new EnumConverter(consumer, type.getJavaType());
-            }
+        if (type.isEnum()) {
+            return new EnumConverter(consumer, type.getJavaType());
         }
+        return null;
+    }
 
-        if (logicalTypeAnnotation instanceof IntLogicalTypeAnnotation intType) {
-            if (intType.getBitWidth() == 8 && (type == null || type.isByte())) {
-                return new ToByteConverter(consumer);
-            }
-            if (intType.getBitWidth() == 16 && (type == null || type.isShort())) {
-                return new ToShortConverter(consumer);
-            }
+    private static Converter converterForJsonType(JavaType type, Consumer<Object> consumer) {
+        if (type == null || type.isString()) {
+            return new StringConverter(consumer);
         }
+        if (type.isBinary()) {
+            return new BinaryConverter(consumer);
+        }
+        return null;
+    }
 
-        if (logicalTypeAnnotation.equals(uuidType())
-                && primitiveTypeName == PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY) {
+    private static Converter converterForBsonType(JavaType type, Consumer<Object> consumer) {
+        if (type == null || type.isBinary()) {
+            return new BinaryConverter(consumer);
+        }
+        return null;
+    }
+
+    private static Converter converterForIntType(JavaType type, Consumer<Object> consumer,
+            IntLogicalTypeAnnotation intType) {
+        if (intType.getBitWidth() == 8 && (type == null || type.isByte())) {
+            return new ToByteConverter(consumer);
+        }
+        if (intType.getBitWidth() == 16 && (type == null || type.isShort())) {
+            return new ToShortConverter(consumer);
+        }
+        return null;
+    }
+
+    private static Converter converterForUuidType(JavaType type, Consumer<Object> consumer,
+            PrimitiveTypeName primitiveTypeName) {
+        if (primitiveTypeName == PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY) {
             if (type == null || type.isUuid()) {
                 return new UuidToUuidConverter(consumer);
             }
@@ -114,21 +141,32 @@ class LogicalTypeConverters {
                 return new UuidToStringConverter(consumer);
             }
         }
+        return null;
+    }
 
-        if (logicalTypeAnnotation.equals(dateType())
-                && primitiveTypeName == PrimitiveTypeName.INT32
-                && (type == null || type.isLocalDate())) {
-            return new LocalDateConverter(consumer);
+    private static Converter converterForDateType(JavaType type, Consumer<Object> consumer,
+            PrimitiveTypeName primitiveTypeName) {
+        if (primitiveTypeName == PrimitiveTypeName.INT32) {
+            if (type == null || type.isLocalDate()) {
+                return new LocalDateConverter(consumer);
+            }
         }
+        return null;
+    }
 
-        if (logicalTypeAnnotation instanceof TimeLogicalTypeAnnotation time
-                && (primitiveTypeName == PrimitiveTypeName.INT32 || primitiveTypeName == PrimitiveTypeName.INT64)
-                && (type == null || type.isLocalTime())) {
-            return new LocalTimeConverter(consumer, time.getUnit());
+    private static Converter converterForTimestampType(JavaType type, Consumer<Object> consumer,
+            PrimitiveTypeName primitiveTypeName, TimeLogicalTypeAnnotation time) {
+        if (primitiveTypeName == PrimitiveTypeName.INT32 || primitiveTypeName == PrimitiveTypeName.INT64) {
+            if (type == null || type.isLocalTime()) {
+                return new LocalTimeConverter(consumer, time.getUnit());
+            }
         }
+        return null;
+    }
 
-        if (logicalTypeAnnotation instanceof TimestampLogicalTypeAnnotation timeStamp
-                && primitiveTypeName == PrimitiveTypeName.INT64) {
+    private static Converter converterForTimestampType(JavaType type, Consumer<Object> consumer,
+            PrimitiveTypeName primitiveTypeName, TimestampLogicalTypeAnnotation timeStamp) {
+        if (primitiveTypeName == PrimitiveTypeName.INT64) {
             if (type == null) {
                 if (timeStamp.isAdjustedToUTC()) {
                     return new InstantConverter(consumer, timeStamp.getUnit());
@@ -142,12 +180,14 @@ class LogicalTypeConverters {
                 return new InstantConverter(consumer, timeStamp.getUnit());
             }
         }
+        return null;
+    }
 
-        if (logicalTypeAnnotation instanceof DecimalLogicalTypeAnnotation decimalType
-                && (type == null || type.isBigDecimal())) {
-            return new DecimalConverter(consumer, primitiveType.getPrimitiveTypeName(), decimalType.getScale());
+    private static Converter converterForDecimalType(JavaType type, Consumer<Object> consumer,
+            PrimitiveTypeName typeName, DecimalLogicalTypeAnnotation decimalType) {
+        if (type == null || type.isBigDecimal()) {
+            return new DecimalConverter(consumer, typeName, decimalType.getScale());
         }
-
         return null;
     }
 
