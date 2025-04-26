@@ -15,6 +15,8 @@
  */
 package com.jerolba.carpet.impl;
 
+import java.lang.reflect.AnnotatedParameterizedType;
+import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.RecordComponent;
@@ -29,11 +31,15 @@ import com.jerolba.carpet.RecordTypeConversionException;
 public class Parameterized {
 
     public static ParameterizedCollection getParameterizedCollection(RecordComponent attr) {
-        return parametizeTo(attr.getGenericType(), ParameterizedCollection::new);
+        return getParameterizedCollection(attr.getAnnotatedType());
     }
 
     public static ParameterizedCollection getParameterizedCollection(Field attr) {
-        return parametizeTo(attr.getGenericType(), ParameterizedCollection::new);
+        return getParameterizedCollection(attr.getAnnotatedType());
+    }
+
+    public static ParameterizedCollection getParameterizedCollection(AnnotatedType annotatedTypeCollection) {
+        return parametizeTo(annotatedTypeCollection, ParameterizedCollection::new);
     }
 
     public static boolean isCollection(Type type) {
@@ -41,11 +47,15 @@ public class Parameterized {
     }
 
     public static ParameterizedMap getParameterizedMap(RecordComponent attr) {
-        return parametizeTo(attr.getGenericType(), ParameterizedMap::new);
+        return getParameterizedMap(attr.getAnnotatedType());
     }
 
     public static ParameterizedMap getParameterizedMap(Field attr) {
-        return parametizeTo(attr.getGenericType(), ParameterizedMap::new);
+        return getParameterizedMap(attr.getAnnotatedType());
+    }
+
+    public static ParameterizedMap getParameterizedMap(AnnotatedType annotatedTypeMap) {
+        return parametizeTo(annotatedTypeMap, ParameterizedMap::new);
     }
 
     public static boolean isMap(Type type) {
@@ -73,16 +83,15 @@ public class Parameterized {
         return false;
     }
 
-    private static <T> T parametizeTo(java.lang.reflect.Type genericType,
-            BiFunction<Type, ParameterizedType, T> constructor) {
-        if (genericType instanceof TypeVariable<?>) {
-            throw new RecordTypeConversionException(genericType.toString() + " generic types not supported");
+    private static <T> T parametizeTo(AnnotatedType annotatedType,
+            BiFunction<Type, AnnotatedParameterizedType, T> constructor) {
+        if (annotatedType instanceof AnnotatedParameterizedType paramType) {
+            if (paramType.getType() instanceof ParameterizedType rawType) {
+                Type raw = rawType.getRawType();
+                return constructor.apply(raw, paramType);
+            }
         }
-        if (genericType instanceof ParameterizedType paramType) {
-            Type collection = paramType.getRawType();
-            return constructor.apply(collection, paramType);
-        }
-        throw new RecordTypeConversionException("Unsuported type in collection");
+        throw new RecordTypeConversionException("Unsupported type in collection: " + annotatedType);
     }
 
 }
