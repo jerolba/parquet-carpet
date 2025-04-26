@@ -19,10 +19,6 @@ import org.apache.parquet.io.api.Binary;
 
 public record BinaryType(boolean isNotNull, BinaryLogicalType logicalType) implements FieldType {
 
-    public enum BinaryLogicalType {
-        BSON, JSON, ENUM, STRING;
-    }
-
     public BinaryType notNull() {
         return new BinaryType(true, logicalType);
     }

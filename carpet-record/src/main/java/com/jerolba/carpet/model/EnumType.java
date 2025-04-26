@@ -15,11 +15,19 @@
  */
 package com.jerolba.carpet.model;
 
-public record EnumType(boolean isNotNull, Class<? extends Enum<?>> enumClass, EnumLogicalType logicalType)
+import java.util.Set;
+
+public record EnumType(boolean isNotNull, Class<? extends Enum<?>> enumClass, BinaryLogicalType logicalType)
         implements FieldType {
 
-    public enum EnumLogicalType {
-        ENUM, STRING;
+    private static final Set<BinaryLogicalType> VALID_LOGICAL_TYPES = Set.of(
+            BinaryLogicalType.STRING,
+            BinaryLogicalType.ENUM);
+
+    public EnumType {
+        if (logicalType != null && !VALID_LOGICAL_TYPES.contains(logicalType)) {
+            throw new IllegalArgumentException("Invalid logical type for StringType: " + logicalType);
+        }
     }
 
     public EnumType notNull() {
@@ -27,7 +35,7 @@ public record EnumType(boolean isNotNull, Class<? extends Enum<?>> enumClass, En
     }
 
     public EnumType asString() {
-        return new EnumType(isNotNull, enumClass, EnumLogicalType.STRING);
+        return new EnumType(isNotNull, enumClass, BinaryLogicalType.STRING);
     }
 
     @Override

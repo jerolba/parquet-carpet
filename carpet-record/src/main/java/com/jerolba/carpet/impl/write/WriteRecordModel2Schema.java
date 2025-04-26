@@ -46,12 +46,10 @@ import org.apache.parquet.schema.Type.Repetition;
 import org.apache.parquet.schema.Types;
 
 import com.jerolba.carpet.RecordTypeConversionException;
-import com.jerolba.carpet.model.BinaryType.BinaryLogicalType;
+import com.jerolba.carpet.model.BinaryLogicalType;
 import com.jerolba.carpet.model.CollectionType;
-import com.jerolba.carpet.model.EnumType.EnumLogicalType;
 import com.jerolba.carpet.model.FieldType;
 import com.jerolba.carpet.model.MapType;
-import com.jerolba.carpet.model.StringType.StringLogicalType;
 import com.jerolba.carpet.model.WriteRecordModelType;
 
 class WriteRecordModel2Schema {
@@ -198,11 +196,11 @@ class WriteRecordModel2Schema {
         } else if (javaType.isByte()) {
             return primitive(PrimitiveTypeName.INT32, repetition).as(intType(8, true)).named(parquetFieldName);
         } else if (javaType.isString()) {
-            return buildStringType(javaType.stringLogicalType(), repetition, parquetFieldName);
+            return buildStringType(javaType.binaryLogicalType(), repetition, parquetFieldName);
         } else if (javaType.isBinary()) {
             return buildBinaryType(javaType.binaryLogicalType(), repetition, parquetFieldName);
         } else if (javaType.isEnum()) {
-            return buildEnumType(javaType.enumLogicalType(), repetition, parquetFieldName);
+            return buildEnumType(javaType.binaryLogicalType(), repetition, parquetFieldName);
         } else if (javaType.isUuid()) {
             return buildUuidType(repetition, parquetFieldName);
         } else if (javaType.isBigDecimal()) {
@@ -223,24 +221,25 @@ class WriteRecordModel2Schema {
         return null;
     }
 
-    private Type buildStringType(StringLogicalType stringLogicalType, Repetition repetition, String parquetFieldName) {
+    private Type buildStringType(BinaryLogicalType logicalType, Repetition repetition, String parquetFieldName) {
         var binary = primitive(BINARY, repetition);
-        if (stringLogicalType == null) {
+        if (logicalType == null) {
             return binary.as(stringType()).named(parquetFieldName);
         }
-        return switch (stringLogicalType) {
+        return switch (logicalType) {
         case JSON -> binary.as(jsonType()).named(parquetFieldName);
         case ENUM -> binary.as(enumType()).named(parquetFieldName);
         case STRING -> binary.as(stringType()).named(parquetFieldName);
+        default -> throw new RecordTypeConversionException("Unsupported logical type for String: " + logicalType);
         };
     }
 
-    private Type buildBinaryType(BinaryLogicalType binaryLogicalType, Repetition repetition, String parquetFieldName) {
+    private Type buildBinaryType(BinaryLogicalType logicalType, Repetition repetition, String parquetFieldName) {
         var binary = primitive(BINARY, repetition);
-        if (binaryLogicalType == null) {
+        if (logicalType == null) {
             return binary.named(parquetFieldName);
         }
-        return switch (binaryLogicalType) {
+        return switch (logicalType) {
         case STRING -> binary.as(stringType()).named(parquetFieldName);
         case ENUM -> binary.as(enumType()).named(parquetFieldName);
         case JSON -> binary.as(jsonType()).named(parquetFieldName);
@@ -248,7 +247,7 @@ class WriteRecordModel2Schema {
         };
     }
 
-    private Type buildEnumType(EnumLogicalType logicalType, Repetition repetition, String parquetFieldName) {
+    private Type buildEnumType(BinaryLogicalType logicalType, Repetition repetition, String parquetFieldName) {
         var binary = primitive(BINARY, repetition);
         if (logicalType == null) {
             return binary.as(enumType()).named(parquetFieldName);
@@ -256,6 +255,7 @@ class WriteRecordModel2Schema {
         return switch (logicalType) {
         case STRING -> binary.as(stringType()).named(parquetFieldName);
         case ENUM -> binary.as(enumType()).named(parquetFieldName);
+        default -> throw new RecordTypeConversionException("Unsupported logical type for String: " + logicalType);
         };
     }
 

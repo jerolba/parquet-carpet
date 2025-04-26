@@ -16,13 +16,12 @@
 package com.jerolba.carpet.impl.write;
 
 import com.jerolba.carpet.model.BigDecimalType;
+import com.jerolba.carpet.model.BinaryLogicalType;
 import com.jerolba.carpet.model.BinaryType;
-import com.jerolba.carpet.model.BinaryType.BinaryLogicalType;
 import com.jerolba.carpet.model.BooleanType;
 import com.jerolba.carpet.model.ByteType;
 import com.jerolba.carpet.model.DoubleType;
 import com.jerolba.carpet.model.EnumType;
-import com.jerolba.carpet.model.EnumType.EnumLogicalType;
 import com.jerolba.carpet.model.FieldType;
 import com.jerolba.carpet.model.FloatType;
 import com.jerolba.carpet.model.InstantType;
@@ -36,7 +35,6 @@ import com.jerolba.carpet.model.MapType;
 import com.jerolba.carpet.model.SetType;
 import com.jerolba.carpet.model.ShortType;
 import com.jerolba.carpet.model.StringType;
-import com.jerolba.carpet.model.StringType.StringLogicalType;
 import com.jerolba.carpet.model.UuidType;
 import com.jerolba.carpet.model.WriteRecordModelType;
 
@@ -127,24 +125,12 @@ class FieldTypeInspect {
     public BinaryLogicalType binaryLogicalType() {
         if (fieldType instanceof BinaryType binary) {
             return binary.logicalType();
-        } else {
-            throw new IllegalStateException("Field type is not a binary type");
-        }
-    }
-
-    public StringLogicalType stringLogicalType() {
-        if (fieldType instanceof StringType string) {
+        } else if (fieldType instanceof StringType string) {
             return string.logicalType();
-        } else {
-            throw new IllegalStateException("Field type is not a string type");
-        }
-    }
-
-    public EnumLogicalType enumLogicalType() {
-        if (fieldType instanceof EnumType enumType) {
+        } else if (fieldType instanceof EnumType enumType) {
             return enumType.logicalType();
         } else {
-            throw new IllegalStateException("Field type is not a enum type");
+            throw new IllegalStateException("Field type is not a binary type");
         }
     }
 
