@@ -230,7 +230,7 @@ class WriteRecordModel2Schema {
         case JSON -> binary.as(jsonType()).named(parquetFieldName);
         case ENUM -> binary.as(enumType()).named(parquetFieldName);
         case STRING -> binary.as(stringType()).named(parquetFieldName);
-        default -> throw new RecordTypeConversionException("Unsupported logical type for String: " + logicalType);
+        case BSON -> throw new RecordTypeConversionException("Unsupported logical type for String: " + logicalType);
         };
     }
 
@@ -255,7 +255,8 @@ class WriteRecordModel2Schema {
         return switch (logicalType) {
         case STRING -> binary.as(stringType()).named(parquetFieldName);
         case ENUM -> binary.as(enumType()).named(parquetFieldName);
-        default -> throw new RecordTypeConversionException("Unsupported logical type for String: " + logicalType);
+        case BSON, JSON -> throw new RecordTypeConversionException(
+                "Unsupported logical type for String: " + logicalType);
         };
     }
 
