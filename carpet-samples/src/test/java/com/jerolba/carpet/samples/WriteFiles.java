@@ -34,6 +34,9 @@ import org.apache.parquet.hadoop.BadConfigurationException;
 import org.apache.parquet.hadoop.ParquetFileWriter.Mode;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
+import org.apache.parquet.io.api.Binary;
+import org.bson.BsonBinaryWriter;
+import org.bson.io.BasicOutputBuffer;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -42,6 +45,7 @@ import com.jerolba.carpet.CarpetWriter;
 import com.jerolba.carpet.ColumnNamingStrategy;
 import com.jerolba.carpet.TimeUnit;
 import com.jerolba.carpet.annotation.Alias;
+import com.jerolba.carpet.annotation.ParquetBson;
 import com.jerolba.carpet.io.FileSystemOutputFile;
 
 class WriteFiles {
@@ -97,6 +101,48 @@ class WriteFiles {
                     new Attribute("GPD", 251600000000.0, "us dollars")));
             writer.write(spain);
         }
+    }
+
+    /**
+     * Records with BSON fields are supported. BSON fields are written as Binary
+     * columns
+     *
+     * @throws IOException
+     */
+    @Test
+    void writeBsonField() throws IOException {
+        record RecordWithBson(String code, String name, @ParquetBson Binary attributes) {
+        }
+
+        var outputFile = new FileSystemOutputFile(temporalFile("BsonField"));
+        try (var writer = new CarpetWriter<>(outputFile, RecordWithBson.class)) {
+            var spain = new RecordWithBson("ES", "Spain",
+                    Binary.fromConstantByteArray(createBsonBinary("population", 48797875)));
+            writer.write(spain);
+        }
+    }
+
+    /**
+     * Utility method that creates a BSON binary with the specified id and value
+     * using low level BSON API.
+     *
+     * @param id    The String id to include
+     * @param value The double value to include
+     * @return byte array containing the BSON binary
+     */
+    public static byte[] createBsonBinary(String id, double value) {
+        BasicOutputBuffer buffer = new BasicOutputBuffer();
+        try (BsonBinaryWriter writer = new BsonBinaryWriter(buffer)) {
+            writer.writeStartDocument();
+            writer.writeName("id");
+            writer.writeString(id);
+            writer.writeName("value");
+            writer.writeDouble(value);
+            writer.writeEndDocument();
+        }
+        byte[] result = buffer.toByteArray();
+        buffer.close();
+        return result;
     }
 
     /**
