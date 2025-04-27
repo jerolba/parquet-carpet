@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,11 +29,18 @@ import java.util.Map;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.util.Utf8;
 import org.apache.parquet.io.InvalidRecordException;
+import org.apache.parquet.io.api.Binary;
 import org.junit.jupiter.api.Test;
 
 import com.jerolba.carpet.ParquetWriterTest;
+import com.jerolba.carpet.annotation.ParquetEnum;
+import com.jerolba.carpet.annotation.ParquetJson;
 
 class CarpetWriterMapTest {
+
+    enum Category {
+        FOO, BAR
+    }
 
     @Test
     void mapPrimitiveValue() throws IOException {
@@ -82,6 +90,140 @@ class CarpetWriterMapTest {
         assertEquals(rec2.name(), avroRecord.get("name").toString());
         assertEquals(rec2.ids(), unUtf8Map(avroRecord.get("ids")));
         assertEquals(rec2.amount(), unUtf8Map(avroRecord.get("amount")));
+
+        var carpetReader = writerTest.getCarpetReader();
+        assertEquals(rec1, carpetReader.read());
+        assertEquals(rec2, carpetReader.read());
+    }
+
+    @Test
+    void mapStringKeyAndValue() throws IOException {
+
+        record MapValues(String name, Map<String, String> values) {
+        }
+
+        var rec1 = new MapValues("foo", Map.of("ABCD", "ONE", "EFGH", "TWO"));
+        var rec2 = new MapValues("bar", Map.of("ABCD", "THREE", "EFGH", "FOUR"));
+        var writerTest = new ParquetWriterTest<>(MapValues.class);
+        writerTest.write(rec1, rec2);
+
+        var avroReader = writerTest.getAvroGenericRecordReader();
+        GenericRecord avroRecord = avroReader.read();
+        assertEquals(rec1.name(), avroRecord.get("name").toString());
+        assertEquals(rec1.values(), unUtf8Map(avroRecord.get("values")));
+
+        avroRecord = avroReader.read();
+        assertEquals(rec2.name(), avroRecord.get("name").toString());
+        assertEquals(rec2.values(), unUtf8Map(avroRecord.get("values")));
+
+        var carpetReader = writerTest.getCarpetReader();
+        assertEquals(rec1, carpetReader.read());
+        assertEquals(rec2, carpetReader.read());
+    }
+
+    @Test
+    void mapStringAsEnumValue() throws IOException {
+
+        record MapValues(String name, Map<String, @ParquetEnum String> values) {
+        }
+
+        var rec1 = new MapValues("foo", Map.of("FOO", "BAR", "BAR", "FOO"));
+        var rec2 = new MapValues("bar", Map.of("FOO", "FOO", "BAR", "BAR"));
+        var writerTest = new ParquetWriterTest<>(MapValues.class);
+        writerTest.write(rec1, rec2);
+
+        var avroReader = writerTest.getAvroGenericRecordReader();
+        GenericRecord avroRecord = avroReader.read();
+        assertEquals(rec1.name(), avroRecord.get("name").toString());
+        assertEquals(rec1.values(), unUtf8Map(avroRecord.get("values")));
+
+        avroRecord = avroReader.read();
+        assertEquals(rec2.name(), avroRecord.get("name").toString());
+        assertEquals(rec2.values(), unUtf8Map(avroRecord.get("values")));
+
+        var carpetReader = writerTest.getCarpetReader();
+        assertEquals(rec1, carpetReader.read());
+        assertEquals(rec2, carpetReader.read());
+
+        record MapValuesAsEnum(String name, Map<String, Category> values) {
+        }
+
+        var carpetReaderAsEnum = writerTest.getCarpetReader(MapValuesAsEnum.class);
+        assertEquals(new MapValuesAsEnum("foo", Map.of("FOO", Category.BAR, "BAR", Category.FOO)),
+                carpetReaderAsEnum.read());
+        assertEquals(new MapValuesAsEnum("bar", Map.of("FOO", Category.FOO, "BAR", Category.BAR)),
+                carpetReaderAsEnum.read());
+    }
+
+    @Test
+    void mapEnumValue() throws IOException {
+
+        record MapValues(String name, Map<String, Category> values) {
+        }
+
+        var rec1 = new MapValues("foo", Map.of("FOO", Category.BAR, "BAR", Category.FOO));
+        var rec2 = new MapValues("bar", Map.of("FOO", Category.FOO, "BAR", Category.BAR));
+        var writerTest = new ParquetWriterTest<>(MapValues.class);
+        writerTest.write(rec1, rec2);
+
+        var avroReader = writerTest.getAvroGenericRecordReader();
+        GenericRecord avroRecord = avroReader.read();
+        assertEquals(rec1.name(), avroRecord.get("name").toString());
+        assertEquals(Map.of("FOO", "BAR", "BAR", "FOO"), unUtf8Map(avroRecord.get("values")));
+
+        avroRecord = avroReader.read();
+        assertEquals(rec2.name(), avroRecord.get("name").toString());
+        assertEquals(Map.of("FOO", "FOO", "BAR", "BAR"), unUtf8Map(avroRecord.get("values")));
+
+        var carpetReader = writerTest.getCarpetReader();
+        assertEquals(rec1, carpetReader.read());
+        assertEquals(rec2, carpetReader.read());
+    }
+
+    @Test
+    void mapJsonValue() throws IOException {
+
+        record MapValues(String name, Map<String, @ParquetJson String> values) {
+        }
+
+        var rec1 = new MapValues("foo", Map.of("FOO", "{}", "BAR", "{\"key1\": \"value1\"}"));
+        var rec2 = new MapValues("bar", Map.of("FOO", "{\"key2\": \"value2\"}", "BAR", "{}"));
+        var writerTest = new ParquetWriterTest<>(MapValues.class);
+        writerTest.write(rec1, rec2);
+
+        var avroReader = writerTest.getAvroGenericRecordReader();
+        GenericRecord avroRecord = avroReader.read();
+        assertEquals(rec1.name(), avroRecord.get("name").toString());
+        assertEquals(rec1.values(), unByteBufferMap(avroRecord.get("values")));
+
+        avroRecord = avroReader.read();
+        assertEquals(rec2.name(), avroRecord.get("name").toString());
+        assertEquals(rec2.values(), unByteBufferMap(avroRecord.get("values")));
+
+        var carpetReader = writerTest.getCarpetReader();
+        assertEquals(rec1, carpetReader.read());
+        assertEquals(rec2, carpetReader.read());
+    }
+
+    @Test
+    void mapBinaryValue() throws IOException {
+
+        record MapValues(String name, Map<String, Binary> values) {
+        }
+
+        var rec1 = new MapValues("foo", Map.of("FOO", Binary.fromString("BAR"), "BAR", Binary.fromString("FOO")));
+        var rec2 = new MapValues("bar", Map.of("FOO", Binary.fromString("FOO"), "BAR", Binary.fromString("BAR")));
+        var writerTest = new ParquetWriterTest<>(MapValues.class);
+        writerTest.write(rec1, rec2);
+
+        var avroReader = writerTest.getAvroGenericRecordReader();
+        GenericRecord avroRecord = avroReader.read();
+        assertEquals(rec1.name(), avroRecord.get("name").toString());
+        assertEquals(Map.of("FOO", "BAR", "BAR", "FOO"), unByteBufferMap(avroRecord.get("values")));
+
+        avroRecord = avroReader.read();
+        assertEquals(rec2.name(), avroRecord.get("name").toString());
+        assertEquals(Map.of("FOO", "FOO", "BAR", "BAR"), unByteBufferMap(avroRecord.get("values")));
 
         var carpetReader = writerTest.getCarpetReader();
         assertEquals(rec1, carpetReader.read());
@@ -508,6 +650,22 @@ class CarpetWriterMapTest {
                 Object value = e.getValue() instanceof Utf8 u ? u.toString() : e.getValue();
                 if (value instanceof Map) {
                     value = unUtf8Map(value);
+                }
+                res.put(key, value);
+            }
+            return res;
+        }
+        return obj;
+    }
+
+    private Object unByteBufferMap(Object obj) throws IOException {
+        if (obj instanceof Map<?, ?> map) {
+            Map<Object, Object> res = new HashMap<>();
+            for (var e : map.entrySet()) {
+                Object key = e.getKey() instanceof Utf8 u ? u.toString() : e.getKey();
+                Object value = e.getValue() instanceof ByteBuffer u ? new String(u.array(), "UTF-8") : e.getValue();
+                if (value instanceof Map) {
+                    value = unByteBufferMap(value);
                 }
                 res.put(key, value);
             }

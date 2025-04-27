@@ -15,8 +15,10 @@
  */
 package com.jerolba.carpet.writer;
 
+import static com.jerolba.carpet.model.FieldTypes.BINARY;
 import static com.jerolba.carpet.model.FieldTypes.BOOLEAN;
 import static com.jerolba.carpet.model.FieldTypes.DOUBLE;
+import static com.jerolba.carpet.model.FieldTypes.ENUM;
 import static com.jerolba.carpet.model.FieldTypes.INTEGER;
 import static com.jerolba.carpet.model.FieldTypes.LIST;
 import static com.jerolba.carpet.model.FieldTypes.MAP;
@@ -33,9 +35,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.parquet.io.api.Binary;
 import org.junit.jupiter.api.Test;
 
 import com.jerolba.carpet.ParquetWriterTest;
+import com.jerolba.carpet.annotation.ParquetBson;
+import com.jerolba.carpet.annotation.ParquetEnum;
+import com.jerolba.carpet.annotation.ParquetJson;
+import com.jerolba.carpet.writer.CarpetWriterCollectionThreeLevelTest.Category;
 
 class WriteRecordModelWriterCollectionThreeLevelTest {
 
@@ -51,6 +58,128 @@ class WriteRecordModelWriterCollectionThreeLevelTest {
                 .withField("amount", LIST.ofType(DOUBLE), SimpleTypeCollection::amount);
 
         var rec = new SimpleTypeCollection("foo", List.of(1, 2, 3), List.of(1.2, 3.2));
+        var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class);
+        writerTest.write(mapper, rec);
+
+        var carpetReader = writerTest.getCarpetReader();
+        assertEquals(rec, carpetReader.read());
+    }
+
+    @Test
+    void simpleStringCollection() throws IOException {
+
+        record SimpleTypeCollection(String name, List<String> values) {
+        }
+
+        var mapper = writeRecordModel(SimpleTypeCollection.class)
+                .withField("name", STRING, SimpleTypeCollection::name)
+                .withField("values", LIST.ofType(STRING), SimpleTypeCollection::values);
+
+        var rec = new SimpleTypeCollection("foo", List.of("foo", "bar"));
+        var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class);
+        writerTest.write(mapper, rec);
+
+        var carpetReader = writerTest.getCarpetReader();
+        assertEquals(rec, carpetReader.read());
+    }
+
+    @Test
+    void simpleStringAsEnumCollection() throws IOException {
+
+        record SimpleTypeCollection(String name, List<@ParquetEnum String> values) {
+        }
+
+        var mapper = writeRecordModel(SimpleTypeCollection.class)
+                .withField("name", STRING, SimpleTypeCollection::name)
+                .withField("values", LIST.ofType(STRING.asEnum()), SimpleTypeCollection::values);
+
+        var rec = new SimpleTypeCollection("foo", List.of("FOO", "BAR"));
+        var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class);
+        writerTest.write(mapper, rec);
+
+        var carpetReader = writerTest.getCarpetReader();
+        assertEquals(rec, carpetReader.read());
+
+        record AsEnum(String name, List<Category> values) {
+        }
+
+        var recEnum = new AsEnum("foo", List.of(Category.FOO, Category.BAR));
+        var carpetReaderEnum = writerTest.getCarpetReader(AsEnum.class);
+        assertEquals(recEnum, carpetReaderEnum.read());
+    }
+
+    @Test
+    void simpleEnumCollection() throws IOException {
+
+        record SimpleTypeCollection(String name, List<Category> values) {
+        }
+
+        var mapper = writeRecordModel(SimpleTypeCollection.class)
+                .withField("name", STRING, SimpleTypeCollection::name)
+                .withField("values", LIST.ofType(ENUM.ofType(Category.class)), SimpleTypeCollection::values);
+
+        var rec = new SimpleTypeCollection("foo", List.of(Category.FOO, Category.BAR));
+        var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class);
+        writerTest.write(mapper, rec);
+
+        var carpetReader = writerTest.getCarpetReader();
+        assertEquals(rec, carpetReader.read());
+    }
+
+    @Test
+    void simpleJsonCollection() throws IOException {
+
+        record SimpleTypeCollection(String name, List<@ParquetJson String> values) {
+        }
+
+        var mapper = writeRecordModel(SimpleTypeCollection.class)
+                .withField("name", STRING, SimpleTypeCollection::name)
+                .withField("values", LIST.ofType(STRING.asJson()), SimpleTypeCollection::values);
+
+        var rec = new SimpleTypeCollection("foo",
+                List.of("{\"key\": 1, \"value\": \"foo\"}", "{\"key\": 2, \"value\": \"bar\"}"));
+        var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class);
+        writerTest.write(mapper, rec);
+
+        var carpetReader = writerTest.getCarpetReader();
+        assertEquals(rec, carpetReader.read());
+    }
+
+    @Test
+    void simpleBinaryCollection() throws IOException {
+
+        record SimpleTypeCollection(String name, List<Binary> values) {
+        }
+
+        var mapper = writeRecordModel(SimpleTypeCollection.class)
+                .withField("name", STRING, SimpleTypeCollection::name)
+                .withField("values", LIST.ofType(BINARY), SimpleTypeCollection::values);
+
+        byte[] binary1 = new byte[] { 1, 2 };
+        byte[] binary2 = new byte[] { 3, 4 };
+        var rec = new SimpleTypeCollection("foo",
+                List.of(Binary.fromConstantByteArray(binary1), Binary.fromConstantByteArray(binary2)));
+        var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class);
+        writerTest.write(mapper, rec);
+
+        var carpetReader = writerTest.getCarpetReader();
+        assertEquals(rec, carpetReader.read());
+    }
+
+    @Test
+    void simpleBsonCollection() throws IOException {
+
+        record SimpleTypeCollection(String name, List<@ParquetBson Binary> values) {
+        }
+
+        var mapper = writeRecordModel(SimpleTypeCollection.class)
+                .withField("name", STRING, SimpleTypeCollection::name)
+                .withField("values", LIST.ofType(BINARY.asBson()), SimpleTypeCollection::values);
+
+        byte[] mockBson1 = new byte[] { 1, 2 };
+        byte[] mockBson2 = new byte[] { 3, 4 };
+        var rec = new SimpleTypeCollection("foo",
+                List.of(Binary.fromConstantByteArray(mockBson1), Binary.fromConstantByteArray(mockBson2)));
         var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class);
         writerTest.write(mapper, rec);
 

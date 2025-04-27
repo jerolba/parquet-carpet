@@ -15,6 +15,7 @@
  */
 package com.jerolba.carpet.impl;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedParameterizedType;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Type;
@@ -40,8 +41,24 @@ public class ParameterizedMap {
         return Parameterized.getClassFromType(valueAnnotatedMapElementType.getType(), "in Map value");
     }
 
+    public JavaType getValueActualJavaType() {
+        return new JavaType(getValueActualType(), getValueAnnotations());
+    }
+
+    private Annotation[] getValueAnnotations() {
+        return valueAnnotatedMapElementType.getDeclaredAnnotations();
+    }
+
     public Class<?> getKeyActualType() {
         return Parameterized.getClassFromType(keyAnnotatedMapElementType.getType(), "in Map key");
+    }
+
+    public JavaType getKeyActualJavaType() {
+        return new JavaType(getKeyActualType(), getKeyAnnotations());
+    }
+
+    private Annotation[] getKeyAnnotations() {
+        return keyAnnotatedMapElementType.getDeclaredAnnotations();
     }
 
     public ParameterizedMap getValueTypeAsMap() {

@@ -15,6 +15,7 @@
  */
 package com.jerolba.carpet.impl;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedParameterizedType;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Type;
@@ -35,6 +36,10 @@ public class ParameterizedCollection {
         return Parameterized.getClassFromType(collectionElementType, "in Collection");
     }
 
+    public JavaType getActualJavaType() {
+        return new JavaType(getActualType(), getAnnotations());
+    }
+
     public Class<?> getCollectionType() {
         return (Class<?>) collectionType;
     }
@@ -53,6 +58,10 @@ public class ParameterizedCollection {
 
     public boolean isMap() {
         return Parameterized.isMap(collectionElementType);
+    }
+
+    private Annotation[] getAnnotations() {
+        return annotatedCollectionElementType.getDeclaredAnnotations();
     }
 
 }

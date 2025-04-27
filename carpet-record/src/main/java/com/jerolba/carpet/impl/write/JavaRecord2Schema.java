@@ -137,7 +137,7 @@ class JavaRecord2Schema {
         if (parametized.isMap()) {
             return createMapType(fieldName, parametized.getParametizedAsMap(), visited, REPEATED);
         }
-        return buildTypeElement(new JavaType(parametized.getActualType()), visited, REPEATED, fieldName);
+        return buildTypeElement(parametized.getActualJavaType(), visited, REPEATED, fieldName);
     }
 
     private Type createCollectionTwoLevel(String fieldName, ParameterizedCollection parametized, Set<Class<?>> visited,
@@ -162,13 +162,12 @@ class JavaRecord2Schema {
         if (parametized.isMap()) {
             return createMapType("element", parametized.getParametizedAsMap(), visited, repetition);
         }
-        return buildTypeElement(new JavaType(parametized.getActualType()), visited, repetition, "element");
+        return buildTypeElement(parametized.getActualJavaType(), visited, repetition, "element");
     }
 
     private Type createMapType(String fieldName, ParameterizedMap parametized, Set<Class<?>> visited,
             Repetition repetition) {
-        Class<?> keyType = parametized.getKeyActualType();
-        Type nestedKey = buildTypeElement(new JavaType(keyType), visited, REQUIRED, "key");
+        Type nestedKey = buildTypeElement(parametized.getKeyActualJavaType(), visited, REQUIRED, "key");
 
         if (parametized.valueIsCollection()) {
             Type childCollection = createCollectionType("value", parametized.getValueTypeAsCollection(),
@@ -180,19 +179,18 @@ class JavaRecord2Schema {
             return Types.map(repetition).key(nestedKey).value(childMap).named(fieldName);
         }
 
-        Class<?> valueType = parametized.getValueActualType();
-        Type nestedValue = buildTypeElement(new JavaType(valueType), visited, OPTIONAL, "value");
+        Type nestedValue = buildTypeElement(parametized.getValueActualJavaType(), visited, OPTIONAL, "value");
         if (nestedKey != null && nestedValue != null) {
             // TODO: what to change to support generation of older versions?
             return Types.map(repetition).key(nestedKey).value(nestedValue).named(fieldName);
         }
-        throw new RecordTypeConversionException("Unsuported type in Map");
+        throw new RecordTypeConversionException("Unsupported type in Map");
     }
 
     private Type buildTypeElement(JavaType javaType, Set<Class<?>> visited, Repetition repetition, String name) {
         Type parquetType = buildType(javaType, visited, repetition, name);
         if (parquetType == null) {
-            throw new RecordTypeConversionException("Unsuported type " + javaType.getJavaType());
+            throw new RecordTypeConversionException("Unsupported type " + javaType.getJavaType());
         }
         return parquetType;
     }

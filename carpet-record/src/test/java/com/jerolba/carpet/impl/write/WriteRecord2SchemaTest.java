@@ -47,6 +47,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Locale.Category;
 import java.util.Map;
 import java.util.UUID;
 
@@ -59,6 +60,9 @@ import com.jerolba.carpet.AnnotatedLevels;
 import com.jerolba.carpet.ColumnNamingStrategy;
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.TimeUnit;
+import com.jerolba.carpet.annotation.ParquetBson;
+import com.jerolba.carpet.annotation.ParquetEnum;
+import com.jerolba.carpet.annotation.ParquetJson;
 import com.jerolba.carpet.model.WriteRecordModelType;
 
 class WriteRecord2SchemaTest {
@@ -925,6 +929,132 @@ class WriteRecord2SchemaTest {
         }
 
         @Test
+        void nestedStringCollection() {
+            record SimpleTypeCollection(String id, List<String> values) {
+            }
+
+            var rootType = writeRecordModel(SimpleTypeCollection.class)
+                    .withField("id", STRING, SimpleTypeCollection::id)
+                    .withField("values", LIST.ofType(STRING), SimpleTypeCollection::values);
+
+            var config = config().annotatedLevels(AnnotatedLevels.ONE).build();
+            MessageType schema = new WriteRecordModel2Schema(config).createSchema(rootType);
+
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      repeated binary values (STRING);
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedStringAsEnumCollection() {
+            record SimpleTypeCollection(String id, List<@ParquetEnum String> values) {
+            }
+
+            var rootType = writeRecordModel(SimpleTypeCollection.class)
+                    .withField("id", STRING, SimpleTypeCollection::id)
+                    .withField("values", LIST.ofType(STRING.asEnum()), SimpleTypeCollection::values);
+
+            var config = config().annotatedLevels(AnnotatedLevels.ONE).build();
+            MessageType schema = new WriteRecordModel2Schema(config).createSchema(rootType);
+
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      repeated binary values (ENUM);
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedEnumCollection() {
+            record SimpleTypeCollection(String id, List<Category> values) {
+            }
+
+            var rootType = writeRecordModel(SimpleTypeCollection.class)
+                    .withField("id", STRING, SimpleTypeCollection::id)
+                    .withField("values", LIST.ofType(ENUM.ofType(Category.class)), SimpleTypeCollection::values);
+
+            var config = config().annotatedLevels(AnnotatedLevels.ONE).build();
+            MessageType schema = new WriteRecordModel2Schema(config).createSchema(rootType);
+
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      repeated binary values (ENUM);
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedJsonCollection() {
+            record SimpleTypeCollection(String id, List<@ParquetJson String> values) {
+            }
+
+            var rootType = writeRecordModel(SimpleTypeCollection.class)
+                    .withField("id", STRING, SimpleTypeCollection::id)
+                    .withField("values", LIST.ofType(STRING.asJson()), SimpleTypeCollection::values);
+
+            var config = config().annotatedLevels(AnnotatedLevels.ONE).build();
+            MessageType schema = new WriteRecordModel2Schema(config).createSchema(rootType);
+
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      repeated binary values (JSON);
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedBinaryCollection() {
+            record SimpleTypeCollection(String id, List<Binary> values) {
+            }
+
+            var rootType = writeRecordModel(SimpleTypeCollection.class)
+                    .withField("id", STRING, SimpleTypeCollection::id)
+                    .withField("values", LIST.ofType(BINARY), SimpleTypeCollection::values);
+
+            var config = config().annotatedLevels(AnnotatedLevels.ONE).build();
+            MessageType schema = new WriteRecordModel2Schema(config).createSchema(rootType);
+
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      repeated binary values;
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedBsonCollection() {
+            record SimpleTypeCollection(String id, List<@ParquetBson Binary> values) {
+            }
+
+            var rootType = writeRecordModel(SimpleTypeCollection.class)
+                    .withField("id", STRING, SimpleTypeCollection::id)
+                    .withField("values", LIST.ofType(BINARY.asBson()), SimpleTypeCollection::values);
+
+            var config = config().annotatedLevels(AnnotatedLevels.ONE).build();
+            MessageType schema = new WriteRecordModel2Schema(config).createSchema(rootType);
+
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      repeated binary values (BSON);
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
         void consecutiveNestedCollections() {
             record ConsecutiveNestedCollection(String id, List<List<Integer>> values) {
             }
@@ -1079,6 +1209,144 @@ class WriteRecord2SchemaTest {
                         repeated group element {
                           optional binary str (STRING);
                         }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedStringCollection() {
+            record SimpleTypeCollection(String id, List<String> values) {
+            }
+
+            var rootType = writeRecordModel(SimpleTypeCollection.class)
+                    .withField("id", STRING, SimpleTypeCollection::id)
+                    .withField("values", LIST.ofType(STRING), SimpleTypeCollection::values);
+
+            var config = config().annotatedLevels(AnnotatedLevels.TWO).build();
+            MessageType schema = new WriteRecordModel2Schema(config).createSchema(rootType);
+
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated binary element (STRING);
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedStringAsEnumCollection() {
+            record SimpleTypeCollection(String id, List<@ParquetEnum String> values) {
+            }
+
+            var rootType = writeRecordModel(SimpleTypeCollection.class)
+                    .withField("id", STRING, SimpleTypeCollection::id)
+                    .withField("values", LIST.ofType(STRING.asEnum()), SimpleTypeCollection::values);
+
+            var config = config().annotatedLevels(AnnotatedLevels.TWO).build();
+            MessageType schema = new WriteRecordModel2Schema(config).createSchema(rootType);
+
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated binary element (ENUM);
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedEnumCollection() {
+            record SimpleTypeCollection(String id, List<Category> values) {
+            }
+
+            var rootType = writeRecordModel(SimpleTypeCollection.class)
+                    .withField("id", STRING, SimpleTypeCollection::id)
+                    .withField("values", LIST.ofType(ENUM.ofType(Category.class)), SimpleTypeCollection::values);
+
+            var config = config().annotatedLevels(AnnotatedLevels.TWO).build();
+            MessageType schema = new WriteRecordModel2Schema(config).createSchema(rootType);
+
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated binary element (ENUM);
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedJsonCollection() {
+            record SimpleTypeCollection(String id, List<@ParquetJson String> values) {
+            }
+
+            var rootType = writeRecordModel(SimpleTypeCollection.class)
+                    .withField("id", STRING, SimpleTypeCollection::id)
+                    .withField("values", LIST.ofType(STRING.asJson()), SimpleTypeCollection::values);
+
+            var config = config().annotatedLevels(AnnotatedLevels.TWO).build();
+            MessageType schema = new WriteRecordModel2Schema(config).createSchema(rootType);
+
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated binary element (JSON);
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedBinaryCollection() {
+            record SimpleTypeCollection(String id, List<Binary> values) {
+            }
+
+            var rootType = writeRecordModel(SimpleTypeCollection.class)
+                    .withField("id", STRING, SimpleTypeCollection::id)
+                    .withField("values", LIST.ofType(BINARY), SimpleTypeCollection::values);
+
+            var config = config().annotatedLevels(AnnotatedLevels.TWO).build();
+            MessageType schema = new WriteRecordModel2Schema(config).createSchema(rootType);
+
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated binary element;
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedBsonCollection() {
+            record SimpleTypeCollection(String id, List<@ParquetBson Binary> values) {
+            }
+
+            var rootType = writeRecordModel(SimpleTypeCollection.class)
+                    .withField("id", STRING, SimpleTypeCollection::id)
+                    .withField("values", LIST.ofType(BINARY.asBson()), SimpleTypeCollection::values);
+
+            var config = config().annotatedLevels(AnnotatedLevels.TWO).build();
+            MessageType schema = new WriteRecordModel2Schema(config).createSchema(rootType);
+
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated binary element (BSON);
                       }
                     }
                     """;
@@ -1445,6 +1713,156 @@ class WriteRecord2SchemaTest {
                       optional group values (LIST) {
                         repeated group list {
                           optional int32 element (INTEGER(8,true));
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedStringCollection() {
+            record SimpleTypeCollection(String id, List<String> values) {
+            }
+
+            var rootType = writeRecordModel(SimpleTypeCollection.class)
+                    .withField("id", STRING, SimpleTypeCollection::id)
+                    .withField("values", LIST.ofType(STRING), SimpleTypeCollection::values);
+
+            var config = config().annotatedLevels(AnnotatedLevels.THREE).build();
+            MessageType schema = new WriteRecordModel2Schema(config).createSchema(rootType);
+
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated group list {
+                          optional binary element (STRING);
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedStringAsEnumCollection() {
+            record SimpleTypeCollection(String id, List<@ParquetEnum String> values) {
+            }
+
+            var rootType = writeRecordModel(SimpleTypeCollection.class)
+                    .withField("id", STRING, SimpleTypeCollection::id)
+                    .withField("values", LIST.ofType(STRING.asEnum()), SimpleTypeCollection::values);
+
+            var config = config().annotatedLevels(AnnotatedLevels.THREE).build();
+            MessageType schema = new WriteRecordModel2Schema(config).createSchema(rootType);
+
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated group list {
+                          optional binary element (ENUM);
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedEnumCollection() {
+            record SimpleTypeCollection(String id, List<Category> values) {
+            }
+
+            var rootType = writeRecordModel(SimpleTypeCollection.class)
+                    .withField("id", STRING, SimpleTypeCollection::id)
+                    .withField("values", LIST.ofType(ENUM.ofType(Category.class)), SimpleTypeCollection::values);
+
+            var config = config().annotatedLevels(AnnotatedLevels.THREE).build();
+            MessageType schema = new WriteRecordModel2Schema(config).createSchema(rootType);
+
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated group list {
+                          optional binary element (ENUM);
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedJsonCollection() {
+            record SimpleTypeCollection(String id, List<@ParquetJson String> values) {
+            }
+
+            var rootType = writeRecordModel(SimpleTypeCollection.class)
+                    .withField("id", STRING, SimpleTypeCollection::id)
+                    .withField("values", LIST.ofType(STRING.asJson()), SimpleTypeCollection::values);
+
+            var config = config().annotatedLevels(AnnotatedLevels.THREE).build();
+            MessageType schema = new WriteRecordModel2Schema(config).createSchema(rootType);
+
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated group list {
+                          optional binary element (JSON);
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedBinaryCollection() {
+            record SimpleTypeCollection(String id, List<Binary> values) {
+            }
+
+            var rootType = writeRecordModel(SimpleTypeCollection.class)
+                    .withField("id", STRING, SimpleTypeCollection::id)
+                    .withField("values", LIST.ofType(BINARY), SimpleTypeCollection::values);
+
+            var config = config().annotatedLevels(AnnotatedLevels.THREE).build();
+            MessageType schema = new WriteRecordModel2Schema(config).createSchema(rootType);
+
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated group list {
+                          optional binary element;
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedBsonCollection() {
+            record SimpleTypeCollection(String id, List<@ParquetBson Binary> values) {
+            }
+
+            var rootType = writeRecordModel(SimpleTypeCollection.class)
+                    .withField("id", STRING, SimpleTypeCollection::id)
+                    .withField("values", LIST.ofType(BINARY.asBson()), SimpleTypeCollection::values);
+
+            var config = config().annotatedLevels(AnnotatedLevels.THREE).build();
+            MessageType schema = new WriteRecordModel2Schema(config).createSchema(rootType);
+
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated group list {
+                          optional binary element (BSON);
                         }
                       }
                     }

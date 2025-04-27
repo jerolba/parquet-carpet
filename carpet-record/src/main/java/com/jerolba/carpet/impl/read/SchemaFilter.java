@@ -168,8 +168,7 @@ class SchemaFilter {
         if (parquetType.isPrimitive()) {
             // if collection type is Java "primitive"
             var primitiveType = parquetType.asPrimitiveType();
-            var actualCollectionType = parameterized.getActualType();
-            validation.validatePrimitiveCompatibility(primitiveType, new JavaType(actualCollectionType));
+            validation.validatePrimitiveCompatibility(primitiveType, parameterized.getActualJavaType());
             return parquetType;
         }
         // if collection type is Java "Record"
@@ -228,8 +227,7 @@ class SchemaFilter {
         }
         if (childElement.isPrimitive()) {
             var primitiveType = childElement.asPrimitiveType();
-            var actualCollectionType = parameterized.getActualType();
-            validation.validatePrimitiveCompatibility(primitiveType, new JavaType(actualCollectionType));
+            validation.validatePrimitiveCompatibility(primitiveType, parameterized.getActualJavaType());
             return parentGroupType;
         }
         var actualCollectionType = parameterized.getActualType();
@@ -238,7 +236,7 @@ class SchemaFilter {
             Type listGroupMapped = rewrapListIfExists(listGroup, childMapped);
             return parentGroupType.withNewFields(listGroupMapped);
         }
-        if (isBasicSupportedType(new JavaType(actualCollectionType)) && !childElement.isPrimitive()) {
+        if (isBasicSupportedType(parameterized.getActualJavaType()) && !childElement.isPrimitive()) {
             throw new RecordTypeConversionException(
                     childElement.getName() + " is not compatible with " + actualCollectionType.getName());
         }
@@ -268,7 +266,7 @@ class SchemaFilter {
         Class<?> keyActualType = parameterized.getKeyActualType();
         if (key.isPrimitive()) {
             PrimitiveType primitiveType = key.asPrimitiveType();
-            validation.validatePrimitiveCompatibility(primitiveType, new JavaType(keyActualType));
+            validation.validatePrimitiveCompatibility(primitiveType, parameterized.getKeyActualJavaType());
         } else if (keyActualType.isRecord()) {
             key = filter(keyActualType, column, key.asGroupType());
         } else {
@@ -297,7 +295,8 @@ class SchemaFilter {
         } else {
             Class<?> valueActualType = parameterized.getValueActualType();
             if (value.isPrimitive()) {
-                validation.validatePrimitiveCompatibility(value.asPrimitiveType(), new JavaType(valueActualType));
+                validation.validatePrimitiveCompatibility(value.asPrimitiveType(),
+                        parameterized.getValueActualJavaType());
             } else if (valueActualType.isRecord()) {
                 value = filter(valueActualType, column, value.asGroupType());
             } else {

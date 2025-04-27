@@ -101,15 +101,14 @@ public class JavaRecord2WriteModel {
         } else if (parametized.isMap()) {
             return LIST.ofType(createMapType(parametized.getParametizedAsMap(), visited));
         }
-        return LIST.ofType(simpleOrCompositeClass(new JavaType(parametized.getActualType()), false, visited));
+        return LIST.ofType(simpleOrCompositeClass(parametized.getActualJavaType(), false, visited));
     }
 
     private FieldType createMapType(ParameterizedMap parametized, Set<Class<?>> visited) {
-        Class<?> keyType = parametized.getKeyActualType();
         if (parametized.keyIsCollection() || parametized.keyIsMap()) {
             throw new RuntimeException("Maps with collections or maps as keys are not supported");
         }
-        FieldType nestedKey = simpleOrCompositeClass(new JavaType(keyType), false, visited);
+        FieldType nestedKey = simpleOrCompositeClass(parametized.getKeyActualJavaType(), false, visited);
 
         if (parametized.valueIsCollection()) {
             FieldType childCollection = createCollectionType(parametized.getValueTypeAsCollection(), visited);
@@ -118,7 +117,7 @@ public class JavaRecord2WriteModel {
             FieldType childMap = createMapType(parametized.getValueTypeAsMap(), visited);
             return MAP.ofTypes(nestedKey, childMap);
         }
-        FieldType nestedValue = simpleOrCompositeClass(new JavaType(parametized.getValueActualType()), false, visited);
+        FieldType nestedValue = simpleOrCompositeClass(parametized.getValueActualJavaType(), false, visited);
         if (nestedKey != null && nestedValue != null) {
             return MAP.ofTypes(nestedKey, nestedValue);
         }
