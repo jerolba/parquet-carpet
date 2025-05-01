@@ -29,7 +29,7 @@ public class JavaType {
     private final Annotation[] declaredAnnotations;
 
     public JavaType(RecordComponent recordComponent) {
-        this(recordComponent.getType());
+        this(recordComponent.getType(), recordComponent.getDeclaredAnnotations());
     }
 
     public JavaType(Class<?> type) {

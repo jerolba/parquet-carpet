@@ -36,6 +36,7 @@ import static org.apache.parquet.schema.Type.Repetition.REPEATED;
 import static org.apache.parquet.schema.Type.Repetition.REQUIRED;
 import static org.apache.parquet.schema.Types.primitive;
 
+import java.lang.reflect.RecordComponent;
 import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -90,31 +91,29 @@ class JavaRecord2Schema {
     private List<Type> createGroupFields(Class<?> recordClass, Set<Class<?>> visited) {
         List<Type> fields = new ArrayList<>();
         for (var attr : recordClass.getRecordComponents()) {
-            Class<?> type = attr.getType();
-            String fieldName = fieldToColumnMapper.getColumnName(attr);
-            boolean notNull = type.isPrimitive() || isNotNull(attr);
-            Repetition repetition = notNull ? REQUIRED : OPTIONAL;
-            JavaType javaType = new JavaType(type, attr.getDeclaredAnnotations());
-
-            Type parquetType = buildType(javaType, visited, repetition, fieldName);
-            if (parquetType != null) {
-                fields.add(parquetType);
-            } else if (javaType.isCollection()) {
-                var parameterizedCollection = getParameterizedCollection(attr);
-                fields.add(createCollectionType(fieldName, parameterizedCollection, repetition, visited));
-            } else if (javaType.isMap()) {
-                var parameterizedMap = getParameterizedMap(attr);
-                fields.add(createMapType(fieldName, parameterizedMap, repetition, visited));
-            } else {
-                java.lang.reflect.Type genericType = attr.getGenericType();
-                if (genericType instanceof TypeVariable<?>) {
-                    throw new RecordTypeConversionException(genericType.toString() + " generic types not supported");
-                }
-                throw new RecordTypeConversionException(
-                        "Field '" + attr.getName() + "' of type " + attr.getType() + " not supported");
-            }
+            fields.add(buildRecordField(attr, visited));
         }
         return fields;
+    }
+
+    private Type buildRecordField(RecordComponent attr, Set<Class<?>> visited) {
+        String fieldName = fieldToColumnMapper.getColumnName(attr);
+        Repetition repetition = isNotNull(attr) ? REQUIRED : OPTIONAL;
+        JavaType javaType = new JavaType(attr);
+
+        Type parquetType = buildType(fieldName, javaType, repetition, visited);
+        if (parquetType != null) {
+            return parquetType;
+        } else if (javaType.isCollection()) {
+            return createCollectionType(fieldName, getParameterizedCollection(attr), repetition, visited);
+        } else if (javaType.isMap()) {
+            return createMapType(fieldName, getParameterizedMap(attr), repetition, visited);
+        }
+        if (attr.getGenericType() instanceof TypeVariable<?>) {
+            throw new RecordTypeConversionException(attr.getGenericType().toString() + " generic types not supported");
+        }
+        throw new RecordTypeConversionException(
+                "Field '" + attr.getName() + "' of type " + attr.getType() + " not supported");
     }
 
     private List<Type> buildCompositeChild(Class<?> recordClass, Set<Class<?>> visited) {
@@ -192,14 +191,14 @@ class JavaRecord2Schema {
     }
 
     private Type buildTypeElement(String name, JavaType javaType, Repetition repetition, Set<Class<?>> visited) {
-        Type parquetType = buildType(javaType, visited, repetition, name);
+        Type parquetType = buildType(name, javaType, repetition, visited);
         if (parquetType == null) {
             throw new RecordTypeConversionException("Unsupported type " + javaType.getJavaType());
         }
         return parquetType;
     }
 
-    private Type buildType(JavaType javaType, Set<Class<?>> visited, Repetition repetition, String name) {
+    private Type buildType(String name, JavaType javaType, Repetition repetition, Set<Class<?>> visited) {
         if (javaType.isInteger()) {
             return primitive(PrimitiveTypeName.INT32, repetition).named(name);
         } else if (javaType.isLong()) {
