@@ -16,9 +16,11 @@
 package com.jerolba.carpet.impl.read;
 
 import static com.jerolba.carpet.impl.NotNullField.isNotNull;
+import static org.apache.parquet.schema.LogicalTypeAnnotation.bsonType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.dateType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.enumType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.intType;
+import static org.apache.parquet.schema.LogicalTypeAnnotation.jsonType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.stringType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.uuidType;
 
@@ -64,8 +66,7 @@ public class SchemaValidation {
         return true;
     }
 
-    public boolean validatePrimitiveCompatibility(PrimitiveType primitiveType, Class<?> javaType) {
-        JavaType type = new JavaType(javaType);
+    public boolean validatePrimitiveCompatibility(PrimitiveType primitiveType, JavaType type) {
         LogicalTypeAnnotation logicalTypeAnnotation = primitiveType.getLogicalTypeAnnotation();
         if (logicalTypeAnnotation != null && validLogicalTypeAnnotation(primitiveType, type)) {
             return true;
@@ -77,7 +78,8 @@ public class SchemaValidation {
         case FLOAT -> validFloatSource(type);
         case DOUBLE -> validDoubleSource(type);
         case BOOLEAN -> validBooleanSource(type);
-        case BINARY, FIXED_LEN_BYTE_ARRAY, INT96 -> throwInvalidConversionException(primitiveType, type);
+        case BINARY -> validBinarySource(type);
+        case FIXED_LEN_BYTE_ARRAY, INT96 -> throwInvalidConversionException(primitiveType, type);
         default -> false;
         };
         if (!valid) {
@@ -142,6 +144,10 @@ public class SchemaValidation {
         return type.isBoolean();
     }
 
+    private boolean validBinarySource(JavaType type) {
+        return type.isBinary();
+    }
+
     public static boolean isBasicSupportedType(JavaType type) {
         return (type.isInteger() || type.isLong() || type.isDouble() || type.isFloat()
                 || type.isBoolean() || type.isShort() || type.isByte() || type.isEnum());
@@ -151,10 +157,16 @@ public class SchemaValidation {
         var logicalType = primitiveType.getLogicalTypeAnnotation();
         var name = primitiveType.getPrimitiveTypeName();
 
-        if (stringType().equals(logicalType) && (type.isString() || type.isEnum())) {
+        if (stringType().equals(logicalType) && (type.isString() || type.isEnum() || type.isBinary())) {
             return name == PrimitiveTypeName.BINARY;
         }
-        if (enumType().equals(logicalType) && (type.isString() || type.isEnum())) {
+        if (enumType().equals(logicalType) && (type.isString() || type.isEnum() || type.isBinary())) {
+            return name == PrimitiveTypeName.BINARY;
+        }
+        if (jsonType().equals(logicalType) && (type.isString() || type.isBinary())) {
+            return name == PrimitiveTypeName.BINARY;
+        }
+        if (bsonType().equals(logicalType) && type.isBinary()) {
             return name == PrimitiveTypeName.BINARY;
         }
         if (logicalType.equals(uuidType()) && (type.isString() || type.isUuid())) {

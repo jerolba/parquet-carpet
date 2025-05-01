@@ -29,9 +29,11 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Locale.Category;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.schema.MessageType;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -42,6 +44,10 @@ import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.TimeUnit;
 import com.jerolba.carpet.annotation.Alias;
 import com.jerolba.carpet.annotation.NotNull;
+import com.jerolba.carpet.annotation.ParquetBson;
+import com.jerolba.carpet.annotation.ParquetEnum;
+import com.jerolba.carpet.annotation.ParquetJson;
+import com.jerolba.carpet.annotation.ParquetString;
 
 class JavaRecord2SchemaTest {
 
@@ -121,6 +127,135 @@ class JavaRecord2SchemaTest {
                 }
                 """;
         assertEquals(expected, schema.toString());
+    }
+
+    @Test
+    void binaryAsStringRecordTest() {
+        record SimpleRecord(long id, @ParquetString Binary name) {
+        }
+
+        MessageType schema = defaultConfigSchema.createSchema(SimpleRecord.class);
+
+        String expected = """
+                message SimpleRecord {
+                  required int64 id;
+                  optional binary name (STRING);
+                }
+                """;
+        assertEquals(expected, schema.toString());
+    }
+
+    @Test
+    void unannotatedBinaryHasNoLogicalType() {
+        record SimpleRecord(long id, Binary data) {
+        }
+
+        MessageType schema = defaultConfigSchema.createSchema(SimpleRecord.class);
+
+        String expected = """
+                message SimpleRecord {
+                  required int64 id;
+                  optional binary data;
+                }
+                """;
+        assertEquals(expected, schema.toString());
+    }
+
+    @Nested
+    class JsonType {
+
+        @Test
+        void jsonFieldFromString() {
+            record JsonRecord(long id, @ParquetJson String value) {
+            }
+            MessageType schema = defaultConfigSchema.createSchema(JsonRecord.class);
+            String expected = """
+                    message JsonRecord {
+                      required int64 id;
+                      optional binary value (JSON);
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void notNullJsonFieldFromString() {
+            record JsonRecord(long id, @ParquetJson @NotNull String value) {
+            }
+
+            MessageType schema = defaultConfigSchema.createSchema(JsonRecord.class);
+            String expected = """
+                    message JsonRecord {
+                      required int64 id;
+                      required binary value (JSON);
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void jsonFieldFromBinary() {
+            record JsonRecord(long id, @ParquetJson Binary value) {
+            }
+            MessageType schema = defaultConfigSchema.createSchema(JsonRecord.class);
+            String expected = """
+                    message JsonRecord {
+                      required int64 id;
+                      optional binary value (JSON);
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void notNullJsonFieldFromBinary() {
+            record JsonRecord(long id, @ParquetJson @NotNull Binary value) {
+            }
+
+            MessageType schema = defaultConfigSchema.createSchema(JsonRecord.class);
+            String expected = """
+                    message JsonRecord {
+                      required int64 id;
+                      required binary value (JSON);
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+    }
+
+    @Nested
+    class BsonType {
+
+        @Test
+        void bsonFieldFromBinary() {
+            record BsonRecord(long id, @ParquetBson Binary value) {
+            }
+            MessageType schema = defaultConfigSchema.createSchema(BsonRecord.class);
+            String expected = """
+                    message BsonRecord {
+                      required int64 id;
+                      optional binary value (BSON);
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void notNullBsonFieldFromBinary() {
+            record BsonRecord(long id, @ParquetBson @NotNull Binary value) {
+            }
+
+            MessageType schema = defaultConfigSchema.createSchema(BsonRecord.class);
+            String expected = """
+                    message BsonRecord {
+                      required int64 id;
+                      required binary value (BSON);
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
     }
 
     @Nested
@@ -548,6 +683,54 @@ class JavaRecord2SchemaTest {
             assertEquals(expected, schema.toString());
         }
 
+        @Test
+        void enumAsString() {
+            record WithStringEnum(long id, String name, @ParquetString Status status) {
+            }
+
+            MessageType schema = defaultConfigSchema.createSchema(WithStringEnum.class);
+            String expected = """
+                    message WithStringEnum {
+                      required int64 id;
+                      optional binary name (STRING);
+                      optional binary status (STRING);
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void stringAsEnum() {
+            record WithStringEnum(long id, String name, @ParquetEnum String status) {
+            }
+
+            MessageType schema = defaultConfigSchema.createSchema(WithStringEnum.class);
+            String expected = """
+                    message WithStringEnum {
+                      required int64 id;
+                      optional binary name (STRING);
+                      optional binary status (ENUM);
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void binaryAsEnum() {
+            record WithBinaryEnum(long id, String name, @ParquetEnum Binary status) {
+            }
+
+            MessageType schema = defaultConfigSchema.createSchema(WithBinaryEnum.class);
+            String expected = """
+                    message WithBinaryEnum {
+                      required int64 id;
+                      optional binary name (STRING);
+                      optional binary status (ENUM);
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
     }
 
     @Nested
@@ -602,6 +785,96 @@ class JavaRecord2SchemaTest {
                     message SimpleTypeCollection {
                       optional binary id (STRING);
                       repeated int32 values;
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedStringCollection() {
+            record SimpleTypeCollection(String id, List<String> values) {
+            }
+
+            MessageType schema = schemaFactory.createSchema(SimpleTypeCollection.class);
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      repeated binary values (STRING);
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedStringAsEnumCollection() {
+            record SimpleTypeCollection(String id, List<@ParquetEnum String> values) {
+            }
+
+            MessageType schema = schemaFactory.createSchema(SimpleTypeCollection.class);
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      repeated binary values (ENUM);
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedEnumCollection() {
+            record SimpleTypeCollection(String id, List<Category> values) {
+            }
+
+            MessageType schema = schemaFactory.createSchema(SimpleTypeCollection.class);
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      repeated binary values (ENUM);
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedJsonCollection() {
+            record SimpleTypeCollection(String id, List<@ParquetJson String> values) {
+            }
+
+            MessageType schema = schemaFactory.createSchema(SimpleTypeCollection.class);
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      repeated binary values (JSON);
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedBinaryCollection() {
+            record SimpleTypeCollection(String id, List<Binary> values) {
+            }
+
+            MessageType schema = schemaFactory.createSchema(SimpleTypeCollection.class);
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      repeated binary values;
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedBsonCollection() {
+            record SimpleTypeCollection(String id, List<@ParquetBson Binary> values) {
+            }
+
+            MessageType schema = schemaFactory.createSchema(SimpleTypeCollection.class);
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      repeated binary values (BSON);
                     }
                     """;
             assertEquals(expected, schema.toString());
@@ -732,6 +1005,108 @@ class JavaRecord2SchemaTest {
                         repeated group element {
                           optional binary str (STRING);
                         }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedStringCollection() {
+            record SimpleTypeCollection(String id, List<String> values) {
+            }
+
+            MessageType schema = schemaFactory.createSchema(SimpleTypeCollection.class);
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated binary element (STRING);
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedStringAsEnumCollection() {
+            record SimpleTypeCollection(String id, List<@ParquetEnum String> values) {
+            }
+
+            MessageType schema = schemaFactory.createSchema(SimpleTypeCollection.class);
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated binary element (ENUM);
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedEnumCollection() {
+            record SimpleTypeCollection(String id, List<Category> values) {
+            }
+
+            MessageType schema = schemaFactory.createSchema(SimpleTypeCollection.class);
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated binary element (ENUM);
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedJsonCollection() {
+            record SimpleTypeCollection(String id, List<@ParquetJson String> values) {
+            }
+
+            MessageType schema = schemaFactory.createSchema(SimpleTypeCollection.class);
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated binary element (JSON);
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedBinaryCollection() {
+            record SimpleTypeCollection(String id, List<Binary> values) {
+            }
+
+            MessageType schema = schemaFactory.createSchema(SimpleTypeCollection.class);
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated binary element;
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedBsonCollection() {
+            record SimpleTypeCollection(String id, List<@ParquetBson Binary> values) {
+            }
+
+            MessageType schema = schemaFactory.createSchema(SimpleTypeCollection.class);
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated binary element (BSON);
                       }
                     }
                     """;
@@ -1028,6 +1403,120 @@ class JavaRecord2SchemaTest {
         }
 
         @Test
+        void nestedStringCollection() {
+            record SimpleTypeCollection(String id, List<String> values) {
+            }
+
+            MessageType schema = schemaFactory.createSchema(SimpleTypeCollection.class);
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated group list {
+                          optional binary element (STRING);
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedStringAsEnumCollection() {
+            record SimpleTypeCollection(String id, List<@ParquetEnum String> values) {
+            }
+
+            MessageType schema = schemaFactory.createSchema(SimpleTypeCollection.class);
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated group list {
+                          optional binary element (ENUM);
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedEnumCollection() {
+            record SimpleTypeCollection(String id, List<Category> values) {
+            }
+
+            MessageType schema = schemaFactory.createSchema(SimpleTypeCollection.class);
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated group list {
+                          optional binary element (ENUM);
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedJsonCollection() {
+            record SimpleTypeCollection(String id, List<@ParquetJson String> values) {
+            }
+
+            MessageType schema = schemaFactory.createSchema(SimpleTypeCollection.class);
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated group list {
+                          optional binary element (JSON);
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedBinaryCollection() {
+            record SimpleTypeCollection(String id, List<Binary> values) {
+            }
+
+            MessageType schema = schemaFactory.createSchema(SimpleTypeCollection.class);
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated group list {
+                          optional binary element;
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedBsonCollection() {
+            record SimpleTypeCollection(String id, List<@ParquetBson Binary> values) {
+            }
+
+            MessageType schema = schemaFactory.createSchema(SimpleTypeCollection.class);
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated group list {
+                          optional binary element (BSON);
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
         void nestedRecordCollection() {
 
             record ChildRecord(String id, Boolean loaded) {
@@ -1186,6 +1675,58 @@ class JavaRecord2SchemaTest {
                             optional group alias (LIST) {
                               repeated group list {
                                 optional binary element (STRING);
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void consecutiveNestedAnnotatedTypeCollection() {
+
+            record ConsecutiveNestedAnnotatedTypeCollection(String id, List<List<@ParquetJson String>> values) {
+            }
+
+            MessageType schema = schemaFactory.createSchema(ConsecutiveNestedAnnotatedTypeCollection.class);
+            String expected = """
+                    message ConsecutiveNestedAnnotatedTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated group list {
+                          optional group element (LIST) {
+                            repeated group list {
+                              optional binary element (JSON);
+                            }
+                          }
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void consecutiveTripleNestedAnnotatedTypeCollections() {
+            record ConsecutiveTripleNestedAnnotatedTypeCollections(String id,
+                    List<List<List<@ParquetBson Binary>>> values) {
+            }
+
+            MessageType schema = schemaFactory.createSchema(ConsecutiveTripleNestedAnnotatedTypeCollections.class);
+            String expected = """
+                    message ConsecutiveTripleNestedAnnotatedTypeCollections {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated group list {
+                          optional group element (LIST) {
+                            repeated group list {
+                              optional group element (LIST) {
+                                repeated group list {
+                                  optional binary element (BSON);
+                                }
                               }
                             }
                           }

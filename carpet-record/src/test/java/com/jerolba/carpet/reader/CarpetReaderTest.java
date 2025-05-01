@@ -18,6 +18,7 @@ package com.jerolba.carpet.reader;
 import static com.jerolba.carpet.FieldMatchingStrategy.BEST_EFFORT;
 import static com.jerolba.carpet.FieldMatchingStrategy.FIELD_NAME;
 import static com.jerolba.carpet.FieldMatchingStrategy.SNAKE_CASE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -59,6 +60,7 @@ import org.apache.parquet.avro.AvroWriteSupport;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.apache.parquet.io.InputFile;
 import org.apache.parquet.io.OutputFile;
+import org.apache.parquet.io.api.Binary;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
@@ -73,6 +75,8 @@ import com.jerolba.carpet.ParquetWriterTest;
 import com.jerolba.carpet.ReadFlag;
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.annotation.Alias;
+import com.jerolba.carpet.annotation.ParquetEnum;
+import com.jerolba.carpet.annotation.ParquetString;
 import com.jerolba.carpet.io.FileSystemInputFile;
 import com.jerolba.carpet.io.FileSystemOutputFile;
 
@@ -431,6 +435,52 @@ class CarpetReaderTest {
         }
 
         @Test
+        void stringAsBinaryObject() throws IOException {
+            Schema schema = schemaType("StringAsBinaryObject").optionalString("value").endRecord();
+
+            var readerTest = new ParquetReaderTest(schema);
+            readerTest.writer(writer -> {
+                Record record = new Record(schema);
+                record.put("value", "Madrid");
+                writer.write(record);
+                record = new Record(schema);
+                record.put("value", "Zaragoza");
+                writer.write(record);
+            });
+
+            record StringAsBinaryObject(@ParquetString Binary value) {
+            }
+
+            try (var carpetReader = readerTest.getCarpetReader(StringAsBinaryObject.class)) {
+                assertEquals(new StringAsBinaryObject(Binary.fromString("Madrid")), carpetReader.read());
+                assertEquals(new StringAsBinaryObject(Binary.fromString("Zaragoza")), carpetReader.read());
+            }
+        }
+
+        @Test
+        void binaryObject() throws IOException {
+            Schema schema = schemaType("BinaryObject").optionalBytes("value").endRecord();
+
+            var readerTest = new ParquetReaderTest(schema);
+            readerTest.writer(writer -> {
+                Record record = new Record(schema);
+                record.put("value", "Madrid".getBytes(UTF_8));
+                writer.write(record);
+                record = new Record(schema);
+                record.put("value", "Zaragoza".getBytes(UTF_8));
+                writer.write(record);
+            });
+
+            record BinaryObject(Binary value) {
+            }
+
+            try (var carpetReader = readerTest.getCarpetReader(BinaryObject.class)) {
+                assertEquals(new BinaryObject(Binary.fromString("Madrid")), carpetReader.read());
+                assertEquals(new BinaryObject(Binary.fromString("Zaragoza")), carpetReader.read());
+            }
+        }
+
+        @Test
         void enumObject() throws IOException {
             Schema schema = schemaType("EnumObject").name("value").type().nullable()
                     .enumeration("Category").symbols("one", "two", "three").noDefault()
@@ -452,6 +502,56 @@ class CarpetReaderTest {
             try (var carpetReader = readerTest.getCarpetReader(EnumObject.class)) {
                 assertEquals(new EnumObject(Category.one), carpetReader.read());
                 assertEquals(new EnumObject(Category.two), carpetReader.read());
+            }
+        }
+
+        @Test
+        void enumToStringObject() throws IOException {
+            Schema schema = schemaType("EnumObject").name("value").type().nullable()
+                    .enumeration("Category").symbols("one", "two", "three").noDefault()
+                    .endRecord();
+
+            var readerTest = new ParquetReaderTest(schema);
+            readerTest.writer(writer -> {
+                Record record = new Record(schema);
+                record.put("value", "one");
+                writer.write(record);
+                record = new Record(schema);
+                record.put("value", "two");
+                writer.write(record);
+            });
+
+            record StringFromEnumObject(String value) {
+            }
+
+            try (var carpetReader = readerTest.getCarpetReader(StringFromEnumObject.class)) {
+                assertEquals(new StringFromEnumObject("one"), carpetReader.read());
+                assertEquals(new StringFromEnumObject("two"), carpetReader.read());
+            }
+        }
+
+        @Test
+        void enumToBinaryObject() throws IOException {
+            Schema schema = schemaType("EnumObject").name("value").type().nullable()
+                    .enumeration("Category").symbols("one", "two", "three").noDefault()
+                    .endRecord();
+
+            var readerTest = new ParquetReaderTest(schema);
+            readerTest.writer(writer -> {
+                Record record = new Record(schema);
+                record.put("value", "one");
+                writer.write(record);
+                record = new Record(schema);
+                record.put("value", "two");
+                writer.write(record);
+            });
+
+            record BinaryFromEnumObject(@ParquetEnum Binary value) {
+            }
+
+            try (var carpetReader = readerTest.getCarpetReader(BinaryFromEnumObject.class)) {
+                assertEquals(new BinaryFromEnumObject(Binary.fromString("one")), carpetReader.read());
+                assertEquals(new BinaryFromEnumObject(Binary.fromString("two")), carpetReader.read());
             }
         }
 

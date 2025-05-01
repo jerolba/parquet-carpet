@@ -58,6 +58,9 @@ class FieldsWriter {
         if (type.isShort() || type.isByte()) {
             return (consumer, v) -> consumer.addInteger(((Number) v).intValue());
         }
+        if (type.isBinary()) {
+            return (consumer, v) -> consumer.addBinary((Binary) v);
+        }
         if (type.isEnum()) {
             EnumsValues enumValues = new EnumsValues(type.getJavaType());
             return (consumer, v) -> consumer.addBinary(enumValues.getValue(v));

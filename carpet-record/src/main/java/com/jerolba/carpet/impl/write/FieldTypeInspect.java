@@ -16,6 +16,8 @@
 package com.jerolba.carpet.impl.write;
 
 import com.jerolba.carpet.model.BigDecimalType;
+import com.jerolba.carpet.model.BinaryLogicalType;
+import com.jerolba.carpet.model.BinaryType;
 import com.jerolba.carpet.model.BooleanType;
 import com.jerolba.carpet.model.ByteType;
 import com.jerolba.carpet.model.DoubleType;
@@ -76,6 +78,10 @@ class FieldTypeInspect {
         return fieldType instanceof StringType;
     }
 
+    public boolean isBinary() {
+        return fieldType instanceof BinaryType;
+    }
+
     public boolean isEnum() {
         return fieldType instanceof EnumType;
     }
@@ -114,6 +120,18 @@ class FieldTypeInspect {
 
     public boolean isMap() {
         return fieldType instanceof MapType;
+    }
+
+    public BinaryLogicalType binaryLogicalType() {
+        if (fieldType instanceof BinaryType binary) {
+            return binary.logicalType();
+        } else if (fieldType instanceof StringType string) {
+            return string.logicalType();
+        } else if (fieldType instanceof EnumType enumType) {
+            return enumType.logicalType();
+        } else {
+            throw new IllegalStateException("Field type is not a binary type");
+        }
     }
 
 }

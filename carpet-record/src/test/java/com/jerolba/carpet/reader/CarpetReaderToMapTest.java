@@ -35,12 +35,17 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
 
+import org.apache.parquet.io.api.Binary;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import com.jerolba.carpet.AnnotatedLevels;
 import com.jerolba.carpet.ParquetWriterTest;
+import com.jerolba.carpet.annotation.ParquetBson;
+import com.jerolba.carpet.annotation.ParquetEnum;
+import com.jerolba.carpet.annotation.ParquetJson;
+import com.jerolba.carpet.annotation.ParquetString;
 
 class CarpetReaderToMapTest {
 
@@ -118,6 +123,31 @@ class CarpetReaderToMapTest {
                     "asLocalDateTime", LocalDateTime.of(2024, 4, 28, 18, 44, 28, 123000000),
                     "asInstant", LocalDateTime.of(2024, 4, 28, 18, 44, 28, 123000000).toInstant(ZoneOffset.ofHours(1)),
                     "asBigDecimal", new BigDecimal("1234567.12"));
+            Map<String, Object> actual = reader.read();
+            assertEquals(expected, actual);
+        }
+
+        @Test
+        void convertRootGroupAnnotatedTypesToMap() throws IOException {
+
+            record MainTypeWrite(String id, @ParquetEnum String category, @ParquetJson String json,
+                    @ParquetString Category enumValue, @ParquetBson Binary bson, Binary binary) {
+            }
+
+            ParquetWriterTest<MainTypeWrite> writerTest = new ParquetWriterTest<>(MainTypeWrite.class);
+            var root = new MainTypeWrite("root", "one", "{\"key\":\"value\"}", Category.two,
+                    Binary.fromConstantByteArray(new byte[] { 1, 2, 3 }),
+                    Binary.fromConstantByteArray(new byte[] { 4, 5, 6 }));
+            writerTest.write(root);
+
+            var reader = writerTest.getCarpetReader(Map.class);
+            var expected = Map.of(
+                    "id", "root",
+                    "category", "one",
+                    "json", "{\"key\":\"value\"}",
+                    "enumValue", "two",
+                    "bson", Binary.fromConstantByteArray(new byte[] { 1, 2, 3 }),
+                    "binary", Binary.fromConstantByteArray(new byte[] { 4, 5, 6 }));
             Map<String, Object> actual = reader.read();
             assertEquals(expected, actual);
         }

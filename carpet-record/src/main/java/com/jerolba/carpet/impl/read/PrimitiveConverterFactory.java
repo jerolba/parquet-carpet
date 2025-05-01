@@ -25,6 +25,7 @@ import org.apache.parquet.schema.Type;
 
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.impl.JavaType;
+import com.jerolba.carpet.impl.read.converter.BinaryConverter;
 import com.jerolba.carpet.impl.read.converter.BooleanConverter;
 import com.jerolba.carpet.impl.read.converter.ToByteConverter;
 import com.jerolba.carpet.impl.read.converter.ToDoubleConverter;
@@ -48,7 +49,9 @@ class PrimitiveConverterFactory {
         case INT32, INT64 -> buildFromIntConverter(consumer, javaType);
         case FLOAT, DOUBLE -> buildFromDecimalConverter(consumer, javaType);
         case BOOLEAN -> buildFromBooleanConverter(consumer, javaType);
-        default -> throw new RecordTypeConversionException(type + " deserialization not supported");
+        case BINARY -> buildFromBinaryConverter(consumer, javaType);
+        case FIXED_LEN_BYTE_ARRAY, INT96 -> throw new RecordTypeConversionException(
+                type + " deserialization not supported");
         };
         if (converter == null) {
             throw new RecordTypeConversionException(
@@ -92,6 +95,13 @@ class PrimitiveConverterFactory {
     private static Converter buildFromBooleanConverter(Consumer<Object> consumer, JavaType type) {
         if (type.isBoolean()) {
             return new BooleanConverter(consumer);
+        }
+        return null;
+    }
+
+    private static Converter buildFromBinaryConverter(Consumer<Object> consumer, JavaType type) {
+        if (type.isBinary()) {
+            return new BinaryConverter(consumer);
         }
         return null;
     }

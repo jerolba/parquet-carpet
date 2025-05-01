@@ -18,16 +18,18 @@ package com.jerolba.carpet.impl.write;
 import static com.jerolba.carpet.impl.NotNullField.isNotNull;
 import static com.jerolba.carpet.impl.Parameterized.getParameterizedCollection;
 import static com.jerolba.carpet.impl.Parameterized.getParameterizedMap;
-import static org.apache.parquet.schema.LogicalTypeAnnotation.dateType;
-import static org.apache.parquet.schema.LogicalTypeAnnotation.decimalType;
+import static com.jerolba.carpet.impl.write.SchemaBuilder.buildDecimalTypeItem;
+import static com.jerolba.carpet.impl.write.SchemaBuilder.buildInstantType;
+import static com.jerolba.carpet.impl.write.SchemaBuilder.buildLocalDateTimeType;
+import static com.jerolba.carpet.impl.write.SchemaBuilder.buildLocalDateType;
+import static com.jerolba.carpet.impl.write.SchemaBuilder.buildLocalTimeType;
+import static com.jerolba.carpet.impl.write.SchemaBuilder.buildUuidType;
+import static org.apache.parquet.schema.LogicalTypeAnnotation.bsonType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.enumType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.intType;
+import static org.apache.parquet.schema.LogicalTypeAnnotation.jsonType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.stringType;
-import static org.apache.parquet.schema.LogicalTypeAnnotation.timeType;
-import static org.apache.parquet.schema.LogicalTypeAnnotation.timestampType;
-import static org.apache.parquet.schema.LogicalTypeAnnotation.uuidType;
 import static org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName.BINARY;
-import static org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY;
 import static org.apache.parquet.schema.Type.Repetition.OPTIONAL;
 import static org.apache.parquet.schema.Type.Repetition.REPEATED;
 import static org.apache.parquet.schema.Type.Repetition.REQUIRED;
@@ -41,17 +43,19 @@ import java.util.Set;
 
 import org.apache.parquet.schema.ConversionPatterns;
 import org.apache.parquet.schema.GroupType;
-import org.apache.parquet.schema.LogicalTypeAnnotation;
-import org.apache.parquet.schema.LogicalTypeAnnotation.UUIDLogicalTypeAnnotation;
 import org.apache.parquet.schema.MessageType;
 import org.apache.parquet.schema.PrimitiveType;
 import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
 import org.apache.parquet.schema.Type;
 import org.apache.parquet.schema.Type.Repetition;
 import org.apache.parquet.schema.Types;
+import org.apache.parquet.schema.Types.PrimitiveBuilder;
 
 import com.jerolba.carpet.RecordTypeConversionException;
-import com.jerolba.carpet.TimeUnit;
+import com.jerolba.carpet.annotation.ParquetBson;
+import com.jerolba.carpet.annotation.ParquetEnum;
+import com.jerolba.carpet.annotation.ParquetJson;
+import com.jerolba.carpet.annotation.ParquetString;
 import com.jerolba.carpet.impl.JavaType;
 import com.jerolba.carpet.impl.ParameterizedCollection;
 import com.jerolba.carpet.impl.ParameterizedMap;
@@ -85,9 +89,9 @@ class JavaRecord2Schema {
             String fieldName = fieldToColumnMapper.getColumnName(attr);
             boolean notNull = type.isPrimitive() || isNotNull(attr);
             Repetition repetition = notNull ? REQUIRED : OPTIONAL;
-            JavaType javaType = new JavaType(type);
+            JavaType javaType = new JavaType(type, attr.getDeclaredAnnotations());
 
-            Type parquetType = buildType(type, visited, repetition, fieldName);
+            Type parquetType = buildType(javaType, visited, repetition, fieldName);
             if (parquetType != null) {
                 fields.add(parquetType);
             } else if (javaType.isCollection()) {
@@ -133,7 +137,7 @@ class JavaRecord2Schema {
         if (parametized.isMap()) {
             return createMapType(fieldName, parametized.getParametizedAsMap(), visited, REPEATED);
         }
-        return buildTypeElement(parametized.getActualType(), visited, REPEATED, fieldName);
+        return buildTypeElement(parametized.getActualJavaType(), visited, REPEATED, fieldName);
     }
 
     private Type createCollectionTwoLevel(String fieldName, ParameterizedCollection parametized, Set<Class<?>> visited,
@@ -158,13 +162,12 @@ class JavaRecord2Schema {
         if (parametized.isMap()) {
             return createMapType("element", parametized.getParametizedAsMap(), visited, repetition);
         }
-        return buildTypeElement(parametized.getActualType(), visited, repetition, "element");
+        return buildTypeElement(parametized.getActualJavaType(), visited, repetition, "element");
     }
 
     private Type createMapType(String fieldName, ParameterizedMap parametized, Set<Class<?>> visited,
             Repetition repetition) {
-        Class<?> keyType = parametized.getKeyActualType();
-        Type nestedKey = buildTypeElement(keyType, visited, REQUIRED, "key");
+        Type nestedKey = buildTypeElement(parametized.getKeyActualJavaType(), visited, REQUIRED, "key");
 
         if (parametized.valueIsCollection()) {
             Type childCollection = createCollectionType("value", parametized.getValueTypeAsCollection(),
@@ -176,127 +179,91 @@ class JavaRecord2Schema {
             return Types.map(repetition).key(nestedKey).value(childMap).named(fieldName);
         }
 
-        Class<?> valueType = parametized.getValueActualType();
-        Type nestedValue = buildTypeElement(valueType, visited, OPTIONAL, "value");
+        Type nestedValue = buildTypeElement(parametized.getValueActualJavaType(), visited, OPTIONAL, "value");
         if (nestedKey != null && nestedValue != null) {
             // TODO: what to change to support generation of older versions?
             return Types.map(repetition).key(nestedKey).value(nestedValue).named(fieldName);
         }
-        throw new RecordTypeConversionException("Unsuported type in Map");
+        throw new RecordTypeConversionException("Unsupported type in Map");
     }
 
-    private Type buildTypeElement(Class<?> type, Set<Class<?>> visited, Repetition repetition, String name) {
-        Type parquetType = buildType(type, visited, repetition, name);
+    private Type buildTypeElement(JavaType javaType, Set<Class<?>> visited, Repetition repetition, String name) {
+        Type parquetType = buildType(javaType, visited, repetition, name);
         if (parquetType == null) {
-            throw new RecordTypeConversionException("Unsuported type " + type);
+            throw new RecordTypeConversionException("Unsupported type " + javaType.getJavaType());
         }
         return parquetType;
     }
 
-    private Type buildType(Class<?> type, Set<Class<?>> visited, Repetition repetition, String name) {
-        JavaType javaType = new JavaType(type);
-        PrimitiveType primitiveType = simpleTypeItems(javaType, repetition, name);
-        if (primitiveType != null) {
-            return primitiveType;
-        }
-        if (javaType.isRecord()) {
-            List<Type> childFields = buildCompositeChild(type, visited);
-            return new GroupType(repetition, name, childFields);
-        }
-        if (javaType.isString()) {
-            return primitive(BINARY, repetition).as(stringType()).named(name);
-        }
-        if (javaType.isEnum()) {
-            return primitive(BINARY, repetition).as(enumType()).named(name);
-        }
-        if (javaType.isUuid()) {
-            return primitive(FIXED_LEN_BYTE_ARRAY, repetition).as(uuidType())
-                    .length(UUIDLogicalTypeAnnotation.BYTES)
-                    .named(name);
-        }
-        if (javaType.isBigDecimal()) {
-            return decimalTypeItem(repetition, name);
-        }
-        PrimitiveType dateTypeItems = dateTypeItems(javaType, repetition, name);
-        if (dateTypeItems != null) {
-            return dateTypeItems;
-        }
-        return null;
-    }
-
-    private PrimitiveType simpleTypeItems(JavaType javaType, Repetition repetition, String name) {
+    private Type buildType(JavaType javaType, Set<Class<?>> visited, Repetition repetition, String name) {
         if (javaType.isInteger()) {
             return primitive(PrimitiveTypeName.INT32, repetition).named(name);
-        }
-        if (javaType.isLong()) {
+        } else if (javaType.isLong()) {
             return primitive(PrimitiveTypeName.INT64, repetition).named(name);
-        }
-        if (javaType.isFloat()) {
+        } else if (javaType.isFloat()) {
             return primitive(PrimitiveTypeName.FLOAT, repetition).named(name);
-        }
-        if (javaType.isDouble()) {
+        } else if (javaType.isDouble()) {
             return primitive(PrimitiveTypeName.DOUBLE, repetition).named(name);
-        }
-        if (javaType.isBoolean()) {
+        } else if (javaType.isBoolean()) {
             return primitive(PrimitiveTypeName.BOOLEAN, repetition).named(name);
-        }
-        if (javaType.isShort()) {
+        } else if (javaType.isShort()) {
             return primitive(PrimitiveTypeName.INT32, repetition).as(intType(16, true)).named(name);
-        }
-        if (javaType.isByte()) {
+        } else if (javaType.isByte()) {
             return primitive(PrimitiveTypeName.INT32, repetition).as(intType(8, true)).named(name);
+        } else if (javaType.isString()) {
+            return buildStringType(javaType, repetition, name);
+        } else if (javaType.isBinary()) {
+            return buildBinaryType(javaType, repetition, name);
+        } else if (javaType.isEnum()) {
+            return buildEnumType(javaType, repetition, name);
+        } else if (javaType.isUuid()) {
+            return buildUuidType(repetition, name);
+        } else if (javaType.isBigDecimal()) {
+            return buildDecimalTypeItem(repetition, name, carpetConfiguration.decimalConfig());
+        } else if (javaType.isLocalDate()) {
+            return buildLocalDateType(repetition, name);
+        } else if (javaType.isLocalTime()) {
+            return buildLocalTimeType(repetition, name,
+                    carpetConfiguration.defaultTimeUnit(), carpetConfiguration.defaultTimeIsAdjustedToUTC());
+        } else if (javaType.isLocalDateTime()) {
+            return buildLocalDateTimeType(repetition, name, carpetConfiguration.defaultTimeUnit());
+        } else if (javaType.isInstant()) {
+            return buildInstantType(repetition, name, carpetConfiguration.defaultTimeUnit());
+        } else if (javaType.isRecord()) {
+            List<Type> childFields = buildCompositeChild(javaType.getJavaType(), visited);
+            return new GroupType(repetition, name, childFields);
         }
         return null;
     }
 
-    private PrimitiveType dateTypeItems(JavaType javaType, Repetition repetition, String name) {
-        if (javaType.isLocalDate()) {
-            return primitive(PrimitiveTypeName.INT32, repetition).as(dateType()).named(name);
+    private Type buildStringType(JavaType javaType, Repetition repetition, String name) {
+        if (javaType.isAnnotatedWith(ParquetJson.class)) {
+            return primitive(BINARY, repetition).as(jsonType()).named(name);
+        } else if (javaType.isAnnotatedWith(ParquetEnum.class)) {
+            return primitive(BINARY, repetition).as(enumType()).named(name);
         }
-        if (javaType.isLocalTime()) {
-            var timeUnit = carpetConfiguration.defaultTimeUnit();
-            var timeType = timeType(carpetConfiguration.defaultTimeIsAdjustedToUTC(), toParquetTimeUnit(timeUnit));
-            var typeName = switch (timeUnit) {
-            case MILLIS -> PrimitiveTypeName.INT32;
-            case MICROS, NANOS -> PrimitiveTypeName.INT64;
-            };
-            return primitive(typeName, repetition).as(timeType).named(name);
-        }
-        if (javaType.isLocalDateTime()) {
-            var timeUnit = carpetConfiguration.defaultTimeUnit();
-            var timeStampType = timestampType(false, toParquetTimeUnit(timeUnit));
-            return primitive(PrimitiveTypeName.INT64, repetition).as(timeStampType).named(name);
-        }
-        if (javaType.isInstant()) {
-            var timeUnit = carpetConfiguration.defaultTimeUnit();
-            var timeStampType = timestampType(true, toParquetTimeUnit(timeUnit));
-            return primitive(PrimitiveTypeName.INT64, repetition).as(timeStampType).named(name);
-        }
-        return null;
+        return primitive(BINARY, repetition).as(stringType()).named(name);
     }
 
-    private static LogicalTypeAnnotation.TimeUnit toParquetTimeUnit(TimeUnit timeUnit) {
-        return switch (timeUnit) {
-        case MILLIS -> LogicalTypeAnnotation.TimeUnit.MILLIS;
-        case MICROS -> LogicalTypeAnnotation.TimeUnit.MICROS;
-        case NANOS -> LogicalTypeAnnotation.TimeUnit.NANOS;
-        };
+    private Type buildBinaryType(JavaType javaType, Repetition repetition, String name) {
+        PrimitiveBuilder<PrimitiveType> binary = primitive(BINARY, repetition);
+        if (javaType.isAnnotatedWith(ParquetString.class)) {
+            binary = binary.as(stringType());
+        } else if (javaType.isAnnotatedWith(ParquetEnum.class)) {
+            binary = binary.as(enumType());
+        } else if (javaType.isAnnotatedWith(ParquetJson.class)) {
+            binary = binary.as(jsonType());
+        } else if (javaType.isAnnotatedWith(ParquetBson.class)) {
+            binary = binary.as(bsonType());
+        }
+        return binary.named(name);
     }
 
-    private Type decimalTypeItem(Repetition repetition, String name) {
-        DecimalConfig decimalConfig = carpetConfiguration.decimalConfig();
-        if (!decimalConfig.arePrecisionAndScaleConfigured()) {
-            throw new RecordTypeConversionException("If BigDecimall is used, a Default Decimal configuration "
-                    + "must be provided in the setup of CarpetWriter builder");
+    private Type buildEnumType(JavaType javaType, Repetition repetition, String name) {
+        if (javaType.isAnnotatedWith(ParquetString.class)) {
+            return primitive(BINARY, repetition).as(stringType()).named(name);
         }
-        var decimalType = decimalType(decimalConfig.scale(), decimalConfig.precision());
-        if (decimalConfig.precision() <= 9) {
-            return primitive(PrimitiveTypeName.INT32, repetition).as(decimalType).named(name);
-        }
-        if (decimalConfig.precision() <= 18) {
-            return primitive(PrimitiveTypeName.INT64, repetition).as(decimalType).named(name);
-        }
-        return primitive(PrimitiveTypeName.BINARY, repetition).as(decimalType).named(name);
+        return primitive(BINARY, repetition).as(enumType()).named(name);
     }
 
     private void validateNotVisitedRecord(Class<?> recordClass, Set<Class<?>> visited) {

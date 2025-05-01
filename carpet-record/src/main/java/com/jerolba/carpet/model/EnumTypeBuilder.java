@@ -18,21 +18,27 @@ package com.jerolba.carpet.model;
 public class EnumTypeBuilder {
 
     private final boolean notNull;
+    private final BinaryLogicalType logicalType;
 
     EnumTypeBuilder() {
-        this(false);
+        this(false, null);
     }
 
-    private EnumTypeBuilder(boolean notNull) {
+    private EnumTypeBuilder(boolean notNull, BinaryLogicalType logicalType) {
         this.notNull = notNull;
+        this.logicalType = logicalType;
     }
 
     public EnumTypeBuilder notNull() {
-        return new EnumTypeBuilder(true);
+        return new EnumTypeBuilder(true, logicalType);
+    }
+
+    public EnumTypeBuilder asString() {
+        return new EnumTypeBuilder(notNull, BinaryLogicalType.STRING);
     }
 
     public EnumType ofType(Class<? extends Enum<?>> enumClass) {
-        return new EnumType(notNull, enumClass);
+        return new EnumType(notNull, enumClass, logicalType);
     }
 
 }

@@ -15,19 +15,22 @@
  */
 package com.jerolba.carpet.impl;
 
-import java.lang.reflect.ParameterizedType;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedParameterizedType;
+import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Type;
 
 public class ParameterizedMap {
 
     private final Type mapType;
-    private final Type keyType;
-    private final Type valueType;
+    private final AnnotatedType keyAnnotatedMapElementType;
+    private final AnnotatedType valueAnnotatedMapElementType;
 
-    public ParameterizedMap(Type mapType, ParameterizedType type) {
+    public ParameterizedMap(Type mapType, AnnotatedParameterizedType type) {
         this.mapType = mapType;
-        this.keyType = type.getActualTypeArguments()[0];
-        this.valueType = type.getActualTypeArguments()[1];
+        AnnotatedType[] annotatedActualTypeArguments = type.getAnnotatedActualTypeArguments();
+        this.keyAnnotatedMapElementType = annotatedActualTypeArguments[0];
+        this.valueAnnotatedMapElementType = annotatedActualTypeArguments[1];
     }
 
     public Class<?> getMapType() {
@@ -35,43 +38,51 @@ public class ParameterizedMap {
     }
 
     public Class<?> getValueActualType() {
-        return Parameterized.getClassFromType(valueType, "in Map value");
+        return Parameterized.getClassFromType(valueAnnotatedMapElementType.getType(), "in Map value");
+    }
+
+    public JavaType getValueActualJavaType() {
+        return new JavaType(getValueActualType(), getValueAnnotations());
+    }
+
+    private Annotation[] getValueAnnotations() {
+        return valueAnnotatedMapElementType.getDeclaredAnnotations();
     }
 
     public Class<?> getKeyActualType() {
-        return Parameterized.getClassFromType(keyType, "in Map key");
+        return Parameterized.getClassFromType(keyAnnotatedMapElementType.getType(), "in Map key");
+    }
+
+    public JavaType getKeyActualJavaType() {
+        return new JavaType(getKeyActualType(), getKeyAnnotations());
+    }
+
+    private Annotation[] getKeyAnnotations() {
+        return keyAnnotatedMapElementType.getDeclaredAnnotations();
     }
 
     public ParameterizedMap getValueTypeAsMap() {
-        if (valueType instanceof ParameterizedType paramType) {
-            Type map = paramType.getRawType();
-            return new ParameterizedMap(map, paramType);
-        }
-        return null;
+        return Parameterized.getParameterizedMap(valueAnnotatedMapElementType);
     }
 
     public ParameterizedCollection getValueTypeAsCollection() {
-        if (valueType instanceof ParameterizedType paramType) {
-            Type collection = paramType.getRawType();
-            return new ParameterizedCollection(collection, paramType);
-        }
-        return null;
+        return Parameterized.getParameterizedCollection(valueAnnotatedMapElementType);
     }
 
     public boolean valueIsCollection() {
-        return Parameterized.isCollection(valueType);
+        return Parameterized.isCollection(valueAnnotatedMapElementType.getType());
     }
 
     public boolean valueIsMap() {
-        return Parameterized.isMap(valueType);
+        return Parameterized.isMap(valueAnnotatedMapElementType.getType());
     }
 
     public boolean keyIsCollection() {
-        return Parameterized.isCollection(keyType);
+        return Parameterized.isCollection(keyAnnotatedMapElementType.getType());
     }
 
     public boolean keyIsMap() {
-        return Parameterized.isMap(keyType);
+        return Parameterized.isMap(keyAnnotatedMapElementType.getType());
     }
 
 }

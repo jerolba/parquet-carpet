@@ -15,22 +15,31 @@
  */
 package com.jerolba.carpet.impl;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.RecordComponent;
 import java.util.Collection;
 import java.util.Map;
+
+import org.apache.parquet.io.api.Binary;
 
 public class JavaType {
 
     private final String typeName;
     private final Class<?> type;
+    private final Annotation[] declaredAnnotations;
 
     public JavaType(RecordComponent recordComponent) {
         this(recordComponent.getType());
     }
 
     public JavaType(Class<?> type) {
+        this(type, null);
+    }
+
+    public JavaType(Class<?> type, Annotation[] declaredAnnotations) {
         this.type = type;
         this.typeName = type.getName();
+        this.declaredAnnotations = declaredAnnotations;
     }
 
     public Class<?> getJavaType() {
@@ -39,6 +48,10 @@ public class JavaType {
 
     public boolean isString() {
         return typeName.equals("java.lang.String");
+    }
+
+    public boolean isBinary() {
+        return Binary.class.isAssignableFrom(type);
     }
 
     public boolean isInteger() {
@@ -111,6 +124,18 @@ public class JavaType {
 
     public boolean isMap() {
         return Map.class.isAssignableFrom(type);
+    }
+
+    public boolean isAnnotatedWith(Class<? extends Annotation> annotationClass) {
+        if (declaredAnnotations == null) {
+            return false;
+        }
+        for (Annotation annotation : declaredAnnotations) {
+            if (annotation.annotationType().equals(annotationClass)) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }

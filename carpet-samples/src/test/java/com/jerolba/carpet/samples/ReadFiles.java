@@ -15,6 +15,7 @@
  */
 package com.jerolba.carpet.samples;
 
+import static com.jerolba.carpet.samples.WriteFiles.createBsonBinary;
 import static org.apache.parquet.filter2.predicate.FilterApi.and;
 import static org.apache.parquet.filter2.predicate.FilterApi.doubleColumn;
 import static org.apache.parquet.filter2.predicate.FilterApi.gt;
@@ -29,6 +30,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -43,6 +45,8 @@ import org.apache.parquet.filter2.predicate.FilterPredicate;
 import org.apache.parquet.filter2.predicate.Operators.Gt;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
+import org.apache.parquet.io.api.Binary;
+import org.bson.BsonBinaryReader;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -53,6 +57,7 @@ import com.jerolba.carpet.CarpetWriter;
 import com.jerolba.carpet.FieldMatchingStrategy;
 import com.jerolba.carpet.TimeUnit;
 import com.jerolba.carpet.annotation.Alias;
+import com.jerolba.carpet.annotation.ParquetBson;
 import com.jerolba.carpet.io.FileSystemInputFile;
 import com.jerolba.carpet.io.FileSystemOutputFile;
 
@@ -162,6 +167,49 @@ class ReadFiles {
 
         CarpetReader<Country> reader = new CarpetReader<>(file, Country.class);
         assertEquals(spain, reader.iterator().next());
+    }
+
+    /**
+     * Read BSON data into a Java Record through a Binary field
+     *
+     * @throws IOException
+     */
+    @Test
+    void readRecordWithBson() throws IOException {
+        record RecordWithBson(String code, String name, @ParquetBson Binary attribute) {
+        }
+
+        var file = temporalFile("RecordWithBson");
+        try (var writer = new CarpetWriter<>(new FileSystemOutputFile(file), RecordWithBson.class)) {
+            var record = new RecordWithBson("ES", "Spain",
+                    Binary.fromConstantByteArray(createBsonBinary("population", 48797875)));
+            writer.write(record);
+        }
+
+        CarpetReader<RecordWithBson> reader = new CarpetReader<>(file, RecordWithBson.class);
+        RecordWithBson recordWithBson = reader.iterator().next();
+        assertEquals(new AttributeBson("population", 48797875), decodeBson(recordWithBson.attribute.toByteBuffer()));
+    }
+
+    private record AttributeBson(String name, double value) {
+    }
+
+    /**
+     * Decode BSON data into a Java Record using lower level API
+     *
+     * @param Binary encoded BSON data
+     * @return Decoded AttributeBson
+     */
+    private AttributeBson decodeBson(ByteBuffer byteBuffer) {
+        try (BsonBinaryReader bsonReader = new BsonBinaryReader(byteBuffer)) {
+            bsonReader.readStartDocument();
+            bsonReader.readName("id");
+            String id = bsonReader.readString();
+            bsonReader.readName("value");
+            double value = bsonReader.readDouble();
+            bsonReader.readEndDocument();
+            return new AttributeBson(id, value);
+        }
     }
 
     /**

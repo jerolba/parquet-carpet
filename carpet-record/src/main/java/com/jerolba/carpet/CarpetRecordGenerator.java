@@ -280,7 +280,8 @@ public class CarpetRecordGenerator {
         LOCAL_TIME_TYPE("LocalTime"),
         LOCAL_DATE_TIME_TYPE("LocalDateTime"),
         INSTANT_TYPE("Instant"),
-        DECIMAL_TYPE("BigDecimal");
+        DECIMAL_TYPE("BigDecimal"),
+        BINARY("Binary");
 
         private final String primitive;
         private final String object;
@@ -307,6 +308,7 @@ public class CarpetRecordGenerator {
                 case FLOAT -> BasicTypes.FLOAT_TYPE;
                 case DOUBLE -> BasicTypes.DOUBLE_TYPE;
                 case BOOLEAN -> BasicTypes.BOOLEAN_TYPE;
+                case BINARY -> BasicTypes.BINARY;
                 default -> throw new RecordTypeConversionException(typeName + " deserialization not supported");
                 };
             }

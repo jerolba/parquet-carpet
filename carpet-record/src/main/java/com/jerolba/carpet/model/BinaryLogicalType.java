@@ -15,15 +15,6 @@
  */
 package com.jerolba.carpet.model;
 
-public sealed interface FieldType
-        permits BooleanType, ByteType, ShortType, IntegerType,
-        LongType, FloatType, DoubleType, StringType, BinaryType, EnumType,
-        UuidType, BigDecimalType, LocalDateType, LocalTimeType,
-        LocalDateTimeType, InstantType, CollectionType, ListType,
-        SetType, MapType, WriteRecordModelType {
-
-    boolean isNotNull();
-
-    Class<?> getClassType();
-
+public enum BinaryLogicalType {
+    BSON, JSON, ENUM, STRING;
 }

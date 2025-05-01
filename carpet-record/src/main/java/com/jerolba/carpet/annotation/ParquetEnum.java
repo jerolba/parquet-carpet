@@ -13,17 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jerolba.carpet.model;
+package com.jerolba.carpet.annotation;
 
-public sealed interface FieldType
-        permits BooleanType, ByteType, ShortType, IntegerType,
-        LongType, FloatType, DoubleType, StringType, BinaryType, EnumType,
-        UuidType, BigDecimalType, LocalDateType, LocalTimeType,
-        LocalDateTimeType, InstantType, CollectionType, ListType,
-        SetType, MapType, WriteRecordModelType {
+import static java.lang.annotation.ElementType.RECORD_COMPONENT;
+import static java.lang.annotation.ElementType.TYPE_USE;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
-    boolean isNotNull();
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
-    Class<?> getClassType();
+@Retention(RUNTIME)
+@Target({ RECORD_COMPONENT, TYPE_USE })
+public @interface ParquetEnum {
 
 }

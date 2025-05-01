@@ -20,6 +20,7 @@ import static java.util.Collections.emptyList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -29,9 +30,14 @@ import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericData.Array;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.util.Utf8;
+import org.apache.parquet.io.api.Binary;
 import org.junit.jupiter.api.Test;
 
 import com.jerolba.carpet.ParquetWriterTest;
+import com.jerolba.carpet.annotation.ParquetBson;
+import com.jerolba.carpet.annotation.ParquetEnum;
+import com.jerolba.carpet.annotation.ParquetJson;
+import com.jerolba.carpet.writer.CarpetWriterCollectionThreeLevelTest.Category;
 
 class CarpetWriterCollectionTwoLevelTest {
 
@@ -51,6 +57,170 @@ class CarpetWriterCollectionTwoLevelTest {
         assertEquals(rec.ids(), avroRecord.get("ids"));
         assertEquals(rec.amount(), avroRecord.get("amount"));
 
+        var carpetReader = writerTest.getCarpetReader();
+        assertEquals(rec, carpetReader.read());
+    }
+
+    @Test
+    void simpleStringCollection() throws IOException {
+
+        record SimpleTypeCollection(String name, List<String> values) {
+        }
+
+        var rec = new SimpleTypeCollection("foo", List.of("foo", "bar"));
+        var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class).withLevel(TWO);
+        writerTest.write(rec);
+
+        var avroReader = writerTest.getAvroGenericRecordReader();
+        GenericRecord avroRecord = avroReader.read();
+        assertEquals(rec.name(), avroRecord.get("name").toString());
+
+        Array<Utf8> ids = (Array<Utf8>) avroRecord.get("values");
+        assertEquals(2, ids.size());
+        assertEquals("foo", ids.get(0).toString());
+        assertEquals("bar", ids.get(1).toString());
+        var carpetReader = writerTest.getCarpetReader();
+        assertEquals(rec, carpetReader.read());
+    }
+
+    @Test
+    void simpleStringAsEnumCollection() throws IOException {
+
+        record SimpleTypeCollection(String name, List<@ParquetEnum String> values) {
+        }
+
+        var rec = new SimpleTypeCollection("foo", List.of("FOO", "BAR"));
+        var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class).withLevel(TWO);
+        writerTest.write(rec);
+
+        var avroReader = writerTest.getAvroGenericRecordReader();
+        GenericRecord avroRecord = avroReader.read();
+        assertEquals(rec.name(), avroRecord.get("name").toString());
+
+        Array<Utf8> ids = (Array<Utf8>) avroRecord.get("values");
+        assertEquals(2, ids.size());
+        assertEquals("FOO", ids.get(0).toString());
+        assertEquals("BAR", ids.get(1).toString());
+        var carpetReader = writerTest.getCarpetReader();
+        assertEquals(rec, carpetReader.read());
+
+        record AsEnum(String name, List<Category> values) {
+        }
+
+        var recEnum = new AsEnum("foo", List.of(Category.FOO, Category.BAR));
+        var carpetReaderEnum = writerTest.getCarpetReader(AsEnum.class);
+        assertEquals(recEnum, carpetReaderEnum.read());
+    }
+
+    @Test
+    void simpleEnumCollection() throws IOException {
+
+        record SimpleTypeCollection(String name, List<Category> values) {
+        }
+
+        var rec = new SimpleTypeCollection("foo", List.of(Category.FOO, Category.BAR));
+        var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class).withLevel(TWO);
+        writerTest.write(rec);
+
+        var avroReader = writerTest.getAvroGenericRecordReader();
+        GenericRecord avroRecord = avroReader.read();
+        assertEquals(rec.name(), avroRecord.get("name").toString());
+
+        Array<Utf8> ids = (Array<Utf8>) avroRecord.get("values");
+        assertEquals(2, ids.size());
+        assertEquals("FOO", ids.get(0).toString());
+        assertEquals("BAR", ids.get(1).toString());
+        var carpetReader = writerTest.getCarpetReader();
+        assertEquals(rec, carpetReader.read());
+    }
+
+    @Test
+    void simpleJsonCollection() throws IOException {
+
+        record SimpleTypeCollection(String name, List<@ParquetJson String> values) {
+        }
+
+        var rec = new SimpleTypeCollection("foo",
+                List.of("{\"key\": 1, \"value\": \"foo\"}", "{\"key\": 2, \"value\": \"bar\"}"));
+        var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class).withLevel(TWO);
+        writerTest.write(rec);
+
+        var avroReader = writerTest.getAvroGenericRecordReader();
+        GenericRecord avroRecord = avroReader.read();
+        assertEquals(rec.name(), avroRecord.get("name").toString());
+
+        Array<ByteBuffer> ids = (Array<ByteBuffer>) avroRecord.get("values");
+        assertEquals(2, ids.size());
+        // Avro does not support JSON, so we need to convert it to a string
+        assertEquals(rec.values().get(0), new String(ids.get(0).array(), "UTF-8"));
+        assertEquals(rec.values().get(1), new String(ids.get(1).array(), "UTF-8"));
+        var carpetReader = writerTest.getCarpetReader();
+        assertEquals(rec, carpetReader.read());
+    }
+
+    @Test
+    void simpleBinaryCollection() throws IOException {
+
+        record SimpleTypeCollection(String name, List<Binary> values) {
+        }
+
+        byte[] binary1 = new byte[] { 1, 2 };
+        byte[] binary2 = new byte[] { 3, 4 };
+        var rec = new SimpleTypeCollection("foo",
+                List.of(Binary.fromConstantByteArray(binary1), Binary.fromConstantByteArray(binary2)));
+        var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class).withLevel(TWO);
+        writerTest.write(rec);
+
+        var avroReader = writerTest.getAvroGenericRecordReader();
+        GenericRecord avroRecord = avroReader.read();
+        assertEquals(rec.name(), avroRecord.get("name").toString());
+
+        Array<ByteBuffer> ids = (Array<ByteBuffer>) avroRecord.get("values");
+        assertEquals(2, ids.size());
+        byte[] fromAvro1 = ids.get(0).array();
+        assertEquals(binary1.length, fromAvro1.length);
+        for (int i = 0; i < binary1.length; i++) {
+            assertEquals(binary1[i], fromAvro1[i]);
+        }
+        byte[] fromAvro2 = ids.get(1).array();
+        assertEquals(binary2.length, fromAvro2.length);
+        for (int i = 0; i < binary2.length; i++) {
+            assertEquals(binary2[i], fromAvro2[i]);
+        }
+        var carpetReader = writerTest.getCarpetReader();
+        assertEquals(rec, carpetReader.read());
+    }
+
+    @Test
+    void simpleBsonCollection() throws IOException {
+
+        record SimpleTypeCollection(String name, List<@ParquetBson Binary> values) {
+        }
+
+        byte[] mockBson1 = new byte[] { 1, 2 };
+        byte[] mockBson2 = new byte[] { 3, 4 };
+        var rec = new SimpleTypeCollection("foo",
+                List.of(Binary.fromConstantByteArray(mockBson1), Binary.fromConstantByteArray(mockBson2)));
+        var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class).withLevel(TWO);
+        writerTest.write(rec);
+
+        var avroReader = writerTest.getAvroGenericRecordReader();
+        GenericRecord avroRecord = avroReader.read();
+        assertEquals(rec.name(), avroRecord.get("name").toString());
+
+        Array<ByteBuffer> ids = (Array<ByteBuffer>) avroRecord.get("values");
+        assertEquals(2, ids.size());
+        // Avro does not support BSON
+        byte[] fromAvro1 = ids.get(0).array();
+        assertEquals(mockBson1.length, fromAvro1.length);
+        for (int i = 0; i < mockBson1.length; i++) {
+            assertEquals(mockBson1[i], fromAvro1[i]);
+        }
+        byte[] fromAvro2 = ids.get(1).array();
+        assertEquals(mockBson2.length, fromAvro2.length);
+        for (int i = 0; i < mockBson2.length; i++) {
+            assertEquals(mockBson2[i], fromAvro2[i]);
+        }
         var carpetReader = writerTest.getCarpetReader();
         assertEquals(rec, carpetReader.read());
     }

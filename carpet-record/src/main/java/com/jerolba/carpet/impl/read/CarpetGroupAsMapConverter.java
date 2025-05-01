@@ -45,6 +45,7 @@ import org.apache.parquet.schema.Type;
 import org.apache.parquet.schema.Type.Repetition;
 
 import com.jerolba.carpet.RecordTypeConversionException;
+import com.jerolba.carpet.impl.read.converter.BinaryConverter;
 import com.jerolba.carpet.impl.read.converter.BooleanConverter;
 import com.jerolba.carpet.impl.read.converter.ToDoubleConverter;
 import com.jerolba.carpet.impl.read.converter.ToFloatConverter;
@@ -119,7 +120,9 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
         case FLOAT -> new ToFloatConverter(consumer);
         case DOUBLE -> new ToDoubleConverter(consumer);
         case BOOLEAN -> new BooleanConverter(consumer);
-        default -> throw new RecordTypeConversionException(type + " deserialization not supported");
+        case BINARY -> new BinaryConverter(consumer);
+        case FIXED_LEN_BYTE_ARRAY, INT96 -> throw new RecordTypeConversionException(
+                type + " deserialization not supported");
         };
     }
 

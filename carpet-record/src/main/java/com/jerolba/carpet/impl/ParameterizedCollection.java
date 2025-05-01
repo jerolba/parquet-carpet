@@ -15,21 +15,29 @@
  */
 package com.jerolba.carpet.impl;
 
-import java.lang.reflect.ParameterizedType;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedParameterizedType;
+import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Type;
 
 public class ParameterizedCollection {
 
     private final Type collectionType;
     private final Type collectionElementType;
+    private final AnnotatedType annotatedCollectionElementType;
 
-    public ParameterizedCollection(Type collectionType, ParameterizedType type) {
+    public ParameterizedCollection(Type collectionType, AnnotatedParameterizedType type) {
         this.collectionType = collectionType;
-        this.collectionElementType = type.getActualTypeArguments()[0];
+        this.annotatedCollectionElementType = type.getAnnotatedActualTypeArguments()[0];
+        this.collectionElementType = annotatedCollectionElementType.getType();
     }
 
     public Class<?> getActualType() {
         return Parameterized.getClassFromType(collectionElementType, "in Collection");
+    }
+
+    public JavaType getActualJavaType() {
+        return new JavaType(getActualType(), getAnnotations());
     }
 
     public Class<?> getCollectionType() {
@@ -37,19 +45,11 @@ public class ParameterizedCollection {
     }
 
     public ParameterizedCollection getParametizedAsCollection() {
-        if (collectionElementType instanceof ParameterizedType paramType) {
-            Type collection = paramType.getRawType();
-            return new ParameterizedCollection(collection, paramType);
-        }
-        return null;
+        return Parameterized.getParameterizedCollection(annotatedCollectionElementType);
     }
 
     public ParameterizedMap getParametizedAsMap() {
-        if (collectionElementType instanceof ParameterizedType paramType) {
-            Type map = paramType.getRawType();
-            return new ParameterizedMap(map, paramType);
-        }
-        return null;
+        return Parameterized.getParameterizedMap(annotatedCollectionElementType);
     }
 
     public boolean isCollection() {
@@ -58,6 +58,10 @@ public class ParameterizedCollection {
 
     public boolean isMap() {
         return Parameterized.isMap(collectionElementType);
+    }
+
+    private Annotation[] getAnnotations() {
+        return annotatedCollectionElementType.getDeclaredAnnotations();
     }
 
 }

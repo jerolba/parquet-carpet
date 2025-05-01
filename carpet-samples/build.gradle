@@ -7,6 +7,8 @@ java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)
     }
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17    
 }
 
 repositories {
@@ -16,7 +18,7 @@ repositories {
 
 dependencies {
     implementation project(':carpet-record')
-
+    testImplementation "org.mongodb:bson:5.4.0"
     testImplementation "org.junit.jupiter:junit-jupiter-api:${junitVersion}"
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
 }

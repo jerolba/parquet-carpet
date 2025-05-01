@@ -17,6 +17,7 @@ package com.jerolba.carpet.writer;
 
 import static com.jerolba.carpet.ColumnNamingStrategy.SNAKE_CASE;
 import static com.jerolba.carpet.model.FieldTypes.BIG_DECIMAL;
+import static com.jerolba.carpet.model.FieldTypes.BINARY;
 import static com.jerolba.carpet.model.FieldTypes.BOOLEAN;
 import static com.jerolba.carpet.model.FieldTypes.BYTE;
 import static com.jerolba.carpet.model.FieldTypes.DOUBLE;
@@ -41,6 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -53,6 +55,7 @@ import org.apache.avro.Conversions.DecimalConversion;
 import org.apache.avro.data.TimeConversions;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
+import org.apache.parquet.io.api.Binary;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -60,6 +63,9 @@ import org.junit.jupiter.api.Test;
 import com.jerolba.carpet.ParquetWriterTest;
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.TimeUnit;
+import com.jerolba.carpet.annotation.ParquetBson;
+import com.jerolba.carpet.annotation.ParquetJson;
+import com.jerolba.carpet.annotation.ParquetString;
 import com.jerolba.carpet.model.FieldTypes;
 import com.jerolba.carpet.model.WriteRecordModelType;
 
@@ -418,6 +424,130 @@ class WriteRecordModelWriterTest {
         }
 
         @Test
+        void stringBinaryObject() throws IOException {
+
+            record StringObject(@ParquetString Binary value) {
+            }
+
+            var mapper = writeRecordModel(StringObject.class)
+                    .withField("value", BINARY.asString(), StringObject::value);
+
+            var rec1 = new StringObject(Binary.fromString("Madrid"));
+            var rec2 = new StringObject(Binary.fromString("Zaragoza"));
+            var writerTest = new ParquetWriterTest<>(StringObject.class);
+            writerTest.write(mapper, rec1, rec2);
+
+            var avroReader = writerTest.getAvroGenericRecordReader();
+            assertEquals(rec1.value.toStringUsingUTF8(), avroReader.read().get("value").toString());
+            assertEquals(rec2.value.toStringUsingUTF8(), avroReader.read().get("value").toString());
+
+            var carpetReader = writerTest.getCarpetReader();
+            assertEquals(rec1, carpetReader.read());
+            assertEquals(rec2, carpetReader.read());
+        }
+
+        @Test
+        void jsonAsStringObject() throws IOException {
+
+            record JsonAsStringObject(@ParquetJson String value) {
+            }
+
+            var mapper = writeRecordModel(JsonAsStringObject.class)
+                    .withField("value", STRING.asJson(), JsonAsStringObject::value);
+
+            var rec1 = new JsonAsStringObject("{\"city\": \"Madrid\"}");
+            var rec2 = new JsonAsStringObject("{\"city\": \"Zaragoza\"}");
+            var writerTest = new ParquetWriterTest<>(JsonAsStringObject.class);
+            writerTest.write(mapper, rec1, rec2);
+
+            var avroReader = writerTest.getAvroGenericRecordReader();
+            ByteBuffer asByteBuffer1 = (ByteBuffer) avroReader.read().get("value");
+            assertEquals(rec1.value, new String(asByteBuffer1.array()));
+            ByteBuffer asByteBuffer2 = (ByteBuffer) avroReader.read().get("value");
+            assertEquals(rec2.value, new String(asByteBuffer2.array()));
+
+            var carpetReader = writerTest.getCarpetReader();
+            assertEquals(rec1, carpetReader.read());
+            assertEquals(rec2, carpetReader.read());
+        }
+
+        @Test
+        void jsonAsBinaryObject() throws IOException {
+
+            record JsonAsBinaryObject(@ParquetJson Binary value) {
+            }
+
+            var mapper = writeRecordModel(JsonAsBinaryObject.class)
+                    .withField("value", BINARY.asJson(), JsonAsBinaryObject::value);
+
+            var rec1 = new JsonAsBinaryObject(Binary.fromString("{\"city\": \"Madrid\"}"));
+            var rec2 = new JsonAsBinaryObject(Binary.fromString("{\"city\": \"Zaragoza\"}"));
+            var writerTest = new ParquetWriterTest<>(JsonAsBinaryObject.class);
+            writerTest.write(mapper, rec1, rec2);
+
+            var avroReader = writerTest.getAvroGenericRecordReader();
+            ByteBuffer asByteBuffer1 = (ByteBuffer) avroReader.read().get("value");
+            assertEquals(rec1.value, Binary.fromReusedByteBuffer(asByteBuffer1));
+            ByteBuffer asByteBuffer2 = (ByteBuffer) avroReader.read().get("value");
+            assertEquals(rec2.value, Binary.fromReusedByteBuffer(asByteBuffer2));
+
+            var carpetReader = writerTest.getCarpetReader();
+            assertEquals(rec1, carpetReader.read());
+            assertEquals(rec2, carpetReader.read());
+        }
+
+        @Test
+        void bsonAsBinaryObject() throws IOException {
+
+            record BsonAsBinaryObject(@ParquetBson Binary value) {
+            }
+
+            var mapper = writeRecordModel(BsonAsBinaryObject.class)
+                    .withField("value", BINARY.asBson(), BsonAsBinaryObject::value);
+
+            byte[] bson = new byte[] {
+                    0x16, 0x00, 0x00, 0x00, // Total lenght (22 bytes) in little-endian
+                    0x02, // Data type: String (0x02)
+                    0x63, 0x69, 0x74, 0x79, 0x00, // "city" + null terminator
+                    0x07, 0x00, 0x00, 0x00, // string lenght (7 bytes) in little-endian
+                    0x4D, 0x61, 0x64, 0x72, 0x69, 0x64, 0x00, // "Madrid" + null terminator
+                    0x00 // document terminator
+            };
+            var rec = new BsonAsBinaryObject(Binary.fromConstantByteArray(bson));
+            var writerTest = new ParquetWriterTest<>(BsonAsBinaryObject.class);
+            writerTest.write(mapper, rec);
+
+            var avroReader = writerTest.getAvroGenericRecordReader();
+            ByteBuffer asByteBuffer = (ByteBuffer) avroReader.read().get("value");
+            assertEquals(rec.value, Binary.fromReusedByteBuffer(asByteBuffer));
+
+            var carpetReader = writerTest.getCarpetReader();
+            assertEquals(rec, carpetReader.read());
+        }
+
+        @Test
+        void justBinaryObject() throws IOException {
+
+            record JustBinaryObject(Binary value) {
+            }
+
+            var mapper = writeRecordModel(JustBinaryObject.class)
+                    .withField("value", BINARY, JustBinaryObject::value);
+
+            byte[] byteArray = new byte[] { 0x01, 0x02, 0x03, 0x04 };
+            var rec = new JustBinaryObject(Binary.fromConstantByteArray(byteArray));
+            var writerTest = new ParquetWriterTest<>(JustBinaryObject.class);
+            writerTest.write(mapper, rec);
+
+            var avroReader = writerTest.getAvroGenericRecordReader();
+            ByteBuffer asByteBuffer = (ByteBuffer) avroReader.read().get("value");
+            assertEquals(rec.value, Binary.fromReusedByteBuffer(asByteBuffer));
+
+            var carpetReader = writerTest.getCarpetReader();
+            assertEquals(rec, carpetReader.read());
+        }
+
+        @Test
         void enumObject() throws IOException {
 
             record EnumObject(Category value) {
@@ -438,6 +568,36 @@ class WriteRecordModelWriterTest {
             var carpetReader = writerTest.getCarpetReader();
             assertEquals(rec1, carpetReader.read());
             assertEquals(rec2, carpetReader.read());
+        }
+
+        @Test
+        void enumAsStringObject() throws IOException {
+
+            record EnumObject(Category value) {
+            }
+
+            var mapper = writeRecordModel(EnumObject.class)
+                    .withField("value", ENUM.ofType(Category.class).asString(), EnumObject::value);
+
+            var rec1 = new EnumObject(Category.one);
+            var rec2 = new EnumObject(Category.two);
+            var writerTest = new ParquetWriterTest<>(EnumObject.class);
+            writerTest.write(mapper, rec1, rec2);
+
+            var avroReader = writerTest.getAvroGenericRecordReader();
+            assertEquals(rec1.value.name(), avroReader.read().get("value").toString());
+            assertEquals(rec2.value.name(), avroReader.read().get("value").toString());
+
+            var carpetReader = writerTest.getCarpetReader();
+            assertEquals(rec1, carpetReader.read());
+            assertEquals(rec2, carpetReader.read());
+
+            record EnumStringObject(String value) {
+            }
+
+            var carpetReaderString = writerTest.getCarpetReader(EnumStringObject.class);
+            assertEquals(new EnumStringObject("one"), carpetReaderString.read());
+            assertEquals(new EnumStringObject("two"), carpetReaderString.read());
         }
 
         @Test

@@ -66,6 +66,9 @@ class ModelFieldsWriter {
         if (type.isShort() || type.isByte()) {
             return (consumer, v) -> consumer.addInteger(((Number) v).intValue());
         }
+        if (type.isBinary()) {
+            return (consumer, v) -> consumer.addBinary((Binary) v);
+        }		
         if (fieldType instanceof EnumType enumType) {
             EnumsValues enumValues = new EnumsValues(enumType.enumClass());
             return (consumer, v) -> consumer.addBinary(enumValues.getValue(v));

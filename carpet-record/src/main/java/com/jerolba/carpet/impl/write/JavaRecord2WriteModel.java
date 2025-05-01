@@ -26,13 +26,19 @@ import java.util.Set;
 import java.util.function.Function;
 
 import com.jerolba.carpet.RecordTypeConversionException;
+import com.jerolba.carpet.annotation.ParquetBson;
+import com.jerolba.carpet.annotation.ParquetEnum;
+import com.jerolba.carpet.annotation.ParquetJson;
+import com.jerolba.carpet.annotation.ParquetString;
 import com.jerolba.carpet.impl.JavaType;
 import com.jerolba.carpet.impl.Parameterized;
 import com.jerolba.carpet.impl.ParameterizedCollection;
 import com.jerolba.carpet.impl.ParameterizedMap;
+import com.jerolba.carpet.model.BinaryType;
 import com.jerolba.carpet.model.EnumType;
 import com.jerolba.carpet.model.FieldType;
 import com.jerolba.carpet.model.FieldTypes;
+import com.jerolba.carpet.model.StringType;
 import com.jerolba.carpet.model.WriteRecordModelType;
 
 public class JavaRecord2WriteModel {
@@ -66,7 +72,7 @@ public class JavaRecord2WriteModel {
                 throw new RecordTypeConversionException(genericType.toString() + " generic types not supported");
             }
             Class<?> type = attr.getType();
-            JavaType javaType = new JavaType(type);
+            JavaType javaType = new JavaType(type, attr.getDeclaredAnnotations());
             FieldType fieldType = null;
             if (javaType.isCollection()) {
                 var parameterizedCollection = Parameterized.getParameterizedCollection(attr);
@@ -76,7 +82,7 @@ public class JavaRecord2WriteModel {
                 fieldType = createMapType(parameterizedMap, visited);
             } else {
                 boolean notNull = type.isPrimitive() || isNotNull(attr);
-                fieldType = simpleOrCompositeClass(type, notNull, visited);
+                fieldType = simpleOrCompositeClass(javaType, notNull, visited);
             }
             String fieldName = fieldToColumnMapper.getColumnName(attr);
             Function<T, Object> recordAccessor = (Function<T, Object>) Reflection.recordAccessor(recordClass, attr);
@@ -84,9 +90,9 @@ public class JavaRecord2WriteModel {
         }
     }
 
-    private FieldType simpleOrCompositeClass(Class<?> type, boolean isNotNull, Set<Class<?>> visited) {
-        FieldType simple = buildSimpleType(type, isNotNull);
-        return simple == null ? buildRecordModel(type, isNotNull, visited) : simple;
+    private FieldType simpleOrCompositeClass(JavaType javaType, boolean isNotNull, Set<Class<?>> visited) {
+        FieldType simple = buildSimpleType(javaType, isNotNull);
+        return simple == null ? buildRecordModel(javaType.getJavaType(), isNotNull, visited) : simple;
     }
 
     private FieldType createCollectionType(ParameterizedCollection parametized, Set<Class<?>> visited) {
@@ -95,15 +101,14 @@ public class JavaRecord2WriteModel {
         } else if (parametized.isMap()) {
             return LIST.ofType(createMapType(parametized.getParametizedAsMap(), visited));
         }
-        return LIST.ofType(simpleOrCompositeClass(parametized.getActualType(), false, visited));
+        return LIST.ofType(simpleOrCompositeClass(parametized.getActualJavaType(), false, visited));
     }
 
     private FieldType createMapType(ParameterizedMap parametized, Set<Class<?>> visited) {
-        Class<?> keyType = parametized.getKeyActualType();
         if (parametized.keyIsCollection() || parametized.keyIsMap()) {
             throw new RuntimeException("Maps with collections or maps as keys are not supported");
         }
-        FieldType nestedKey = simpleOrCompositeClass(keyType, false, visited);
+        FieldType nestedKey = simpleOrCompositeClass(parametized.getKeyActualJavaType(), false, visited);
 
         if (parametized.valueIsCollection()) {
             FieldType childCollection = createCollectionType(parametized.getValueTypeAsCollection(), visited);
@@ -112,7 +117,7 @@ public class JavaRecord2WriteModel {
             FieldType childMap = createMapType(parametized.getValueTypeAsMap(), visited);
             return MAP.ofTypes(nestedKey, childMap);
         }
-        FieldType nestedValue = simpleOrCompositeClass(parametized.getValueActualType(), false, visited);
+        FieldType nestedValue = simpleOrCompositeClass(parametized.getValueActualJavaType(), false, visited);
         if (nestedKey != null && nestedValue != null) {
             return MAP.ofTypes(nestedKey, nestedValue);
         }
@@ -131,13 +136,7 @@ public class JavaRecord2WriteModel {
         return visited;
     }
 
-    public static FieldType buildSimpleType(Class<?> type, boolean isNotNull) {
-        JavaType javaType = new JavaType(type);
-        FieldType javaPrimitiveType = javaPrimitiveTypes(javaType, isNotNull);
-        return javaPrimitiveType != null ? javaPrimitiveType : javaTypes(type, javaType, isNotNull);
-    }
-
-    private static FieldType javaPrimitiveTypes(JavaType javaType, boolean isNotNull) {
+    public static FieldType buildSimpleType(JavaType javaType, boolean isNotNull) {
         if (javaType.isInteger()) {
             return isNotNull ? FieldTypes.INTEGER.notNull() : FieldTypes.INTEGER;
         }
@@ -159,16 +158,14 @@ public class JavaRecord2WriteModel {
         if (javaType.isByte()) {
             return isNotNull ? FieldTypes.BYTE.notNull() : FieldTypes.BYTE;
         }
-        return null;
-    }
-
-    private static FieldType javaTypes(Class<?> type, JavaType javaType, boolean isNotNull) {
         if (javaType.isString()) {
-            return isNotNull ? FieldTypes.STRING.notNull() : FieldTypes.STRING;
+            return stringType(javaType, isNotNull);
+        }
+        if (javaType.isBinary()) {
+            return binaryType(javaType, isNotNull);
         }
         if (javaType.isEnum()) {
-            EnumType enumType = new EnumType(false, (Class<? extends Enum<?>>) type);
-            return isNotNull ? enumType.notNull() : enumType;
+            return enumType(javaType, isNotNull);
         }
         if (javaType.isUuid()) {
             return isNotNull ? FieldTypes.UUID.notNull() : FieldTypes.UUID;
@@ -189,6 +186,39 @@ public class JavaRecord2WriteModel {
             return isNotNull ? FieldTypes.INSTANT.notNull() : FieldTypes.INSTANT;
         }
         return null;
+    }
+
+    private static FieldType stringType(JavaType javaType, boolean isNotNull) {
+        StringType type = isNotNull ? FieldTypes.STRING.notNull() : FieldTypes.STRING;
+        if (javaType.isAnnotatedWith(ParquetJson.class)) {
+            type = type.asJson();
+        } else if (javaType.isAnnotatedWith(ParquetEnum.class)) {
+            type = type.asEnum();
+        }
+        return type;
+    }
+
+    private static FieldType binaryType(JavaType javaType, boolean isNotNull) {
+        BinaryType binary = isNotNull ? FieldTypes.BINARY.notNull() : FieldTypes.BINARY;
+        if (javaType.isAnnotatedWith(ParquetString.class)) {
+            binary = binary.asString();
+        } else if (javaType.isAnnotatedWith(ParquetJson.class)) {
+            binary = binary.asJson();
+        } else if (javaType.isAnnotatedWith(ParquetEnum.class)) {
+            binary = binary.asEnum();
+        } else if (javaType.isAnnotatedWith(ParquetBson.class)) {
+            binary = binary.asBson();
+        }
+        return binary;
+    }
+
+    private static FieldType enumType(JavaType javaType, boolean isNotNull) {
+        if (javaType.isAnnotatedWith(ParquetString.class)) {
+            BinaryType binary = FieldTypes.BINARY.asString();
+            return isNotNull ? binary.notNull() : binary;
+        }
+        EnumType enumType = FieldTypes.ENUM.ofType((Class<? extends Enum<?>>) javaType.getJavaType());
+        return isNotNull ? enumType.notNull() : enumType;
     }
 
 }

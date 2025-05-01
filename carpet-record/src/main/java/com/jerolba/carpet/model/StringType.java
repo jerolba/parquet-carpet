@@ -15,10 +15,31 @@
  */
 package com.jerolba.carpet.model;
 
-public record StringType(boolean isNotNull) implements FieldType {
+import java.util.Set;
+
+public record StringType(boolean isNotNull, BinaryLogicalType logicalType) implements FieldType {
+
+    private static final Set<BinaryLogicalType> VALID_LOGICAL_TYPES = Set.of(
+            BinaryLogicalType.STRING,
+            BinaryLogicalType.ENUM,
+            BinaryLogicalType.JSON);
+
+    public StringType {
+        if (logicalType != null && !VALID_LOGICAL_TYPES.contains(logicalType)) {
+            throw new IllegalArgumentException("Invalid logical type for StringType: " + logicalType);
+        }
+    }
 
     public StringType notNull() {
-        return new StringType(true);
+        return new StringType(true, logicalType);
+    }
+
+    public StringType asJson() {
+        return new StringType(isNotNull, BinaryLogicalType.JSON);
+    }
+
+    public StringType asEnum() {
+        return new StringType(isNotNull, BinaryLogicalType.ENUM);
     }
 
     @Override
