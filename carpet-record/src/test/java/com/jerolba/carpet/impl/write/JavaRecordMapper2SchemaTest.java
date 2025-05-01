@@ -1525,6 +1525,26 @@ class JavaRecordMapper2SchemaTest {
         }
 
         @Test
+        void nestedNotNullStringCollection() {
+
+            record SimpleTypeCollection(@NotNull String id, @NotNull List<@NotNull String> values) {
+            }
+
+            MessageType schema = class2Model2Schema(SimpleTypeCollection.class);
+            String expected = """
+                    message SimpleTypeCollection {
+                      required binary id (STRING);
+                      required group values (LIST) {
+                        repeated group list {
+                          required binary element (STRING);
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
         void consecutiveNestedRecordCollection() {
 
             record ChildRecord(String id, Boolean loaded) {
@@ -1577,6 +1597,35 @@ class JavaRecordMapper2SchemaTest {
                                     optional binary id (STRING);
                                     optional boolean loaded;
                                   }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void consecutiveTripleNestedNotNullCollection() {
+
+            record ConsecutiveTripleNestedNotNullCollection(@NotNull String id,
+                    @NotNull List<@NotNull List<@NotNull List<@NotNull String>>> values) {
+            }
+
+            MessageType schema = class2Model2Schema(ConsecutiveTripleNestedNotNullCollection.class);
+            String expected = """
+                    message ConsecutiveTripleNestedNotNullCollection {
+                      required binary id (STRING);
+                      required group values (LIST) {
+                        repeated group list {
+                          required group element (LIST) {
+                            repeated group list {
+                              required group element (LIST) {
+                                repeated group list {
+                                  required binary element (STRING);
                                 }
                               }
                             }
@@ -1748,6 +1797,26 @@ class JavaRecordMapper2SchemaTest {
         }
 
         @Test
+        void nestedNotNullableTypeMap() {
+            record SimpleTypeMap(@NotNull String id, @NotNull Map<String, @NotNull Integer> values) {
+            }
+
+            MessageType schema = class2Model2Schema(SimpleTypeMap.class);
+            String expected = """
+                    message SimpleTypeMap {
+                      required binary id (STRING);
+                      required group values (MAP) {
+                        repeated group key_value {
+                          required binary key (STRING);
+                          required int32 value;
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
         void nestedRecordMap() {
 
             record ChildRecord(String id, Boolean loaded) {
@@ -1890,6 +1959,38 @@ class JavaRecordMapper2SchemaTest {
                                     optional binary id (STRING);
                                     optional boolean loaded;
                                   }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void consecutiveTripleNestedNotNullMap() {
+
+            record ConsecutiveTripleNestedNotNullMap(@NotNull String id,
+                    @NotNull Map<String, @NotNull Map<String, @NotNull Map<String, @NotNull String>>> values) {
+            }
+
+            MessageType schema = class2Model2Schema(ConsecutiveTripleNestedNotNullMap.class);
+            String expected = """
+                    message ConsecutiveTripleNestedNotNullMap {
+                      required binary id (STRING);
+                      required group values (MAP) {
+                        repeated group key_value {
+                          required binary key (STRING);
+                          required group value (MAP) {
+                            repeated group key_value {
+                              required binary key (STRING);
+                              required group value (MAP) {
+                                repeated group key_value {
+                                  required binary key (STRING);
+                                  required binary value (STRING);
                                 }
                               }
                             }

@@ -138,4 +138,8 @@ public class JavaType {
         return false;
     }
 
+    public Annotation[] getDeclaredAnnotations() {
+        return declaredAnnotations;
+    }
+
 }

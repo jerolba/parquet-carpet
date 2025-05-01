@@ -16,6 +16,7 @@
 package com.jerolba.carpet.impl.write;
 
 import static com.jerolba.carpet.impl.NotNullField.isNotNull;
+import static com.jerolba.carpet.impl.NotNullField.isNotNullAnnotated;
 import static com.jerolba.carpet.impl.Parameterized.getParameterizedCollection;
 import static com.jerolba.carpet.impl.Parameterized.getParameterizedMap;
 import static com.jerolba.carpet.impl.write.SchemaBuilder.buildDecimalTypeItem;
@@ -62,6 +63,10 @@ import com.jerolba.carpet.impl.ParameterizedMap;
 
 class JavaRecord2Schema {
 
+    private static final String KEY = "key";
+    private static final String VALUE = "value";
+    private static final String ELEMENT = "element";
+
     private final CarpetWriteConfiguration carpetConfiguration;
     private final FieldToColumnMapper fieldToColumnMapper;
 
@@ -96,10 +101,10 @@ class JavaRecord2Schema {
                 fields.add(parquetType);
             } else if (javaType.isCollection()) {
                 var parameterizedCollection = getParameterizedCollection(attr);
-                fields.add(createCollectionType(fieldName, parameterizedCollection, visited, repetition));
+                fields.add(createCollectionType(fieldName, parameterizedCollection, repetition, visited));
             } else if (javaType.isMap()) {
                 var parameterizedMap = getParameterizedMap(attr);
-                fields.add(createMapType(fieldName, parameterizedMap, visited, repetition));
+                fields.add(createMapType(fieldName, parameterizedMap, repetition, visited));
             } else {
                 java.lang.reflect.Type genericType = attr.getGenericType();
                 if (genericType instanceof TypeVariable<?>) {
@@ -119,12 +124,12 @@ class JavaRecord2Schema {
         return fields;
     }
 
-    private Type createCollectionType(String fieldName, ParameterizedCollection collectionClass, Set<Class<?>> visited,
-            Repetition repetition) {
+    private Type createCollectionType(String fieldName, ParameterizedCollection collectionClass, Repetition repetition,
+            Set<Class<?>> visited) {
         return switch (carpetConfiguration.annotatedLevels()) {
         case ONE -> createCollectionOneLevel(fieldName, collectionClass, visited);
-        case TWO -> createCollectionTwoLevel(fieldName, collectionClass, visited, repetition);
-        case THREE -> createCollectionThreeLevel(fieldName, collectionClass, visited, repetition);
+        case TWO -> createCollectionTwoLevel(fieldName, collectionClass, repetition, visited);
+        case THREE -> createCollectionThreeLevel(fieldName, collectionClass, repetition, visited);
         };
     }
 
@@ -135,51 +140,50 @@ class JavaRecord2Schema {
                     "Recursive collections not supported in annotated 1-level structures");
         }
         if (parametized.isMap()) {
-            return createMapType(fieldName, parametized.getParametizedAsMap(), visited, REPEATED);
+            return createMapType(fieldName, parametized.getParametizedAsMap(), REPEATED, visited);
         }
-        return buildTypeElement(parametized.getActualJavaType(), visited, REPEATED, fieldName);
+        return buildTypeElement(fieldName, parametized.getActualJavaType(), REPEATED, visited);
     }
 
-    private Type createCollectionTwoLevel(String fieldName, ParameterizedCollection parametized, Set<Class<?>> visited,
-            Repetition repetition) {
+    private Type createCollectionTwoLevel(String fieldName, ParameterizedCollection parametized, Repetition repetition,
+            Set<Class<?>> visited) {
         // Two level collections elements are not nullables
-        Type nested = createNestedCollection(parametized, visited, REPEATED);
+        Type nested = createNestedCollection(parametized, REPEATED, visited);
         return ConversionPatterns.listType(repetition, fieldName, nested);
     }
 
     private Type createCollectionThreeLevel(String fieldName, ParameterizedCollection parametized,
-            Set<Class<?>> visited, Repetition repetition) {
-        // Three level collections elements are nullables
-        Type nested = createNestedCollection(parametized, visited, OPTIONAL);
+            Repetition repetition, Set<Class<?>> visited) {
+        var repetitionCollection = getTypeRepetition(parametized.getActualJavaType());
+        Type nested = createNestedCollection(parametized, repetitionCollection, visited);
         return ConversionPatterns.listOfElements(repetition, fieldName, nested);
     }
 
-    private Type createNestedCollection(ParameterizedCollection parametized, Set<Class<?>> visited,
-            Repetition repetition) {
+    private Type createNestedCollection(ParameterizedCollection parametized, Repetition repetition,
+            Set<Class<?>> visited) {
         if (parametized.isCollection()) {
-            return createCollectionType("element", parametized.getParametizedAsCollection(), visited, repetition);
+            return createCollectionType(ELEMENT, parametized.getParametizedAsCollection(), repetition, visited);
         }
         if (parametized.isMap()) {
-            return createMapType("element", parametized.getParametizedAsMap(), visited, repetition);
+            return createMapType(ELEMENT, parametized.getParametizedAsMap(), repetition, visited);
         }
-        return buildTypeElement(parametized.getActualJavaType(), visited, repetition, "element");
+        return buildTypeElement(ELEMENT, parametized.getActualJavaType(), repetition, visited);
     }
 
-    private Type createMapType(String fieldName, ParameterizedMap parametized, Set<Class<?>> visited,
-            Repetition repetition) {
-        Type nestedKey = buildTypeElement(parametized.getKeyActualJavaType(), visited, REQUIRED, "key");
+    private Type createMapType(String fieldName, ParameterizedMap parametized, Repetition repetition,
+            Set<Class<?>> visited) {
+        Type nestedKey = buildTypeElement(KEY, parametized.getKeyActualJavaType(), REQUIRED, visited);
+        Type nestedValue = null;
 
+        var repetitionValue = getTypeRepetition(parametized.getValueActualJavaType());
         if (parametized.valueIsCollection()) {
-            Type childCollection = createCollectionType("value", parametized.getValueTypeAsCollection(),
-                    visited, OPTIONAL);
-            return Types.map(repetition).key(nestedKey).value(childCollection).named(fieldName);
+            nestedValue = createCollectionType(VALUE, parametized.getValueTypeAsCollection(), repetitionValue,
+                    visited);
+        } else if (parametized.valueIsMap()) {
+            nestedValue = createMapType(VALUE, parametized.getValueTypeAsMap(), repetitionValue, visited);
+        } else {
+            nestedValue = buildTypeElement(VALUE, parametized.getValueActualJavaType(), repetitionValue, visited);
         }
-        if (parametized.valueIsMap()) {
-            Type childMap = createMapType("value", parametized.getValueTypeAsMap(), visited, OPTIONAL);
-            return Types.map(repetition).key(nestedKey).value(childMap).named(fieldName);
-        }
-
-        Type nestedValue = buildTypeElement(parametized.getValueActualJavaType(), visited, OPTIONAL, "value");
         if (nestedKey != null && nestedValue != null) {
             // TODO: what to change to support generation of older versions?
             return Types.map(repetition).key(nestedKey).value(nestedValue).named(fieldName);
@@ -187,7 +191,7 @@ class JavaRecord2Schema {
         throw new RecordTypeConversionException("Unsupported type in Map");
     }
 
-    private Type buildTypeElement(JavaType javaType, Set<Class<?>> visited, Repetition repetition, String name) {
+    private Type buildTypeElement(String name, JavaType javaType, Repetition repetition, Set<Class<?>> visited) {
         Type parquetType = buildType(javaType, visited, repetition, name);
         if (parquetType == null) {
             throw new RecordTypeConversionException("Unsupported type " + javaType.getJavaType());
@@ -274,6 +278,10 @@ class JavaRecord2Schema {
             throw new RecordTypeConversionException("Recusive records are not supported");
         }
         visited.add(recordClass);
+    }
+
+    private static Repetition getTypeRepetition(JavaType javaType) {
+        return isNotNullAnnotated(javaType.getDeclaredAnnotations()) ? REQUIRED : OPTIONAL;
     }
 
 }

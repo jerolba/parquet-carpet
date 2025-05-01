@@ -60,6 +60,7 @@ import com.jerolba.carpet.AnnotatedLevels;
 import com.jerolba.carpet.ColumnNamingStrategy;
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.TimeUnit;
+import com.jerolba.carpet.annotation.NotNull;
 import com.jerolba.carpet.annotation.ParquetBson;
 import com.jerolba.carpet.annotation.ParquetEnum;
 import com.jerolba.carpet.annotation.ParquetJson;
@@ -1871,6 +1872,32 @@ class WriteRecord2SchemaTest {
         }
 
         @Test
+        void nestedNotNullStringCollection() {
+
+            record SimpleTypeCollection(@NotNull String id, @NotNull List<@NotNull String> values) {
+            }
+
+            var rootType = writeRecordModel(SimpleTypeCollection.class)
+                    .withField("id", STRING.notNull(), SimpleTypeCollection::id)
+                    .withField("values", LIST.ofType(STRING.notNull()).notNull(), SimpleTypeCollection::values);
+
+            var config = config().annotatedLevels(AnnotatedLevels.THREE).build();
+            MessageType schema = new WriteRecordModel2Schema(config).createSchema(rootType);
+
+            String expected = """
+                    message SimpleTypeCollection {
+                      required binary id (STRING);
+                      required group values (LIST) {
+                        repeated group list {
+                          required binary element (STRING);
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
         void nestedRecordCollection() {
             record ChildRecord(String id, Boolean loaded) {
             }
@@ -1976,6 +2003,42 @@ class WriteRecord2SchemaTest {
                                     optional binary id (STRING);
                                     optional boolean loaded;
                                   }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void consecutiveTripleNestedNotNullCollection() {
+
+            record ConsecutiveTripleNestedNotNullCollection(String id, List<List<List<String>>> values) {
+            }
+
+            var rootType = writeRecordModel(ConsecutiveTripleNestedNotNullCollection.class)
+                    .withField("id", STRING.notNull(), ConsecutiveTripleNestedNotNullCollection::id)
+                    .withField("values",
+                            LIST.notNull().ofType(LIST.notNull().ofType(LIST.notNull().ofType(STRING.notNull()))),
+                            ConsecutiveTripleNestedNotNullCollection::values);
+
+            var config = config().annotatedLevels(AnnotatedLevels.THREE).build();
+            MessageType schema = new WriteRecordModel2Schema(config).createSchema(rootType);
+
+            String expected = """
+                    message ConsecutiveTripleNestedNotNullCollection {
+                      required binary id (STRING);
+                      required group values (LIST) {
+                        repeated group list {
+                          required group element (LIST) {
+                            repeated group list {
+                              required group element (LIST) {
+                                repeated group list {
+                                  required binary element (STRING);
                                 }
                               }
                             }
@@ -2177,6 +2240,29 @@ class WriteRecord2SchemaTest {
         }
 
         @Test
+        void nestedNotNullableTypeMap() {
+            record SimpleTypeMap(String id, Map<String, Integer> values) {
+            }
+
+            var rootType = writeRecordModel(SimpleTypeMap.class)
+                    .withField("id", STRING.notNull(), SimpleTypeMap::id)
+                    .withField("values", MAP.ofTypes(STRING, INTEGER.notNull()).notNull(), SimpleTypeMap::values);
+
+            String expected = """
+                    message SimpleTypeMap {
+                      required binary id (STRING);
+                      required group values (MAP) {
+                        repeated group key_value {
+                          required binary key (STRING);
+                          required int32 value;
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schemaWithRootType(rootType).toString());
+        }
+
+        @Test
         void nestedRecordMap() {
             record ChildRecord(String id, Boolean loaded) {
             }
@@ -2347,6 +2433,43 @@ class WriteRecord2SchemaTest {
                                     optional binary id (STRING);
                                     optional boolean loaded;
                                   }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schemaWithRootType(rootType).toString());
+        }
+
+        @Test
+        void consecutiveTripleNestedNotNullMap() {
+
+            record ConsecutiveTripleNestedNotNullMap(String id,
+                    Map<String, Map<String, Map<String, String>>> values) {
+            }
+
+            var rootType = writeRecordModel(ConsecutiveTripleNestedNotNullMap.class)
+                    .withField("id", STRING.notNull(), ConsecutiveTripleNestedNotNullMap::id)
+                    .withField("values", MAP.notNull().ofTypes(STRING,
+                            MAP.notNull().ofTypes(STRING, MAP.notNull().ofTypes(STRING, STRING.notNull()))),
+                            ConsecutiveTripleNestedNotNullMap::values);
+
+            String expected = """
+                    message ConsecutiveTripleNestedNotNullMap {
+                      required binary id (STRING);
+                      required group values (MAP) {
+                        repeated group key_value {
+                          required binary key (STRING);
+                          required group value (MAP) {
+                            repeated group key_value {
+                              required binary key (STRING);
+                              required group value (MAP) {
+                                repeated group key_value {
+                                  required binary key (STRING);
+                                  required binary value (STRING);
                                 }
                               }
                             }
