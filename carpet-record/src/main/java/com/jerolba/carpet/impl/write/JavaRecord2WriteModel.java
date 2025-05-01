@@ -16,6 +16,7 @@
 package com.jerolba.carpet.impl.write;
 
 import static com.jerolba.carpet.impl.NotNullField.isNotNull;
+import static com.jerolba.carpet.impl.NotNullField.isNotNullAnnotated;
 import static com.jerolba.carpet.model.FieldTypes.LIST;
 import static com.jerolba.carpet.model.FieldTypes.MAP;
 import static com.jerolba.carpet.model.FieldTypes.writeRecordModel;
@@ -38,6 +39,8 @@ import com.jerolba.carpet.model.BinaryType;
 import com.jerolba.carpet.model.EnumType;
 import com.jerolba.carpet.model.FieldType;
 import com.jerolba.carpet.model.FieldTypes;
+import com.jerolba.carpet.model.ListTypeBuilder;
+import com.jerolba.carpet.model.MapTypeBuilder;
 import com.jerolba.carpet.model.StringType;
 import com.jerolba.carpet.model.WriteRecordModelType;
 
@@ -73,15 +76,15 @@ public class JavaRecord2WriteModel {
             }
             Class<?> type = attr.getType();
             JavaType javaType = new JavaType(type, attr.getDeclaredAnnotations());
+            boolean notNull = type.isPrimitive() || isNotNull(attr);
             FieldType fieldType = null;
             if (javaType.isCollection()) {
                 var parameterizedCollection = Parameterized.getParameterizedCollection(attr);
-                fieldType = createCollectionType(parameterizedCollection, visited);
+                fieldType = createCollectionType(parameterizedCollection, notNull, visited);
             } else if (javaType.isMap()) {
                 var parameterizedMap = Parameterized.getParameterizedMap(attr);
-                fieldType = createMapType(parameterizedMap, visited);
+                fieldType = createMapType(parameterizedMap, notNull, visited);
             } else {
-                boolean notNull = type.isPrimitive() || isNotNull(attr);
                 fieldType = simpleOrCompositeClass(javaType, notNull, visited);
             }
             String fieldName = fieldToColumnMapper.getColumnName(attr);
@@ -95,31 +98,37 @@ public class JavaRecord2WriteModel {
         return simple == null ? buildRecordModel(javaType.getJavaType(), isNotNull, visited) : simple;
     }
 
-    private FieldType createCollectionType(ParameterizedCollection parametized, Set<Class<?>> visited) {
+    private FieldType createCollectionType(ParameterizedCollection parametized, boolean isNotNull,
+            Set<Class<?>> visited) {
+        JavaType actualJavaType = parametized.getActualJavaType();
+        boolean typeIsNotNull = isNotNullAnnotated(actualJavaType.getDeclaredAnnotations());
+        ListTypeBuilder list = isNotNull ? LIST.notNull() : LIST;
         if (parametized.isCollection()) {
-            return LIST.ofType(createCollectionType(parametized.getParametizedAsCollection(), visited));
+            return list.ofType(createCollectionType(parametized.getParametizedAsCollection(), typeIsNotNull, visited));
         } else if (parametized.isMap()) {
-            return LIST.ofType(createMapType(parametized.getParametizedAsMap(), visited));
+            return list.ofType(createMapType(parametized.getParametizedAsMap(), typeIsNotNull, visited));
         }
-        return LIST.ofType(simpleOrCompositeClass(parametized.getActualJavaType(), false, visited));
+        return list.ofType(simpleOrCompositeClass(actualJavaType, typeIsNotNull, visited));
     }
 
-    private FieldType createMapType(ParameterizedMap parametized, Set<Class<?>> visited) {
+    private FieldType createMapType(ParameterizedMap parametized, boolean isNotNull, Set<Class<?>> visited) {
         if (parametized.keyIsCollection() || parametized.keyIsMap()) {
             throw new RuntimeException("Maps with collections or maps as keys are not supported");
         }
-        FieldType nestedKey = simpleOrCompositeClass(parametized.getKeyActualJavaType(), false, visited);
-
+        FieldType nestedKey = simpleOrCompositeClass(parametized.getKeyActualJavaType(), true, visited);
+        JavaType valueActualJavaType = parametized.getValueActualJavaType();
+        boolean valueIsNotNull = isNotNullAnnotated(valueActualJavaType.getDeclaredAnnotations());
+        FieldType nestedValue = null;
         if (parametized.valueIsCollection()) {
-            FieldType childCollection = createCollectionType(parametized.getValueTypeAsCollection(), visited);
-            return MAP.ofTypes(nestedKey, childCollection);
+            nestedValue = createCollectionType(parametized.getValueTypeAsCollection(), valueIsNotNull, visited);
         } else if (parametized.valueIsMap()) {
-            FieldType childMap = createMapType(parametized.getValueTypeAsMap(), visited);
-            return MAP.ofTypes(nestedKey, childMap);
+            nestedValue = createMapType(parametized.getValueTypeAsMap(), valueIsNotNull, visited);
+        } else {
+            nestedValue = simpleOrCompositeClass(valueActualJavaType, valueIsNotNull, visited);
         }
-        FieldType nestedValue = simpleOrCompositeClass(parametized.getValueActualJavaType(), false, visited);
         if (nestedKey != null && nestedValue != null) {
-            return MAP.ofTypes(nestedKey, nestedValue);
+            MapTypeBuilder map = isNotNull ? MAP.notNull() : MAP;
+            return map.ofTypes(nestedKey, nestedValue);
         }
         throw new RecordTypeConversionException("Unsuported type in Map");
     }

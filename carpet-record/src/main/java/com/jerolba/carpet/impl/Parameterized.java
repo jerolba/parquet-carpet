@@ -66,6 +66,12 @@ public class Parameterized {
         if ((type instanceof Class<?> finalType)) {
             return finalType;
         }
+        if ((type instanceof ParameterizedType parameterizedType)) {
+            Type rawType = parameterizedType.getRawType();
+            if (rawType instanceof Class<?> finalType) {
+                return finalType;
+            }
+        }
         if ((type instanceof TypeVariable<?> finalType)) {
             throw new RecordTypeConversionException(
                     finalType.getName() + " generic type not supported " + usageForError);

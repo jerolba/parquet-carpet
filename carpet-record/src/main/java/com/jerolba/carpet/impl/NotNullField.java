@@ -24,7 +24,10 @@ public class NotNullField {
         if (recordComponent.getType().isPrimitive()) {
             return true;
         }
-        Annotation[] annotations = recordComponent.getDeclaredAnnotations();
+        return isNotNullAnnotated(recordComponent.getDeclaredAnnotations());
+    }
+
+    public static boolean isNotNullAnnotated(Annotation[] annotations) {
         for (Annotation annotation : annotations) {
             var type = annotation.annotationType();
             String name = type.getSimpleName().toLowerCase();
