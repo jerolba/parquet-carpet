@@ -15,6 +15,7 @@
  */
 package com.jerolba.carpet.impl.write;
 
+import static com.jerolba.carpet.impl.write.BigDecimalWrite.buildDecimalConfig;
 import static com.jerolba.carpet.impl.write.SchemaBuilder.buildDecimalTypeItem;
 import static com.jerolba.carpet.impl.write.SchemaBuilder.buildInstantType;
 import static com.jerolba.carpet.impl.write.SchemaBuilder.buildLocalDateTimeType;
@@ -46,6 +47,7 @@ import org.apache.parquet.schema.Type.Repetition;
 import org.apache.parquet.schema.Types;
 
 import com.jerolba.carpet.RecordTypeConversionException;
+import com.jerolba.carpet.model.BigDecimalType;
 import com.jerolba.carpet.model.BinaryLogicalType;
 import com.jerolba.carpet.model.CollectionType;
 import com.jerolba.carpet.model.FieldType;
@@ -205,7 +207,10 @@ class WriteRecordModel2Schema {
         } else if (javaType.isUuid()) {
             return buildUuidType(repetition, parquetFieldName);
         } else if (javaType.isBigDecimal()) {
-            return buildDecimalTypeItem(repetition, parquetFieldName, carpetConfiguration.decimalConfig());
+            var bigDecimalType = (BigDecimalType) type;
+            var config = buildDecimalConfig(bigDecimalType.precision(), bigDecimalType.scale(),
+                    bigDecimalType.roundingMode(), carpetConfiguration.decimalConfig());
+            return buildDecimalTypeItem(repetition, parquetFieldName, config);
         } else if (javaType.isLocalDate()) {
             return buildLocalDateType(repetition, parquetFieldName);
         } else if (javaType.isLocalTime()) {

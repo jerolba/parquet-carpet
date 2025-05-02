@@ -16,6 +16,7 @@
 package com.jerolba.carpet.writer;
 
 import static com.jerolba.carpet.AnnotatedLevels.TWO;
+import static com.jerolba.carpet.model.FieldTypes.BIG_DECIMAL;
 import static com.jerolba.carpet.model.FieldTypes.BINARY;
 import static com.jerolba.carpet.model.FieldTypes.BOOLEAN;
 import static com.jerolba.carpet.model.FieldTypes.DOUBLE;
@@ -30,6 +31,7 @@ import static java.util.Collections.emptyList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -125,6 +127,45 @@ class WriteRecordModelWriterCollectionTwoLevelTest {
 
         var carpetReader = writerTest.getCarpetReader();
         assertEquals(rec, carpetReader.read());
+    }
+
+    @Test
+    void simpleBigDecimalCollection() throws IOException {
+
+        record SimpleTypeCollection(String name, List<BigDecimal> values) {
+        }
+
+        var mapper = writeRecordModel(SimpleTypeCollection.class)
+                .withField("name", STRING, SimpleTypeCollection::name)
+                .withField("values", LIST.ofType(BIG_DECIMAL), SimpleTypeCollection::values);
+
+        var rec = new SimpleTypeCollection("foo", List.of(new BigDecimal("1.0"), new BigDecimal("2.0")));
+        var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class).withLevel(TWO)
+                .withDecimalConfig(6, 2);
+        writerTest.write(mapper, rec);
+
+        var carpetReader = writerTest.getCarpetReader();
+        var expected = new SimpleTypeCollection("foo", List.of(new BigDecimal("1.00"), new BigDecimal("2.00")));
+        assertEquals(expected, carpetReader.read());
+    }
+
+    @Test
+    void simpleBigDecimalAnnotatedCollection() throws IOException {
+
+        record SimpleTypeCollection(String name, List<BigDecimal> values) {
+        }
+
+        var mapper = writeRecordModel(SimpleTypeCollection.class)
+                .withField("name", STRING, SimpleTypeCollection::name)
+                .withField("values", LIST.ofType(BIG_DECIMAL.withPrecisionScale(6, 3)), SimpleTypeCollection::values);
+
+        var rec = new SimpleTypeCollection("foo", List.of(new BigDecimal("1.0"), new BigDecimal("2.0")));
+        var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class).withLevel(TWO);
+        writerTest.write(mapper, rec);
+
+        var carpetReader = writerTest.getCarpetReader();
+        var expected = new SimpleTypeCollection("foo", List.of(new BigDecimal("1.000"), new BigDecimal("2.000")));
+        assertEquals(expected, carpetReader.read());
     }
 
     @Test

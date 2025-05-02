@@ -124,7 +124,7 @@ class SchemaFilter {
             }
             if (Map.class.isAssignableFrom(recordComponent.getType())) {
                 var parameterized = getParameterizedMap(recordComponent);
-                if (parameterized.getKeyActualType().equals(String.class)) {
+                if (parameterized.getKeyActualJavaType().isString()) {
                     if (parameterized.getValueActualType().equals(Object.class)) {
                         validation.validateNullability(parquetType, recordComponent);
                         inProjection.put(parquetFieldName, parquetType);

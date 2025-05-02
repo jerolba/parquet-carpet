@@ -16,11 +16,39 @@
 package com.jerolba.carpet.model;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
-public record BigDecimalType(boolean isNotNull) implements FieldType {
+public record BigDecimalType(boolean isNotNull, Integer precision, Integer scale, RoundingMode roundingMode)
+        implements FieldType {
+
+    public BigDecimalType {
+        if (precision != null && scale != null) {
+            if (precision <= 0) {
+                throw new IllegalArgumentException("precision must be greater than 0");
+            }
+            if (scale < 0) {
+                throw new IllegalArgumentException("scale must be zero or a positive value");
+            }
+            if (scale > precision) {
+                throw new IllegalArgumentException("scale must be less than or equal to the precision");
+            }
+        } else if (precision != null) {
+            throw new IllegalArgumentException("scale must be specified if precision is specified");
+        } else if (scale != null) {
+            throw new IllegalArgumentException("precision must be specified if scale is specified");
+        }
+    }
 
     public BigDecimalType notNull() {
-        return new BigDecimalType(true);
+        return new BigDecimalType(true, precision, scale, roundingMode);
+    }
+
+    public BigDecimalType withPrecisionScale(int precision, int scale) {
+        return new BigDecimalType(isNotNull, precision, scale, roundingMode);
+    }
+
+    public BigDecimalType withRoundingMode(RoundingMode roundingMode) {
+        return new BigDecimalType(isNotNull, precision, scale, roundingMode);
     }
 
     @Override

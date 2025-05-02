@@ -21,11 +21,14 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.avro.Conversions.DecimalConversion;
+import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.util.Utf8;
 import org.apache.parquet.io.InvalidRecordException;
@@ -35,6 +38,7 @@ import org.junit.jupiter.api.Test;
 import com.jerolba.carpet.ParquetWriterTest;
 import com.jerolba.carpet.annotation.ParquetEnum;
 import com.jerolba.carpet.annotation.ParquetJson;
+import com.jerolba.carpet.annotation.PrecisionScale;
 
 class CarpetWriterMapTest {
 
@@ -178,6 +182,57 @@ class CarpetWriterMapTest {
         var carpetReader = writerTest.getCarpetReader();
         assertEquals(rec1, carpetReader.read());
         assertEquals(rec2, carpetReader.read());
+    }
+
+    @Test
+    void mapBigDecimalValue() throws IOException {
+
+        record MapValues(String name, Map<String, BigDecimal> values) {
+        }
+
+        var rec = new MapValues("foo", Map.of("FOO", new BigDecimal("2.0"), "BAR", new BigDecimal("6.0")));
+        var writerTest = new ParquetWriterTest<>(MapValues.class)
+                .withDecimalConfig(20, 2);
+        writerTest.write(rec);
+
+        GenericData genericDataModel = new GenericData();
+        genericDataModel.addLogicalTypeConversion(new DecimalConversion());
+        var avroReader = writerTest.getAvroGenericRecordReaderWithModel(genericDataModel);
+
+        GenericRecord avroRecord = avroReader.read();
+        assertEquals("foo", avroRecord.get("name").toString());
+        assertEquals(Map.of("FOO", new BigDecimal("2.00"), "BAR", new BigDecimal("6.00")),
+                unUtf8Map(avroRecord.get("values")));
+
+        var carpetReader = writerTest.getCarpetReader();
+        MapValues carpetRecord = carpetReader.read();
+        assertEquals("foo", carpetRecord.name());
+        assertEquals(Map.of("FOO", new BigDecimal("2.00"), "BAR", new BigDecimal("6.00")), carpetRecord.values());
+    }
+
+    @Test
+    void mapBigDecimalAnnotatedValue() throws IOException {
+
+        record MapValues(String name, Map<String, @PrecisionScale(precision = 20, scale = 3) BigDecimal> values) {
+        }
+
+        var rec = new MapValues("foo", Map.of("FOO", new BigDecimal("2.0"), "BAR", new BigDecimal("6.0")));
+        var writerTest = new ParquetWriterTest<>(MapValues.class);
+        writerTest.write(rec);
+
+        GenericData genericDataModel = new GenericData();
+        genericDataModel.addLogicalTypeConversion(new DecimalConversion());
+        var avroReader = writerTest.getAvroGenericRecordReaderWithModel(genericDataModel);
+
+        GenericRecord avroRecord = avroReader.read();
+        assertEquals("foo", avroRecord.get("name").toString());
+        assertEquals(Map.of("FOO", new BigDecimal("2.000"), "BAR", new BigDecimal("6.000")),
+                unUtf8Map(avroRecord.get("values")));
+
+        var carpetReader = writerTest.getCarpetReader();
+        MapValues carpetRecord = carpetReader.read();
+        assertEquals("foo", carpetRecord.name());
+        assertEquals(Map.of("FOO", new BigDecimal("2.000"), "BAR", new BigDecimal("6.000")), carpetRecord.values());
     }
 
     @Test

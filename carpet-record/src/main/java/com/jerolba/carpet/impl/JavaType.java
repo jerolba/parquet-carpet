@@ -126,16 +126,20 @@ public class JavaType {
         return Map.class.isAssignableFrom(type);
     }
 
-    public boolean isAnnotatedWith(Class<? extends Annotation> annotationClass) {
+    public <T extends Annotation> boolean isAnnotatedWith(Class<T> annotationClass) {
+        return getAnnotation(annotationClass) != null;
+    }
+
+    public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
         if (declaredAnnotations == null) {
-            return false;
+            return null;
         }
         for (Annotation annotation : declaredAnnotations) {
             if (annotation.annotationType().equals(annotationClass)) {
-                return true;
+                return (T) annotation;
             }
         }
-        return false;
+        return null;
     }
 
     public Annotation[] getDeclaredAnnotations() {

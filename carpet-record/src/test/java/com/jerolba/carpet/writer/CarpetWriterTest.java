@@ -58,6 +58,8 @@ import com.jerolba.carpet.annotation.ParquetBson;
 import com.jerolba.carpet.annotation.ParquetEnum;
 import com.jerolba.carpet.annotation.ParquetJson;
 import com.jerolba.carpet.annotation.ParquetString;
+import com.jerolba.carpet.annotation.PrecisionScale;
+import com.jerolba.carpet.annotation.Rounding;
 import com.jerolba.carpet.io.FileSystemInputFile;
 import com.jerolba.carpet.io.FileSystemOutputFile;
 
@@ -703,6 +705,137 @@ class CarpetWriterTest {
                 var writerTest = new ParquetWriterTest<>(BigDecimalObject.class)
                         .withBigDecimalScaleAdjustment(RoundingMode.HALF_UP)
                         .withDecimalConfig(20, 2);
+                writerTest.write(
+                        new BigDecimalObject(new BigDecimal("12345678901234.5678")),
+                        new BigDecimalObject(new BigDecimal("12345678901234.1234")));
+
+                GenericData genericDataModel = new GenericData();
+                genericDataModel.addLogicalTypeConversion(new DecimalConversion());
+                var avroReader = writerTest.getAvroGenericRecordReaderWithModel(genericDataModel);
+
+                BigDecimal scaled1 = new BigDecimal("12345678901234.57");
+                BigDecimal scaled2 = new BigDecimal("12345678901234.12");
+                assertEquals(scaled1, avroReader.read().get("value"));
+                assertEquals(scaled2, avroReader.read().get("value"));
+
+                var carpetReader = writerTest.getCarpetReader();
+                assertEquals(scaled1, carpetReader.read().value());
+                assertEquals(scaled2, carpetReader.read().value());
+            }
+
+        }
+
+        @Nested
+        class BigDecimalFieldAnnotated {
+
+            @Test
+            void highPrecision() throws IOException {
+                record BigDecimalObject(@PrecisionScale(precision = 20, scale = 5) BigDecimal value) {
+                }
+
+                var bigDec1 = new BigDecimal("12345678901234.56789");
+                var bigDec2 = new BigDecimal("98765432109876.54321");
+                var rec1 = new BigDecimalObject(bigDec1);
+                var rec2 = new BigDecimalObject(bigDec2);
+                var writerTest = new ParquetWriterTest<>(BigDecimalObject.class);
+                writerTest.write(rec1, rec2);
+
+                GenericData genericDataModel = new GenericData();
+                genericDataModel.addLogicalTypeConversion(new DecimalConversion());
+                var avroReader = writerTest.getAvroGenericRecordReaderWithModel(genericDataModel);
+
+                assertEquals(bigDec1, avroReader.read().get("value"));
+                assertEquals(bigDec2, avroReader.read().get("value"));
+
+                var carpetReader = writerTest.getCarpetReader();
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
+
+            @Test
+            void mediumPrecision() throws IOException {
+                record BigDecimalObject(@PrecisionScale(precision = 18, scale = 3) BigDecimal value) {
+                }
+
+                var bigDec1 = new BigDecimal("1234567890123.456");
+                var bigDec2 = new BigDecimal("9876543210987.654");
+                var rec1 = new BigDecimalObject(bigDec1);
+                var rec2 = new BigDecimalObject(bigDec2);
+                var writerTest = new ParquetWriterTest<>(BigDecimalObject.class);
+                writerTest.write(rec1, rec2);
+
+                var carpetReader = writerTest.getCarpetReader();
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
+
+            @Test
+            void lowPrecision() throws IOException {
+                record BigDecimalObject(@PrecisionScale(precision = 9, scale = 4) BigDecimal value) {
+                }
+
+                var bigDec1 = new BigDecimal("12345.6789");
+                var bigDec2 = new BigDecimal("98765.4321");
+                var rec1 = new BigDecimalObject(bigDec1);
+                var rec2 = new BigDecimalObject(bigDec2);
+                var writerTest = new ParquetWriterTest<>(BigDecimalObject.class);
+                writerTest.write(rec1, rec2);
+
+                var carpetReader = writerTest.getCarpetReader();
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
+
+            @Test
+            void rescaling() throws IOException {
+                record BigDecimalObject(@PrecisionScale(precision = 20, scale = 5) BigDecimal value) {
+                }
+
+                var writerTest = new ParquetWriterTest<>(BigDecimalObject.class);
+                writerTest.write(
+                        new BigDecimalObject(new BigDecimal("12345678901234.5")),
+                        new BigDecimalObject(new BigDecimal("98765432109876.5")));
+
+                GenericData genericDataModel = new GenericData();
+                genericDataModel.addLogicalTypeConversion(new DecimalConversion());
+                var avroReader = writerTest.getAvroGenericRecordReaderWithModel(genericDataModel);
+
+                BigDecimal scaled1 = new BigDecimal("12345678901234.50000");
+                BigDecimal scaled2 = new BigDecimal("98765432109876.50000");
+                assertEquals(scaled1, avroReader.read().get("value"));
+                assertEquals(scaled2, avroReader.read().get("value"));
+
+                var carpetReader = writerTest.getCarpetReader();
+                assertEquals(scaled1, carpetReader.read().value());
+                assertEquals(scaled2, carpetReader.read().value());
+            }
+
+            @Test
+            void invalidRescaling() {
+                record BigDecimalObject(@PrecisionScale(precision = 20, scale = 2) BigDecimal value) {
+                }
+                var rec1 = new BigDecimalObject(new BigDecimal("12345678901234.5678"));
+                var writerTest = new ParquetWriterTest<>(BigDecimalObject.class);
+                assertThrowsExactly(RecordTypeConversionException.class,
+                        () -> writerTest.write(rec1));
+            }
+
+            @Test
+            void invalidPrecision() {
+                record BigDecimalObject(@PrecisionScale(precision = 10, scale = 4) BigDecimal value) {
+                }
+                var rec1 = new BigDecimalObject(new BigDecimal("12345678901234.5678"));
+                var writerTest = new ParquetWriterTest<>(BigDecimalObject.class);
+                assertThrowsExactly(RecordTypeConversionException.class,
+                        () -> writerTest.write(rec1));
+            }
+
+            @Test
+            void allowScaleAdjustament() throws IOException {
+                record BigDecimalObject(
+                        @PrecisionScale(precision = 20, scale = 2) @Rounding(RoundingMode.HALF_UP) BigDecimal value) {
+                }
+                var writerTest = new ParquetWriterTest<>(BigDecimalObject.class);
                 writerTest.write(
                         new BigDecimalObject(new BigDecimal("12345678901234.5678")),
                         new BigDecimalObject(new BigDecimal("12345678901234.1234")));

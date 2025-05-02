@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -31,6 +32,7 @@ import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.annotation.ParquetBson;
 import com.jerolba.carpet.annotation.ParquetEnum;
 import com.jerolba.carpet.annotation.ParquetJson;
+import com.jerolba.carpet.annotation.PrecisionScale;
 import com.jerolba.carpet.writer.CarpetWriterCollectionThreeLevelTest.Category;
 
 //TODO: how can we verify that is correct with out using carpet reader?
@@ -106,6 +108,37 @@ class CarpetWriterCollectionOneLevelTest {
 
         var carpetReader = writerTest.getCarpetReader();
         assertEquals(rec, carpetReader.read());
+    }
+
+    @Test
+    void simpleBigDecimalCollection() throws IOException {
+
+        record SimpleTypeCollection(String name, List<BigDecimal> values) {
+        }
+
+        var rec = new SimpleTypeCollection("foo", List.of(new BigDecimal("1.0"), new BigDecimal("2.0")));
+        var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class).withLevel(ONE)
+                .withDecimalConfig(6, 2);
+        writerTest.write(rec);
+
+        var carpetReader = writerTest.getCarpetReader();
+        var expected = new SimpleTypeCollection("foo", List.of(new BigDecimal("1.00"), new BigDecimal("2.00")));
+        assertEquals(expected, carpetReader.read());
+    }
+
+    @Test
+    void simpleBigDecimalAnnotatedCollection() throws IOException {
+
+        record SimpleTypeCollection(String name, List<@PrecisionScale(precision = 6, scale = 3) BigDecimal> values) {
+        }
+
+        var rec = new SimpleTypeCollection("foo", List.of(new BigDecimal("1.0"), new BigDecimal("2.0")));
+        var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class).withLevel(ONE);
+        writerTest.write(rec);
+
+        var carpetReader = writerTest.getCarpetReader();
+        var expected = new SimpleTypeCollection("foo", List.of(new BigDecimal("1.000"), new BigDecimal("2.000")));
+        assertEquals(expected, carpetReader.read());
     }
 
     @Test

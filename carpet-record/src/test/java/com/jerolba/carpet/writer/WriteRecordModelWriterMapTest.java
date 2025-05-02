@@ -15,8 +15,11 @@
  */
 package com.jerolba.carpet.writer;
 
+import static com.jerolba.carpet.model.FieldTypes.BIG_DECIMAL;
+import static com.jerolba.carpet.model.FieldTypes.BINARY;
 import static com.jerolba.carpet.model.FieldTypes.BOOLEAN;
 import static com.jerolba.carpet.model.FieldTypes.DOUBLE;
+import static com.jerolba.carpet.model.FieldTypes.ENUM;
 import static com.jerolba.carpet.model.FieldTypes.INTEGER;
 import static com.jerolba.carpet.model.FieldTypes.LIST;
 import static com.jerolba.carpet.model.FieldTypes.MAP;
@@ -27,11 +30,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.avro.Conversions.DecimalConversion;
+import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.util.Utf8;
 import org.apache.parquet.io.InvalidRecordException;
@@ -40,7 +46,6 @@ import org.junit.jupiter.api.Test;
 
 import com.jerolba.carpet.ParquetWriterTest;
 import com.jerolba.carpet.annotation.ParquetEnum;
-import com.jerolba.carpet.annotation.ParquetJson;
 
 class WriteRecordModelWriterMapTest {
 
@@ -148,10 +153,14 @@ class WriteRecordModelWriterMapTest {
         record MapValues(String name, Map<String, String> values) {
         }
 
+        var mapper = writeRecordModel(MapValues.class)
+                .withField("name", STRING, MapValues::name)
+                .withField("values", MAP.ofTypes(STRING, STRING), MapValues::values);
+
         var rec1 = new MapValues("foo", Map.of("ABCD", "ONE", "EFGH", "TWO"));
         var rec2 = new MapValues("bar", Map.of("ABCD", "THREE", "EFGH", "FOUR"));
         var writerTest = new ParquetWriterTest<>(MapValues.class);
-        writerTest.write(rec1, rec2);
+        writerTest.write(mapper, rec1, rec2);
 
         var avroReader = writerTest.getAvroGenericRecordReader();
         GenericRecord avroRecord = avroReader.read();
@@ -173,10 +182,14 @@ class WriteRecordModelWriterMapTest {
         record MapValues(String name, Map<String, @ParquetEnum String> values) {
         }
 
+        var mapper = writeRecordModel(MapValues.class)
+                .withField("name", STRING, MapValues::name)
+                .withField("values", MAP.ofTypes(STRING, STRING.asEnum()), MapValues::values);
+
         var rec1 = new MapValues("foo", Map.of("FOO", "BAR", "BAR", "FOO"));
         var rec2 = new MapValues("bar", Map.of("FOO", "FOO", "BAR", "BAR"));
         var writerTest = new ParquetWriterTest<>(MapValues.class);
-        writerTest.write(rec1, rec2);
+        writerTest.write(mapper, rec1, rec2);
 
         var avroReader = writerTest.getAvroGenericRecordReader();
         GenericRecord avroRecord = avroReader.read();
@@ -207,10 +220,14 @@ class WriteRecordModelWriterMapTest {
         record MapValues(String name, Map<String, Category> values) {
         }
 
+        var mapper = writeRecordModel(MapValues.class)
+                .withField("name", STRING, MapValues::name)
+                .withField("values", MAP.ofTypes(STRING, ENUM.ofType(Category.class)), MapValues::values);
+
         var rec1 = new MapValues("foo", Map.of("FOO", Category.BAR, "BAR", Category.FOO));
         var rec2 = new MapValues("bar", Map.of("FOO", Category.FOO, "BAR", Category.BAR));
         var writerTest = new ParquetWriterTest<>(MapValues.class);
-        writerTest.write(rec1, rec2);
+        writerTest.write(mapper, rec1, rec2);
 
         var avroReader = writerTest.getAvroGenericRecordReader();
         GenericRecord avroRecord = avroReader.read();
@@ -227,15 +244,78 @@ class WriteRecordModelWriterMapTest {
     }
 
     @Test
+    void mapBigDecimalValue() throws IOException {
+
+        record MapValues(String name, Map<String, BigDecimal> values) {
+        }
+
+        var mapper = writeRecordModel(MapValues.class)
+                .withField("name", STRING, MapValues::name)
+                .withField("values", MAP.ofTypes(STRING, BIG_DECIMAL), MapValues::values);
+
+        var rec = new MapValues("foo", Map.of("FOO", new BigDecimal("2.0"), "BAR", new BigDecimal("6.0")));
+        var writerTest = new ParquetWriterTest<>(MapValues.class)
+                .withDecimalConfig(20, 2);
+        writerTest.write(mapper, rec);
+
+        GenericData genericDataModel = new GenericData();
+        genericDataModel.addLogicalTypeConversion(new DecimalConversion());
+        var avroReader = writerTest.getAvroGenericRecordReaderWithModel(genericDataModel);
+
+        GenericRecord avroRecord = avroReader.read();
+        assertEquals("foo", avroRecord.get("name").toString());
+        assertEquals(Map.of("FOO", new BigDecimal("2.00"), "BAR", new BigDecimal("6.00")),
+                unUtf8Map(avroRecord.get("values")));
+
+        var carpetReader = writerTest.getCarpetReader();
+        MapValues carpetRecord = carpetReader.read();
+        assertEquals("foo", carpetRecord.name());
+        assertEquals(Map.of("FOO", new BigDecimal("2.00"), "BAR", new BigDecimal("6.00")), carpetRecord.values());
+    }
+
+    @Test
+    void mapBigDecimalAnnotatedValue() throws IOException {
+
+        record MapValues(String name, Map<String, BigDecimal> values) {
+        }
+
+        var mapper = writeRecordModel(MapValues.class)
+                .withField("name", STRING, MapValues::name)
+                .withField("values", MAP.ofTypes(STRING, BIG_DECIMAL.withPrecisionScale(20, 3)), MapValues::values);
+
+        var rec = new MapValues("foo", Map.of("FOO", new BigDecimal("2.0"), "BAR", new BigDecimal("6.0")));
+        var writerTest = new ParquetWriterTest<>(MapValues.class);
+        writerTest.write(mapper, rec);
+
+        GenericData genericDataModel = new GenericData();
+        genericDataModel.addLogicalTypeConversion(new DecimalConversion());
+        var avroReader = writerTest.getAvroGenericRecordReaderWithModel(genericDataModel);
+
+        GenericRecord avroRecord = avroReader.read();
+        assertEquals("foo", avroRecord.get("name").toString());
+        assertEquals(Map.of("FOO", new BigDecimal("2.000"), "BAR", new BigDecimal("6.000")),
+                unUtf8Map(avroRecord.get("values")));
+
+        var carpetReader = writerTest.getCarpetReader();
+        MapValues carpetRecord = carpetReader.read();
+        assertEquals("foo", carpetRecord.name());
+        assertEquals(Map.of("FOO", new BigDecimal("2.000"), "BAR", new BigDecimal("6.000")), carpetRecord.values());
+    }
+
+    @Test
     void mapJsonValue() throws IOException {
 
-        record MapValues(String name, Map<String, @ParquetJson String> values) {
+        record MapValues(String name, Map<String, String> values) {
         }
+
+        var mapper = writeRecordModel(MapValues.class)
+                .withField("name", STRING, MapValues::name)
+                .withField("values", MAP.ofTypes(STRING, STRING.asJson()), MapValues::values);
 
         var rec1 = new MapValues("foo", Map.of("FOO", "{}", "BAR", "{\"key1\": \"value1\"}"));
         var rec2 = new MapValues("bar", Map.of("FOO", "{\"key2\": \"value2\"}", "BAR", "{}"));
         var writerTest = new ParquetWriterTest<>(MapValues.class);
-        writerTest.write(rec1, rec2);
+        writerTest.write(mapper, rec1, rec2);
 
         var avroReader = writerTest.getAvroGenericRecordReader();
         GenericRecord avroRecord = avroReader.read();
@@ -257,10 +337,14 @@ class WriteRecordModelWriterMapTest {
         record MapValues(String name, Map<String, Binary> values) {
         }
 
+        var mapper = writeRecordModel(MapValues.class)
+                .withField("name", STRING, MapValues::name)
+                .withField("values", MAP.ofTypes(STRING, BINARY), MapValues::values);
+
         var rec1 = new MapValues("foo", Map.of("FOO", Binary.fromString("BAR"), "BAR", Binary.fromString("FOO")));
         var rec2 = new MapValues("bar", Map.of("FOO", Binary.fromString("FOO"), "BAR", Binary.fromString("BAR")));
         var writerTest = new ParquetWriterTest<>(MapValues.class);
-        writerTest.write(rec1, rec2);
+        writerTest.write(mapper, rec1, rec2);
 
         var avroReader = writerTest.getAvroGenericRecordReader();
         GenericRecord avroRecord = avroReader.read();

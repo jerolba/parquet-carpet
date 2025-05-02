@@ -34,6 +34,7 @@ import java.util.function.Consumer;
 import org.apache.parquet.io.api.RecordConsumer;
 
 import com.jerolba.carpet.RecordTypeConversionException;
+import com.jerolba.carpet.impl.JavaType;
 import com.jerolba.carpet.impl.ParameterizedCollection;
 import com.jerolba.carpet.impl.ParameterizedMap;
 import com.jerolba.carpet.impl.write.CollectionsWriters.MapRecordFieldWriter;
@@ -57,8 +58,9 @@ class CarpetRecordWriter {
         for (RecordComponent attr : recordClass.getRecordComponents()) {
             RecordField f = new ReflectionRecordField(recordClass, attr, getFieldName(attr), idx);
             Class<?> type = attr.getType();
+            JavaType javaType = new JavaType(attr);
             Consumer<Object> writer = null;
-            BiConsumer<RecordConsumer, Object> basicTypeWriter = buildSimpleElementConsumer(type, recordConsumer,
+            BiConsumer<RecordConsumer, Object> basicTypeWriter = buildSimpleElementConsumer(javaType, recordConsumer,
                     carpetConfiguration);
             if (basicTypeWriter != null) {
                 writer = new FieldWriterConsumer(recordConsumer, f, basicTypeWriter);
@@ -101,7 +103,7 @@ class CarpetRecordWriter {
             Consumer<Object> childWriter = createMapStructureWriter(parametizedChild, null);
             elemConsumer = (consumer, v) -> childWriter.accept(v);
         } else {
-            Class<?> type = parametized.getActualType();
+            JavaType type = parametized.getActualJavaType();
             elemConsumer = buildSimpleElementConsumer(type, recordConsumer, carpetConfiguration);
         }
         if (elemConsumer == null) {
@@ -122,7 +124,7 @@ class CarpetRecordWriter {
             Consumer<Object> childWriter = createMapStructureWriter(parametizedChild, null);
             elemConsumer = (consumer, v) -> childWriter.accept(v);
         } else {
-            Class<?> type = parametized.getActualType();
+            JavaType type = parametized.getActualJavaType();
             elemConsumer = buildSimpleElementConsumer(type, recordConsumer, carpetConfiguration);
         }
         if (elemConsumer == null) {
@@ -153,7 +155,7 @@ class CarpetRecordWriter {
             Consumer<Object> childWriter = createMapStructureWriter(parametizedChild, null);
             elemConsumer = (consumer, v) -> childWriter.accept(v);
         } else {
-            Class<?> type = parametized.getActualType();
+            JavaType type = parametized.getActualJavaType();
             elemConsumer = buildSimpleElementConsumer(type, recordConsumer, carpetConfiguration);
         }
         if (elemConsumer == null) {
@@ -179,7 +181,7 @@ class CarpetRecordWriter {
     private Consumer<Object> createMapStructureWriter(ParameterizedMap parametized, RecordField recordField) {
         // Key
         BiConsumer<RecordConsumer, Object> elemKeyConsumer = null;
-        Class<?> keyType = parametized.getKeyActualType();
+        JavaType keyType = parametized.getKeyActualJavaType();
         elemKeyConsumer = buildSimpleElementConsumer(keyType, recordConsumer, carpetConfiguration);
 
         // Value
@@ -193,7 +195,7 @@ class CarpetRecordWriter {
             Consumer<Object> childWriter = createMapStructureWriter(parametizedChild, null);
             elemValueConsumer = (consumer, v) -> childWriter.accept(v);
         } else {
-            Class<?> valueType = parametized.getValueActualType();
+            JavaType valueType = parametized.getValueActualJavaType();
             elemValueConsumer = buildSimpleElementConsumer(valueType, recordConsumer, carpetConfiguration);
         }
         if (elemValueConsumer == null || elemKeyConsumer == null) {

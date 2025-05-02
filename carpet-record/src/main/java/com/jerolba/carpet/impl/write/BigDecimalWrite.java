@@ -15,6 +15,7 @@
  */
 package com.jerolba.carpet.impl.write;
 
+import static com.jerolba.carpet.impl.write.DecimalConfig.decimalConfig;
 import static java.math.RoundingMode.UNNECESSARY;
 
 import java.math.BigDecimal;
@@ -24,6 +25,8 @@ import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.io.api.RecordConsumer;
 
 import com.jerolba.carpet.RecordTypeConversionException;
+import com.jerolba.carpet.annotation.PrecisionScale;
+import com.jerolba.carpet.annotation.Rounding;
 
 class BigDecimalWrite {
 
@@ -103,4 +106,27 @@ class BigDecimalWrite {
         }
         return value;
     }
+
+    static DecimalConfig buildDecimalConfig(PrecisionScale precisionAndScale, Rounding rounding,
+            DecimalConfig decimalConfig) {
+        Integer precision = precisionAndScale != null ? precisionAndScale.precision() : null;
+        Integer scale = precisionAndScale != null ? precisionAndScale.scale() : null;
+        RoundingMode roundingMode = rounding != null ? rounding.value() : null;
+        return buildDecimalConfig(precision, scale, roundingMode, decimalConfig);
+    }
+
+    static DecimalConfig buildDecimalConfig(Integer precision, Integer scale, RoundingMode roundingMode,
+            DecimalConfig decimalConfig) {
+        if (decimalConfig == null) {
+            decimalConfig = decimalConfig();
+        }
+        if (precision != null && scale != null) {
+            decimalConfig = decimalConfig.withPrecisionAndScale(precision, scale);
+        }
+        if (roundingMode != null) {
+            decimalConfig = decimalConfig.withRoundingMode(roundingMode);
+        }
+        return decimalConfig;
+    }
+
 }
