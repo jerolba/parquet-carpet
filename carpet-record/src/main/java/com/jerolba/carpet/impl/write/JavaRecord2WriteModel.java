@@ -31,6 +31,7 @@ import com.jerolba.carpet.annotation.ParquetBson;
 import com.jerolba.carpet.annotation.ParquetEnum;
 import com.jerolba.carpet.annotation.ParquetJson;
 import com.jerolba.carpet.annotation.ParquetString;
+import com.jerolba.carpet.annotation.PrecisionScale;
 import com.jerolba.carpet.impl.JavaType;
 import com.jerolba.carpet.impl.Parameterized;
 import com.jerolba.carpet.impl.ParameterizedCollection;
@@ -46,11 +47,10 @@ import com.jerolba.carpet.model.WriteRecordModelType;
 
 public class JavaRecord2WriteModel {
 
-    private final com.jerolba.carpet.impl.write.FieldToColumnMapper fieldToColumnMapper;
+    private final FieldToColumnMapper fieldToColumnMapper;
 
     public JavaRecord2WriteModel(CarpetWriteConfiguration carpetConfiguration) {
-        this.fieldToColumnMapper = new com.jerolba.carpet.impl.write.FieldToColumnMapper(
-                carpetConfiguration.columnNamingStrategy());
+        this.fieldToColumnMapper = new FieldToColumnMapper(carpetConfiguration.columnNamingStrategy());
     }
 
     public <T> WriteRecordModelType<T> createModel(Class<T> recordClass) {
@@ -180,7 +180,12 @@ public class JavaRecord2WriteModel {
             return isNotNull ? FieldTypes.UUID.notNull() : FieldTypes.UUID;
         }
         if (javaType.isBigDecimal()) {
-            return isNotNull ? FieldTypes.BIG_DECIMAL.notNull() : FieldTypes.BIG_DECIMAL;
+            PrecisionScale precisionScale = javaType.getAnnotation(PrecisionScale.class);
+            var bigDecimal = isNotNull ? FieldTypes.BIG_DECIMAL.notNull() : FieldTypes.BIG_DECIMAL;
+            if (precisionScale != null) {
+                bigDecimal = bigDecimal.withPrecisionScale(precisionScale.precision(), precisionScale.scale());
+            }
+            return bigDecimal;
         }
         if (javaType.isLocalDate()) {
             return isNotNull ? FieldTypes.LOCAL_DATE.notNull() : FieldTypes.LOCAL_DATE;

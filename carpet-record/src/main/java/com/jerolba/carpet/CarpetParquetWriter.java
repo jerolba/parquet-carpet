@@ -142,7 +142,7 @@ public class CarpetParquetWriter {
          * @return this builder for method chaining.
          */
         public Builder<T> withDefaultDecimal(int precision, int scale) {
-            this.decimalConfig = decimalConfig.withPrecionAndScale(precision, scale);
+            this.decimalConfig = decimalConfig.withPrecisionAndScale(precision, scale);
             return self();
         }
 

@@ -19,6 +19,7 @@ import static com.jerolba.carpet.impl.NotNullField.isNotNull;
 import static com.jerolba.carpet.impl.NotNullField.isNotNullAnnotated;
 import static com.jerolba.carpet.impl.Parameterized.getParameterizedCollection;
 import static com.jerolba.carpet.impl.Parameterized.getParameterizedMap;
+import static com.jerolba.carpet.impl.write.BigDecimalWrite.buildDecimalConfig;
 import static com.jerolba.carpet.impl.write.SchemaBuilder.buildDecimalTypeItem;
 import static com.jerolba.carpet.impl.write.SchemaBuilder.buildInstantType;
 import static com.jerolba.carpet.impl.write.SchemaBuilder.buildLocalDateTimeType;
@@ -58,6 +59,8 @@ import com.jerolba.carpet.annotation.ParquetBson;
 import com.jerolba.carpet.annotation.ParquetEnum;
 import com.jerolba.carpet.annotation.ParquetJson;
 import com.jerolba.carpet.annotation.ParquetString;
+import com.jerolba.carpet.annotation.PrecisionScale;
+import com.jerolba.carpet.annotation.Rounding;
 import com.jerolba.carpet.impl.JavaType;
 import com.jerolba.carpet.impl.ParameterizedCollection;
 import com.jerolba.carpet.impl.ParameterizedMap;
@@ -222,7 +225,10 @@ class JavaRecord2Schema {
         } else if (javaType.isUuid()) {
             return buildUuidType(repetition, name);
         } else if (javaType.isBigDecimal()) {
-            return buildDecimalTypeItem(repetition, name, carpetConfiguration.decimalConfig());
+            DecimalConfig decimalConfig = buildDecimalConfig(javaType.getAnnotation(PrecisionScale.class),
+                    javaType.getAnnotation(Rounding.class),
+                    carpetConfiguration.decimalConfig());
+            return buildDecimalTypeItem(repetition, name, decimalConfig);
         } else if (javaType.isLocalDate()) {
             return buildLocalDateType(repetition, name);
         } else if (javaType.isLocalTime()) {

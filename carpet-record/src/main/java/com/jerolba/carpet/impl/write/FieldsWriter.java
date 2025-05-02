@@ -15,6 +15,7 @@
  */
 package com.jerolba.carpet.impl.write;
 
+import static com.jerolba.carpet.impl.write.BigDecimalWrite.buildDecimalConfig;
 import static com.jerolba.carpet.impl.write.TimeWrite.instantCosumer;
 import static com.jerolba.carpet.impl.write.TimeWrite.localDateTimeConsumer;
 import static com.jerolba.carpet.impl.write.TimeWrite.localTimeConsumer;
@@ -26,6 +27,8 @@ import java.util.function.BiConsumer;
 import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.io.api.RecordConsumer;
 
+import com.jerolba.carpet.annotation.PrecisionScale;
+import com.jerolba.carpet.annotation.Rounding;
 import com.jerolba.carpet.impl.JavaType;
 
 class FieldsWriter {
@@ -33,10 +36,9 @@ class FieldsWriter {
     private FieldsWriter() {
     }
 
-    public static BiConsumer<RecordConsumer, Object> buildSimpleElementConsumer(Class<?> javaType,
+    public static BiConsumer<RecordConsumer, Object> buildSimpleElementConsumer(JavaType type,
             RecordConsumer recordConsumer, CarpetWriteConfiguration carpetConfiguration) {
 
-        JavaType type = new JavaType(javaType);
         if (type.isInteger()) {
             return (consumer, v) -> consumer.addInteger((Integer) v);
         }
@@ -80,7 +82,10 @@ class FieldsWriter {
         if (type.isInstant()) {
             return instantCosumer(carpetConfiguration.defaultTimeUnit());
         } else if (type.isBigDecimal()) {
-            BigDecimalWrite bigDecimalWrite = new BigDecimalWrite(carpetConfiguration.decimalConfig());
+            DecimalConfig decimalConfig = buildDecimalConfig(type.getAnnotation(PrecisionScale.class),
+                    type.getAnnotation(Rounding.class),
+                    carpetConfiguration.decimalConfig());
+            BigDecimalWrite bigDecimalWrite = new BigDecimalWrite(decimalConfig);
             return bigDecimalWrite::write;
         }
         if (type.isRecord()) {

@@ -317,7 +317,7 @@ class WriteRecord2SchemaTest {
     }
 
     @Nested
-    class DecimalConfiguration {
+    class DecimalConfigurationGlobal {
 
         @Test
         void recordField() {
@@ -328,7 +328,7 @@ class WriteRecord2SchemaTest {
                     .withField("value", BIG_DECIMAL, RecordFieldDecimal::value);
 
             CarpetWriteConfiguration config = config()
-                    .decimalConfig(decimalConfig().withPrecionAndScale(20, 4))
+                    .decimalConfig(decimalConfig().withPrecisionAndScale(20, 4))
                     .build();
             MessageType schema = new WriteRecordModel2Schema(config).createSchema(rootType);
 
@@ -349,7 +349,7 @@ class WriteRecord2SchemaTest {
                     .withField("value", BIG_DECIMAL, RecordFieldDecimal::value);
 
             CarpetWriteConfiguration config = config()
-                    .decimalConfig(decimalConfig().withPrecionAndScale(9, 4))
+                    .decimalConfig(decimalConfig().withPrecisionAndScale(9, 4))
                     .build();
             MessageType schema = new WriteRecordModel2Schema(config).createSchema(rootType);
 
@@ -370,7 +370,7 @@ class WriteRecord2SchemaTest {
                     .withField("value", BIG_DECIMAL, RecordFieldDecimal::value);
 
             CarpetWriteConfiguration config = config()
-                    .decimalConfig(decimalConfig().withPrecionAndScale(18, 8))
+                    .decimalConfig(decimalConfig().withPrecisionAndScale(18, 8))
                     .build();
             MessageType schema = new WriteRecordModel2Schema(config).createSchema(rootType);
 
@@ -391,7 +391,7 @@ class WriteRecord2SchemaTest {
                     .withField("value", LIST.ofType(BIG_DECIMAL), CollectionDecimalValue::value);
 
             CarpetWriteConfiguration config = config()
-                    .decimalConfig(decimalConfig().withPrecionAndScale(20, 4))
+                    .decimalConfig(decimalConfig().withPrecisionAndScale(20, 4))
                     .build();
             MessageType schema = new WriteRecordModel2Schema(config).createSchema(rootType);
 
@@ -417,7 +417,7 @@ class WriteRecord2SchemaTest {
                             NestedCollectionDecimalValue::value);
 
             CarpetWriteConfiguration config = config()
-                    .decimalConfig(decimalConfig().withPrecionAndScale(20, 4))
+                    .decimalConfig(decimalConfig().withPrecisionAndScale(20, 4))
                     .build();
             MessageType schema = new WriteRecordModel2Schema(config).createSchema(rootType);
 
@@ -447,7 +447,7 @@ class WriteRecord2SchemaTest {
                             MapKeyValueDecimals::value);
 
             CarpetWriteConfiguration config = config()
-                    .decimalConfig(decimalConfig().withPrecionAndScale(20, 4))
+                    .decimalConfig(decimalConfig().withPrecisionAndScale(20, 4))
                     .build();
             MessageType schema = new WriteRecordModel2Schema(config).createSchema(rootType);
 
@@ -474,7 +474,7 @@ class WriteRecord2SchemaTest {
                             NestedMapKeyValueDecimal::value);
 
             CarpetWriteConfiguration config = config()
-                    .decimalConfig(decimalConfig().withPrecionAndScale(20, 4))
+                    .decimalConfig(decimalConfig().withPrecisionAndScale(20, 4))
                     .build();
             MessageType schema = new WriteRecordModel2Schema(config).createSchema(rootType);
 
@@ -494,6 +494,159 @@ class WriteRecord2SchemaTest {
                     }
                     """;
             assertEquals(expected, schema.toString());
+        }
+
+    }
+
+    @Nested
+    class DecimalConfigurationPerValue {
+
+        @Test
+        void recordField() {
+            record RecordFieldDecimal(BigDecimal value) {
+            }
+
+            var rootType = writeRecordModel(RecordFieldDecimal.class)
+                    .withField("value", BIG_DECIMAL.withPrecisionScale(20, 4), RecordFieldDecimal::value);
+
+            String expected = """
+                    message RecordFieldDecimal {
+                      optional binary value (DECIMAL(20,4));
+                    }
+                    """;
+            assertEquals(expected, schemaWithRootType(rootType).toString());
+        }
+
+        @Test
+        void intPrecision() {
+            record RecordFieldDecimal(BigDecimal value) {
+            }
+
+            var rootType = writeRecordModel(RecordFieldDecimal.class)
+                    .withField("value", BIG_DECIMAL.withPrecisionScale(9, 4), RecordFieldDecimal::value);
+
+            String expected = """
+                    message RecordFieldDecimal {
+                      optional int32 value (DECIMAL(9,4));
+                    }
+                    """;
+            assertEquals(expected, schemaWithRootType(rootType).toString());
+        }
+
+        @Test
+        void longPrecision() {
+            record RecordFieldDecimal(BigDecimal value) {
+            }
+
+            var rootType = writeRecordModel(RecordFieldDecimal.class)
+                    .withField("value", BIG_DECIMAL.withPrecisionScale(18, 8), RecordFieldDecimal::value);
+
+            String expected = """
+                    message RecordFieldDecimal {
+                      optional int64 value (DECIMAL(18,8));
+                    }
+                    """;
+            assertEquals(expected, schemaWithRootType(rootType).toString());
+        }
+
+        @Test
+        void collectionValue() {
+            record CollectionDecimalValue(List<BigDecimal> value) {
+            }
+
+            var rootType = writeRecordModel(CollectionDecimalValue.class)
+                    .withField("value", LIST.ofType(BIG_DECIMAL.withPrecisionScale(20, 4)),
+                            CollectionDecimalValue::value);
+
+            String expected = """
+                    message CollectionDecimalValue {
+                      optional group value (LIST) {
+                        repeated group list {
+                          optional binary element (DECIMAL(20,4));
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schemaWithRootType(rootType).toString());
+        }
+
+        @Test
+        void nestedCollectionValue() {
+            record NestedCollectionDecimalValue(List<List<BigDecimal>> value) {
+            }
+
+            var rootType = writeRecordModel(NestedCollectionDecimalValue.class)
+                    .withField("value", LIST.ofType(LIST.ofType(BIG_DECIMAL.withPrecisionScale(20, 4))),
+                            NestedCollectionDecimalValue::value);
+
+            String expected = """
+                    message NestedCollectionDecimalValue {
+                      optional group value (LIST) {
+                        repeated group list {
+                          optional group element (LIST) {
+                            repeated group list {
+                              optional binary element (DECIMAL(20,4));
+                            }
+                          }
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schemaWithRootType(rootType).toString());
+        }
+
+        @Test
+        void mapKeyAndValue() {
+            record MapKeyValueDecimals(Map<BigDecimal, BigDecimal> value) {
+            }
+
+            var rootType = writeRecordModel(MapKeyValueDecimals.class)
+                    .withField("value",
+                            MAP.ofTypes(BIG_DECIMAL.withPrecisionScale(16, 2),
+                                    BIG_DECIMAL.withPrecisionScale(28, 6)),
+                            MapKeyValueDecimals::value);
+
+            String expected = """
+                    message MapKeyValueDecimals {
+                      optional group value (MAP) {
+                        repeated group key_value {
+                          required int64 key (DECIMAL(16,2));
+                          optional binary value (DECIMAL(28,6));
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schemaWithRootType(rootType).toString());
+        }
+
+        @Test
+        void nestedMapKeyAndValue() {
+            record NestedMapKeyValueDecimal(Map<BigDecimal, Map<BigDecimal, BigDecimal>> value) {
+            }
+
+            var rootType = writeRecordModel(NestedMapKeyValueDecimal.class)
+                    .withField("value", MAP.ofTypes(BIG_DECIMAL.withPrecisionScale(16, 2),
+                            MAP.ofTypes(
+                                    BIG_DECIMAL.withPrecisionScale(20, 4),
+                                    BIG_DECIMAL.withPrecisionScale(24, 6))),
+                            NestedMapKeyValueDecimal::value);
+
+            String expected = """
+                    message NestedMapKeyValueDecimal {
+                      optional group value (MAP) {
+                        repeated group key_value {
+                          required int64 key (DECIMAL(16,2));
+                          optional group value (MAP) {
+                            repeated group key_value {
+                              required binary key (DECIMAL(20,4));
+                              optional binary value (DECIMAL(24,6));
+                            }
+                          }
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schemaWithRootType(rootType).toString());
         }
 
     }

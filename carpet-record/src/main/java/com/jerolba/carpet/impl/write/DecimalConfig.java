@@ -45,7 +45,7 @@ public class DecimalConfig {
         return new DecimalConfig(null, null, null);
     }
 
-    public DecimalConfig withPrecionAndScale(int precision, int scale) {
+    public DecimalConfig withPrecisionAndScale(int precision, int scale) {
         if (precision <= 0) {
             throw new IllegalArgumentException("precision must be greater than 0");
         }

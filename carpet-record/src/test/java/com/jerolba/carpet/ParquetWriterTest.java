@@ -112,8 +112,10 @@ public class ParquetWriterTest<T> {
             builder = builder.withWriteRecordModel(mapper);
         }
         if (precision != null) {
-            builder = builder.withDefaultDecimal(precision, scale)
-                    .withBigDecimalScaleAdjustment(roundingMode);
+            builder = builder.withDefaultDecimal(precision, scale);
+        }
+        if (roundingMode != null) {
+            builder = builder.withBigDecimalScaleAdjustment(roundingMode);
         }
         try (ParquetWriter<T> writer = builder.build()) {
             for (var v : values) {

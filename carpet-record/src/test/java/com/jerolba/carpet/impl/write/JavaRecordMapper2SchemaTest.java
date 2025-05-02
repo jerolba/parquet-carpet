@@ -48,6 +48,7 @@ import com.jerolba.carpet.annotation.ParquetBson;
 import com.jerolba.carpet.annotation.ParquetEnum;
 import com.jerolba.carpet.annotation.ParquetJson;
 import com.jerolba.carpet.annotation.ParquetString;
+import com.jerolba.carpet.annotation.PrecisionScale;
 import com.jerolba.carpet.model.WriteRecordModelType;
 
 class JavaRecordMapper2SchemaTest {
@@ -262,7 +263,7 @@ class JavaRecordMapper2SchemaTest {
     class DecimalConfiguration {
 
         CarpetWriteConfiguration config = new CarpetWriteConfiguration(AnnotatedLevels.THREE,
-                defaultNaming, defaultTimeUnit, decimalConfig().withPrecionAndScale(20, 4));
+                defaultNaming, defaultTimeUnit, decimalConfig().withPrecisionAndScale(20, 4));
 
         @Test
         void recordField() {
@@ -284,7 +285,7 @@ class JavaRecordMapper2SchemaTest {
             }
 
             CarpetWriteConfiguration intPrecisionConfig = new CarpetWriteConfiguration(AnnotatedLevels.THREE,
-                    defaultNaming, defaultTimeUnit, decimalConfig().withPrecionAndScale(9, 4));
+                    defaultNaming, defaultTimeUnit, decimalConfig().withPrecisionAndScale(9, 4));
 
             MessageType schema = class2Model2Schema(RecordFieldDecimal.class, intPrecisionConfig);
             String expected = """
@@ -301,7 +302,7 @@ class JavaRecordMapper2SchemaTest {
             }
 
             CarpetWriteConfiguration longPrecisionConfig = new CarpetWriteConfiguration(AnnotatedLevels.THREE,
-                    defaultNaming, defaultTimeUnit, decimalConfig().withPrecionAndScale(18, 8));
+                    defaultNaming, defaultTimeUnit, decimalConfig().withPrecisionAndScale(18, 8));
 
             MessageType schema = class2Model2Schema(RecordFieldDecimal.class, longPrecisionConfig);
             String expected = """
@@ -314,9 +315,9 @@ class JavaRecordMapper2SchemaTest {
 
         @Test
         void invalidConfig() {
-            assertThrowsExactly(IllegalArgumentException.class, () -> decimalConfig().withPrecionAndScale(0, 8));
-            assertThrowsExactly(IllegalArgumentException.class, () -> decimalConfig().withPrecionAndScale(10, -1));
-            assertThrowsExactly(IllegalArgumentException.class, () -> decimalConfig().withPrecionAndScale(12, 13));
+            assertThrowsExactly(IllegalArgumentException.class, () -> decimalConfig().withPrecisionAndScale(0, 8));
+            assertThrowsExactly(IllegalArgumentException.class, () -> decimalConfig().withPrecisionAndScale(10, -1));
+            assertThrowsExactly(IllegalArgumentException.class, () -> decimalConfig().withPrecisionAndScale(12, 13));
         }
 
         @Test
@@ -393,6 +394,163 @@ class JavaRecordMapper2SchemaTest {
                             repeated group key_value {
                               required binary key (DECIMAL(20,4));
                               optional binary value (DECIMAL(20,4));
+                            }
+                          }
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+    }
+
+    @Nested
+    class PrecionAndScaleAnnotation {
+
+        CarpetWriteConfiguration config = new CarpetWriteConfiguration(AnnotatedLevels.THREE,
+                defaultNaming, defaultTimeUnit, null);
+
+        @Test
+        void recordField() {
+            record RecordFieldDecimal(@PrecisionScale(precision = 20, scale = 4) BigDecimal value) {
+            }
+
+            MessageType schema = class2Model2Schema(RecordFieldDecimal.class, config);
+            String expected = """
+                    message RecordFieldDecimal {
+                      optional binary value (DECIMAL(20,4));
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void intPrecision() {
+            record RecordFieldDecimal(@PrecisionScale(precision = 9, scale = 4) BigDecimal value) {
+            }
+
+            MessageType schema = class2Model2Schema(RecordFieldDecimal.class, config);
+            String expected = """
+                    message RecordFieldDecimal {
+                      optional int32 value (DECIMAL(9,4));
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void longPrecision() {
+            record RecordFieldDecimal(@PrecisionScale(precision = 18, scale = 8) BigDecimal value) {
+            }
+
+            MessageType schema = class2Model2Schema(RecordFieldDecimal.class, config);
+            String expected = """
+                    message RecordFieldDecimal {
+                      optional int64 value (DECIMAL(18,8));
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void invalidConfig() {
+            assertThrowsExactly(IllegalArgumentException.class, () -> {
+                record RecordFieldDecimal(@PrecisionScale(precision = 0, scale = 8) BigDecimal value) {
+                }
+                class2Model2Schema(RecordFieldDecimal.class, config);
+
+            });
+            assertThrowsExactly(IllegalArgumentException.class, () -> {
+                record RecordFieldDecimal(@PrecisionScale(precision = 10, scale = -1) BigDecimal value) {
+                }
+                class2Model2Schema(RecordFieldDecimal.class, config);
+
+            });
+            assertThrowsExactly(IllegalArgumentException.class, () -> {
+                record RecordFieldDecimal(@PrecisionScale(precision = 12, scale = 13) BigDecimal value) {
+                }
+                class2Model2Schema(RecordFieldDecimal.class, config);
+            });
+        }
+
+        @Test
+        void collectionValue() {
+            record CollectionDecimalValue(List<@PrecisionScale(precision = 20, scale = 4) BigDecimal> value) {
+            }
+
+            MessageType schema = class2Model2Schema(CollectionDecimalValue.class, config);
+            String expected = """
+                    message CollectionDecimalValue {
+                      optional group value (LIST) {
+                        repeated group list {
+                          optional binary element (DECIMAL(20,4));
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedCollectionValue() {
+            record NestedCollectionDecimalValue(
+                    List<List<@PrecisionScale(precision = 20, scale = 4) BigDecimal>> value) {
+            }
+
+            MessageType schema = class2Model2Schema(NestedCollectionDecimalValue.class, config);
+            String expected = """
+                    message NestedCollectionDecimalValue {
+                      optional group value (LIST) {
+                        repeated group list {
+                          optional group element (LIST) {
+                            repeated group list {
+                              optional binary element (DECIMAL(20,4));
+                            }
+                          }
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void mapKeyAndValue() {
+            record MapKeyValueDecimals(
+                    Map<@PrecisionScale(precision = 16, scale = 2) BigDecimal, @PrecisionScale(precision = 28, scale = 6) BigDecimal> value) {
+            }
+
+            MessageType schema = class2Model2Schema(MapKeyValueDecimals.class, config);
+            String expected = """
+                    message MapKeyValueDecimals {
+                      optional group value (MAP) {
+                        repeated group key_value {
+                          required int64 key (DECIMAL(16,2));
+                          optional binary value (DECIMAL(28,6));
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedMapKeyAndValue() {
+            record NestedMapKeyValueDecimal(
+                    Map<@PrecisionScale(precision = 16, scale = 2) BigDecimal, Map<@PrecisionScale(precision = 20, scale = 4) BigDecimal, @PrecisionScale(precision = 24, scale = 6) BigDecimal>> value) {
+            }
+
+            MessageType schema = class2Model2Schema(NestedMapKeyValueDecimal.class, config);
+            String expected = """
+                    message NestedMapKeyValueDecimal {
+                      optional group value (MAP) {
+                        repeated group key_value {
+                          required int64 key (DECIMAL(16,2));
+                          optional group value (MAP) {
+                            repeated group key_value {
+                              required binary key (DECIMAL(20,4));
+                              optional binary value (DECIMAL(24,6));
                             }
                           }
                         }

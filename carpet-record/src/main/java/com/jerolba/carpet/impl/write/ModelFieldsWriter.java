@@ -15,6 +15,7 @@
  */
 package com.jerolba.carpet.impl.write;
 
+import static com.jerolba.carpet.impl.write.BigDecimalWrite.buildDecimalConfig;
 import static com.jerolba.carpet.impl.write.TimeWrite.instantCosumer;
 import static com.jerolba.carpet.impl.write.TimeWrite.localDateTimeConsumer;
 import static com.jerolba.carpet.impl.write.TimeWrite.localTimeConsumer;
@@ -30,6 +31,7 @@ import java.util.function.ToLongFunction;
 import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.io.api.RecordConsumer;
 
+import com.jerolba.carpet.model.BigDecimalType;
 import com.jerolba.carpet.model.EnumType;
 import com.jerolba.carpet.model.FieldType;
 import com.jerolba.carpet.model.ToBooleanFunction;
@@ -68,7 +70,7 @@ class ModelFieldsWriter {
         }
         if (type.isBinary()) {
             return (consumer, v) -> consumer.addBinary((Binary) v);
-        }		
+        }
         if (fieldType instanceof EnumType enumType) {
             EnumsValues enumValues = new EnumsValues(enumType.enumClass());
             return (consumer, v) -> consumer.addBinary(enumValues.getValue(v));
@@ -89,7 +91,10 @@ class ModelFieldsWriter {
             return instantCosumer(carpetConfiguration.defaultTimeUnit());
         }
         if (type.isBigDecimal()) {
-            return new BigDecimalWrite(carpetConfiguration.decimalConfig())::write;
+            var bigDecimalType = (BigDecimalType) fieldType;
+            var config = buildDecimalConfig(bigDecimalType.precision(), bigDecimalType.scale(),
+                    bigDecimalType.roundingMode(), carpetConfiguration.decimalConfig());
+            return new BigDecimalWrite(config)::write;
         }
         if (fieldType instanceof WriteRecordModelType<?> recordType) {
             var recordWriter = new WriteRecordModelWriter(recordConsumer, recordType, carpetConfiguration);

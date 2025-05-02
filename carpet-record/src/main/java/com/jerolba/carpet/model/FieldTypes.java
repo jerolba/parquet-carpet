@@ -28,7 +28,7 @@ public class FieldTypes {
     public static final BinaryType BINARY = new BinaryType(false, null);
     public static final EnumTypeBuilder ENUM = new EnumTypeBuilder();
     public static final UuidType UUID = new UuidType(false);
-    public static final BigDecimalType BIG_DECIMAL = new BigDecimalType(false);
+    public static final BigDecimalType BIG_DECIMAL = new BigDecimalType(false, null, null, null);
     public static final LocalDateType LOCAL_DATE = new LocalDateType(false);
     public static final LocalTimeType LOCAL_TIME = new LocalTimeType(false);
     public static final LocalDateTimeType LOCAL_DATE_TIME = new LocalDateTimeType(false);

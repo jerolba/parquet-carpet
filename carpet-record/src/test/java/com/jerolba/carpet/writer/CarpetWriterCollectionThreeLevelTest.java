@@ -20,6 +20,7 @@ import static java.util.Collections.emptyList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.HashSet;
@@ -37,6 +38,7 @@ import com.jerolba.carpet.ParquetWriterTest;
 import com.jerolba.carpet.annotation.ParquetBson;
 import com.jerolba.carpet.annotation.ParquetEnum;
 import com.jerolba.carpet.annotation.ParquetJson;
+import com.jerolba.carpet.annotation.PrecisionScale;
 
 //Verification with Avro is done considering that parser can not read List > element structures correctly
 class CarpetWriterCollectionThreeLevelTest {
@@ -142,6 +144,39 @@ class CarpetWriterCollectionThreeLevelTest {
         assertEquals("BAR", ids.get(1).get("element").toString());
         var carpetReader = writerTest.getCarpetReader();
         assertEquals(rec, carpetReader.read());
+    }
+
+    @Test
+    void simpleBigDecimalCollection() throws IOException {
+
+        record SimpleTypeCollection(String name, List<BigDecimal> values) {
+        }
+
+        var rec = new SimpleTypeCollection("foo", List.of(new BigDecimal("1.0"), new BigDecimal("2.0")));
+        var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class)
+                .withDecimalConfig(6, 2);
+        writerTest.write(rec);
+
+        var carpetReader = writerTest.getCarpetReader();
+        var expected = new SimpleTypeCollection("foo",
+                List.of(new BigDecimal("1.00"), new BigDecimal("2.00")));
+        assertEquals(expected, carpetReader.read());
+    }
+
+    @Test
+    void simpleBigDecimalAnnotatedCollection() throws IOException {
+
+        record SimpleTypeCollection(String name, List<@PrecisionScale(precision = 6, scale = 3) BigDecimal> values) {
+        }
+
+        var rec = new SimpleTypeCollection("foo", List.of(new BigDecimal("1.0"), new BigDecimal("2.0")));
+        var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class);
+        writerTest.write(rec);
+
+        var carpetReader = writerTest.getCarpetReader();
+        var expected = new SimpleTypeCollection("foo",
+                List.of(new BigDecimal("1.000"), new BigDecimal("2.000")));
+        assertEquals(expected, carpetReader.read());
     }
 
     @Test

@@ -60,9 +60,10 @@ class SchemaBuilder {
     }
 
     static Type buildDecimalTypeItem(Repetition repetition, String name, DecimalConfig decimalConfig) {
-        if (decimalConfig == null) {
-            throw new RecordTypeConversionException("If BigDecimall is used, a Default Decimal configuration "
-                    + "must be provided in the setup of CarpetWriter builder");
+        if (decimalConfig == null || decimalConfig.scale() == null || decimalConfig.precision() == null) {
+            throw new RecordTypeConversionException("If BigDecimal is used, a Default Decimal configuration "
+                    + "must be provided in the setup of CarpetWriter builder, or BigDecimal fields must be "
+                    + "annotated with @PrecisionScale");
         }
         var decimalType = decimalType(decimalConfig.scale(), decimalConfig.precision());
         if (decimalConfig.precision() <= 9) {
