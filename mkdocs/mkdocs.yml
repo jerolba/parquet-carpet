@@ -1,0 +1,53 @@
+site_name: Carpet Documentation
+site_description: Parquet Serialization and Deserialization Library for Java
+site_url: https://jerolba.github.io/parquet-carpet
+repo_name: jerolba/parquet-carpet
+repo_url: https://github.com/jerolba/parquet-carpet
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - content.tabs.link
+    - search.suggest
+    - search.highlight
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - pymdownx.details
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: getting-started/installation.md
+    - Basic Usage: getting-started/basic-usage.md
+    - CarpetWriter API: getting-started/carpetwriter-api.md
+    - CarpetReader API: getting-started/carpetreader-api.md
+  - Advanced Usage:
+    - Column Mapping: advanced/column-mapping.md
+    - Data Types: advanced/data-types.md
+    - Projections: advanced/projections.md
+    - Schema Mismatch: advanced/schema-mismatch.md
+    - Nullability: advanced/nullability.md
+    - Input and Output Files: advanced/input-output-files.md
+    - Configuration: advanced/configuration.md
+    - Low Level Parquet Classes: advanced/low-level-parquet.md
