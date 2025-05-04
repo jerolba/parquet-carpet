@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - master
-      - gh-76/fix-github-pages-publication
     paths:
       - 'mkdocs/docs/**'
       - '.github/workflows/documentation.yml'
