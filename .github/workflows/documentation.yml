@@ -4,7 +4,7 @@ on:
     branches:
       - master
     paths:
-      - 'mkdocs/docs/**'
+      - 'mkdocs/**'
       - '.github/workflows/documentation.yml'
 
 permissions:

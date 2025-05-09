@@ -108,11 +108,9 @@ Key advanced topics include:
 - **Configuration & Low-Level Access**:
     - [Parquet Configuration Tuning (compression, page sizes, etc.)](https://carpet.jerolba.com/advanced/configuration/)
     - [BigDecimal Precision and Scale](https://carpet.jerolba.com/advanced/configuration/#bigdecimal-precision-and-scale)
-    - [Time Unit Configuration](https://carpet.jerolba.com/advanced/configuration/#time-unit)
+    - [Time Unit Configuration](https://carpet.jerolba.com/advanced/configuration/#time-unit-configuration)
     - [Low-Level Parquet Classes Integration](https://carpet.jerolba.com/advanced/low-level-parquet/)
     - [Local File System File Handling](https://carpet.jerolba.com/advanced/input-output-files/)
-
-Explore these topics and more in the [Advanced Usage section of our documentation](https://carpet.jerolba.com/advanced/).
 
 ## Build
 
