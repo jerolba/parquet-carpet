@@ -10,6 +10,7 @@ theme:
     - navigation.sections
     - navigation.expand
     - navigation.path
+    - navigation.footer
     - content.tabs.link
     - search.suggest
     - search.highlight
@@ -44,8 +45,8 @@ nav:
     - CarpetWriter API: getting-started/carpetwriter-api.md
     - CarpetReader API: getting-started/carpetreader-api.md
   - Advanced Usage:
-    - Column Mapping: advanced/column-mapping.md
     - Data Types: advanced/data-types.md
+    - Column Mapping: advanced/column-mapping.md
     - Projections: advanced/projections.md
     - Schema Mismatch: advanced/schema-mismatch.md
     - Nullability: advanced/nullability.md
