@@ -46,10 +46,11 @@ nav:
     - CarpetReader API: getting-started/carpetreader-api.md
   - Advanced Usage:
     - Data Types: advanced/data-types.md
+    - Java Types Annotations: advanced/java-type-annotations.md
     - Column Mapping: advanced/column-mapping.md
     - Projections: advanced/projections.md
     - Schema Mismatch: advanced/schema-mismatch.md
     - Nullability: advanced/nullability.md
     - Input and Output Files: advanced/input-output-files.md
-    - Configuration: advanced/configuration.md
+    - Advanced Configuration: advanced/configuration.md
     - Low Level Parquet Classes: advanced/low-level-parquet.md

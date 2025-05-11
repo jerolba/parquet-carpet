@@ -40,14 +40,14 @@ You can include this library in your Java project using Maven:
 <dependency>
     <groupId>com.jerolba</groupId>
     <artifactId>carpet-record</artifactId>
-    <version>0.3.0</version>
+    <version>0.4.0</version>
 </dependency>
 ```
 
 or using Gradle:
 
 ```gradle
-implementation 'com.jerolba:carpet-record:0.3.0'
+implementation 'com.jerolba:carpet-record:0.4.0'
 ```
 
 Carpet includes only the essential transitive dependencies required for file read and write operations.

@@ -13,6 +13,7 @@ Carpet maps main Java types to Parquet data types automatically:
 | long/Long | int64 |
 | float/Float | float |
 | double/Double | double |
+| Binary | binary |
 | String | binary (STRING) |
 | Enum | binary (ENUM) |
 | UUID | fixed_len_byte_array(16) (UUID) |
@@ -37,6 +38,33 @@ BigDecimal mapping depends on precision:
 | ≤ 9 | int32 (DECIMAL) |
 | ≤ 18 | int64 (DECIMAL) |
 | > 18 | binary (DECIMAL) or fixed_len_byte_array (DECIMAL) |
+
+## Binary
+
+Carpet supports storing binary data using the `org.apache.parquet.io.api.Binary` class. This is useful for storing raw binary data that doesn't fit into other types. The `Binary` class provides methods for creating and manipulating binary data.
+
+Following record:
+
+```java
+record SimpleRecord(long id, Binary data) { }
+```
+
+generates a Parquet schema with a `binary` type:
+
+```
+message SimpleRecord {
+    required int64 id;
+    optional binary data;
+}
+```
+
+## JSON and BSON types
+
+Java doesn't have a native JSON or BSON type, but you can use `String` or `org.apache.parquet.io.api.Binary` to store JSON or BSON data.
+
+To configure it, you can use the `@ParquetJson` or `@ParquetBson` annotations to specify the logical type in Parquet schema.
+
+You can find more information about JSON and BSON in the [Java Type Annotations](../java-type-annotations/) section.
 
 ## Nested Structures
 
