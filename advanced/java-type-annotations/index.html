@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://jerolba.github.io/parquet-carpet/advanced/column-mapping/">
+        <link rel="canonical" href="https://jerolba.github.io/parquet-carpet/advanced/java-type-annotations/">
       
       
-        <link rel="prev" href="../java-type-annotations/">
+        <link rel="prev" href="../data-types/">
       
       
-        <link rel="next" href="../projections/">
+        <link rel="next" href="../column-mapping/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -24,7 +24,7 @@
     
     
       
-        <title>Column Mapping - Carpet Documentation</title>
+        <title>Java Types Annotations - Carpet Documentation</title>
       
     
     
@@ -76,7 +76,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#column-name-mapping" class="md-skip">
+        <a href="#java-type-annotations" class="md-skip">
           Skip to content
         </a>
       
@@ -112,7 +112,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Column Mapping
+              Java Types Annotations
             
           </span>
         </div>
@@ -491,29 +491,6 @@
                 
   
   
-  
-  
-    <li class="md-nav__item">
-      <a href="../java-type-annotations/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Java Types Annotations
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
     
   
   
@@ -531,7 +508,7 @@
   
   
   <span class="md-ellipsis">
-    Column Mapping
+    Java Types Annotations
     
   </span>
   
@@ -544,7 +521,7 @@
   
   
   <span class="md-ellipsis">
-    Column Mapping
+    Java Types Annotations
     
   </span>
   
@@ -567,37 +544,112 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#column-name-aliasing" class="md-nav__link">
+  <a href="#parquetstring-annotation" class="md-nav__link">
     <span class="md-ellipsis">
-      Column Name Aliasing
+      @ParquetString annotation
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="@ParquetString annotation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#with-binary-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      With Binary type
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#with-enum-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      With Enum type
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parquetenum-annotation" class="md-nav__link">
+    <span class="md-ellipsis">
+      @ParquetEnum annotation
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="@ParquetEnum annotation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#with-binary-type_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      With Binary type
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#with-string-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      With String type
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parquetjson-annotation" class="md-nav__link">
+    <span class="md-ellipsis">
+      @ParquetJson annotation
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#column-name-conversion" class="md-nav__link">
+  <a href="#parquetbson-annotation" class="md-nav__link">
     <span class="md-ellipsis">
-      Column Name Conversion
+      @ParquetBson annotation
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Column Name Conversion">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bigdecimal-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      BigDecimal type
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="BigDecimal type">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#writing" class="md-nav__link">
+  <a href="#precisionscale-annotation" class="md-nav__link">
     <span class="md-ellipsis">
-      Writing
+      @PrecisionScale annotation
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#reading" class="md-nav__link">
+  <a href="#rounding-annotation" class="md-nav__link">
     <span class="md-ellipsis">
-      Reading
+      @Rounding annotation
     </span>
   </a>
   
@@ -612,6 +664,29 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../column-mapping/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Column Mapping
+    
+  </span>
+  
+
+      </a>
     </li>
   
 
@@ -789,37 +864,112 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#column-name-aliasing" class="md-nav__link">
+  <a href="#parquetstring-annotation" class="md-nav__link">
     <span class="md-ellipsis">
-      Column Name Aliasing
+      @ParquetString annotation
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="@ParquetString annotation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#with-binary-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      With Binary type
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#with-enum-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      With Enum type
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parquetenum-annotation" class="md-nav__link">
+    <span class="md-ellipsis">
+      @ParquetEnum annotation
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="@ParquetEnum annotation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#with-binary-type_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      With Binary type
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#with-string-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      With String type
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parquetjson-annotation" class="md-nav__link">
+    <span class="md-ellipsis">
+      @ParquetJson annotation
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#column-name-conversion" class="md-nav__link">
+  <a href="#parquetbson-annotation" class="md-nav__link">
     <span class="md-ellipsis">
-      Column Name Conversion
+      @ParquetBson annotation
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Column Name Conversion">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bigdecimal-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      BigDecimal type
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="BigDecimal type">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#writing" class="md-nav__link">
+  <a href="#precisionscale-annotation" class="md-nav__link">
     <span class="md-ellipsis">
-      Writing
+      @PrecisionScale annotation
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#reading" class="md-nav__link">
+  <a href="#rounding-annotation" class="md-nav__link">
     <span class="md-ellipsis">
-      Reading
+      @Rounding annotation
     </span>
   </a>
   
@@ -849,45 +999,116 @@
   
 
 
-<h1 id="column-name-mapping">Column Name Mapping</h1>
-<p>Carpet uses reflection to discover the schema of your files. Since Java record attribute names are limited by Java syntax while Parquet column names are more flexible.</p>
-<h2 id="column-name-aliasing">Column Name Aliasing</h2>
-<p>You can use the <code>@Alias</code> annotation to specify a different name for a field in the Parquet schema. This is useful when you want to map a Java field to a Parquet column with a different name or format.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kd">record</span> <span class="nc">MyRecord</span><span class="p">(</span><span class="kt">long</span><span class="w"> </span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="nd">@Alias</span><span class="p">(</span><span class="s">&quot;$name.id&quot;</span><span class="p">)</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">nameId</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span>
+<h1 id="java-type-annotations">Java Type Annotations</h1>
+<p>Carpet allows you to store <code>String</code>, Enum, or <code>org.apache.parquet.io.api.Binary</code> fields as the Parquet <code>BINARY</code> type with different logical types, such as String, Enum, JSON, or BSON. This is useful for embedding JSON, BSON documents, or any raw binary data directly into your Parquet files if no native type is available for your use case.</p>
+<p>You can use the <code>@ParquetString</code>, <code>@ParquetEnum</code>, <code>@ParquetJson</code>, or <code>@ParquetBson</code> annotations to configure the logical type in the Parquet schema. These annotations do not transform or convert the actual data. They simply specify how the data should be interpreted in the Parquet format. Carpet does not validate the content of the data, so you must ensure that the data you are writing is valid String, JSON, or BSON.</p>
+<p>These annotations can be applied to record components or collection elements (<code>List&lt;@ParquetBson Binary&gt; values</code>). The following sections describe how to use these annotations with different types.</p>
+<h2 id="parquetstring-annotation">@ParquetString annotation</h2>
+<p>The <code>@ParquetString</code> annotation is used to specify that a field should be stored as a Parquet string type when the field type is an Enum or a Parquet Java <code>Binary</code> type.</p>
+<p>By default, Carpet converts <code>Binary</code> and Enum types to their corresponding Parquet types. However, for some use cases, you may want to store them as binary strings instead, overriding the default behavior.</p>
+<h3 id="with-binary-type">With Binary type</h3>
+<p>The following record:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kd">record</span> <span class="nc">Person</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="nd">@ParquetString</span><span class="w"> </span><span class="n">Binary</span><span class="w"> </span><span class="n">code</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span>
 </code></pre></div>
-<h2 id="column-name-conversion">Column Name Conversion</h2>
-<p>Carpet supports automatic conversion of Java field names to Parquet column names. By default, it uses the same name as the field. However, you can modify this behaviour while configuring Carpet.</p>
-<h3 id="writing">Writing</h3>
-<p>Writing a file, configure the property <code>columnNamingStrategy</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">record</span> <span class="nc">MyRecord</span><span class="p">(</span><span class="kt">long</span><span class="w"> </span><span class="n">userCode</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">userName</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">List</span><span class="o">&lt;</span><span class="n">MyRecord</span><span class="o">&gt;</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">calculateDataToPersist</span><span class="p">();</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="k">try</span><span class="w"> </span><span class="p">(</span><span class="kd">var</span><span class="w"> </span><span class="n">writer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">CarpetWriter</span><span class="p">.</span><span class="na">Builder</span><span class="o">&lt;&gt;</span><span class="p">(</span><span class="n">outputStream</span><span class="p">,</span><span class="w"> </span><span class="n">MyRecord</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="p">.</span><span class="na">withColumnNamingStrategy</span><span class="p">(</span><span class="n">ColumnNamingStrategy</span><span class="p">.</span><span class="na">SNAKE_CASE</span><span class="p">)</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">    </span><span class="p">.</span><span class="na">build</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">  </span><span class="n">writer</span><span class="p">.</span><span class="na">write</span><span class="p">(</span><span class="n">data</span><span class="p">);</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="p">}</span>
+<p>will be converted to the following Parquet schema:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>message Person {
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  optional binary name (STRING);
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  optional binary code (STRING);
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>}
 </code></pre></div>
-<p>This will create a Parquet file with columns named <code>user_code</code> and <code>user_name</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>message MyRecord {
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  required int64 user_code;
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  optional binary user_name (STRING);
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>}
+<p>This is useful when the source of your information is a <code>Binary</code> type, but you still want to store it as a string in Parquet.</p>
+<h3 id="with-enum-type">With Enum type</h3>
+<p>The following record:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kd">enum</span><span class="w"> </span><span class="n">Category</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">HIGH</span><span class="p">,</span><span class="w"> </span><span class="n">MEDIUM</span><span class="p">,</span><span class="w"> </span><span class="n">LOW</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="kd">record</span> <span class="nc">Person</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="nd">@ParquetString</span><span class="w"> </span><span class="n">Category</span><span class="w"> </span><span class="n">category</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span>
 </code></pre></div>
-<p>At the moment, only the snake conversion strategy is implemented.</p>
-<h3 id="reading">Reading</h3>
-<p>To read a file using the inverse logic we must configure the property <code>fieldMatchingStrategy</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kd">var</span><span class="w"> </span><span class="n">reader</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">CarpetReader</span><span class="o">&lt;&gt;</span><span class="p">(</span><span class="n">input</span><span class="p">,</span><span class="w"> </span><span class="n">SomeEntity</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="p">.</span><span class="na">withFieldMatchingStrategy</span><span class="p">(</span><span class="n">FieldMatchingStrategy</span><span class="p">.</span><span class="na">SNAKE_CASE</span><span class="p">);</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">List</span><span class="o">&lt;</span><span class="n">SomeEntity</span><span class="o">&gt;</span><span class="w"> </span><span class="n">list</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">reader</span><span class="p">.</span><span class="na">toList</span><span class="p">();</span>
+<p>will be converted to the following Parquet schema:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>message Person {
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  optional binary name (STRING);
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  optional binary category (STRING);
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>}
 </code></pre></div>
-<p>Available strategies reading a file are:</p>
-<ul>
-<li><code>FIELD_NAME</code>: Match column with exact field name</li>
-<li><code>SNAKE_CASE</code>: Match column with snake_case version of field name</li>
-<li><code>BEST_EFFORT</code>: Try exact match first, then try snake_case</li>
-</ul>
-<p>Reading and writing a file, @Alias annotation has precedence over the strategy configuration.</p>
+<p>You can work with enumerations while keeping their String representation in Parquet, without breaking contracts with other systems.</p>
+<h2 id="parquetenum-annotation">@ParquetEnum annotation</h2>
+<p>The <code>@ParquetEnum</code> annotation is used to specify that a field should be stored as a Parquet enum type when the field type is a <code>String</code> or a Parquet Java <code>Binary</code> type.</p>
+<p>By default, Carpet converts <code>Binary</code> and <code>String</code> types to their corresponding Parquet types. However, for some use cases, you may want to store them as binary Enum instead, overriding the default behavior.</p>
+<h3 id="with-binary-type_1">With Binary type</h3>
+<p>The following record:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kd">record</span> <span class="nc">Person</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="nd">@ParquetEnum</span><span class="w"> </span><span class="n">Binary</span><span class="w"> </span><span class="n">code</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span>
+</code></pre></div>
+<p>will be converted to the following Parquet schema:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>message Person {
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>  optional binary name (STRING);
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>  optional binary code (ENUM);
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>}
+</code></pre></div>
+<p>This is useful when the source of your information is a <code>Binary</code> type, but you still want to store it as an Enum in Parquet.</p>
+<h3 id="with-string-type">With String type</h3>
+<p>The following record:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kd">record</span> <span class="nc">Person</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="nd">@ParquetEnum</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">category</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span>
+</code></pre></div>
+<p>will be converted to the following Parquet schema:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>message Person {
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>  optional binary name (STRING);
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>  optional binary category (ENUM);
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>}
+</code></pre></div>
+<p>You can work with Strings while keeping their Enum representation in Parquet, without breaking contracts with other systems.</p>
+<h2 id="parquetjson-annotation">@ParquetJson annotation</h2>
+<p>Java does not have a native JSON type, but you can use <code>String</code> or <code>Binary</code> to store JSON data. The <code>@ParquetJson</code> annotation is used to specify that a field should be stored as a Parquet JSON type when the field type is a <code>String</code> or <code>Binary</code>.</p>
+<p>To store a field as JSON, annotate the record component with <code>@ParquetJson</code>. The data will be stored as Parquet <code>binary</code> with the <code>JSON</code> logical type.</p>
+<p>The following record:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="kd">record</span> <span class="nc">ProductEvent</span><span class="p">(</span><span class="kt">long</span><span class="w"> </span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="n">Instant</span><span class="w"> </span><span class="n">timestamp</span><span class="p">,</span><span class="w"> </span><span class="nd">@ParquetJson</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">jsonData</span><span class="p">){}</span>
+</code></pre></div>
+<p>generates a schema with a <code>binary</code> field annotated with the <code>JSON</code> logical type:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>message ProductEvent {
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>    required int64 id;
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>    required int64 timestamp (TIMESTAMP(MILLIS,true));
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>    optional binary jsonData (JSON);
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>}
+</code></pre></div>
+<p><code>@ParquetJson</code> can also annotate the <code>Binary</code> class.</p>
+<h2 id="parquetbson-annotation">@ParquetBson annotation</h2>
+<p>Similar to JSON, Java does not have a native BSON type, but you can use the <code>Binary</code> type to store BSON data. The <code>@ParquetBson</code> annotation is used to specify that a field should be stored as a Parquet BSON type when the field type is <code>Binary</code>.</p>
+<p>The following record:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="kd">record</span> <span class="nc">ProductEvent</span><span class="p">(</span><span class="kt">long</span><span class="w"> </span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="n">Instant</span><span class="w"> </span><span class="n">timestamp</span><span class="p">,</span><span class="w"> </span><span class="nd">@ParquetBson</span><span class="w"> </span><span class="n">Binary</span><span class="w"> </span><span class="n">bsonData</span><span class="p">){}</span>
+</code></pre></div>
+<p>generates a schema with a <code>binary</code> field annotated with the <code>BSON</code> logical type:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>message ProductEvent {
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>    required int64 id;
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>    required int64 timestamp (TIMESTAMP(MILLIS,true));
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>    optional binary bsonData (BSON);
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>}
+</code></pre></div>
+<p>Carpet does not validate the content of the data, so you must ensure that the data you are writing is valid BSON.</p>
+<h2 id="bigdecimal-type">BigDecimal type</h2>
+<p>The <code>BigDecimal</code> type is used to represent arbitrary-precision decimal numbers. In Parquet, <code>BigDecimal</code> can be represented by multiple physical Parquet types, all configured with the <code>DECIMAL</code> logical type and a specified precision and scale.</p>
+<h3 id="precisionscale-annotation">@PrecisionScale annotation</h3>
+<p>The precision is the total number of digits, and the scale is the number of digits to the right of the decimal point.</p>
+<p>When writing a file, the precision and scale can be configured globally in the <a href="../configuration/#bigdecimal-precision-and-scale">writer configuration</a> or per record field using the <code>@PrecisionScale</code> annotation. Annotation configuration takes precedence over the writer configuration.</p>
+<p>The following record:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="kd">record</span> <span class="nc">Product</span><span class="p">(</span><span class="kt">long</span><span class="w"> </span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="nd">@PrecisionScale</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">)</span><span class="w"> </span><span class="n">BigDecimal</span><span class="w"> </span><span class="n">price</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+</code></pre></div>
+<p>will be converted to the following Parquet schema:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>message Product {
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>  required int64 id;
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>  optional binary price (DECIMAL(20,4));
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>}
+</code></pre></div>
+<p>When writing a file with a configured precision and scale, Carpet adapts the data to these specifications. If the data in the file has a different precision or scale, it will be converted to the specified precision and scale.</p>
+<p>When reading a file with a record field annotated with <code>@PrecisionScale</code>, Carpet does NOT validate the precision and scale of the data. It reads the data as <code>BigDecimal</code> using the precision and scale from the file. If the data in the file has a different precision or scale, Carpet will not throw an error or convert it. You must ensure that the data you are reading is valid for the specified precision and scale.</p>
+<h3 id="rounding-annotation">@Rounding annotation</h3>
+<p>If scale adjustment is needed, you must configure the rounding mode to round the value to the specified scale.</p>
+<p>When writing a file, the rounding mode can be configured globally in the <a href="../configuration/#bigdecimal-precision-and-scale">writer configuration</a> or per record field using the <code>@Rounding</code> annotation. Annotation configuration takes precedence over the writer configuration.</p>
+<p>The <code>@Rounding</code> annotation requires a <code>RoundingMode</code> enum parameter, which is used to round <code>BigDecimal</code> values in the Java API. This annotation does not modify the generated Parquet schema but configures the rounding mode for <code>BigDecimal</code> values.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="kd">record</span> <span class="nc">Product</span><span class="p">(</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">    </span><span class="kt">long</span><span class="w"> </span><span class="n">id</span><span class="p">,</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">    </span><span class="nd">@PrecisionScale</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">)</span><span class="w"> </span><span class="nd">@Rounding</span><span class="p">(</span><span class="n">RoundingMode</span><span class="p">.</span><span class="na">HALF_UP</span><span class="p">)</span><span class="w"> </span><span class="n">BigDecimal</span><span class="w"> </span><span class="n">price</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="p">}</span>
+</code></pre></div>
+<p>If the rounding mode is not specified via annotation or writer configuration, the default is <code>RoundingMode.UNNECESSARY</code>. This means an exception will be thrown if rounding is necessary, which is useful to ensure data integrity if no changes are expected during conversion.</p>
+<p><code>@PrecisionScale</code> and <code>@Rounding</code> annotations can be used together or separately, depending on your use case and how you want to configure the precision and scale of <code>BigDecimal</code> values in your Parquet files.</p>
 
 
 
@@ -919,7 +1140,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../java-type-annotations/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Java Types Annotations">
+          <a href="../data-types/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Data Types">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -929,20 +1150,20 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Java Types Annotations
+                Data Types
               </div>
             </div>
           </a>
         
         
           
-          <a href="../projections/" class="md-footer__link md-footer__link--next" aria-label="Next: Projections">
+          <a href="../column-mapping/" class="md-footer__link md-footer__link--next" aria-label="Next: Column Mapping">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Projections
+                Column Mapping
               </div>
             </div>
             <div class="md-footer__button md-icon">
