@@ -26,6 +26,7 @@ import com.jerolba.carpet.impl.read.converter.LocalDateTimeRead.LongToLocalDateT
 
 public class LocalDateTimeConverter extends PrimitiveConverter {
 
+    private final LocalDateTimeRead localDateTimeRead = new LocalDateTimeRead();
     private final Consumer<Object> consumer;
     private final LongToLocalDateTime mapper;
     private LocalDateTime[] dict = null;
@@ -33,9 +34,9 @@ public class LocalDateTimeConverter extends PrimitiveConverter {
     public LocalDateTimeConverter(Consumer<Object> consumer, TimeUnit timeUnit) {
         this.consumer = consumer;
         this.mapper = switch (timeUnit) {
-        case MILLIS -> LocalDateTimeRead::localDateTimeFromMillisFromEpoch;
-        case MICROS -> LocalDateTimeRead::localDateTimeFromMicrosFromEpoch;
-        case NANOS -> LocalDateTimeRead::localDateTimeFromNanosFromEpoch;
+        case MILLIS -> localDateTimeRead::localDateTimeFromMillisFromEpoch;
+        case MICROS -> localDateTimeRead::localDateTimeFromMicrosFromEpoch;
+        case NANOS -> localDateTimeRead::localDateTimeFromNanosFromEpoch;
         };
     }
 
