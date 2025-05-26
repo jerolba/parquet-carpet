@@ -18,6 +18,7 @@ package com.jerolba.carpet.impl.read.converter;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.zone.ZoneRules;
 
 public class LocalDateTimeRead {
 
@@ -26,23 +27,26 @@ public class LocalDateTimeRead {
         LocalDateTime map(long timeFromEpoch);
     }
 
-    public static LocalDateTime localDateTimeFromMillisFromEpoch(long millisFromEpoch) {
+    private final ZoneRules rules = ZoneOffset.UTC.getRules();
+
+    public LocalDateTime localDateTimeFromMillisFromEpoch(long millisFromEpoch) {
         Instant instant = InstantRead.instantFromMillisFromEpoch(millisFromEpoch);
         return localDateTimeInUTC(instant);
     }
 
-    public static LocalDateTime localDateTimeFromMicrosFromEpoch(long microsFromEpoch) {
+    public LocalDateTime localDateTimeFromMicrosFromEpoch(long microsFromEpoch) {
         Instant instant = InstantRead.instantFromMicrosFromEpoch(microsFromEpoch);
         return localDateTimeInUTC(instant);
     }
 
-    public static LocalDateTime localDateTimeFromNanosFromEpoch(long nanosFromEpoch) {
+    public LocalDateTime localDateTimeFromNanosFromEpoch(long nanosFromEpoch) {
         Instant instant = InstantRead.instantFromNanosFromEpoch(nanosFromEpoch);
         return localDateTimeInUTC(instant);
     }
 
-    private static LocalDateTime localDateTimeInUTC(Instant instant) {
-        return LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
+    private LocalDateTime localDateTimeInUTC(Instant instant) {
+        ZoneOffset offset = rules.getOffset(instant);
+        return LocalDateTime.ofEpochSecond(instant.getEpochSecond(), instant.getNano(), offset);
     }
 
 }
