@@ -27,11 +27,6 @@ import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import org.apache.parquet.bytes.ByteBufferAllocator;
-import org.apache.parquet.compression.CompressionCodecFactory;
-import org.apache.parquet.conf.ParquetConfiguration;
-import org.apache.parquet.crypto.FileDecryptionProperties;
-import org.apache.parquet.filter2.compat.FilterCompat.Filter;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.io.InputFile;
 
@@ -46,8 +41,7 @@ import com.jerolba.carpet.io.FileSystemInputFile;
  */
 public class CarpetReader<T> implements Iterable<T> {
 
-    private final Class<T> recordClass;
-    private Builder<T> builder;
+    private final Builder<T> builder;
 
     /**
      *
@@ -58,8 +52,7 @@ public class CarpetReader<T> implements Iterable<T> {
      * @param recordClass the class of the records being read
      */
     public CarpetReader(InputFile inputFile, Class<T> recordClass) {
-        this.builder = new Builder<>(inputFile, recordClass);
-        this.recordClass = recordClass;
+        this(new Builder<>(inputFile, recordClass));
     }
 
     /**
@@ -74,8 +67,7 @@ public class CarpetReader<T> implements Iterable<T> {
         this(new FileSystemInputFile(file), recordClass);
     }
 
-    private CarpetReader(Builder<T> builder, Class<T> recordClass) {
-        this.recordClass = recordClass;
+    private CarpetReader(Builder<T> builder) {
         this.builder = builder;
     }
 
@@ -184,7 +176,7 @@ public class CarpetReader<T> implements Iterable<T> {
 
     private RecordIterator<T> buildIterator() {
         try {
-            return new RecordIterator<>(recordClass, builder.buildParquetReader());
+            return new RecordIterator<>(builder.getRecordClass(), builder.buildParquetReader());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -272,204 +264,23 @@ public class CarpetReader<T> implements Iterable<T> {
 
     }
 
-    public static class Builder<T> {
+    public static class Builder<T> extends CarpetReaderConfigurationBuilder<T, Builder<T>> {
 
-        private final CarpetParquetReader.Builder<T> builder;
-        private final Class<T> recordClass;
-
-        /**
-         *
-         * Creates a new {@code Builder} instance from the specified InputFile and
-         * record class.
-         *
-         * @param inputFile   the input file from which the records will be read
-         * @param recordClass the class of the records being read
-         */
         public Builder(InputFile file, Class<T> readClass) {
-            this.builder = CarpetParquetReader.builder(file, readClass);
-            this.recordClass = readClass;
+            super(file, readClass);
         }
 
-        /**
-         *
-         * Creates a new {@code Builder} instance from the specified File and record
-         * class.
-         *
-         * @param file        the File containing the Parquet data
-         * @param recordClass the class of the records being read
-         */
         public Builder(File file, Class<T> recordClass) {
-            this(new FileSystemInputFile(file), recordClass);
+            super(file, recordClass);
         }
 
-        /**
-         * Feature that determines whether encountering of missed parquet column should
-         * result in a failure (by throwing a RecordTypeConversionException) or not.
-         *
-         * Feature is enabled by default.
-         *
-         * @param failOnMissingColumn
-         * @return Carpet Reader Builder
-         */
-        public Builder<T> failOnMissingColumn(boolean failOnMissingColumn) {
-            this.builder.failOnMissingColumn(failOnMissingColumn);
+        @Override
+        protected Builder<T> self() {
             return this;
-        }
-
-        /**
-         * Feature that determines whether encountering null is an error when
-         * deserializing into Java primitive types (like 'int' or 'double'). If it is, a
-         * RecordTypeConversionException is thrown to indicate this; if not, default
-         * value is used (0 for 'int', 0.0 for double, same defaulting as what JVM
-         * uses).
-         *
-         * Feature is disabled by default.
-         *
-         * @param failOnNullForPrimitives
-         * @return Carpet Reader Builder
-         */
-        public Builder<T> failOnNullForPrimitives(boolean failOnNullForPrimitives) {
-            this.builder.failOnNullForPrimitives(failOnNullForPrimitives);
-            return this;
-        }
-
-        /**
-         * Feature that determines whether coercion from one number type to other number
-         * type with less resolutions is allowed or not. If disabled, coercion truncates
-         * value.
-         *
-         * A narrowing primitive conversion may lose information about the overall
-         * magnitude of a numeric value and may also lose precision and range. Narrowing
-         * follows
-         * <a href="https://docs.oracle.com/javase/specs/jls/se10/html/jls-5.html">Java
-         * Language Specification</a>
-         *
-         * Feature is disabled by default.
-         *
-         * @param failNarrowingPrimitiveConversion
-         * @return Carpet Reader Builder
-         */
-        public Builder<T> failNarrowingPrimitiveConversion(boolean failNarrowingPrimitiveConversion) {
-            this.builder.failNarrowingPrimitiveConversion(failNarrowingPrimitiveConversion);
-            return this;
-        }
-
-        public Builder<T> fieldMatchingStrategy(FieldMatchingStrategy fieldMatchingStrategy) {
-            this.builder.fieldMatchingStrategy(fieldMatchingStrategy);
-            return this;
-        }
-
-        public Builder<T> withConf(ParquetConfiguration conf) {
-            this.builder.withConf(conf);
-            return this;
-        }
-
-        public Builder<T> withFilter(Filter filter) {
-            this.builder.withFilter(filter);
-            return this;
-        }
-
-        public Builder<T> withAllocator(ByteBufferAllocator allocator) {
-            this.builder.withAllocator(allocator);
-            return this;
-        }
-
-        public Builder<T> useSignedStringMinMax(boolean useSignedStringMinMax) {
-            this.builder.useSignedStringMinMax(useSignedStringMinMax);
-            return this;
-        }
-
-        public Builder<T> useSignedStringMinMax() {
-            this.builder.useSignedStringMinMax();
-            return this;
-        }
-
-        public Builder<T> useStatsFilter(boolean useStatsFilter) {
-            this.builder.useStatsFilter(useStatsFilter);
-            return this;
-        }
-
-        public Builder<T> useStatsFilter() {
-            this.builder.useStatsFilter();
-            return this;
-        }
-
-        public Builder<T> useDictionaryFilter(boolean useDictionaryFilter) {
-            this.builder.useDictionaryFilter(useDictionaryFilter);
-            return this;
-        }
-
-        public Builder<T> useDictionaryFilter() {
-            this.builder.useDictionaryFilter();
-            return this;
-        }
-
-        public Builder<T> useRecordFilter(boolean useRecordFilter) {
-            this.builder.useRecordFilter(useRecordFilter);
-            return this;
-        }
-
-        public Builder<T> useRecordFilter() {
-            this.builder.useRecordFilter();
-            return this;
-        }
-
-        public Builder<T> useColumnIndexFilter(boolean useColumnIndexFilter) {
-            this.builder.useColumnIndexFilter(useColumnIndexFilter);
-            return this;
-        }
-
-        public Builder<T> useColumnIndexFilter() {
-            this.builder.useColumnIndexFilter();
-            return this;
-        }
-
-        public Builder<T> usePageChecksumVerification(boolean usePageChecksumVerification) {
-            this.builder.usePageChecksumVerification(usePageChecksumVerification);
-            return this;
-        }
-
-        public Builder<T> useBloomFilter(boolean useBloomFilter) {
-            this.builder.useBloomFilter(useBloomFilter);
-            return this;
-        }
-
-        public Builder<T> useBloomFilter() {
-            this.builder.useBloomFilter();
-            return this;
-        }
-
-        public Builder<T> usePageChecksumVerification() {
-            this.builder.usePageChecksumVerification();
-            return this;
-        }
-
-        public Builder<T> withFileRange(long start, long end) {
-            this.builder.withFileRange(start, end);
-            return this;
-        }
-
-        public Builder<T> withCodecFactory(CompressionCodecFactory codecFactory) {
-            this.builder.withCodecFactory(codecFactory);
-            return this;
-        }
-
-        public Builder<T> withDecryption(FileDecryptionProperties fileDecryptionProperties) {
-            this.builder.withDecryption(fileDecryptionProperties);
-            return this;
-        }
-
-        public Builder<T> set(String key, String value) {
-            this.builder.set(key, value);
-            return this;
-        }
-
-        private ParquetReader<T> buildParquetReader() throws IOException {
-            return this.builder.build();
         }
 
         public CarpetReader<T> build() {
-            return new CarpetReader<>(this, recordClass);
+            return new CarpetReader<>(this);
         }
 
     }

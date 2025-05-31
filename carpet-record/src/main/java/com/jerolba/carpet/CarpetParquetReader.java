@@ -39,15 +39,35 @@ public class CarpetParquetReader {
 
     public static class Builder<T> extends ParquetReader.Builder<T> {
 
-        private final Class<T> readClass;
+        private final Class<T> recordClass;
+        private final InputFile inputFile;
         private boolean failOnMissingColumn = DEFAULT_FAIL_ON_MISSING_COLUMN;
         private boolean failOnNullForPrimitives = DEFAULT_FAIL_ON_NULL_FOR_PRIMITIVES;
         private boolean failNarrowingPrimitiveConversion = DEFAULT_FAIL_NARROWING_PRIMITIVE_CONVERSION;
         private FieldMatchingStrategy fieldMatchingStrategy = DEFAULT_FIELD_MATCHING_STRATEGY;
 
-        private Builder(InputFile file, Class<T> readClass) {
+        private Builder(InputFile file, Class<T> recordClass) {
             super(file, new PlainParquetConfiguration());
-            this.readClass = readClass;
+            this.inputFile = file;
+            this.recordClass = recordClass;
+        }
+
+        /**
+         * Returns the configured InputFile
+         *
+         * @return InputFile
+         */
+        public InputFile getInputFile() {
+            return inputFile;
+        }
+
+        /**
+         * Returns the configured Class of the records being read.
+         *
+         * @return Class of the records being read
+         */
+        public Class<T> getRecordClass() {
+            return recordClass;
         }
 
         /**
@@ -114,7 +134,7 @@ public class CarpetParquetReader {
                     failNarrowingPrimitiveConversion,
                     failOnNullForPrimitives,
                     fieldMatchingStrategy);
-            return new CarpetReadSupport<>(readClass, configuration);
+            return new CarpetReadSupport<>(recordClass, configuration);
         }
 
     }
