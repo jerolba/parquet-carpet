@@ -21,15 +21,14 @@ import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.io.InputFile;
 
+import com.jerolba.carpet.impl.read.ParquetRecordIterator;
 import com.jerolba.carpet.io.FileSystemInputFile;
 
 /**
@@ -150,7 +149,7 @@ public class CarpetReader<T> implements Iterable<T> {
      * @throws IOException if an I/O error occurs
      */
     public Stream<T> stream() {
-        RecordIterator<T> iterator = buildIterator();
+        ParquetRecordIterator<T> iterator = buildIterator();
         Spliterator<T> spliterator = Spliterators.spliteratorUnknownSize(iterator,
                 Spliterator.ORDERED | Spliterator.NONNULL | Spliterator.IMMUTABLE);
         return StreamSupport.stream(spliterator, false)
@@ -174,94 +173,12 @@ public class CarpetReader<T> implements Iterable<T> {
         }
     }
 
-    private RecordIterator<T> buildIterator() {
+    private ParquetRecordIterator<T> buildIterator() {
         try {
-            return new RecordIterator<>(builder.getRecordClass(), builder.buildParquetReader());
+            return new ParquetRecordIterator<>(builder.buildParquetReader());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-    }
-
-    /**
-     * This class provides an iterator for the records in a Parquet file.
-     *
-     * @param <T> the type of the records in the Parquet file
-     */
-    private static class RecordIterator<T> implements CloseableIterator<T> {
-
-        private final ParquetReader<T> reader;
-        private T nextRecord;
-
-        /**
-         * Creates a new {@code RecordIterator} instance from the specified record class
-         * and reader.
-         *
-         * @param recordClass the class of the records in the Parquet file
-         * @param reader      the reader for the Parquet data
-         * @throws IOException if an I/O error occurs
-         */
-        RecordIterator(Class<T> recordClass, ParquetReader<T> reader) throws IOException {
-            this.reader = reader;
-            this.nextRecord = reader.read();
-        }
-
-        /**
-         * Returns {@code true} if the iteration has more records.
-         *
-         * @return {@code true} if the iteration has more records, {@code false}
-         *         otherwise
-         */
-        @Override
-        public boolean hasNext() {
-            return nextRecord != null;
-        }
-
-        /**
-         * Returns the next record in the iteration.
-         *
-         * @return the next record in the iteration
-         * @throws NoSuchElementException if the iteration has no more records
-         */
-        @Override
-        public T next() {
-            if (!hasNext()) {
-                throw new NoSuchElementException();
-            }
-            T res = nextRecord;
-            try {
-                this.nextRecord = reader.read();
-                if (nextRecord == null) {
-                    uncheckedCloseReader();
-                }
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-            return res;
-        }
-
-        /**
-         * Closes the underlying reader.
-         *
-         * @throws IOException if an I/O error occurs
-         */
-        @Override
-        public void close() throws IOException {
-            reader.close();
-            nextRecord = null;
-        }
-
-        /**
-         * Closes the underlying reader and releases any resources associated with it,
-         * suppressing any checked exceptions.
-         */
-        private void uncheckedCloseReader() {
-            try {
-                close();
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }
-
     }
 
     public static class Builder<T> extends CarpetReaderConfigurationBuilder<T, Builder<T>> {
