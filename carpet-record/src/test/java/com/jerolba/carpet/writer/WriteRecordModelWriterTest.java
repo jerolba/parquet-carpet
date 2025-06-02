@@ -92,13 +92,15 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(IntPrimitive.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var avroReader = writerTest.getAvroGenericRecordReader();
-            assertEquals(rec1.value, avroReader.read().get("value"));
-            assertEquals(rec2.value, avroReader.read().get("value"));
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                assertEquals(rec1.value, avroReader.read().get("value"));
+                assertEquals(rec2.value, avroReader.read().get("value"));
+            }
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -115,13 +117,15 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(LongPrimitive.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var avroReader = writerTest.getAvroGenericRecordReader();
-            assertEquals(rec1.value, avroReader.read().get("value"));
-            assertEquals(rec2.value, avroReader.read().get("value"));
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                assertEquals(rec1.value, avroReader.read().get("value"));
+                assertEquals(rec2.value, avroReader.read().get("value"));
+            }
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -138,13 +142,15 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(DoublePrimitive.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var avroReader = writerTest.getAvroGenericRecordReader();
-            assertEquals(rec1.value, avroReader.read().get("value"));
-            assertEquals(rec2.value, avroReader.read().get("value"));
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                assertEquals(rec1.value, avroReader.read().get("value"));
+                assertEquals(rec2.value, avroReader.read().get("value"));
+            }
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -161,13 +167,15 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(FloatPrimitive.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var avroReader = writerTest.getAvroGenericRecordReader();
-            assertEquals(rec1.value, avroReader.read().get("value"));
-            assertEquals(rec2.value, avroReader.read().get("value"));
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                assertEquals(rec1.value, avroReader.read().get("value"));
+                assertEquals(rec2.value, avroReader.read().get("value"));
+            }
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -184,13 +192,15 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(ShortPrimitive.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var avroReader = writerTest.getAvroGenericRecordReader();
-            assertEquals(rec1.value, ((Number) avroReader.read().get("value")).shortValue());
-            assertEquals(rec2.value, ((Number) avroReader.read().get("value")).shortValue());
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                assertEquals(rec1.value, ((Number) avroReader.read().get("value")).shortValue());
+                assertEquals(rec2.value, ((Number) avroReader.read().get("value")).shortValue());
+            }
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -207,13 +217,15 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(BytePrimitive.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var avroReader = writerTest.getAvroGenericRecordReader();
-            assertEquals(rec1.value, ((Number) avroReader.read().get("value")).byteValue());
-            assertEquals(rec2.value, ((Number) avroReader.read().get("value")).byteValue());
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                assertEquals(rec1.value, ((Number) avroReader.read().get("value")).byteValue());
+                assertEquals(rec2.value, ((Number) avroReader.read().get("value")).byteValue());
+            }
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -230,13 +242,15 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(BooleanPrimitive.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var avroReader = writerTest.getAvroGenericRecordReader();
-            assertEquals(rec1.value, avroReader.read().get("value"));
-            assertEquals(rec2.value, avroReader.read().get("value"));
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                assertEquals(rec1.value, avroReader.read().get("value"));
+                assertEquals(rec2.value, avroReader.read().get("value"));
+            }
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -253,13 +267,15 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(IntegerObject.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var avroReader = writerTest.getAvroGenericRecordReader();
-            assertEquals(rec1.value, avroReader.read().get("value"));
-            assertEquals(rec2.value, avroReader.read().get("value"));
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                assertEquals(rec1.value, avroReader.read().get("value"));
+                assertEquals(rec2.value, avroReader.read().get("value"));
+            }
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -276,13 +292,15 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(LongObject.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var avroReader = writerTest.getAvroGenericRecordReader();
-            assertEquals(rec1.value, avroReader.read().get("value"));
-            assertEquals(rec2.value, avroReader.read().get("value"));
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                assertEquals(rec1.value, avroReader.read().get("value"));
+                assertEquals(rec2.value, avroReader.read().get("value"));
+            }
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -299,13 +317,15 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(DoubleObject.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var avroReader = writerTest.getAvroGenericRecordReader();
-            assertEquals(rec1.value, avroReader.read().get("value"));
-            assertEquals(rec2.value, avroReader.read().get("value"));
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                assertEquals(rec1.value, avroReader.read().get("value"));
+                assertEquals(rec2.value, avroReader.read().get("value"));
+            }
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -322,13 +342,15 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(FloatObject.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var avroReader = writerTest.getAvroGenericRecordReader();
-            assertEquals(rec1.value, avroReader.read().get("value"));
-            assertEquals(rec2.value, avroReader.read().get("value"));
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                assertEquals(rec1.value, avroReader.read().get("value"));
+                assertEquals(rec2.value, avroReader.read().get("value"));
+            }
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -345,13 +367,15 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(ShortObject.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var avroReader = writerTest.getAvroGenericRecordReader();
-            assertEquals(rec1.value, ((Number) avroReader.read().get("value")).shortValue());
-            assertEquals(rec2.value, ((Number) avroReader.read().get("value")).shortValue());
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                assertEquals(rec1.value, ((Number) avroReader.read().get("value")).shortValue());
+                assertEquals(rec2.value, ((Number) avroReader.read().get("value")).shortValue());
+            }
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -368,13 +392,15 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(ByteObject.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var avroReader = writerTest.getAvroGenericRecordReader();
-            assertEquals(rec1.value, ((Number) avroReader.read().get("value")).byteValue());
-            assertEquals(rec2.value, ((Number) avroReader.read().get("value")).byteValue());
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                assertEquals(rec1.value, ((Number) avroReader.read().get("value")).byteValue());
+                assertEquals(rec2.value, ((Number) avroReader.read().get("value")).byteValue());
+            }
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -391,13 +417,15 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(BooleanObject.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var avroReader = writerTest.getAvroGenericRecordReader();
-            assertEquals(rec1.value, avroReader.read().get("value"));
-            assertEquals(rec2.value, avroReader.read().get("value"));
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                assertEquals(rec1.value, avroReader.read().get("value"));
+                assertEquals(rec2.value, avroReader.read().get("value"));
+            }
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -414,13 +442,15 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(StringObject.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var avroReader = writerTest.getAvroGenericRecordReader();
-            assertEquals(rec1.value, avroReader.read().get("value").toString());
-            assertEquals(rec2.value, avroReader.read().get("value").toString());
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                assertEquals(rec1.value, avroReader.read().get("value").toString());
+                assertEquals(rec2.value, avroReader.read().get("value").toString());
+            }
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -437,13 +467,15 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(StringObject.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var avroReader = writerTest.getAvroGenericRecordReader();
-            assertEquals(rec1.value.toStringUsingUTF8(), avroReader.read().get("value").toString());
-            assertEquals(rec2.value.toStringUsingUTF8(), avroReader.read().get("value").toString());
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                assertEquals(rec1.value.toStringUsingUTF8(), avroReader.read().get("value").toString());
+                assertEquals(rec2.value.toStringUsingUTF8(), avroReader.read().get("value").toString());
+            }
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -460,15 +492,17 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(JsonAsStringObject.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var avroReader = writerTest.getAvroGenericRecordReader();
-            ByteBuffer asByteBuffer1 = (ByteBuffer) avroReader.read().get("value");
-            assertEquals(rec1.value, new String(asByteBuffer1.array()));
-            ByteBuffer asByteBuffer2 = (ByteBuffer) avroReader.read().get("value");
-            assertEquals(rec2.value, new String(asByteBuffer2.array()));
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                ByteBuffer asByteBuffer1 = (ByteBuffer) avroReader.read().get("value");
+                assertEquals(rec1.value, new String(asByteBuffer1.array()));
+                ByteBuffer asByteBuffer2 = (ByteBuffer) avroReader.read().get("value");
+                assertEquals(rec2.value, new String(asByteBuffer2.array()));
+            }
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -485,15 +519,17 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(JsonAsBinaryObject.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var avroReader = writerTest.getAvroGenericRecordReader();
-            ByteBuffer asByteBuffer1 = (ByteBuffer) avroReader.read().get("value");
-            assertEquals(rec1.value, Binary.fromReusedByteBuffer(asByteBuffer1));
-            ByteBuffer asByteBuffer2 = (ByteBuffer) avroReader.read().get("value");
-            assertEquals(rec2.value, Binary.fromReusedByteBuffer(asByteBuffer2));
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                ByteBuffer asByteBuffer1 = (ByteBuffer) avroReader.read().get("value");
+                assertEquals(rec1.value, Binary.fromReusedByteBuffer(asByteBuffer1));
+                ByteBuffer asByteBuffer2 = (ByteBuffer) avroReader.read().get("value");
+                assertEquals(rec2.value, Binary.fromReusedByteBuffer(asByteBuffer2));
+            }
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -517,12 +553,14 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(BsonAsBinaryObject.class);
             writerTest.write(mapper, rec);
 
-            var avroReader = writerTest.getAvroGenericRecordReader();
-            ByteBuffer asByteBuffer = (ByteBuffer) avroReader.read().get("value");
-            assertEquals(rec.value, Binary.fromReusedByteBuffer(asByteBuffer));
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                ByteBuffer asByteBuffer = (ByteBuffer) avroReader.read().get("value");
+                assertEquals(rec.value, Binary.fromReusedByteBuffer(asByteBuffer));
+            }
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec, carpetReader.read());
+            }
         }
 
         @Test
@@ -539,12 +577,14 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(JustBinaryObject.class);
             writerTest.write(mapper, rec);
 
-            var avroReader = writerTest.getAvroGenericRecordReader();
-            ByteBuffer asByteBuffer = (ByteBuffer) avroReader.read().get("value");
-            assertEquals(rec.value, Binary.fromReusedByteBuffer(asByteBuffer));
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                ByteBuffer asByteBuffer = (ByteBuffer) avroReader.read().get("value");
+                assertEquals(rec.value, Binary.fromReusedByteBuffer(asByteBuffer));
+            }
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec, carpetReader.read());
+            }
         }
 
         @Test
@@ -561,13 +601,15 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(EnumObject.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var avroReader = writerTest.getAvroGenericRecordReader();
-            assertEquals(rec1.value.name(), avroReader.read().get("value").toString());
-            assertEquals(rec2.value.name(), avroReader.read().get("value").toString());
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                assertEquals(rec1.value.name(), avroReader.read().get("value").toString());
+                assertEquals(rec2.value.name(), avroReader.read().get("value").toString());
+            }
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -584,20 +626,22 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(EnumObject.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var avroReader = writerTest.getAvroGenericRecordReader();
-            assertEquals(rec1.value.name(), avroReader.read().get("value").toString());
-            assertEquals(rec2.value.name(), avroReader.read().get("value").toString());
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                assertEquals(rec1.value.name(), avroReader.read().get("value").toString());
+                assertEquals(rec2.value.name(), avroReader.read().get("value").toString());
+            }
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
 
             record EnumStringObject(String value) {
             }
-
-            var carpetReaderString = writerTest.getCarpetReader(EnumStringObject.class);
-            assertEquals(new EnumStringObject("one"), carpetReaderString.read());
-            assertEquals(new EnumStringObject("two"), carpetReaderString.read());
+            try (var carpetReaderString = writerTest.getCarpetReader(EnumStringObject.class)) {
+                assertEquals(new EnumStringObject("one"), carpetReaderString.read());
+                assertEquals(new EnumStringObject("two"), carpetReaderString.read());
+            }
         }
 
         @Test
@@ -614,13 +658,15 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(UuidObject.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var avroReader = writerTest.getAvroGenericRecordReader();
-            assertEquals(rec1.value.toString(), avroReader.read().get("value").toString());
-            assertEquals(rec2.value.toString(), avroReader.read().get("value").toString());
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                assertEquals(rec1.value.toString(), avroReader.read().get("value").toString());
+                assertEquals(rec2.value.toString(), avroReader.read().get("value").toString());
+            }
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Nested
@@ -644,14 +690,15 @@ class WriteRecordModelWriterTest {
 
                 GenericData genericDataModel = new GenericData();
                 genericDataModel.addLogicalTypeConversion(new DecimalConversion());
-                var avroReader = writerTest.getAvroGenericRecordReaderWithModel(genericDataModel);
+                try (var avroReader = writerTest.getAvroGenericRecordReaderWithModel(genericDataModel)) {
+                    assertEquals(bigDec1, avroReader.read().get("value"));
+                    assertEquals(bigDec2, avroReader.read().get("value"));
+                }
 
-                assertEquals(bigDec1, avroReader.read().get("value"));
-                assertEquals(bigDec2, avroReader.read().get("value"));
-
-                var carpetReader = writerTest.getCarpetReader();
-                assertEquals(rec1, carpetReader.read());
-                assertEquals(rec2, carpetReader.read());
+                try (var carpetReader = writerTest.getCarpetReader()) {
+                    assertEquals(rec1, carpetReader.read());
+                    assertEquals(rec2, carpetReader.read());
+                }
             }
 
             @Test
@@ -664,9 +711,10 @@ class WriteRecordModelWriterTest {
                         .withDecimalConfig(18, 3);
                 writerTest.write(mapper, rec1, rec2);
 
-                var carpetReader = writerTest.getCarpetReader();
-                assertEquals(rec1, carpetReader.read());
-                assertEquals(rec2, carpetReader.read());
+                try (var carpetReader = writerTest.getCarpetReader()) {
+                    assertEquals(rec1, carpetReader.read());
+                    assertEquals(rec2, carpetReader.read());
+                }
             }
 
             @Test
@@ -679,9 +727,10 @@ class WriteRecordModelWriterTest {
                         .withDecimalConfig(9, 4);
                 writerTest.write(mapper, rec1, rec2);
 
-                var carpetReader = writerTest.getCarpetReader();
-                assertEquals(rec1, carpetReader.read());
-                assertEquals(rec2, carpetReader.read());
+                try (var carpetReader = writerTest.getCarpetReader()) {
+                    assertEquals(rec1, carpetReader.read());
+                    assertEquals(rec2, carpetReader.read());
+                }
             }
 
             @Test
@@ -694,16 +743,18 @@ class WriteRecordModelWriterTest {
 
                 GenericData genericDataModel = new GenericData();
                 genericDataModel.addLogicalTypeConversion(new DecimalConversion());
-                var avroReader = writerTest.getAvroGenericRecordReaderWithModel(genericDataModel);
-
                 BigDecimal scaled1 = new BigDecimal("12345678901234.50000");
                 BigDecimal scaled2 = new BigDecimal("98765432109876.50000");
-                assertEquals(scaled1, avroReader.read().get("value"));
-                assertEquals(scaled2, avroReader.read().get("value"));
 
-                var carpetReader = writerTest.getCarpetReader();
-                assertEquals(scaled1, carpetReader.read().value());
-                assertEquals(scaled2, carpetReader.read().value());
+                try (var avroReader = writerTest.getAvroGenericRecordReaderWithModel(genericDataModel)) {
+                    assertEquals(scaled1, avroReader.read().get("value"));
+                    assertEquals(scaled2, avroReader.read().get("value"));
+                }
+
+                try (var carpetReader = writerTest.getCarpetReader()) {
+                    assertEquals(scaled1, carpetReader.read().value());
+                    assertEquals(scaled2, carpetReader.read().value());
+                }
             }
 
             @Test
@@ -735,16 +786,18 @@ class WriteRecordModelWriterTest {
 
                 GenericData genericDataModel = new GenericData();
                 genericDataModel.addLogicalTypeConversion(new DecimalConversion());
-                var avroReader = writerTest.getAvroGenericRecordReaderWithModel(genericDataModel);
-
                 BigDecimal scaled1 = new BigDecimal("12345678901234.57");
                 BigDecimal scaled2 = new BigDecimal("12345678901234.12");
-                assertEquals(scaled1, avroReader.read().get("value"));
-                assertEquals(scaled2, avroReader.read().get("value"));
 
-                var carpetReader = writerTest.getCarpetReader();
-                assertEquals(scaled1, carpetReader.read().value());
-                assertEquals(scaled2, carpetReader.read().value());
+                try (var avroReader = writerTest.getAvroGenericRecordReaderWithModel(genericDataModel)) {
+                    assertEquals(scaled1, avroReader.read().get("value"));
+                    assertEquals(scaled2, avroReader.read().get("value"));
+                }
+
+                try (var carpetReader = writerTest.getCarpetReader()) {
+                    assertEquals(scaled1, carpetReader.read().value());
+                    assertEquals(scaled2, carpetReader.read().value());
+                }
             }
 
         }
@@ -769,14 +822,15 @@ class WriteRecordModelWriterTest {
 
                 GenericData genericDataModel = new GenericData();
                 genericDataModel.addLogicalTypeConversion(new DecimalConversion());
-                var avroReader = writerTest.getAvroGenericRecordReaderWithModel(genericDataModel);
+                try (var avroReader = writerTest.getAvroGenericRecordReaderWithModel(genericDataModel)) {
+                    assertEquals(bigDec1, avroReader.read().get("value"));
+                    assertEquals(bigDec2, avroReader.read().get("value"));
+                }
 
-                assertEquals(bigDec1, avroReader.read().get("value"));
-                assertEquals(bigDec2, avroReader.read().get("value"));
-
-                var carpetReader = writerTest.getCarpetReader();
-                assertEquals(rec1, carpetReader.read());
-                assertEquals(rec2, carpetReader.read());
+                try (var carpetReader = writerTest.getCarpetReader()) {
+                    assertEquals(rec1, carpetReader.read());
+                    assertEquals(rec2, carpetReader.read());
+                }
             }
 
             @Test
@@ -791,9 +845,10 @@ class WriteRecordModelWriterTest {
                 var writerTest = new ParquetWriterTest<>(BigDecimalObject.class);
                 writerTest.write(mapper, rec1, rec2);
 
-                var carpetReader = writerTest.getCarpetReader();
-                assertEquals(rec1, carpetReader.read());
-                assertEquals(rec2, carpetReader.read());
+                try (var carpetReader = writerTest.getCarpetReader()) {
+                    assertEquals(rec1, carpetReader.read());
+                    assertEquals(rec2, carpetReader.read());
+                }
             }
 
             @Test
@@ -808,9 +863,10 @@ class WriteRecordModelWriterTest {
                 var writerTest = new ParquetWriterTest<>(BigDecimalObject.class);
                 writerTest.write(mapper, rec1, rec2);
 
-                var carpetReader = writerTest.getCarpetReader();
-                assertEquals(rec1, carpetReader.read());
-                assertEquals(rec2, carpetReader.read());
+                try (var carpetReader = writerTest.getCarpetReader()) {
+                    assertEquals(rec1, carpetReader.read());
+                    assertEquals(rec2, carpetReader.read());
+                }
             }
 
             @Test
@@ -825,16 +881,18 @@ class WriteRecordModelWriterTest {
 
                 GenericData genericDataModel = new GenericData();
                 genericDataModel.addLogicalTypeConversion(new DecimalConversion());
-                var avroReader = writerTest.getAvroGenericRecordReaderWithModel(genericDataModel);
-
                 BigDecimal scaled1 = new BigDecimal("12345678901234.50000");
                 BigDecimal scaled2 = new BigDecimal("98765432109876.50000");
-                assertEquals(scaled1, avroReader.read().get("value"));
-                assertEquals(scaled2, avroReader.read().get("value"));
 
-                var carpetReader = writerTest.getCarpetReader();
-                assertEquals(scaled1, carpetReader.read().value());
-                assertEquals(scaled2, carpetReader.read().value());
+                try (var avroReader = writerTest.getAvroGenericRecordReaderWithModel(genericDataModel)) {
+                    assertEquals(scaled1, avroReader.read().get("value"));
+                    assertEquals(scaled2, avroReader.read().get("value"));
+                }
+
+                try (var carpetReader = writerTest.getCarpetReader()) {
+                    assertEquals(scaled1, carpetReader.read().value());
+                    assertEquals(scaled2, carpetReader.read().value());
+                }
             }
 
             @Test
@@ -872,16 +930,18 @@ class WriteRecordModelWriterTest {
 
                 GenericData genericDataModel = new GenericData();
                 genericDataModel.addLogicalTypeConversion(new DecimalConversion());
-                var avroReader = writerTest.getAvroGenericRecordReaderWithModel(genericDataModel);
-
                 BigDecimal scaled1 = new BigDecimal("12345678901234.57");
                 BigDecimal scaled2 = new BigDecimal("12345678901234.12");
-                assertEquals(scaled1, avroReader.read().get("value"));
-                assertEquals(scaled2, avroReader.read().get("value"));
 
-                var carpetReader = writerTest.getCarpetReader();
-                assertEquals(scaled1, carpetReader.read().value());
-                assertEquals(scaled2, carpetReader.read().value());
+                try (var avroReader = writerTest.getAvroGenericRecordReaderWithModel(genericDataModel)) {
+                    assertEquals(scaled1, avroReader.read().get("value"));
+                    assertEquals(scaled2, avroReader.read().get("value"));
+                }
+
+                try (var carpetReader = writerTest.getCarpetReader()) {
+                    assertEquals(scaled1, carpetReader.read().value());
+                    assertEquals(scaled2, carpetReader.read().value());
+                }
             }
 
         }
@@ -900,13 +960,15 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(IntegerNullObject.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var avroReader = writerTest.getAvroGenericRecordReader();
-            assertEquals(rec1.value, avroReader.read().get("value"));
-            assertNull(avroReader.read().get("value"));
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                assertEquals(rec1.value, avroReader.read().get("value"));
+                assertNull(avroReader.read().get("value"));
+            }
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -923,13 +985,15 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(LongNullObject.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var avroReader = writerTest.getAvroGenericRecordReader();
-            assertEquals(rec1.value, avroReader.read().get("value"));
-            assertNull(avroReader.read().get("value"));
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                assertEquals(rec1.value, avroReader.read().get("value"));
+                assertNull(avroReader.read().get("value"));
+            }
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -946,13 +1010,15 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(DoubleNullObject.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var avroReader = writerTest.getAvroGenericRecordReader();
-            assertEquals(rec1.value, avroReader.read().get("value"));
-            assertNull(avroReader.read().get("value"));
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                assertEquals(rec1.value, avroReader.read().get("value"));
+                assertNull(avroReader.read().get("value"));
+            }
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -969,13 +1035,15 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(FloatNullObject.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var avroReader = writerTest.getAvroGenericRecordReader();
-            assertEquals(rec1.value, avroReader.read().get("value"));
-            assertNull(avroReader.read().get("value"));
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                assertEquals(rec1.value, avroReader.read().get("value"));
+                assertNull(avroReader.read().get("value"));
+            }
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -992,13 +1060,15 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(ShortNullObject.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var avroReader = writerTest.getAvroGenericRecordReader();
-            assertEquals(rec1.value, ((Number) avroReader.read().get("value")).shortValue());
-            assertNull(avroReader.read().get("value"));
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                assertEquals(rec1.value, ((Number) avroReader.read().get("value")).shortValue());
+                assertNull(avroReader.read().get("value"));
+            }
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -1015,13 +1085,15 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(ByteNullObject.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var avroReader = writerTest.getAvroGenericRecordReader();
-            assertEquals(rec1.value, ((Number) avroReader.read().get("value")).byteValue());
-            assertNull(avroReader.read().get("value"));
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                assertEquals(rec1.value, ((Number) avroReader.read().get("value")).byteValue());
+                assertNull(avroReader.read().get("value"));
+            }
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -1038,13 +1110,14 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(BooleanNullObject.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var avroReader = writerTest.getAvroGenericRecordReader();
-            assertEquals(rec1.value, avroReader.read().get("value"));
-            assertNull(avroReader.read().get("value"));
-
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                assertEquals(rec1.value, avroReader.read().get("value"));
+                assertNull(avroReader.read().get("value"));
+            }
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -1061,13 +1134,15 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(StringNullObject.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var avroReader = writerTest.getAvroGenericRecordReader();
-            assertEquals(rec1.value, avroReader.read().get("value").toString());
-            assertNull(avroReader.read().get("value"));
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                assertEquals(rec1.value, avroReader.read().get("value").toString());
+                assertNull(avroReader.read().get("value"));
+            }
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -1084,13 +1159,15 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(EnumNullObject.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var avroReader = writerTest.getAvroGenericRecordReader();
-            assertEquals(rec1.value.name(), avroReader.read().get("value").toString());
-            assertNull(avroReader.read().get("value"));
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                assertEquals(rec1.value.name(), avroReader.read().get("value").toString());
+                assertNull(avroReader.read().get("value"));
+            }
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -1107,13 +1184,15 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(UuidNullObject.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var avroReader = writerTest.getAvroGenericRecordReader();
-            assertEquals(rec1.value.toString(), avroReader.read().get("value").toString());
-            assertEquals(null, avroReader.read().get("value"));
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                assertEquals(rec1.value.toString(), avroReader.read().get("value").toString());
+                assertEquals(null, avroReader.read().get("value"));
+            }
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
     }
 
@@ -1134,13 +1213,15 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(LocalDateRecord.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var avroReader = writerTest.getAvroGenericRecordReader();
-            assertEquals((int) rec1.value.toEpochDay(), avroReader.read().get("value"));
-            assertEquals((int) rec2.value.toEpochDay(), avroReader.read().get("value"));
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                assertEquals((int) rec1.value.toEpochDay(), avroReader.read().get("value"));
+                assertEquals((int) rec2.value.toEpochDay(), avroReader.read().get("value"));
+            }
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Nested
@@ -1162,13 +1243,15 @@ class WriteRecordModelWriterTest {
                         .withTimeUnit(TimeUnit.MILLIS);
                 writerTest.write(mapper, rec1, rec2);
 
-                var avroReader = writerTest.getAvroGenericRecordReader();
-                assertEquals((int) (rec1.value.toNanoOfDay() / 1000000), avroReader.read().get("value"));
-                assertEquals((int) (rec2.value.toNanoOfDay() / 1000000), avroReader.read().get("value"));
+                try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                    assertEquals((int) (rec1.value.toNanoOfDay() / 1000000), avroReader.read().get("value"));
+                    assertEquals((int) (rec2.value.toNanoOfDay() / 1000000), avroReader.read().get("value"));
+                }
 
-                var carpetReader = writerTest.getCarpetReader();
-                assertEquals(LocalTime.of(9, 30, 21, 100000000), carpetReader.read().value());
-                assertEquals(LocalTime.of(23, 59, 59, 999000000), carpetReader.read().value());
+                try (var carpetReader = writerTest.getCarpetReader()) {
+                    assertEquals(LocalTime.of(9, 30, 21, 100000000), carpetReader.read().value());
+                    assertEquals(LocalTime.of(23, 59, 59, 999000000), carpetReader.read().value());
+                }
             }
 
             @Test
@@ -1178,13 +1261,15 @@ class WriteRecordModelWriterTest {
                         .withTimeUnit(TimeUnit.MICROS);
                 writerTest.write(mapper, rec1, rec2);
 
-                var avroReader = writerTest.getAvroGenericRecordReader();
-                assertEquals(rec1.value.toNanoOfDay() / 1000, avroReader.read().get("value"));
-                assertEquals(rec2.value.toNanoOfDay() / 1000, avroReader.read().get("value"));
+                try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                    assertEquals(rec1.value.toNanoOfDay() / 1000, avroReader.read().get("value"));
+                    assertEquals(rec2.value.toNanoOfDay() / 1000, avroReader.read().get("value"));
+                }
 
-                var carpetReader = writerTest.getCarpetReader();
-                assertEquals(LocalTime.of(9, 30, 21, 100200000), carpetReader.read().value());
-                assertEquals(LocalTime.of(23, 59, 59, 999999000), carpetReader.read().value());
+                try (var carpetReader = writerTest.getCarpetReader()) {
+                    assertEquals(LocalTime.of(9, 30, 21, 100200000), carpetReader.read().value());
+                    assertEquals(LocalTime.of(23, 59, 59, 999999000), carpetReader.read().value());
+                }
             }
 
             @Test
@@ -1194,13 +1279,15 @@ class WriteRecordModelWriterTest {
                         .withTimeUnit(TimeUnit.NANOS);
                 writerTest.write(mapper, rec1, rec2);
 
-                var avroReader = writerTest.getAvroGenericRecordReader();
-                assertEquals(rec1.value.toNanoOfDay(), avroReader.read().get("value"));
-                assertEquals(rec2.value.toNanoOfDay(), avroReader.read().get("value"));
+                try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                    assertEquals(rec1.value.toNanoOfDay(), avroReader.read().get("value"));
+                    assertEquals(rec2.value.toNanoOfDay(), avroReader.read().get("value"));
+                }
 
-                var carpetReader = writerTest.getCarpetReader();
-                assertEquals(rec1, carpetReader.read());
-                assertEquals(rec2, carpetReader.read());
+                try (var carpetReader = writerTest.getCarpetReader()) {
+                    assertEquals(rec1, carpetReader.read());
+                    assertEquals(rec2, carpetReader.read());
+                }
             }
         }
 
@@ -1234,9 +1321,10 @@ class WriteRecordModelWriterTest {
                 assertEquals(expected1, avroReader.read().get("value"));
                 assertEquals(expected2, avroReader.read().get("value"));
 
-                var carpetReader = writerTest.getCarpetReader();
-                assertEquals(expected1, carpetReader.read().value());
-                assertEquals(expected2, carpetReader.read().value());
+                try (var carpetReader = writerTest.getCarpetReader()) {
+                    assertEquals(expected1, carpetReader.read().value());
+                    assertEquals(expected2, carpetReader.read().value());
+                }
             }
 
             @Test
@@ -1254,9 +1342,10 @@ class WriteRecordModelWriterTest {
                 assertEquals(expected1, avroReader.read().get("value"));
                 assertEquals(expected2, avroReader.read().get("value"));
 
-                var carpetReader = writerTest.getCarpetReader();
-                assertEquals(expected1, carpetReader.read().value());
-                assertEquals(expected2, carpetReader.read().value());
+                try (var carpetReader = writerTest.getCarpetReader()) {
+                    assertEquals(expected1, carpetReader.read().value());
+                    assertEquals(expected2, carpetReader.read().value());
+                }
             }
 
             @Test
@@ -1268,9 +1357,10 @@ class WriteRecordModelWriterTest {
                 Instant expected1 = Instant.ofEpochSecond(local.toEpochSecond(ofHours(2)), 987654321);
                 Instant expected2 = Instant.ofEpochSecond(local.toEpochSecond(ofHours(-2)), 123456789);
 
-                var carpetReader = writerTest.getCarpetReader();
-                assertEquals(expected1, carpetReader.read().value());
-                assertEquals(expected2, carpetReader.read().value());
+                try (var carpetReader = writerTest.getCarpetReader()) {
+                    assertEquals(expected1, carpetReader.read().value());
+                    assertEquals(expected2, carpetReader.read().value());
+                }
             }
         }
 
@@ -1304,9 +1394,10 @@ class WriteRecordModelWriterTest {
                 assertEquals(expected1, avroReader.read().get("value"));
                 assertEquals(expected2, avroReader.read().get("value"));
 
-                var carpetReader = writerTest.getCarpetReader();
-                assertEquals(expected1, carpetReader.read().value());
-                assertEquals(expected2, carpetReader.read().value());
+                try (var carpetReader = writerTest.getCarpetReader()) {
+                    assertEquals(expected1, carpetReader.read().value());
+                    assertEquals(expected2, carpetReader.read().value());
+                }
             }
 
             @Test
@@ -1319,13 +1410,17 @@ class WriteRecordModelWriterTest {
                 LocalDateTime expected1 = LocalDateTime.of(2024, 5, 3, 15, 31, 11, 987000000);
                 LocalDateTime expected2 = LocalDateTime.of(2024, 5, 3, 23, 59, 59, 123000000);
 
-                var avroReader = writerTest.getAvroGenericRecordReader();
-                assertEquals(expected1.toEpochSecond(ZoneOffset.UTC) * 1000 + 987, avroReader.read().get("value"));
-                assertEquals(expected2.toEpochSecond(ZoneOffset.UTC) * 1000 + 123, avroReader.read().get("value"));
+                try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                    assertEquals(expected1.toEpochSecond(ZoneOffset.UTC) * 1000 + 987,
+                            avroReader.read().get("value"));
+                    assertEquals(expected2.toEpochSecond(ZoneOffset.UTC) * 1000 + 123,
+                            avroReader.read().get("value"));
+                }
 
-                var carpetReader = writerTest.getCarpetReader();
-                assertEquals(expected1, carpetReader.read().value());
-                assertEquals(expected2, carpetReader.read().value());
+                try (var carpetReader = writerTest.getCarpetReader()) {
+                    assertEquals(expected1, carpetReader.read().value());
+                    assertEquals(expected2, carpetReader.read().value());
+                }
             }
 
             @Test
@@ -1344,9 +1439,10 @@ class WriteRecordModelWriterTest {
                 assertEquals(expected1, avroReader.read().get("value"));
                 assertEquals(expected2, avroReader.read().get("value"));
 
-                var carpetReader = writerTest.getCarpetReader();
-                assertEquals(expected1, carpetReader.read().value());
-                assertEquals(expected2, carpetReader.read().value());
+                try (var carpetReader = writerTest.getCarpetReader()) {
+                    assertEquals(expected1, carpetReader.read().value());
+                    assertEquals(expected2, carpetReader.read().value());
+                }
             }
 
             @Test
@@ -1359,15 +1455,17 @@ class WriteRecordModelWriterTest {
                 LocalDateTime expected1 = LocalDateTime.of(2024, 5, 3, 15, 31, 11, 987654000);
                 LocalDateTime expected2 = LocalDateTime.of(2024, 5, 3, 23, 59, 59, 123456000);
 
-                var avroReader = writerTest.getAvroGenericRecordReader();
-                assertEquals(expected1.toEpochSecond(ZoneOffset.UTC) * 1_000_000 + 987654,
-                        avroReader.read().get("value"));
-                assertEquals(expected2.toEpochSecond(ZoneOffset.UTC) * 1_000_000 + 123456,
-                        avroReader.read().get("value"));
+                try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                    assertEquals(expected1.toEpochSecond(ZoneOffset.UTC) * 1_000_000 + 987654,
+                            avroReader.read().get("value"));
+                    assertEquals(expected2.toEpochSecond(ZoneOffset.UTC) * 1_000_000 + 123456,
+                            avroReader.read().get("value"));
+                }
 
-                var carpetReader = writerTest.getCarpetReader();
-                assertEquals(expected1, carpetReader.read().value());
-                assertEquals(expected2, carpetReader.read().value());
+                try (var carpetReader = writerTest.getCarpetReader()) {
+                    assertEquals(expected1, carpetReader.read().value());
+                    assertEquals(expected2, carpetReader.read().value());
+                }
             }
 
             @Test
@@ -1376,15 +1474,17 @@ class WriteRecordModelWriterTest {
                         .withTimeUnit(TimeUnit.NANOS);
                 writerTest.write(mapper, rec1, rec2);
 
-                var avroReader = writerTest.getAvroGenericRecordReader();
-                assertEquals(local1.toEpochSecond(ZoneOffset.UTC) * 1_000_000_000 + 987654321,
-                        avroReader.read().get("value"));
-                assertEquals(local2.toEpochSecond(ZoneOffset.UTC) * 1_000_000_000 + 123456789,
-                        avroReader.read().get("value"));
+                try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                    assertEquals(local1.toEpochSecond(ZoneOffset.UTC) * 1_000_000_000 + 987654321,
+                            avroReader.read().get("value"));
+                    assertEquals(local2.toEpochSecond(ZoneOffset.UTC) * 1_000_000_000 + 123456789,
+                            avroReader.read().get("value"));
+                }
 
-                var carpetReader = writerTest.getCarpetReader();
-                assertEquals(local1, carpetReader.read().value());
-                assertEquals(local2, carpetReader.read().value());
+                try (var carpetReader = writerTest.getCarpetReader()) {
+                    assertEquals(local1, carpetReader.read().value());
+                    assertEquals(local2, carpetReader.read().value());
+                }
             }
         }
     }
@@ -1406,9 +1506,10 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(IntegerList.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -1425,9 +1526,10 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(LongList.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -1444,9 +1546,10 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(DoubleList.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -1463,9 +1566,10 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(FloatList.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -1482,9 +1586,10 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(ShortList.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -1501,9 +1606,10 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(ByteList.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -1520,9 +1626,10 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(BooleanList.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -1539,9 +1646,10 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(StringList.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -1558,9 +1666,10 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(EnumList.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -1577,9 +1686,10 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(UuidList.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -1596,9 +1706,10 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(LocalDateList.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Nested
@@ -1620,12 +1731,13 @@ class WriteRecordModelWriterTest {
                         .withTimeUnit(TimeUnit.MILLIS);
                 writerTest.write(mapper, rec1, rec2);
 
-                var carpetReader = writerTest.getCarpetReader();
-                LocalTimeList read1 = carpetReader.read();
-                assertEquals(LocalTime.of(8, 10, 23, 123000000), read1.values.get(0));
-                assertNull(read1.values.get(1));
-                assertEquals(LocalTime.of(10, 0, 0, 0), read1.values.get(2));
-                assertEquals(rec2, carpetReader.read());
+                try (var carpetReader = writerTest.getCarpetReader()) {
+                    LocalTimeList read1 = carpetReader.read();
+                    assertEquals(LocalTime.of(8, 10, 23, 123000000), read1.values.get(0));
+                    assertNull(read1.values.get(1));
+                    assertEquals(LocalTime.of(10, 0, 0, 0), read1.values.get(2));
+                    assertEquals(rec2, carpetReader.read());
+                }
             }
 
             @Test
@@ -1634,12 +1746,13 @@ class WriteRecordModelWriterTest {
                         .withTimeUnit(TimeUnit.MICROS);
                 writerTest.write(mapper, rec1, rec2);
 
-                var carpetReader = writerTest.getCarpetReader();
-                LocalTimeList read1 = carpetReader.read();
-                assertEquals(LocalTime.of(8, 10, 23, 123456000), read1.values.get(0));
-                assertNull(read1.values.get(1));
-                assertEquals(LocalTime.of(10, 0, 0, 0), read1.values.get(2));
-                assertEquals(rec2, carpetReader.read());
+                try (var carpetReader = writerTest.getCarpetReader()) {
+                    LocalTimeList read1 = carpetReader.read();
+                    assertEquals(LocalTime.of(8, 10, 23, 123456000), read1.values.get(0));
+                    assertNull(read1.values.get(1));
+                    assertEquals(LocalTime.of(10, 0, 0, 0), read1.values.get(2));
+                    assertEquals(rec2, carpetReader.read());
+                }
             }
 
             @Test
@@ -1648,9 +1761,10 @@ class WriteRecordModelWriterTest {
                         .withTimeUnit(TimeUnit.NANOS);
                 writerTest.write(mapper, rec1, rec2);
 
-                var carpetReader = writerTest.getCarpetReader();
-                assertEquals(rec1, carpetReader.read());
-                assertEquals(rec2, carpetReader.read());
+                try (var carpetReader = writerTest.getCarpetReader()) {
+                    assertEquals(rec1, carpetReader.read());
+                    assertEquals(rec2, carpetReader.read());
+                }
             }
         }
 
@@ -1675,9 +1789,10 @@ class WriteRecordModelWriterTest {
                         .withTimeUnit(TimeUnit.NANOS);
                 writerTest.write(mapper, rec1, rec2);
 
-                var carpetReader = writerTest.getCarpetReader();
-                assertEquals(rec1, carpetReader.read());
-                assertEquals(rec2, carpetReader.read());
+                try (var carpetReader = writerTest.getCarpetReader()) {
+                    assertEquals(rec1, carpetReader.read());
+                    assertEquals(rec2, carpetReader.read());
+                }
             }
 
             @Test
@@ -1698,9 +1813,10 @@ class WriteRecordModelWriterTest {
                         .withTimeUnit(TimeUnit.NANOS);
                 writerTest.write(mapper, rec1, rec2);
 
-                var carpetReader = writerTest.getCarpetReader();
-                assertEquals(rec1, carpetReader.read());
-                assertEquals(rec2, carpetReader.read());
+                try (var carpetReader = writerTest.getCarpetReader()) {
+                    assertEquals(rec1, carpetReader.read());
+                    assertEquals(rec2, carpetReader.read());
+                }
             }
         }
 
@@ -1713,16 +1829,20 @@ class WriteRecordModelWriterTest {
             var mapper = writeRecordModel(BigDecimalList.class)
                     .withField("values", LIST.ofType(BIG_DECIMAL), BigDecimalList::values);
 
-            var rec1 = new BigDecimalList(asList(new BigDecimal("1234567.123"), null, BigDecimal.TEN));
+            var rec1 = new BigDecimalList(
+                    asList(new BigDecimal("1234567.123"), null, BigDecimal.TEN));
             var rec2 = new BigDecimalList(null);
             var writerTest = new ParquetWriterTest<>(BigDecimalList.class)
                     .withDecimalConfig(20, 3);
             writerTest.write(mapper, rec1, rec2);
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(new BigDecimalList(asList(new BigDecimal("1234567.123"), null, new BigDecimal("10.000"))),
-                    carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(
+                        new BigDecimalList(asList(new BigDecimal("1234567.123"), null,
+                                new BigDecimal("10.000"))),
+                        carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
     }
 
@@ -1738,11 +1858,13 @@ class WriteRecordModelWriterTest {
         var writerTest = new ParquetWriterTest<>(EmptyFile.class);
         writerTest.write(mapper);
 
-        var avroReader = writerTest.getAvroGenericRecordReader();
-        assertNull(avroReader.read());
+        try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+            assertNull(avroReader.read());
+        }
 
-        var carpetReader = writerTest.getCarpetReader();
-        assertNull(carpetReader.read());
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertNull(carpetReader.read());
+        }
     }
 
     @Test
@@ -1755,7 +1877,8 @@ class WriteRecordModelWriterTest {
 
         var mapper = writeRecordModel(ClassWithMultipleFields.class)
                 .withField("name", STRING, ClassWithMultipleFields::name)
-                .withField("category", ENUM.ofType(Category.class), ClassWithMultipleFields::category)
+                .withField("category", ENUM.ofType(Category.class),
+                        ClassWithMultipleFields::category)
                 .withField("p1", ClassWithMultipleFields::p1)
                 .withField("f1", INTEGER, ClassWithMultipleFields::f1)
                 .withField("p2", ClassWithMultipleFields::p2)
@@ -1778,27 +1901,29 @@ class WriteRecordModelWriterTest {
         var writerTest = new ParquetWriterTest<>(ClassWithMultipleFields.class);
         writerTest.write(mapper, rec);
 
-        var avroReader = writerTest.getAvroGenericRecordReader();
-        GenericRecord record = avroReader.read();
-        assertEquals(rec.name, record.get("name").toString());
-        assertEquals(rec.category.name(), record.get("category").toString());
-        assertEquals(rec.p1, record.get("p1"));
-        assertEquals(rec.f1, record.get("f1"));
-        assertEquals(rec.p2, record.get("p2"));
-        assertEquals(rec.f2, record.get("f2"));
-        assertEquals(rec.p3, record.get("p3"));
-        assertEquals(rec.f3, record.get("f3"));
-        assertEquals(rec.p4, record.get("p4"));
-        assertEquals(rec.f4, record.get("f4"));
-        assertEquals(rec.p5, ((Number) record.get("p5")).byteValue());
-        assertEquals(rec.f5, ((Number) record.get("f5")).byteValue());
-        assertEquals(rec.p6, ((Number) record.get("p6")).shortValue());
-        assertEquals(rec.f6, ((Number) record.get("f6")).shortValue());
-        assertEquals(rec.p7, record.get("p7"));
-        assertEquals(rec.f7, record.get("f7"));
+        try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+            GenericRecord record = avroReader.read();
+            assertEquals(rec.name, record.get("name").toString());
+            assertEquals(rec.category.name(), record.get("category").toString());
+            assertEquals(rec.p1, record.get("p1"));
+            assertEquals(rec.f1, record.get("f1"));
+            assertEquals(rec.p2, record.get("p2"));
+            assertEquals(rec.f2, record.get("f2"));
+            assertEquals(rec.p3, record.get("p3"));
+            assertEquals(rec.f3, record.get("f3"));
+            assertEquals(rec.p4, record.get("p4"));
+            assertEquals(rec.f4, record.get("f4"));
+            assertEquals(rec.p5, ((Number) record.get("p5")).byteValue());
+            assertEquals(rec.f5, ((Number) record.get("f5")).byteValue());
+            assertEquals(rec.p6, ((Number) record.get("p6")).shortValue());
+            assertEquals(rec.f6, ((Number) record.get("f6")).shortValue());
+            assertEquals(rec.p7, record.get("p7"));
+            assertEquals(rec.f7, record.get("f7"));
+        }
 
-        var carpetReader = writerTest.getCarpetReader();
-        assertEquals(rec, carpetReader.read());
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec, carpetReader.read());
+        }
     }
 
     @Test
@@ -1811,7 +1936,8 @@ class WriteRecordModelWriterTest {
 
         var mapper = writeRecordModel(ClassWithMultipleNullFields.class)
                 .withField("name", STRING, ClassWithMultipleNullFields::name)
-                .withField("category", ENUM.ofType(Category.class), ClassWithMultipleNullFields::category)
+                .withField("category", ENUM.ofType(Category.class),
+                        ClassWithMultipleNullFields::category)
                 .withField("p1", ClassWithMultipleNullFields::p1)
                 .withField("f1", INTEGER, ClassWithMultipleNullFields::f1)
                 .withField("p2", ClassWithMultipleNullFields::p2)
@@ -1833,27 +1959,29 @@ class WriteRecordModelWriterTest {
         var writerTest = new ParquetWriterTest<>(ClassWithMultipleNullFields.class);
         writerTest.write(mapper, rec);
 
-        var avroReader = writerTest.getAvroGenericRecordReader();
-        GenericRecord record = avroReader.read();
-        assertNull(record.get("name"));
-        assertNull(record.get("category"));
-        assertEquals(rec.p1, record.get("p1"));
-        assertNull(record.get("f1"));
-        assertEquals(rec.p2, record.get("p2"));
-        assertNull(record.get("f2"));
-        assertEquals(rec.p3, record.get("p3"));
-        assertNull(record.get("f3"));
-        assertEquals(rec.p4, record.get("p4"));
-        assertNull(record.get("f4"));
-        assertEquals(rec.p5, ((Number) record.get("p5")).byteValue());
-        assertNull(record.get("f5"));
-        assertEquals(rec.p6, ((Number) record.get("p6")).shortValue());
-        assertNull(record.get("f6"));
-        assertEquals(rec.p7, record.get("p7"));
-        assertNull(record.get("f7"));
+        try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+            GenericRecord record = avroReader.read();
+            assertNull(record.get("name"));
+            assertNull(record.get("category"));
+            assertEquals(rec.p1, record.get("p1"));
+            assertNull(record.get("f1"));
+            assertEquals(rec.p2, record.get("p2"));
+            assertNull(record.get("f2"));
+            assertEquals(rec.p3, record.get("p3"));
+            assertNull(record.get("f3"));
+            assertEquals(rec.p4, record.get("p4"));
+            assertNull(record.get("f4"));
+            assertEquals(rec.p5, ((Number) record.get("p5")).byteValue());
+            assertNull(record.get("f5"));
+            assertEquals(rec.p6, ((Number) record.get("p6")).shortValue());
+            assertNull(record.get("f6"));
+            assertEquals(rec.p7, record.get("p7"));
+            assertNull(record.get("f7"));
+        }
 
-        var carpetReader = writerTest.getCarpetReader();
-        assertEquals(rec, carpetReader.read());
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec, carpetReader.read());
+        }
     }
 
     @Nested
@@ -1879,21 +2007,23 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(CompositeMain.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var avroReader = writerTest.getAvroGenericRecordReader();
-            GenericRecord record = avroReader.read();
-            assertEquals(rec1.name, record.get("name").toString());
-            GenericRecord child = (GenericRecord) record.get("child");
-            assertEquals(rec1.child.id, child.get("id").toString());
-            assertEquals(rec1.child.value, child.get("value"));
-            record = avroReader.read();
-            assertEquals(rec2.name, record.get("name").toString());
-            child = (GenericRecord) record.get("child");
-            assertEquals(rec2.child.id, child.get("id").toString());
-            assertEquals(rec2.child.value, child.get("value"));
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                GenericRecord record = avroReader.read();
+                assertEquals(rec1.name, record.get("name").toString());
+                GenericRecord child = (GenericRecord) record.get("child");
+                assertEquals(rec1.child.id, child.get("id").toString());
+                assertEquals(rec1.child.value, child.get("value"));
+                record = avroReader.read();
+                assertEquals(rec2.name, record.get("name").toString());
+                child = (GenericRecord) record.get("child");
+                assertEquals(rec2.child.id, child.get("id").toString());
+                assertEquals(rec2.child.value, child.get("value"));
+            }
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -1916,19 +2046,21 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(CompositeNullMain.class);
             writerTest.write(mapper, rec1, rec2);
 
-            var avroReader = writerTest.getAvroGenericRecordReader();
-            GenericRecord record = avroReader.read();
-            assertEquals(rec1.name, record.get("name").toString());
-            GenericRecord child = (GenericRecord) record.get("child");
-            assertEquals(rec1.child.id, child.get("id").toString());
-            assertEquals(rec1.child.value, child.get("value"));
-            record = avroReader.read();
-            assertEquals(rec2.name, record.get("name").toString());
-            assertNull(record.get("child"));
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                GenericRecord record = avroReader.read();
+                assertEquals(rec1.name, record.get("name").toString());
+                GenericRecord child = (GenericRecord) record.get("child");
+                assertEquals(rec1.child.id, child.get("id").toString());
+                assertEquals(rec1.child.value, child.get("value"));
+                record = avroReader.read();
+                assertEquals(rec2.name, record.get("name").toString());
+                assertNull(record.get("child"));
+            }
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
         }
 
         @Test
@@ -1962,29 +2094,31 @@ class WriteRecordModelWriterTest {
             var writerTest = new ParquetWriterTest<>(MultipleLevelComposition.class);
             writerTest.write(mapper, rec1, rec2, rec3);
 
-            var avroReader = writerTest.getAvroGenericRecordReader();
-            GenericRecord record1 = avroReader.read();
-            assertEquals(rec1.id, record1.get("id").toString());
-            GenericRecord child1 = (GenericRecord) record1.get("child");
-            assertEquals(rec1.child.name, child1.get("name").toString());
-            GenericRecord subChild1 = (GenericRecord) child1.get("subChild");
-            assertEquals(rec1.child.subChild.area, subChild1.get("area").toString());
-            assertEquals(rec1.child.subChild.value, subChild1.get("value"));
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                GenericRecord record1 = avroReader.read();
+                assertEquals(rec1.id, record1.get("id").toString());
+                GenericRecord child1 = (GenericRecord) record1.get("child");
+                assertEquals(rec1.child.name, child1.get("name").toString());
+                GenericRecord subChild1 = (GenericRecord) child1.get("subChild");
+                assertEquals(rec1.child.subChild.area, subChild1.get("area").toString());
+                assertEquals(rec1.child.subChild.value, subChild1.get("value"));
 
-            GenericRecord record2 = avroReader.read();
-            assertEquals(rec2.id, record2.get("id").toString());
-            GenericRecord child2 = (GenericRecord) record2.get("child");
-            assertEquals(rec2.child.name, child2.get("name").toString());
-            assertNull(child2.get("subChild"));
+                GenericRecord record2 = avroReader.read();
+                assertEquals(rec2.id, record2.get("id").toString());
+                GenericRecord child2 = (GenericRecord) record2.get("child");
+                assertEquals(rec2.child.name, child2.get("name").toString());
+                assertNull(child2.get("subChild"));
 
-            GenericRecord record3 = avroReader.read();
-            assertEquals(rec3.id, record3.get("id").toString());
-            assertNull(record3.get("child"));
+                GenericRecord record3 = avroReader.read();
+                assertEquals(rec3.id, record3.get("id").toString());
+                assertNull(record3.get("child"));
+            }
 
-            var carpetReader = writerTest.getCarpetReader();
-            assertEquals(rec1, carpetReader.read());
-            assertEquals(rec2, carpetReader.read());
-            assertEquals(rec3, carpetReader.read());
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+                assertEquals(rec3, carpetReader.read());
+            }
         }
 
     }

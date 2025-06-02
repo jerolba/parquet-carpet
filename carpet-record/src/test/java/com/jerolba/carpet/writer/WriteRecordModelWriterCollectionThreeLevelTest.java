@@ -63,8 +63,9 @@ class WriteRecordModelWriterCollectionThreeLevelTest {
         var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class);
         writerTest.write(mapper, rec);
 
-        var carpetReader = writerTest.getCarpetReader();
-        assertEquals(rec, carpetReader.read());
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec, carpetReader.read());
+        }
     }
 
     @Test
@@ -81,8 +82,9 @@ class WriteRecordModelWriterCollectionThreeLevelTest {
         var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class);
         writerTest.write(mapper, rec);
 
-        var carpetReader = writerTest.getCarpetReader();
-        assertEquals(rec, carpetReader.read());
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec, carpetReader.read());
+        }
     }
 
     @Test
@@ -99,15 +101,17 @@ class WriteRecordModelWriterCollectionThreeLevelTest {
         var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class);
         writerTest.write(mapper, rec);
 
-        var carpetReader = writerTest.getCarpetReader();
-        assertEquals(rec, carpetReader.read());
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec, carpetReader.read());
+        }
 
         record AsEnum(String name, List<Category> values) {
         }
 
         var recEnum = new AsEnum("foo", List.of(Category.FOO, Category.BAR));
-        var carpetReaderEnum = writerTest.getCarpetReader(AsEnum.class);
-        assertEquals(recEnum, carpetReaderEnum.read());
+        try (var carpetReaderEnum = writerTest.getCarpetReader(AsEnum.class)) {
+            assertEquals(recEnum, carpetReaderEnum.read());
+        }
     }
 
     @Test
@@ -124,8 +128,9 @@ class WriteRecordModelWriterCollectionThreeLevelTest {
         var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class);
         writerTest.write(mapper, rec);
 
-        var carpetReader = writerTest.getCarpetReader();
-        assertEquals(rec, carpetReader.read());
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec, carpetReader.read());
+        }
     }
 
     @Test
@@ -143,9 +148,10 @@ class WriteRecordModelWriterCollectionThreeLevelTest {
                 .withDecimalConfig(6, 2);
         writerTest.write(mapper, rec);
 
-        var carpetReader = writerTest.getCarpetReader();
-        var expected = new SimpleTypeCollection("foo", List.of(new BigDecimal("1.00"), new BigDecimal("2.00")));
-        assertEquals(expected, carpetReader.read());
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            var expected = new SimpleTypeCollection("foo", List.of(new BigDecimal("1.00"), new BigDecimal("2.00")));
+            assertEquals(expected, carpetReader.read());
+        }
     }
 
     @Test
@@ -162,9 +168,10 @@ class WriteRecordModelWriterCollectionThreeLevelTest {
         var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class);
         writerTest.write(mapper, rec);
 
-        var carpetReader = writerTest.getCarpetReader();
-        var expected = new SimpleTypeCollection("foo", List.of(new BigDecimal("1.000"), new BigDecimal("2.000")));
-        assertEquals(expected, carpetReader.read());
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            var expected = new SimpleTypeCollection("foo", List.of(new BigDecimal("1.000"), new BigDecimal("2.000")));
+            assertEquals(expected, carpetReader.read());
+        }
     }
 
     @Test
@@ -182,8 +189,9 @@ class WriteRecordModelWriterCollectionThreeLevelTest {
         var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class);
         writerTest.write(mapper, rec);
 
-        var carpetReader = writerTest.getCarpetReader();
-        assertEquals(rec, carpetReader.read());
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec, carpetReader.read());
+        }
     }
 
     @Test
@@ -203,8 +211,9 @@ class WriteRecordModelWriterCollectionThreeLevelTest {
         var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class);
         writerTest.write(mapper, rec);
 
-        var carpetReader = writerTest.getCarpetReader();
-        assertEquals(rec, carpetReader.read());
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec, carpetReader.read());
+        }
     }
 
     @Test
@@ -224,8 +233,9 @@ class WriteRecordModelWriterCollectionThreeLevelTest {
         var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class);
         writerTest.write(mapper, rec);
 
-        var carpetReader = writerTest.getCarpetReader();
-        assertEquals(rec, carpetReader.read());
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec, carpetReader.read());
+        }
     }
 
     @Test
@@ -242,8 +252,9 @@ class WriteRecordModelWriterCollectionThreeLevelTest {
         var writerTest = new ParquetWriterTest<>(ConsecutiveNestedCollection.class);
         writerTest.write(mapper, rec);
 
-        var carpetReader = writerTest.getCarpetReader();
-        assertEquals(rec, carpetReader.read());
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec, carpetReader.read());
+        }
     }
 
     @Test
@@ -267,8 +278,9 @@ class WriteRecordModelWriterCollectionThreeLevelTest {
         var writerTest = new ParquetWriterTest<>(SimpleCompositeCollection.class);
         writerTest.write(mapper, rec);
 
-        var carpetReader = writerTest.getCarpetReader();
-        assertEquals(rec, carpetReader.read());
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec, carpetReader.read());
+        }
     }
 
     @Test
@@ -292,8 +304,9 @@ class WriteRecordModelWriterCollectionThreeLevelTest {
         var writerTest = new ParquetWriterTest<>(ConsecutiveNestedCompositeCollection.class);
         writerTest.write(mapper, rec);
 
-        var carpetReader = writerTest.getCarpetReader();
-        assertEquals(rec, carpetReader.read());
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec, carpetReader.read());
+        }
     }
 
     @Test
@@ -317,8 +330,9 @@ class WriteRecordModelWriterCollectionThreeLevelTest {
         var writerTest = new ParquetWriterTest<>(NonConsecutiveNestedCollection.class);
         writerTest.write(mapper, rec);
 
-        var carpetReader = writerTest.getCarpetReader();
-        assertEquals(rec, carpetReader.read());
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec, carpetReader.read());
+        }
     }
 
     @Test
@@ -336,8 +350,9 @@ class WriteRecordModelWriterCollectionThreeLevelTest {
         var writerTest = new ParquetWriterTest<>(MapInCollection.class);
         writerTest.write(mapper, rec);
 
-        var carpetReader = writerTest.getCarpetReader();
-        assertEquals(rec, carpetReader.read());
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec, carpetReader.read());
+        }
     }
 
     @Test
@@ -354,9 +369,10 @@ class WriteRecordModelWriterCollectionThreeLevelTest {
         var writerTest = new ParquetWriterTest<>(EmptyCollection.class);
         writerTest.write(mapper, rec);
 
-        var carpetReader = writerTest.getCarpetReader();
-        EmptyCollection expectedNullList = new EmptyCollection("foo", emptyList());
-        assertEquals(expectedNullList, carpetReader.read());
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            EmptyCollection expectedNullList = new EmptyCollection("foo", emptyList());
+            assertEquals(expectedNullList, carpetReader.read());
+        }
     }
 
     @Test
@@ -373,9 +389,10 @@ class WriteRecordModelWriterCollectionThreeLevelTest {
         var writerTest = new ParquetWriterTest<>(EmptyNestedCollection.class);
         writerTest.write(mapper, rec);
 
-        var carpetReader = writerTest.getCarpetReader();
-        EmptyNestedCollection expected = new EmptyNestedCollection("foo", List.of(List.of()));
-        assertEquals(expected, carpetReader.read());
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            EmptyNestedCollection expected = new EmptyNestedCollection("foo", List.of(List.of()));
+            assertEquals(expected, carpetReader.read());
+        }
     }
 
     @Test
@@ -395,11 +412,12 @@ class WriteRecordModelWriterCollectionThreeLevelTest {
                 new WithCollection("baz", List.of(1, 2, 3)),
                 new WithCollection("baz", asList(1, null, 3)));
 
-        var carpetReader = writerTest.getCarpetReader();
-        assertEquals(new WithCollection("foo", null), carpetReader.read());
-        assertEquals(new WithCollection("bar", List.of()), carpetReader.read());
-        assertEquals(new WithCollection("baz", List.of(1, 2, 3)), carpetReader.read());
-        assertEquals(new WithCollection("baz", asList(1, null, 3)), carpetReader.read());
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(new WithCollection("foo", null), carpetReader.read());
+            assertEquals(new WithCollection("bar", List.of()), carpetReader.read());
+            assertEquals(new WithCollection("baz", List.of(1, 2, 3)), carpetReader.read());
+            assertEquals(new WithCollection("baz", asList(1, null, 3)), carpetReader.read());
+        }
     }
 
     @Test
@@ -420,8 +438,9 @@ class WriteRecordModelWriterCollectionThreeLevelTest {
         record ListCollection(String name, List<String> ids) {
         }
 
-        var carpetReader = writerTest.getCarpetReader(ListCollection.class);
-        assertEquals(new ListCollection("foo", ids), carpetReader.read());
+        try (var carpetReader = writerTest.getCarpetReader(ListCollection.class)) {
+            assertEquals(new ListCollection("foo", ids), carpetReader.read());
+        }
     }
 
     @Test
@@ -442,8 +461,9 @@ class WriteRecordModelWriterCollectionThreeLevelTest {
         record ListCollection(String name, List<String> ids) {
         }
 
-        var carpetReader = writerTest.getCarpetReader(ListCollection.class);
-        assertEquals(new ListCollection("foo", ids), carpetReader.read());
+        try (var carpetReader = writerTest.getCarpetReader(ListCollection.class)) {
+            assertEquals(new ListCollection("foo", ids), carpetReader.read());
+        }
     }
 
 }

@@ -28,7 +28,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.avro.generic.GenericData;
-import org.apache.avro.generic.GenericData.Array;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.util.Utf8;
 import org.apache.parquet.io.api.Binary;
@@ -53,14 +52,16 @@ class CarpetWriterCollectionTwoLevelTest {
         var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class).withLevel(TWO);
         writerTest.write(rec);
 
-        var avroReader = writerTest.getAvroGenericRecordReader();
-        GenericRecord avroRecord = avroReader.read();
-        assertEquals(rec.name(), avroRecord.get("name").toString());
-        assertEquals(rec.ids(), avroRecord.get("ids"));
-        assertEquals(rec.amount(), avroRecord.get("amount"));
+        try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+            GenericRecord avroRecord = avroReader.read();
+            assertEquals(rec.name(), avroRecord.get("name").toString());
+            assertEquals(rec.ids(), avroRecord.get("ids"));
+            assertEquals(rec.amount(), avroRecord.get("amount"));
+        }
 
-        var carpetReader = writerTest.getCarpetReader();
-        assertEquals(rec, carpetReader.read());
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec, carpetReader.read());
+        }
     }
 
     @Test
@@ -73,16 +74,18 @@ class CarpetWriterCollectionTwoLevelTest {
         var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class).withLevel(TWO);
         writerTest.write(rec);
 
-        var avroReader = writerTest.getAvroGenericRecordReader();
-        GenericRecord avroRecord = avroReader.read();
-        assertEquals(rec.name(), avroRecord.get("name").toString());
+        try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+            GenericRecord avroRecord = avroReader.read();
+            assertEquals(rec.name(), avroRecord.get("name").toString());
 
-        Array<Utf8> ids = (Array<Utf8>) avroRecord.get("values");
-        assertEquals(2, ids.size());
-        assertEquals("foo", ids.get(0).toString());
-        assertEquals("bar", ids.get(1).toString());
-        var carpetReader = writerTest.getCarpetReader();
-        assertEquals(rec, carpetReader.read());
+            List<Utf8> ids = (List<Utf8>) avroRecord.get("values");
+            assertEquals(2, ids.size());
+            assertEquals("foo", ids.get(0).toString());
+            assertEquals("bar", ids.get(1).toString());
+        }
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec, carpetReader.read());
+        }
     }
 
     @Test
@@ -95,23 +98,26 @@ class CarpetWriterCollectionTwoLevelTest {
         var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class).withLevel(TWO);
         writerTest.write(rec);
 
-        var avroReader = writerTest.getAvroGenericRecordReader();
-        GenericRecord avroRecord = avroReader.read();
-        assertEquals(rec.name(), avroRecord.get("name").toString());
+        try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+            GenericRecord avroRecord = avroReader.read();
+            assertEquals(rec.name(), avroRecord.get("name").toString());
 
-        Array<Utf8> ids = (Array<Utf8>) avroRecord.get("values");
-        assertEquals(2, ids.size());
-        assertEquals("FOO", ids.get(0).toString());
-        assertEquals("BAR", ids.get(1).toString());
-        var carpetReader = writerTest.getCarpetReader();
-        assertEquals(rec, carpetReader.read());
+            List<Utf8> ids = (List<Utf8>) avroRecord.get("values");
+            assertEquals(2, ids.size());
+            assertEquals("FOO", ids.get(0).toString());
+            assertEquals("BAR", ids.get(1).toString());
+        }
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec, carpetReader.read());
+        }
 
         record AsEnum(String name, List<Category> values) {
         }
 
         var recEnum = new AsEnum("foo", List.of(Category.FOO, Category.BAR));
-        var carpetReaderEnum = writerTest.getCarpetReader(AsEnum.class);
-        assertEquals(recEnum, carpetReaderEnum.read());
+        try (var carpetReaderEnum = writerTest.getCarpetReader(AsEnum.class)) {
+            assertEquals(recEnum, carpetReaderEnum.read());
+        }
     }
 
     @Test
@@ -124,16 +130,18 @@ class CarpetWriterCollectionTwoLevelTest {
         var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class).withLevel(TWO);
         writerTest.write(rec);
 
-        var avroReader = writerTest.getAvroGenericRecordReader();
-        GenericRecord avroRecord = avroReader.read();
-        assertEquals(rec.name(), avroRecord.get("name").toString());
+        try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+            GenericRecord avroRecord = avroReader.read();
+            assertEquals(rec.name(), avroRecord.get("name").toString());
 
-        Array<Utf8> ids = (Array<Utf8>) avroRecord.get("values");
-        assertEquals(2, ids.size());
-        assertEquals("FOO", ids.get(0).toString());
-        assertEquals("BAR", ids.get(1).toString());
-        var carpetReader = writerTest.getCarpetReader();
-        assertEquals(rec, carpetReader.read());
+            List<Utf8> ids = (List<Utf8>) avroRecord.get("values");
+            assertEquals(2, ids.size());
+            assertEquals("FOO", ids.get(0).toString());
+            assertEquals("BAR", ids.get(1).toString());
+        }
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec, carpetReader.read());
+        }
     }
 
     @Test
@@ -147,9 +155,10 @@ class CarpetWriterCollectionTwoLevelTest {
                 .withDecimalConfig(6, 2);
         writerTest.write(rec);
 
-        var carpetReader = writerTest.getCarpetReader();
-        var expected = new SimpleTypeCollection("foo", List.of(new BigDecimal("1.00"), new BigDecimal("2.00")));
-        assertEquals(expected, carpetReader.read());
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            var expected = new SimpleTypeCollection("foo", List.of(new BigDecimal("1.00"), new BigDecimal("2.00")));
+            assertEquals(expected, carpetReader.read());
+        }
     }
 
     @Test
@@ -162,9 +171,10 @@ class CarpetWriterCollectionTwoLevelTest {
         var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class).withLevel(TWO);
         writerTest.write(rec);
 
-        var carpetReader = writerTest.getCarpetReader();
-        var expected = new SimpleTypeCollection("foo", List.of(new BigDecimal("1.000"), new BigDecimal("2.000")));
-        assertEquals(expected, carpetReader.read());
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            var expected = new SimpleTypeCollection("foo", List.of(new BigDecimal("1.000"), new BigDecimal("2.000")));
+            assertEquals(expected, carpetReader.read());
+        }
     }
 
     @Test
@@ -178,17 +188,19 @@ class CarpetWriterCollectionTwoLevelTest {
         var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class).withLevel(TWO);
         writerTest.write(rec);
 
-        var avroReader = writerTest.getAvroGenericRecordReader();
-        GenericRecord avroRecord = avroReader.read();
-        assertEquals(rec.name(), avroRecord.get("name").toString());
+        try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+            GenericRecord avroRecord = avroReader.read();
+            assertEquals(rec.name(), avroRecord.get("name").toString());
 
-        Array<ByteBuffer> ids = (Array<ByteBuffer>) avroRecord.get("values");
-        assertEquals(2, ids.size());
-        // Avro does not support JSON, so we need to convert it to a string
-        assertEquals(rec.values().get(0), new String(ids.get(0).array(), "UTF-8"));
-        assertEquals(rec.values().get(1), new String(ids.get(1).array(), "UTF-8"));
-        var carpetReader = writerTest.getCarpetReader();
-        assertEquals(rec, carpetReader.read());
+            List<ByteBuffer> ids = (List<ByteBuffer>) avroRecord.get("values");
+            assertEquals(2, ids.size());
+            // Avro does not support JSON, so we need to convert it to a string
+            assertEquals(rec.values().get(0), new String(ids.get(0).array(), "UTF-8"));
+            assertEquals(rec.values().get(1), new String(ids.get(1).array(), "UTF-8"));
+        }
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec, carpetReader.read());
+        }
     }
 
     @Test
@@ -204,24 +216,26 @@ class CarpetWriterCollectionTwoLevelTest {
         var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class).withLevel(TWO);
         writerTest.write(rec);
 
-        var avroReader = writerTest.getAvroGenericRecordReader();
-        GenericRecord avroRecord = avroReader.read();
-        assertEquals(rec.name(), avroRecord.get("name").toString());
+        try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+            GenericRecord avroRecord = avroReader.read();
+            assertEquals(rec.name(), avroRecord.get("name").toString());
 
-        Array<ByteBuffer> ids = (Array<ByteBuffer>) avroRecord.get("values");
-        assertEquals(2, ids.size());
-        byte[] fromAvro1 = ids.get(0).array();
-        assertEquals(binary1.length, fromAvro1.length);
-        for (int i = 0; i < binary1.length; i++) {
-            assertEquals(binary1[i], fromAvro1[i]);
+            List<ByteBuffer> ids = (List<ByteBuffer>) avroRecord.get("values");
+            assertEquals(2, ids.size());
+            byte[] fromAvro1 = ids.get(0).array();
+            assertEquals(binary1.length, fromAvro1.length);
+            for (int i = 0; i < binary1.length; i++) {
+                assertEquals(binary1[i], fromAvro1[i]);
+            }
+            byte[] fromAvro2 = ids.get(1).array();
+            assertEquals(binary2.length, fromAvro2.length);
+            for (int i = 0; i < binary2.length; i++) {
+                assertEquals(binary2[i], fromAvro2[i]);
+            }
         }
-        byte[] fromAvro2 = ids.get(1).array();
-        assertEquals(binary2.length, fromAvro2.length);
-        for (int i = 0; i < binary2.length; i++) {
-            assertEquals(binary2[i], fromAvro2[i]);
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec, carpetReader.read());
         }
-        var carpetReader = writerTest.getCarpetReader();
-        assertEquals(rec, carpetReader.read());
     }
 
     @Test
@@ -237,25 +251,27 @@ class CarpetWriterCollectionTwoLevelTest {
         var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class).withLevel(TWO);
         writerTest.write(rec);
 
-        var avroReader = writerTest.getAvroGenericRecordReader();
-        GenericRecord avroRecord = avroReader.read();
-        assertEquals(rec.name(), avroRecord.get("name").toString());
+        try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+            GenericRecord avroRecord = avroReader.read();
+            assertEquals(rec.name(), avroRecord.get("name").toString());
 
-        Array<ByteBuffer> ids = (Array<ByteBuffer>) avroRecord.get("values");
-        assertEquals(2, ids.size());
-        // Avro does not support BSON
-        byte[] fromAvro1 = ids.get(0).array();
-        assertEquals(mockBson1.length, fromAvro1.length);
-        for (int i = 0; i < mockBson1.length; i++) {
-            assertEquals(mockBson1[i], fromAvro1[i]);
+            List<ByteBuffer> ids = (List<ByteBuffer>) avroRecord.get("values");
+            assertEquals(2, ids.size());
+            // Avro does not support BSON
+            byte[] fromAvro1 = ids.get(0).array();
+            assertEquals(mockBson1.length, fromAvro1.length);
+            for (int i = 0; i < mockBson1.length; i++) {
+                assertEquals(mockBson1[i], fromAvro1[i]);
+            }
+            byte[] fromAvro2 = ids.get(1).array();
+            assertEquals(mockBson2.length, fromAvro2.length);
+            for (int i = 0; i < mockBson2.length; i++) {
+                assertEquals(mockBson2[i], fromAvro2[i]);
+            }
         }
-        byte[] fromAvro2 = ids.get(1).array();
-        assertEquals(mockBson2.length, fromAvro2.length);
-        for (int i = 0; i < mockBson2.length; i++) {
-            assertEquals(mockBson2[i], fromAvro2[i]);
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec, carpetReader.read());
         }
-        var carpetReader = writerTest.getCarpetReader();
-        assertEquals(rec, carpetReader.read());
     }
 
     @Test
@@ -268,19 +284,20 @@ class CarpetWriterCollectionTwoLevelTest {
         var writerTest = new ParquetWriterTest<>(ConsecutiveNestedCollection.class).withLevel(TWO);
         writerTest.write(rec);
 
-        var avroReader = writerTest.getAvroGenericRecordReader();
-        GenericRecord avroRecord = avroReader.read();
-        assertEquals(rec.id(), avroRecord.get("id").toString());
-        Array<Array<Integer>> mainArray = (Array<Array<Integer>>) avroRecord.get("values");
-        assertEquals(1, mainArray.size());
-        Array<Integer> nestedArray = mainArray.get(0);
-        assertEquals(3, nestedArray.size());
-        assertEquals(1, nestedArray.get(0));
-        assertEquals(2, nestedArray.get(1));
-        assertEquals(3, nestedArray.get(2));
-
-        var carpetReader = writerTest.getCarpetReader();
-        assertEquals(rec, carpetReader.read());
+        try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+            GenericRecord avroRecord = avroReader.read();
+            assertEquals(rec.id(), avroRecord.get("id").toString());
+            List<List<Integer>> mainArray = (List<List<Integer>>) avroRecord.get("values");
+            assertEquals(1, mainArray.size());
+            List<Integer> nestedArray = mainArray.get(0);
+            assertEquals(3, nestedArray.size());
+            assertEquals(1, nestedArray.get(0));
+            assertEquals(2, nestedArray.get(1));
+            assertEquals(3, nestedArray.get(2));
+        }
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec, carpetReader.read());
+        }
     }
 
     @Test
@@ -296,19 +313,20 @@ class CarpetWriterCollectionTwoLevelTest {
         var writerTest = new ParquetWriterTest<>(SimpleCompositeCollection.class).withLevel(TWO);
         writerTest.write(rec);
 
-        var avroReader = writerTest.getAvroGenericRecordReader();
-        GenericRecord avroRecord = avroReader.read();
-        assertEquals(rec.name(), avroRecord.get("name").toString());
-        Array<GenericRecord> ids = (Array<GenericRecord>) avroRecord.get("ids");
-        GenericRecord child = ids.get(0);
-        assertEquals(rec.ids().get(0).id(), child.get("id").toString());
-        assertEquals(rec.ids().get(0).active(), child.get("active"));
-        child = ids.get(1);
-        assertEquals(rec.ids().get(1).id(), child.get("id").toString());
-        assertEquals(rec.ids().get(1).active(), child.get("active"));
-
-        var carpetReader = writerTest.getCarpetReader();
-        assertEquals(rec, carpetReader.read());
+        try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+            GenericRecord avroRecord = avroReader.read();
+            assertEquals(rec.name(), avroRecord.get("name").toString());
+            List<GenericRecord> ids = (List<GenericRecord>) avroRecord.get("ids");
+            GenericRecord child = ids.get(0);
+            assertEquals(rec.ids().get(0).id(), child.get("id").toString());
+            assertEquals(rec.ids().get(0).active(), child.get("active"));
+            child = ids.get(1);
+            assertEquals(rec.ids().get(1).id(), child.get("id").toString());
+            assertEquals(rec.ids().get(1).active(), child.get("active"));
+        }
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec, carpetReader.read());
+        }
     }
 
     @Test
@@ -324,22 +342,23 @@ class CarpetWriterCollectionTwoLevelTest {
         var writerTest = new ParquetWriterTest<>(ConsecutiveNestedCompositeCollection.class).withLevel(TWO);
         writerTest.write(rec);
 
-        var avroReader = writerTest.getAvroGenericRecordReader();
-        GenericRecord avroRecord = avroReader.read();
-        assertEquals(rec.name(), avroRecord.get("name").toString());
-        Array<Array<GenericRecord>> mainArray = (Array<Array<GenericRecord>>) avroRecord.get("ids");
-        assertEquals(1, mainArray.size());
-        Array<GenericRecord> nestedArray = mainArray.get(0);
-        GenericRecord child = nestedArray.get(0);
-        List<ChildRecord> childs = rec.ids().get(0);
-        assertEquals(childs.get(0).id(), child.get("id").toString());
-        assertEquals(childs.get(0).active(), child.get("active"));
-        child = nestedArray.get(1);
-        assertEquals(childs.get(1).id(), child.get("id").toString());
-        assertEquals(childs.get(1).active(), child.get("active"));
-
-        var carpetReader = writerTest.getCarpetReader();
-        assertEquals(rec, carpetReader.read());
+        try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+            GenericRecord avroRecord = avroReader.read();
+            assertEquals(rec.name(), avroRecord.get("name").toString());
+            List<List<GenericRecord>> mainArray = (List<List<GenericRecord>>) avroRecord.get("ids");
+            assertEquals(1, mainArray.size());
+            List<GenericRecord> nestedArray = mainArray.get(0);
+            GenericRecord child = nestedArray.get(0);
+            List<ChildRecord> childs = rec.ids().get(0);
+            assertEquals(childs.get(0).id(), child.get("id").toString());
+            assertEquals(childs.get(0).active(), child.get("active"));
+            child = nestedArray.get(1);
+            assertEquals(childs.get(1).id(), child.get("id").toString());
+            assertEquals(childs.get(1).active(), child.get("active"));
+        }
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec, carpetReader.read());
+        }
     }
 
     @Test
@@ -355,18 +374,19 @@ class CarpetWriterCollectionTwoLevelTest {
         var writerTest = new ParquetWriterTest<>(NonConsecutiveNestedCollection.class).withLevel(TWO);
         writerTest.write(rec);
 
-        var avroReader = writerTest.getAvroGenericRecordReader();
-        GenericRecord avroRecord = avroReader.read();
-        assertEquals(rec.id(), avroRecord.get("id").toString());
-        Array<GenericRecord> ids = (Array<GenericRecord>) avroRecord.get("values");
-        GenericRecord child = ids.get(0);
-        assertEquals(rec.values().get(0).name(), child.get("name").toString());
-        Array<Utf8> alias = (Array<Utf8>) child.get("alias");
-        assertEquals(rec.values().get(0).alias().get(0), alias.get(0).toString());
-        assertEquals(rec.values().get(0).alias().get(1), alias.get(1).toString());
-
-        var carpetReader = writerTest.getCarpetReader();
-        assertEquals(rec, carpetReader.read());
+        try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+            GenericRecord avroRecord = avroReader.read();
+            assertEquals(rec.id(), avroRecord.get("id").toString());
+            List<GenericRecord> ids = (List<GenericRecord>) avroRecord.get("values");
+            GenericRecord child = ids.get(0);
+            assertEquals(rec.values().get(0).name(), child.get("name").toString());
+            List<Utf8> alias = (List<Utf8>) child.get("alias");
+            assertEquals(rec.values().get(0).alias().get(0), alias.get(0).toString());
+            assertEquals(rec.values().get(0).alias().get(1), alias.get(1).toString());
+        }
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec, carpetReader.read());
+        }
     }
 
     @Test
@@ -380,24 +400,25 @@ class CarpetWriterCollectionTwoLevelTest {
         var writerTest = new ParquetWriterTest<>(MapInCollection.class).withLevel(TWO);
         writerTest.write(rec);
 
-        var avroReader = writerTest.getAvroGenericRecordReader();
-        GenericRecord avroRecord = avroReader.read();
-        assertEquals(rec.name(), avroRecord.get("name").toString());
-        List<Map<Utf8, Integer>> ids = (List<Map<Utf8, Integer>>) avroRecord.get("ids");
-        Map<Utf8, Integer> map1 = ids.get(0);
-        assertEquals(3, map1.size());
-        assertEquals(1, map1.get(new Utf8("1")));
-        assertEquals(2, map1.get(new Utf8("2")));
-        assertEquals(3, map1.get(new Utf8("3")));
+        try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+            GenericRecord avroRecord = avroReader.read();
+            assertEquals(rec.name(), avroRecord.get("name").toString());
+            List<Map<Utf8, Integer>> ids = (List<Map<Utf8, Integer>>) avroRecord.get("ids");
+            Map<Utf8, Integer> map1 = ids.get(0);
+            assertEquals(3, map1.size());
+            assertEquals(1, map1.get(new Utf8("1")));
+            assertEquals(2, map1.get(new Utf8("2")));
+            assertEquals(3, map1.get(new Utf8("3")));
 
-        Map<Utf8, Integer> map2 = ids.get(1);
-        assertEquals(3, map2.size());
-        assertEquals(10, map2.get(new Utf8("1")));
-        assertEquals(20, map2.get(new Utf8("2")));
-        assertEquals(30, map2.get(new Utf8("3")));
-
-        var carpetReader = writerTest.getCarpetReader();
-        assertEquals(rec, carpetReader.read());
+            Map<Utf8, Integer> map2 = ids.get(1);
+            assertEquals(3, map2.size());
+            assertEquals(10, map2.get(new Utf8("1")));
+            assertEquals(20, map2.get(new Utf8("2")));
+            assertEquals(30, map2.get(new Utf8("3")));
+        }
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec, carpetReader.read());
+        }
     }
 
     @Test
@@ -410,14 +431,15 @@ class CarpetWriterCollectionTwoLevelTest {
         var writerTest = new ParquetWriterTest<>(EmptyCollection.class).withLevel(TWO);
         writerTest.write(rec);
 
-        var avroReader = writerTest.getAvroGenericRecordReader();
-        GenericRecord avroRecord = avroReader.read();
-        assertEquals(rec.name(), avroRecord.get("name").toString());
-        assertEquals(emptyList(), avroRecord.get("ids"));
-
-        var carpetReader = writerTest.getCarpetReader();
-        EmptyCollection expectedNullList = new EmptyCollection("foo", emptyList());
-        assertEquals(expectedNullList, carpetReader.read());
+        try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+            GenericRecord avroRecord = avroReader.read();
+            assertEquals(rec.name(), avroRecord.get("name").toString());
+            assertEquals(emptyList(), avroRecord.get("ids"));
+        }
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            EmptyCollection expectedNullList = new EmptyCollection("foo", emptyList());
+            assertEquals(expectedNullList, carpetReader.read());
+        }
     }
 
     @Test
@@ -430,10 +452,11 @@ class CarpetWriterCollectionTwoLevelTest {
         var writerTest = new ParquetWriterTest<>(EmptyNestedCollection.class).withLevel(TWO);
         writerTest.write(rec);
 
-        var avroReader = writerTest.getAvroGenericRecordReader();
-        GenericRecord avroRecord = avroReader.read();
-        assertEquals(rec.name(), avroRecord.get("name").toString());
-        assertEquals(List.of(List.of()), avroRecord.get("ids"));
+        try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+            GenericRecord avroRecord = avroReader.read();
+            assertEquals(rec.name(), avroRecord.get("name").toString());
+            assertEquals(List.of(List.of()), avroRecord.get("ids"));
+        }
     }
 
     @Test
@@ -447,10 +470,11 @@ class CarpetWriterCollectionTwoLevelTest {
                 new WithCollection("bar", List.of()),
                 new WithCollection("baz", List.of(1, 2, 3)));
 
-        var carpetReader = writerTest.getCarpetReader();
-        assertEquals(new WithCollection("foo", null), carpetReader.read());
-        assertEquals(new WithCollection("bar", List.of()), carpetReader.read());
-        assertEquals(new WithCollection("baz", List.of(1, 2, 3)), carpetReader.read());
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(new WithCollection("foo", null), carpetReader.read());
+            assertEquals(new WithCollection("bar", List.of()), carpetReader.read());
+            assertEquals(new WithCollection("baz", List.of(1, 2, 3)), carpetReader.read());
+        }
     }
 
     @Test
@@ -464,18 +488,20 @@ class CarpetWriterCollectionTwoLevelTest {
         var writerTest = new ParquetWriterTest<>(SetCollection.class).withLevel(TWO);
         writerTest.write(rec);
 
-        var avroReader = writerTest.getAvroGenericRecordReader();
-        GenericRecord avroRecord = avroReader.read();
-        assertEquals(rec.name(), avroRecord.get("name").toString());
-        var asLst = ((GenericData.Array) avroRecord.get("ids"))
-                .stream().map(Object::toString)
-                .toList();
-        assertEquals(ids, asLst);
+        try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+            GenericRecord avroRecord = avroReader.read();
+            assertEquals(rec.name(), avroRecord.get("name").toString());
+            var asLst = ((GenericData.Array) avroRecord.get("ids"))
+                    .stream().map(Object::toString)
+                    .toList();
+            assertEquals(ids, asLst);
+        }
 
         record ListCollection(String name, List<String> ids) {
         }
 
-        var carpetReader = writerTest.getCarpetReader(ListCollection.class);
-        assertEquals(new ListCollection("foo", ids), carpetReader.read());
+        try (var carpetReader = writerTest.getCarpetReader(ListCollection.class)) {
+            assertEquals(new ListCollection("foo", ids), carpetReader.read());
+        }
     }
 }
