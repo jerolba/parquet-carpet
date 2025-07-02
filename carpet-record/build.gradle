@@ -11,7 +11,7 @@ java {
         languageVersion = JavaLanguageVersion.of(17)
     }
     sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17    
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 repositories {
@@ -38,7 +38,7 @@ dependencies {
         exclude group: 'org.apache.avro', module: 'avro'
     }
     api("org.apache.hadoop:hadoop-common:${hadoopVersion}") {
-        exclude group: 'org.apache.hadoop', module: 'hadoop-auth'    
+        exclude group: 'org.apache.hadoop', module: 'hadoop-auth'
         exclude group: 'org.apache.avro', module: 'avro'
         exclude group: 'com.fasterxml.jackson.core', module: 'jackson-databind'
         exclude group: 'org.apache.kerby', module: 'kerb-core'
@@ -154,7 +154,7 @@ configurations.implementation {
     exclude group: 'log4j', module: 'log4j'
     exclude group: 'com.jcraft', module: 'jsch'
     exclude group: 'dnsjava', module: 'dnsjava'
-    exclude group: 'io.dropwizard.metrics', module: 'metrics-core'    
+    exclude group: 'io.dropwizard.metrics', module: 'metrics-core'
     exclude group: 'com.google.code.gson', module: 'gson'
     exclude group: 'com.google.re2j', module: 're2j'
 }
@@ -172,7 +172,7 @@ test {
 jacocoTestReport {
     reports {
          xml.required = true
-         html.required = true         
+         html.required = true
      }
 }
 
@@ -243,7 +243,7 @@ def customizePom(pom) {
             licenses {
                 license {
                     name 'Apache License 2.0'
-                    url 'http://www.apache.org/license/LICENSE-2.0.txt'
+                    url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
                     distribution 'repo'
                 }
             }
