@@ -2,8 +2,8 @@ plugins {
     id 'java'
     id 'java-library'
     id 'jacoco'
-    id 'maven-publish'
     id 'signing'
+    id "com.vanniktech.maven.publish" version "0.34.0"
 }
 
 java {
@@ -196,68 +196,33 @@ artifacts {
     archives javadocJar
 }
 
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            customizePom(pom)
-            groupId 'com.jerolba'
-            artifactId 'carpet-record'
-            version version
+mavenPublishing {
+  coordinates("com.jerolba", "carpet-record", version)
 
-            from components.java
-
-            artifact sourceJar
-            artifact javadocJar
-        }
+  pom {
+    name = "Carpet Record"
+    description = "Carpet Record serialize/deserialize Parquet files using Java Records"
+    inceptionYear = "2020"
+    url = "https://github.com/jerolba/parquet-carpet/"
+    licenses {
+      license {
+        name = "The Apache License, Version 2.0"
+        url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+        distribution = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
     }
-    if (project.hasProperty('sonatypeUsername')){
-        repositories {
-            maven {
-                url "https://oss.sonatype.org/service/local/staging/deploy/maven2"
-                credentials {
-                    username sonatypeUsername
-                    password sonatypePassword
-                }
-            }
-        }
-    } else {
-        println 'No sonatype configuration found. Expected user and password at $HOME/.gradle/gradle.properties file.'
+    developers {
+      developer {
+        id = "jerolba"
+        name = "Jerónimo López"
+        url = "https://github.com/jerolba/"
+      }
     }
+    scm {
+      url = "https://github.com/jerolba/parquet-carpet/"
+      connection = "scm:git:git://github.com/jerolba/parquet-carpet.git"
+      developerConnection = "scm:git:ssh://git@github.com/jerolba/parquet-carpet.git"
+    }
+  }
 }
 
-signing {
-    sign publishing.publications.mavenJava
-}
-
-
-def customizePom(pom) {
-    pom.withXml {
-        def root = asNode()
-
-        root.children().last() + {
-            resolveStrategy = Closure.DELEGATE_FIRST
-
-            description 'Carpet Record serialize/deserialize Parquet files using Java Records'
-            name 'Carpet Record'
-            url 'https://github.com/jerolba/parquet-carpet'
-            licenses {
-                license {
-                    name 'Apache License 2.0'
-                    url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                    distribution 'repo'
-                }
-            }
-            scm {
-                url 'https://github.com/jerolba/parquet-carpet'
-                connection 'scm:git:git://github.com/jerolba/parquet-carpet'
-                developerConnection 'scm:git:ssh://github.com:jerolba/parquet-carpet'
-            }
-            developers {
-                developer {
-                    id 'jerolba'
-                    name 'Jerónimo López'
-                }
-            }
-        }
-    }
-}
