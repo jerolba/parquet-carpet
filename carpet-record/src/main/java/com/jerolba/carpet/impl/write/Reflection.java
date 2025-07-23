@@ -24,19 +24,61 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.RecordComponent;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 public class Reflection {
+
+    private static final ConcurrentHashMap<CacheKey, Function<Object, Object>> ACCESSOR_CACHE = new ConcurrentHashMap<>();
 
     private Reflection() {
     }
 
     public static Function<Object, Object> recordAccessor(Class<?> targetClass, RecordComponent recordComponent) {
-        return fieldAccessor(targetClass, recordComponent.getName(), recordComponent.getType());
+        return cachedFieldAccessor(targetClass, recordComponent.getName(), recordComponent.getType());
     }
 
     public static Function<Object, Object> recordAccessor(Class<?> targetClass, Field classField) {
-        return fieldAccessor(targetClass, classField.getName(), classField.getType());
+        return cachedFieldAccessor(targetClass, classField.getName(), classField.getType());
+    }
+
+    private static class CacheKey {
+
+        private final Class<?> targetClass;
+        private final String fieldName;
+        private final Class<?> fieldType;
+
+        public CacheKey(Class<?> targetClass, String fieldName, Class<?> fieldType) {
+            this.targetClass = targetClass;
+            this.fieldName = fieldName;
+            this.fieldType = fieldType;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null || getClass() != obj.getClass()) {
+                return false;
+            }
+            CacheKey cacheKey = (CacheKey) obj;
+            return targetClass == cacheKey.targetClass &&
+                    fieldName.equals(cacheKey.fieldName) &&
+                    fieldType == cacheKey.fieldType;
+        }
+
+        @Override
+        public int hashCode() {
+            return System.identityHashCode(targetClass) ^
+                    fieldName.hashCode() ^
+                    System.identityHashCode(fieldType);
+        }
+    }
+
+    private static Function<Object, Object> cachedFieldAccessor(Class<?> targetClass, String name, Class<?> fieldType) {
+        CacheKey cacheKey = new CacheKey(targetClass, name, fieldType);
+        return ACCESSOR_CACHE.computeIfAbsent(cacheKey, k -> fieldAccessor(targetClass, name, fieldType));
     }
 
     private static Function<Object, Object> fieldAccessor(Class<?> targetClass, String name, Class<?> fieldType) {
