@@ -91,8 +91,9 @@ public class Reflection {
                 findVirtual = lookup.findVirtual(targetClass, name, methodType(fieldType));
             } catch (IllegalAccessException e) {
                 try {
-                    lookup = MethodHandles.privateLookupIn(targetClass, lookup);
-                    findVirtual = lookup.findVirtual(targetClass, name, methodType(fieldType));
+                    Lookup privateLookup = MethodHandles.privateLookupIn(targetClass, lookup);
+                    findVirtual = privateLookup.findVirtual(targetClass, name, methodType(fieldType));
+                    lookup = privateLookup;
                 } catch (IllegalAccessException e1) {
                     return viaDeclaredMethod(targetClass, name, lookup);
                 }
