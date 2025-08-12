@@ -21,6 +21,7 @@ import java.lang.invoke.CallSite;
 import java.lang.invoke.LambdaMetafactory;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.RecordComponent;
@@ -82,33 +83,51 @@ public class Reflection {
     }
 
     private static Function<Object, Object> fieldAccessor(Class<?> targetClass, String name, Class<?> fieldType) {
-        MethodHandles.Lookup lookup = MethodHandles.lookup();
         try {
-            MethodHandle findVirtual = lookup.findVirtual(targetClass, name, methodType(fieldType));
-            CallSite site = LambdaMetafactory.metafactory(lookup,
-                    "apply",
-                    methodType(Function.class),
-                    methodType(Object.class, Object.class),
-                    findVirtual,
-                    methodType(fieldType, targetClass));
-            return (Function<Object, Object>) site.getTarget().invokeExact();
-        } catch (IllegalAccessException e) {
+            Lookup lookup = null;
+            MethodHandle findVirtual = null;
             try {
-                Method m = targetClass.getDeclaredMethod(name);
-                m.setAccessible(true);
-                MethodHandle pmh = lookup.unreflect(m);
-                return obj -> {
-                    try {
-                        return pmh.invoke(obj);
-                    } catch (Throwable e1) {
-                        throw new RuntimeException(e1);
-                    }
-                };
-            } catch (NoSuchMethodException | IllegalAccessException em) {
-                throw new RuntimeException(em);
+                lookup = MethodHandles.lookup();
+                findVirtual = lookup.findVirtual(targetClass, name, methodType(fieldType));
+            } catch (IllegalAccessException e) {
+                try {
+                    lookup = MethodHandles.privateLookupIn(targetClass, lookup);
+                    findVirtual = lookup.findVirtual(targetClass, name, methodType(fieldType));
+                } catch (IllegalAccessException e1) {
+                    return viaDeclaredMethod(targetClass, name, lookup);
+                }
             }
-        } catch (Throwable t) {
-            throw new RuntimeException(t);
+            try {
+                CallSite site = LambdaMetafactory.metafactory(lookup,
+                        "apply",
+                        methodType(Function.class),
+                        methodType(Object.class, Object.class),
+                        findVirtual,
+                        methodType(fieldType, targetClass));
+                return (Function<Object, Object>) site.getTarget().invokeExact();
+            } catch (Throwable e) {
+                return viaDeclaredMethod(targetClass, name, lookup);
+            }
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static Function<Object, Object> viaDeclaredMethod(Class<?> targetClass, String name, Lookup lookup)
+            throws NoSuchMethodException {
+        try {
+            Method m = targetClass.getDeclaredMethod(name);
+            m.setAccessible(true);
+            MethodHandle pmh = lookup.unreflect(m);
+            return obj -> {
+                try {
+                    return pmh.invoke(obj);
+                } catch (Throwable t2) {
+                    throw new RuntimeException(t2);
+                }
+            };
+        } catch (IllegalAccessException em) {
+            throw new RuntimeException(em);
         }
     }
 

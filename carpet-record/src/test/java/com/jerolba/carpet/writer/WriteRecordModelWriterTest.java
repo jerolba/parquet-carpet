@@ -2185,4 +2185,89 @@ class WriteRecordModelWriterTest {
 
     }
 
+    @Nested
+    class VisibilityTest {
+
+        public record PublicRecord(String id, int value) {
+        }
+
+        private record PrivateRecord(String id, int value) {
+        }
+
+        record PackagePrivateRecord(String id, int value) {
+        }
+
+        @Test
+        void publicRecordIsWritable() throws IOException {
+            var rec1 = new PublicRecord("Madrid", 10);
+            var rec2 = new PublicRecord("Barcelona", 20);
+            var mapper = writeRecordModel(PublicRecord.class)
+                    .withField("id", STRING, PublicRecord::id)
+                    .withField("value", PublicRecord::value);
+
+            var writerTest = new ParquetWriterTest<>(PublicRecord.class);
+            writerTest.write(mapper, rec1, rec2);
+
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                assertEquals(rec1.id, avroReader.read().get("id").toString());
+                assertEquals(rec2.id, avroReader.read().get("id").toString());
+            }
+        }
+
+        @Test
+        void privateRecordIsWritable() throws IOException {
+            var rec1 = new PrivateRecord("Madrid", 10);
+            var rec2 = new PrivateRecord("Barcelona", 20);
+            var mapper = writeRecordModel(PrivateRecord.class)
+                    .withField("id", STRING, PrivateRecord::id)
+                    .withField("value", PrivateRecord::value);
+
+            var writerTest = new ParquetWriterTest<>(PrivateRecord.class);
+            writerTest.write(mapper, rec1, rec2);
+
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                assertEquals(rec1.id, avroReader.read().get("id").toString());
+                assertEquals(rec2.id, avroReader.read().get("id").toString());
+            }
+        }
+
+        @Test
+        void packagePrivateRecordIsWritable() throws IOException {
+            var rec1 = new PackagePrivateRecord("Madrid", 10);
+            var rec2 = new PackagePrivateRecord("Barcelona", 20);
+            var mapper = writeRecordModel(PackagePrivateRecord.class)
+                    .withField("id", STRING, PackagePrivateRecord::id)
+                    .withField("value", PackagePrivateRecord::value);
+
+            var writerTest = new ParquetWriterTest<>(PackagePrivateRecord.class);
+            writerTest.write(mapper, rec1, rec2);
+
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                assertEquals(rec1.id, avroReader.read().get("id").toString());
+                assertEquals(rec2.id, avroReader.read().get("id").toString());
+            }
+        }
+
+        @Test
+        void innerRecordIsWritable() throws IOException {
+
+            record InnerRecord(String id, int value) {
+            }
+
+            var rec1 = new InnerRecord("Madrid", 10);
+            var rec2 = new InnerRecord("Barcelona", 20);
+            var mapper = writeRecordModel(InnerRecord.class)
+                    .withField("id", STRING, InnerRecord::id)
+                    .withField("value", InnerRecord::value);
+
+            var writerTest = new ParquetWriterTest<>(InnerRecord.class);
+            writerTest.write(mapper, rec1, rec2);
+
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                assertEquals(rec1.id, avroReader.read().get("id").toString());
+                assertEquals(rec2.id, avroReader.read().get("id").toString());
+            }
+        }
+    }
+
 }
