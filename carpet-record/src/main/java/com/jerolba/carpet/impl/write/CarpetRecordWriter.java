@@ -21,6 +21,8 @@ import static com.jerolba.carpet.impl.Parameterized.getParameterizedMap;
 import static com.jerolba.carpet.impl.write.CollectionsWriters.MapRecordFieldWriter.writeKeyalueGroup;
 import static com.jerolba.carpet.impl.write.CollectionsWriters.ThreeLevelCollectionRecordFieldWriter.writeGroupElementThree;
 import static com.jerolba.carpet.impl.write.CollectionsWriters.TwoLevelCollectionRecordFieldWriter.writeGroupElementTwo;
+import static com.jerolba.carpet.impl.write.FieldsWriter.buildPrimitiveAccessor;
+import static com.jerolba.carpet.impl.write.FieldsWriter.buildPrimitiveJavaConsumer;
 import static com.jerolba.carpet.impl.write.FieldsWriter.buildSimpleElementConsumer;
 
 import java.lang.reflect.RecordComponent;
@@ -56,22 +58,31 @@ class CarpetRecordWriter {
 
         int idx = 0;
         for (RecordComponent attr : recordClass.getRecordComponents()) {
-            RecordField f = new ReflectionRecordField(recordClass, attr, getFieldName(attr), idx);
-            Class<?> type = attr.getType();
             JavaType javaType = new JavaType(attr);
+            String parquetFieldName = getFieldName(attr);
             Consumer<Object> writer = null;
-            BiConsumer<RecordConsumer, Object> basicTypeWriter = buildSimpleElementConsumer(javaType, recordConsumer,
-                    carpetConfiguration);
-            if (basicTypeWriter != null) {
-                writer = new FieldWriterConsumer(recordConsumer, f, basicTypeWriter);
-            } else if (Collection.class.isAssignableFrom(type)) {
-                ParameterizedCollection collectionClass = getParameterizedCollection(attr);
-                writer = createCollectionWriter(collectionClass, f);
-            } else if (Map.class.isAssignableFrom(type)) {
-                ParameterizedMap mapClass = getParameterizedMap(attr);
-                writer = createMapStructureWriter(mapClass, f);
-            } else {
-                throw new RuntimeException(type.getName() + " can not be serialized");
+            if (javaType.isJavaPrimitive()) {
+                var accessor = buildPrimitiveAccessor(recordClass, attr, javaType);
+                if (accessor != null) {
+                    writer = buildPrimitiveJavaConsumer(parquetFieldName, javaType, accessor, idx, recordConsumer);
+                }
+            }
+            if (writer == null) {
+                Class<?> type = attr.getType();
+                RecordField f = new ReflectionRecordField(recordClass, attr, parquetFieldName, idx);
+                BiConsumer<RecordConsumer, Object> basicTypeWriter = buildSimpleElementConsumer(javaType,
+                        recordConsumer, carpetConfiguration);
+                if (basicTypeWriter != null) {
+                    writer = new FieldWriterConsumer(recordConsumer, f, basicTypeWriter);
+                } else if (Collection.class.isAssignableFrom(type)) {
+                    ParameterizedCollection collectionClass = getParameterizedCollection(attr);
+                    writer = createCollectionWriter(collectionClass, f);
+                } else if (Map.class.isAssignableFrom(type)) {
+                    ParameterizedMap mapClass = getParameterizedMap(attr);
+                    writer = createMapStructureWriter(mapClass, f);
+                } else {
+                    throw new RuntimeException(type.getName() + " can not be serialized");
+                }
             }
             fieldWriters.add(writer);
             idx++;
