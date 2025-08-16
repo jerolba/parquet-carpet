@@ -46,6 +46,10 @@ public class JavaType {
         return type;
     }
 
+    public boolean isJavaPrimitive() {
+        return type.isPrimitive();
+    }
+
     public boolean isString() {
         return typeName.equals("java.lang.String");
     }

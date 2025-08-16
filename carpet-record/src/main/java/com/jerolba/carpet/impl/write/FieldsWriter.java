@@ -21,8 +21,13 @@ import static com.jerolba.carpet.impl.write.TimeWrite.localDateTimeConsumer;
 import static com.jerolba.carpet.impl.write.TimeWrite.localTimeConsumer;
 import static com.jerolba.carpet.impl.write.UuidWrite.uuidToBinary;
 
+import java.lang.reflect.RecordComponent;
 import java.time.LocalDate;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.ToDoubleFunction;
+import java.util.function.ToIntFunction;
+import java.util.function.ToLongFunction;
 
 import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.io.api.RecordConsumer;
@@ -30,13 +35,17 @@ import org.apache.parquet.io.api.RecordConsumer;
 import com.jerolba.carpet.annotation.PrecisionScale;
 import com.jerolba.carpet.annotation.Rounding;
 import com.jerolba.carpet.impl.JavaType;
+import com.jerolba.carpet.model.ToBooleanFunction;
+import com.jerolba.carpet.model.ToByteFunction;
+import com.jerolba.carpet.model.ToFloatFunction;
+import com.jerolba.carpet.model.ToShortFunction;
 
 class FieldsWriter {
 
     private FieldsWriter() {
     }
 
-    public static BiConsumer<RecordConsumer, Object> buildSimpleElementConsumer(JavaType type,
+    static BiConsumer<RecordConsumer, Object> buildSimpleElementConsumer(JavaType type,
             RecordConsumer recordConsumer, CarpetWriteConfiguration carpetConfiguration) {
 
         if (type.isInteger()) {
@@ -95,6 +104,61 @@ class FieldsWriter {
                 recordWriter.write(v);
                 consumer.endGroup();
             };
+        }
+        return null;
+    }
+
+    static Object buildPrimitiveAccessor(Class<?> targetClass, RecordComponent attr, JavaType javaType) {
+        if (javaType.isBoolean()) {
+            return Reflection.booleanFieldAccessor(targetClass, attr.getName());
+        } else if (javaType.isByte()) {
+            return Reflection.byteFieldAccessor(targetClass, attr.getName());
+        } else if (javaType.isShort()) {
+            return Reflection.shortFieldAccessor(targetClass, attr.getName());
+        } else if (javaType.isInteger()) {
+            return Reflection.intFieldAccessor(targetClass, attr.getName());
+        } else if (javaType.isLong()) {
+            return Reflection.longFieldAccessor(targetClass, attr.getName());
+        } else if (javaType.isFloat()) {
+            return Reflection.floatFieldAccessor(targetClass, attr.getName());
+        } else if (javaType.isDouble()) {
+            return Reflection.doubleFieldAccessor(targetClass, attr.getName());
+        }
+        return null;
+    }
+
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    static Consumer<Object> buildPrimitiveJavaConsumer(
+            String parquetFieldName, JavaType javaType, Object fieldAccessor,
+            int idx, RecordConsumer recordConsumer) {
+        if (javaType.isBoolean()) {
+            var accessor = (ToBooleanFunction) fieldAccessor;
+            return new PrimitiveFieldWriter(recordConsumer, parquetFieldName, idx,
+                    (rc, obj) -> rc.addBoolean(accessor.applyAsBoolean(obj)));
+        } else if (javaType.isByte()) {
+            var accessor = (ToByteFunction<Object>) fieldAccessor;
+            return new PrimitiveFieldWriter(recordConsumer, parquetFieldName, idx,
+                    (rc, obj) -> rc.addInteger(accessor.applyAsByte(obj)));
+        } else if (javaType.isShort()) {
+            var accessor = (ToShortFunction<Object>) fieldAccessor;
+            return new PrimitiveFieldWriter(recordConsumer, parquetFieldName, idx,
+                    (rc, obj) -> rc.addInteger(accessor.applyAsShort(obj)));
+        } else if (javaType.isInteger()) {
+            var accessor = (ToIntFunction<Object>) fieldAccessor;
+            return new PrimitiveFieldWriter(recordConsumer, parquetFieldName, idx,
+                    (rc, obj) -> rc.addInteger(accessor.applyAsInt(obj)));
+        } else if (javaType.isLong()) {
+            var accessor = (ToLongFunction<Object>) fieldAccessor;
+            return new PrimitiveFieldWriter(recordConsumer, parquetFieldName, idx,
+                    (rc, obj) -> rc.addLong(accessor.applyAsLong(obj)));
+        } else if (javaType.isFloat()) {
+            var accessor = (ToFloatFunction<Object>) fieldAccessor;
+            return new PrimitiveFieldWriter(recordConsumer, parquetFieldName, idx,
+                    (rc, obj) -> rc.addFloat(accessor.applyAsFloat(obj)));
+        } else if (javaType.isDouble()) {
+            var accessor = (ToDoubleFunction<Object>) fieldAccessor;
+            return new PrimitiveFieldWriter(recordConsumer, parquetFieldName, idx,
+                    (rc, obj) -> rc.addDouble(accessor.applyAsDouble(obj)));
         }
         return null;
     }
