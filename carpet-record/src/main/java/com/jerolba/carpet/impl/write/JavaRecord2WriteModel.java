@@ -25,6 +25,9 @@ import java.lang.reflect.TypeVariable;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.ToDoubleFunction;
+import java.util.function.ToIntFunction;
+import java.util.function.ToLongFunction;
 
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.annotation.ParquetBson;
@@ -43,6 +46,10 @@ import com.jerolba.carpet.model.FieldTypes;
 import com.jerolba.carpet.model.ListTypeBuilder;
 import com.jerolba.carpet.model.MapTypeBuilder;
 import com.jerolba.carpet.model.StringType;
+import com.jerolba.carpet.model.ToBooleanFunction;
+import com.jerolba.carpet.model.ToByteFunction;
+import com.jerolba.carpet.model.ToFloatFunction;
+import com.jerolba.carpet.model.ToShortFunction;
 import com.jerolba.carpet.model.WriteRecordModelType;
 
 public class JavaRecord2WriteModel {
@@ -74,6 +81,7 @@ public class JavaRecord2WriteModel {
             if (genericType instanceof TypeVariable<?>) {
                 throw new RecordTypeConversionException(genericType.toString() + " generic types not supported");
             }
+            String parquetFieldName = fieldToColumnMapper.getColumnName(attr);
             Class<?> type = attr.getType();
             JavaType javaType = new JavaType(type, attr.getDeclaredAnnotations());
             boolean notNull = type.isPrimitive() || isNotNull(attr);
@@ -87,9 +95,33 @@ public class JavaRecord2WriteModel {
             } else {
                 fieldType = simpleOrCompositeClass(javaType, notNull, visited);
             }
-            String fieldName = fieldToColumnMapper.getColumnName(attr);
-            Function<T, Object> recordAccessor = (Function<T, Object>) Reflection.recordAccessor(recordClass, attr);
-            writeModel.withField(fieldName, fieldType, recordAccessor);
+            if (!type.isPrimitive()) {
+                writeModel.withField(parquetFieldName, fieldType,
+                        (Function<T, Object>) Reflection.recordAccessor(recordClass, attr));
+            } else if (javaType.isInteger()) {
+                writeModel.withField(parquetFieldName,
+                        (ToIntFunction<T>) Reflection.intFieldAccessor(recordClass, attr.getName()));
+            } else if (javaType.isLong()) {
+                writeModel.withField(parquetFieldName,
+                        (ToLongFunction<T>) Reflection.longFieldAccessor(recordClass, attr.getName()));
+            } else if (javaType.isFloat()) {
+                writeModel.withField(parquetFieldName,
+                        (ToFloatFunction<T>) Reflection.floatFieldAccessor(recordClass, attr.getName()));
+            } else if (javaType.isDouble()) {
+                writeModel.withField(parquetFieldName,
+                        (ToDoubleFunction<T>) Reflection.doubleFieldAccessor(recordClass, attr.getName()));
+            } else if (javaType.isShort()) {
+                writeModel.withField(parquetFieldName,
+                        (ToShortFunction<T>) Reflection.shortFieldAccessor(recordClass, attr.getName()));
+            } else if (javaType.isByte()) {
+                writeModel.withField(parquetFieldName,
+                        (ToByteFunction<T>) Reflection.byteFieldAccessor(recordClass, attr.getName()));
+            } else if (javaType.isBoolean()) {
+                writeModel.withField(parquetFieldName,
+                        (ToBooleanFunction<T>) Reflection.booleanFieldAccessor(recordClass, attr.getName()));
+            } else {
+                throw new RecordTypeConversionException("Unsupported primitive type: " + type);
+            }
         }
     }
 
