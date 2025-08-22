@@ -57,8 +57,6 @@ import com.jerolba.carpet.CarpetWriter;
 import com.jerolba.carpet.FieldMatchingStrategy;
 import com.jerolba.carpet.PartitionedCarpetWriter;
 import com.jerolba.carpet.PartitionedCarpetWriterBuilder;
-import com.jerolba.carpet.PartitionConfig;
-import com.jerolba.carpet.PartitionKey;
 import com.jerolba.carpet.TimeUnit;
 import com.jerolba.carpet.annotation.Alias;
 import com.jerolba.carpet.annotation.ParquetBson;
