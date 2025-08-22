@@ -17,6 +17,7 @@ package com.jerolba.carpet.samples;
 
 import static java.util.UUID.randomUUID;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,6 +44,8 @@ import org.junit.jupiter.api.Test;
 import com.jerolba.carpet.CarpetParquetWriter;
 import com.jerolba.carpet.CarpetWriter;
 import com.jerolba.carpet.ColumnNamingStrategy;
+import com.jerolba.carpet.PartitionedCarpetWriter;
+import com.jerolba.carpet.PartitionedCarpetWriterBuilder;
 import com.jerolba.carpet.TimeUnit;
 import com.jerolba.carpet.annotation.Alias;
 import com.jerolba.carpet.annotation.ParquetBson;
@@ -393,9 +396,149 @@ class WriteFiles {
 
     }
 
+    /**
+     * Write data partitioned by year and category using Hive-style partitioning
+     * Creates directory structure: /data/orders/year=2024/category=electronics/data.parquet
+     *
+     * @throws IOException
+     */
+    @Test
+    void writePartitionedData() throws IOException {
+        record Order(long id, String customerId, LocalDateTime orderDate, String category, double amount) {
+        }
+
+        // Create test data
+        List<Order> orders = List.of(
+            new Order(1, "customer1", LocalDateTime.of(2024, 1, 15, 10, 0), "electronics", 299.99),
+            new Order(2, "customer2", LocalDateTime.of(2024, 1, 16, 11, 0), "books", 45.50),
+            new Order(3, "customer3", LocalDateTime.of(2024, 2, 15, 12, 0), "electronics", 599.99),
+            new Order(4, "customer4", LocalDateTime.of(2023, 12, 20, 14, 0), "clothing", 89.99)
+        );
+
+        // Configure partitioned writer
+        PartitionedCarpetWriter<Order> writer = new PartitionedCarpetWriterBuilder<Order>(Order.class)
+            .withBasePath(temporalDirectory("partitioned_orders").getAbsolutePath())
+            .partitionBy("year", order -> String.valueOf(order.orderDate().getYear()))
+            .partitionBy("category", Order::category)
+            .withMaxPathLength(2048)
+            .build();
+
+        try {
+            // Write all orders - they will be automatically partitioned
+            writer.write(orders);
+            
+            // Verify partitions were created
+            assertTrue(writer.getCreatedPartitions().size() > 0);
+            
+        } finally {
+            writer.close();
+        }
+    }
+
+    /**
+     * Write data with complex partitioning logic including business rules
+     *
+     * @throws IOException
+     */
+    @Test
+    void writePartitionedDataWithBusinessLogic() throws IOException {
+        record Transaction(long id, String accountId, LocalDateTime timestamp, double amount, String region) {
+        }
+
+        // Create test data
+        List<Transaction> transactions = List.of(
+            new Transaction(1, "P123", LocalDateTime.of(2024, 1, 15, 10, 0), 1500.00, "US"),
+            new Transaction(2, "B456", LocalDateTime.of(2024, 1, 16, 11, 0), 2500.00, "EU"),
+            new Transaction(3, "P789", LocalDateTime.of(2024, 2, 15, 12, 0), 500.00, "US"),
+            new Transaction(4, "G101", LocalDateTime.of(2024, 2, 16, 13, 0), 10000.00, "AS")
+        );
+
+        // Configure partitioned writer with business logic
+        PartitionedCarpetWriter<Transaction> writer = new PartitionedCarpetWriterBuilder<Transaction>(Transaction.class)
+            .withBasePath(temporalDirectory("partitioned_transactions").getAbsolutePath())
+            .partitionBy("year_month", tx -> 
+                tx.timestamp().format(java.time.format.DateTimeFormatter.ofPattern("yyyy/MM")))
+            .partitionBy("account_type", tx -> {
+                // Business logic: categorize accounts
+                if (tx.accountId().startsWith("P")) return "personal";
+                if (tx.accountId().startsWith("B")) return "business";
+                if (tx.accountId().startsWith("G")) return "government";
+                return "other";
+            })
+            .partitionBy("amount_range", tx -> {
+                // Business logic: categorize by amount
+                if (tx.amount() < 1000) return "small";
+                if (tx.amount() < 5000) return "medium";
+                if (tx.amount() < 10000) return "large";
+                return "xlarge";
+            })
+            .build();
+
+        try {
+            writer.write(transactions);
+            assertTrue(writer.getCreatedPartitions().size() > 0);
+        } finally {
+            writer.close();
+        }
+    }
+
+    /**
+     * Write data with multiple partition levels and error handling
+     *
+     * @throws IOException
+     */
+    @Test
+    void writePartitionedDataWithMultipleLevels() throws IOException {
+        record Event(String userId, String eventType, LocalDateTime timestamp, String region, String device) {
+        }
+
+        // Create test data
+        List<Event> events = List.of(
+            new Event("user1", "login", LocalDateTime.of(2024, 1, 15, 10, 0), "US", "mobile"),
+            new Event("user2", "purchase", LocalDateTime.of(2024, 1, 15, 11, 0), "EU", "desktop"),
+            new Event("user3", "logout", LocalDateTime.of(2024, 1, 16, 12, 0), "US", "mobile"),
+            new Event("user4", "view", LocalDateTime.of(2024, 1, 16, 13, 0), "AS", "tablet")
+        );
+
+        // Configure partitioned writer with multiple levels
+        PartitionedCarpetWriter<Event> writer = new PartitionedCarpetWriterBuilder<Event>(Event.class)
+            .withBasePath(temporalDirectory("partitioned_events").getAbsolutePath())
+            .partitionBy("date", event -> 
+                event.timestamp().toLocalDate().toString())
+            .partitionBy("region_device", event -> 
+                event.region() + "_" + event.device())
+            .partitionBy("event_category", event -> {
+                // Business logic: categorize events
+                return switch (event.eventType().toLowerCase()) {
+                    case "login", "logout" -> "authentication";
+                    case "purchase", "add_to_cart" -> "commerce";
+                    case "view", "search" -> "browsing";
+                    default -> "other";
+                };
+            })
+            .build();
+
+        try {
+            writer.write(events);
+            assertTrue(writer.getCreatedPartitions().size() > 0);
+        } finally {
+            writer.close();
+        }
+    }
+
+
+
     private File temporalFile(String name) {
         try {
             return Files.createTempFile(name, ".parquet").toFile();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private File temporalDirectory(String name) {
+        try {
+            return Files.createTempDirectory(name).toFile();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

@@ -55,6 +55,10 @@ import com.jerolba.carpet.CarpetParquetReader;
 import com.jerolba.carpet.CarpetReader;
 import com.jerolba.carpet.CarpetWriter;
 import com.jerolba.carpet.FieldMatchingStrategy;
+import com.jerolba.carpet.PartitionedCarpetWriter;
+import com.jerolba.carpet.PartitionedCarpetWriterBuilder;
+import com.jerolba.carpet.PartitionConfig;
+import com.jerolba.carpet.PartitionKey;
 import com.jerolba.carpet.TimeUnit;
 import com.jerolba.carpet.annotation.Alias;
 import com.jerolba.carpet.annotation.ParquetBson;
@@ -514,6 +518,250 @@ class ReadFiles {
             assertTrue(data.contains(new SomeRecord(2, "Bar", 3493292.23)));
         }
 
+    }
+
+    /**
+     * Read partitioned data using standard CarpetReader for individual partitions
+     */
+    @Nested
+    class PartitionedDataReading {
+
+        record Order(long id, String customerId, LocalDateTime orderDate, String category, double amount) {
+        }
+
+        /**
+         * Create partitioned data for testing
+         */
+        private File createPartitionedData() throws IOException {
+            // Create test data
+            List<Order> orders = List.of(
+                new Order(1, "customer1", LocalDateTime.of(2024, 1, 15, 10, 0), "electronics", 299.99),
+                new Order(2, "customer2", LocalDateTime.of(2024, 1, 16, 11, 0), "books", 45.50),
+                new Order(3, "customer3", LocalDateTime.of(2024, 2, 15, 12, 0), "electronics", 599.99),
+                new Order(4, "customer4", LocalDateTime.of(2023, 12, 20, 14, 0), "clothing", 89.99)
+            );
+
+            // Create partitioned data
+            File baseDir = temporalDirectory("partitioned_orders");
+            PartitionedCarpetWriter<Order> writer = new PartitionedCarpetWriterBuilder<Order>(Order.class)
+                .withBasePath(baseDir.getAbsolutePath())
+                .partitionBy("year", order -> String.valueOf(order.orderDate().getYear()))
+                .partitionBy("category", Order::category)
+                .build();
+
+            try {
+                writer.write(orders);
+            } finally {
+                writer.close();
+            }
+
+            return baseDir;
+        }
+
+        /**
+         * Read specific partition using standard CarpetReader
+         *
+         * @throws IOException
+         */
+        @Test
+        void readSpecificPartition() throws IOException {
+            File baseDir = createPartitionedData();
+
+            // Read specific partition: 2024 electronics
+            File partitionFile = new File(baseDir, "year=2024/category=electronics/data.parquet");
+            List<Order> electronics2024 = new CarpetReader<>(partitionFile, Order.class).toList();
+
+            assertEquals(2, electronics2024.size());
+            assertTrue(electronics2024.stream().allMatch(order -> 
+                order.orderDate().getYear() == 2024 && order.category().equals("electronics")));
+        }
+
+        /**
+         * Read multiple partitions and combine results
+         *
+         * @throws IOException
+         */
+        @Test
+        void readMultiplePartitions() throws IOException {
+            File baseDir = createPartitionedData();
+
+            // Read all 2024 partitions
+            List<Order> all2024Orders = new ArrayList<>();
+            
+            File year2024Dir = new File(baseDir, "year=2024");
+            if (year2024Dir.exists() && year2024Dir.isDirectory()) {
+                File[] categoryDirs = year2024Dir.listFiles();
+                if (categoryDirs != null) {
+                    for (File categoryDir : categoryDirs) {
+                        if (categoryDir.isDirectory()) {
+                            File dataFile = new File(categoryDir, "data.parquet");
+                            if (dataFile.exists()) {
+                                List<Order> partitionOrders = new CarpetReader<>(dataFile, Order.class).toList();
+                                all2024Orders.addAll(partitionOrders);
+                            }
+                        }
+                    }
+                }
+            }
+
+            assertEquals(3, all2024Orders.size());
+            assertTrue(all2024Orders.stream().allMatch(order -> order.orderDate().getYear() == 2024));
+        }
+
+        /**
+         * Stream data from multiple partitions
+         *
+         * @throws IOException
+         */
+        @Test
+        void streamFromMultiplePartitions() throws IOException {
+            File baseDir = createPartitionedData();
+
+            // Stream from all partitions
+            List<Order> allOrders = new ArrayList<>();
+            
+            File[] yearDirs = baseDir.listFiles();
+            if (yearDirs != null) {
+                for (File yearDir : yearDirs) {
+                    if (yearDir.isDirectory() && yearDir.getName().startsWith("year=")) {
+                        File[] categoryDirs = yearDir.listFiles();
+                        if (categoryDirs != null) {
+                            for (File categoryDir : categoryDirs) {
+                                if (categoryDir.isDirectory()) {
+                                    File dataFile = new File(categoryDir, "data.parquet");
+                                    if (dataFile.exists()) {
+                                        List<Order> partitionOrders = new CarpetReader<>(dataFile, Order.class).toList();
+                                        allOrders.addAll(partitionOrders);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            assertEquals(4, allOrders.size());
+        }
+
+        /**
+         * Filter data by partition values during reading
+         *
+         * @throws IOException
+         */
+        @Test
+        void filterByPartitionValues() throws IOException {
+            File baseDir = createPartitionedData();
+
+            // Read only electronics orders from any year
+            List<Order> electronicsOrders = new ArrayList<>();
+            
+            File[] yearDirs = baseDir.listFiles();
+            if (yearDirs != null) {
+                for (File yearDir : yearDirs) {
+                    if (yearDir.isDirectory() && yearDir.getName().startsWith("year=")) {
+                        File electronicsDir = new File(yearDir, "category=electronics");
+                        if (electronicsDir.exists() && electronicsDir.isDirectory()) {
+                            File dataFile = new File(electronicsDir, "data.parquet");
+                            if (dataFile.exists()) {
+                                List<Order> partitionOrders = new CarpetReader<>(dataFile, Order.class).toList();
+                                electronicsOrders.addAll(partitionOrders);
+                            }
+                        }
+                    }
+                }
+            }
+
+            assertEquals(2, electronicsOrders.size());
+            assertTrue(electronicsOrders.stream().allMatch(order -> order.category().equals("electronics")));
+        }
+
+        /**
+         * Read partitioned data with business logic filtering
+         *
+         * @throws IOException
+         */
+        @Test
+        void readWithBusinessLogicFiltering() throws IOException {
+            File baseDir = createPartitionedData();
+
+            // Read high-value orders (>$100) from 2024
+            List<Order> highValue2024Orders = new ArrayList<>();
+            
+            File year2024Dir = new File(baseDir, "year=2024");
+            if (year2024Dir.exists() && year2024Dir.isDirectory()) {
+                File[] categoryDirs = year2024Dir.listFiles();
+                if (categoryDirs != null) {
+                    for (File categoryDir : categoryDirs) {
+                        if (categoryDir.isDirectory()) {
+                            File dataFile = new File(categoryDir, "data.parquet");
+                            if (dataFile.exists()) {
+                                List<Order> partitionOrders = new CarpetReader<>(dataFile, Order.class).toList();
+                                // Apply business logic filter
+                                List<Order> highValueOrders = partitionOrders.stream()
+                                    .filter(order -> order.amount() > 100.0)
+                                    .toList();
+                                highValue2024Orders.addAll(highValueOrders);
+                            }
+                        }
+                    }
+                }
+            }
+
+            assertEquals(2, highValue2024Orders.size());
+            assertTrue(highValue2024Orders.stream().allMatch(order -> 
+                order.orderDate().getYear() == 2024 && order.amount() > 100.0));
+        }
+
+        /**
+         * Demonstrate reading partitioned data with error handling
+         *
+         * @throws IOException
+         */
+        @Test
+        void readPartitionedDataWithErrorHandling() throws IOException {
+            File baseDir = createPartitionedData();
+
+            // Read all partitions with error handling
+            List<Order> allOrders = new ArrayList<>();
+            List<String> failedPartitions = new ArrayList<>();
+            
+            File[] yearDirs = baseDir.listFiles();
+            if (yearDirs != null) {
+                for (File yearDir : yearDirs) {
+                    if (yearDir.isDirectory() && yearDir.getName().startsWith("year=")) {
+                        File[] categoryDirs = yearDir.listFiles();
+                        if (categoryDirs != null) {
+                            for (File categoryDir : categoryDirs) {
+                                if (categoryDir.isDirectory()) {
+                                    File dataFile = new File(categoryDir, "data.parquet");
+                                    if (dataFile.exists()) {
+                                        try {
+                                            List<Order> partitionOrders = new CarpetReader<>(dataFile, Order.class).toList();
+                                            allOrders.addAll(partitionOrders);
+                                        } catch (Exception e) {
+                                            // Log failed partition
+                                            failedPartitions.add(categoryDir.getAbsolutePath());
+                                            System.err.println("Failed to read partition: " + categoryDir.getAbsolutePath() + " - " + e.getMessage());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            assertEquals(4, allOrders.size());
+            assertEquals(0, failedPartitions.size()); // Should be 0 for valid data
+        }
+
+        private File temporalDirectory(String name) {
+            try {
+                return Files.createTempDirectory(name).toFile();
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
     }
 
     private File temporalFile(String name) {
