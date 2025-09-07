@@ -522,8 +522,6 @@ class CarpetWriterTest {
             var writerTest = new ParquetWriterTest<>(GeometryAsBinaryObject.class);
             writerTest.write(rec);
 
-            System.out.println(writerTest.getSchema());
-
             try (var avroReader = writerTest.getAvroGenericRecordReader()) {
                 ByteBuffer asByteBuffer = (ByteBuffer) avroReader.read().get("value");
                 assertEquals(rec.value, Binary.fromReusedByteBuffer(asByteBuffer));
