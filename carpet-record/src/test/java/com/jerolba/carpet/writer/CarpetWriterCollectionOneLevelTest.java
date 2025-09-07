@@ -26,17 +26,25 @@ import java.util.Map;
 
 import org.apache.parquet.io.api.Binary;
 import org.junit.jupiter.api.Test;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.io.WKBWriter;
 
 import com.jerolba.carpet.ParquetWriterTest;
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.annotation.ParquetBson;
 import com.jerolba.carpet.annotation.ParquetEnum;
+import com.jerolba.carpet.annotation.ParquetGeography;
+import com.jerolba.carpet.annotation.ParquetGeometry;
 import com.jerolba.carpet.annotation.ParquetJson;
 import com.jerolba.carpet.annotation.PrecisionScale;
 import com.jerolba.carpet.writer.CarpetWriterCollectionThreeLevelTest.Category;
 
 //TODO: how can we verify that is correct with out using carpet reader?
 class CarpetWriterCollectionOneLevelTest {
+
+    private final GeometryFactory geomFactory = new GeometryFactory();
+    private final WKBWriter wkbWriter = new WKBWriter();
 
     @Test
     void simpleTypeCollection() throws IOException {
@@ -192,6 +200,46 @@ class CarpetWriterCollectionOneLevelTest {
         byte[] mockBson2 = new byte[] { 3, 4 };
         var rec = new SimpleTypeCollection("foo",
                 List.of(Binary.fromConstantByteArray(mockBson1), Binary.fromConstantByteArray(mockBson2)));
+        var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class).withLevel(ONE);
+        writerTest.write(rec);
+
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec, carpetReader.read());
+        }
+    }
+
+    @Test
+    void simpleGeometryCollection() throws IOException {
+
+        record SimpleTypeCollection(String name, List<@ParquetGeometry Binary> values) {
+        }
+
+        Binary point1 = Binary
+                .fromConstantByteArray(wkbWriter.write(geomFactory.createPoint(new Coordinate(1.0, 1.0))));
+        Binary point2 = Binary
+                .fromConstantByteArray(wkbWriter.write(geomFactory.createPoint(new Coordinate(2.0, 2.0))));
+
+        var rec = new SimpleTypeCollection("foo", List.of(point1, point2));
+        var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class).withLevel(ONE);
+        writerTest.write(rec);
+
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec, carpetReader.read());
+        }
+    }
+
+    @Test
+    void simpleGeographyCollection() throws IOException {
+
+        record SimpleTypeCollection(String name, List<@ParquetGeography Binary> values) {
+        }
+
+        Binary point1 = Binary
+                .fromConstantByteArray(wkbWriter.write(geomFactory.createPoint(new Coordinate(1.0, 1.0))));
+        Binary point2 = Binary
+                .fromConstantByteArray(wkbWriter.write(geomFactory.createPoint(new Coordinate(2.0, 2.0))));
+
+        var rec = new SimpleTypeCollection("foo", List.of(point1, point2));
         var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class).withLevel(ONE);
         writerTest.write(rec);
 

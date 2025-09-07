@@ -32,15 +32,26 @@ import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.util.Utf8;
 import org.apache.parquet.io.api.Binary;
 import org.junit.jupiter.api.Test;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.io.WKBWriter;
 
 import com.jerolba.carpet.ParquetWriterTest;
 import com.jerolba.carpet.annotation.ParquetBson;
 import com.jerolba.carpet.annotation.ParquetEnum;
+import com.jerolba.carpet.annotation.ParquetGeography;
+import com.jerolba.carpet.annotation.ParquetGeometry;
 import com.jerolba.carpet.annotation.ParquetJson;
 import com.jerolba.carpet.annotation.PrecisionScale;
-import com.jerolba.carpet.writer.CarpetWriterCollectionThreeLevelTest.Category;
 
 class CarpetWriterCollectionTwoLevelTest {
+
+    private final GeometryFactory geomFactory = new GeometryFactory();
+    private final WKBWriter wkbWriter = new WKBWriter();
+
+    enum Category {
+        FOO, BAR
+    }
 
     @Test
     void simpleTypeCollection() throws IOException {
@@ -267,6 +278,82 @@ class CarpetWriterCollectionTwoLevelTest {
             assertEquals(mockBson2.length, fromAvro2.length);
             for (int i = 0; i < mockBson2.length; i++) {
                 assertEquals(mockBson2[i], fromAvro2[i]);
+            }
+        }
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec, carpetReader.read());
+        }
+    }
+
+    @Test
+    void simpleGeometryCollection() throws IOException {
+
+        record SimpleTypeCollection(String name, List<@ParquetGeometry Binary> values) {
+        }
+
+        Binary point1 = Binary
+                .fromConstantByteArray(wkbWriter.write(geomFactory.createPoint(new Coordinate(1.0, 1.0))));
+        Binary point2 = Binary
+                .fromConstantByteArray(wkbWriter.write(geomFactory.createPoint(new Coordinate(2.0, 2.0))));
+
+        var rec = new SimpleTypeCollection("foo", List.of(point1, point2));
+        var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class).withLevel(TWO);
+        writerTest.write(rec);
+
+        try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+            GenericRecord avroRecord = avroReader.read();
+            assertEquals(rec.name(), avroRecord.get("name").toString());
+
+            List<ByteBuffer> ids = (List<ByteBuffer>) avroRecord.get("values");
+            assertEquals(2, ids.size());
+            // Avro does not support Geometry
+            byte[] fromAvro1 = ids.get(0).array();
+            assertEquals(point1.length(), fromAvro1.length);
+            for (int i = 0; i < point1.length(); i++) {
+                assertEquals(point1.getBytes()[i], fromAvro1[i]);
+            }
+            byte[] fromAvro2 = ids.get(1).array();
+            assertEquals(point2.length(), fromAvro2.length);
+            for (int i = 0; i < point2.length(); i++) {
+                assertEquals(point2.getBytes()[i], fromAvro2[i]);
+            }
+        }
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec, carpetReader.read());
+        }
+    }
+
+    @Test
+    void simpleGeographyCollection() throws IOException {
+
+        record SimpleTypeCollection(String name, List<@ParquetGeography Binary> values) {
+        }
+
+        Binary point1 = Binary
+                .fromConstantByteArray(wkbWriter.write(geomFactory.createPoint(new Coordinate(1.0, 1.0))));
+        Binary point2 = Binary
+                .fromConstantByteArray(wkbWriter.write(geomFactory.createPoint(new Coordinate(2.0, 2.0))));
+
+        var rec = new SimpleTypeCollection("foo", List.of(point1, point2));
+        var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class).withLevel(TWO);
+        writerTest.write(rec);
+
+        try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+            GenericRecord avroRecord = avroReader.read();
+            assertEquals(rec.name(), avroRecord.get("name").toString());
+
+            List<ByteBuffer> ids = (List<ByteBuffer>) avroRecord.get("values");
+            assertEquals(2, ids.size());
+            // Avro does not support Geography
+            byte[] fromAvro1 = ids.get(0).array();
+            assertEquals(point1.length(), fromAvro1.length);
+            for (int i = 0; i < point1.length(); i++) {
+                assertEquals(point1.getBytes()[i], fromAvro1[i]);
+            }
+            byte[] fromAvro2 = ids.get(1).array();
+            assertEquals(point2.length(), fromAvro2.length);
+            for (int i = 0; i < point2.length(); i++) {
+                assertEquals(point2.getBytes()[i], fromAvro2[i]);
             }
         }
         try (var carpetReader = writerTest.getCarpetReader()) {

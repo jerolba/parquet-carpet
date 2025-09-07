@@ -19,6 +19,7 @@ import static java.util.Collections.emptyMap;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -34,13 +35,22 @@ import org.apache.avro.util.Utf8;
 import org.apache.parquet.io.InvalidRecordException;
 import org.apache.parquet.io.api.Binary;
 import org.junit.jupiter.api.Test;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.io.WKBWriter;
 
 import com.jerolba.carpet.ParquetWriterTest;
+import com.jerolba.carpet.annotation.ParquetBson;
 import com.jerolba.carpet.annotation.ParquetEnum;
+import com.jerolba.carpet.annotation.ParquetGeography;
+import com.jerolba.carpet.annotation.ParquetGeometry;
 import com.jerolba.carpet.annotation.ParquetJson;
 import com.jerolba.carpet.annotation.PrecisionScale;
 
 class CarpetWriterMapTest {
+
+    private final GeometryFactory geomFactory = new GeometryFactory();
+    private final WKBWriter wkbWriter = new WKBWriter();
 
     enum Category {
         FOO, BAR
@@ -299,6 +309,137 @@ class CarpetWriterMapTest {
         try (var carpetReader = writerTest.getCarpetReader()) {
             assertEquals(rec1, carpetReader.read());
             assertEquals(rec2, carpetReader.read());
+        }
+    }
+
+    @Test
+    void mapBsonValue() throws IOException {
+
+        record MapValues(String name, Map<String, @ParquetBson Binary> values) {
+        }
+
+        byte[] mockBson11 = new byte[] { 1, 2 };
+        byte[] mockBson12 = new byte[] { 3, 4 };
+        byte[] mockBson21 = new byte[] { 5, 6 };
+        byte[] mockBson22 = new byte[] { 7, 8 };
+
+        var rec1 = new MapValues("foo", Map.of("FOO", Binary.fromConstantByteArray(mockBson11),
+                "BAR", Binary.fromConstantByteArray(mockBson12)));
+        var rec2 = new MapValues("bar", Map.of("FOO", Binary.fromConstantByteArray(mockBson21),
+                "BAR", Binary.fromConstantByteArray(mockBson22)));
+        var writerTest = new ParquetWriterTest<>(MapValues.class);
+        writerTest.write(rec1, rec2);
+
+        try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+            GenericRecord avroRecord = avroReader.read();
+            assertEquals(rec1.name(), avroRecord.get("name").toString());
+            Map<Object, Object> map1 = (Map<Object, Object>) byteBufferMap(avroRecord.get("values"));
+            assertTrue(map1.containsKey("FOO"));
+            assertBinaryEquals(mockBson11, ((ByteBuffer) map1.get("FOO")).array());
+            assertTrue(map1.containsKey("BAR"));
+            assertBinaryEquals(mockBson12, ((ByteBuffer) map1.get("BAR")).array());
+
+            avroRecord = avroReader.read();
+            assertEquals(rec2.name(), avroRecord.get("name").toString());
+            Map<Object, Object> map2 = (Map<Object, Object>) byteBufferMap(avroRecord.get("values"));
+            assertTrue(map2.containsKey("FOO"));
+            assertBinaryEquals(mockBson21, ((ByteBuffer) map2.get("FOO")).array());
+            assertTrue(map2.containsKey("BAR"));
+            assertBinaryEquals(mockBson22, ((ByteBuffer) map2.get("BAR")).array());
+        }
+
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec1, carpetReader.read());
+            assertEquals(rec2, carpetReader.read());
+        }
+    }
+
+    @Test
+    void mapGeometryValue() throws IOException {
+
+        record MapValues(String name, Map<String, @ParquetGeometry Binary> values) {
+        }
+        byte[] geo11 = wkbWriter.write(geomFactory.createPoint(new Coordinate(1.0, 1.0)));
+        byte[] geo12 = wkbWriter.write(geomFactory.createPoint(new Coordinate(1.0, 2.0)));
+        byte[] geo21 = wkbWriter.write(geomFactory.createPoint(new Coordinate(2.0, 1.0)));
+        byte[] geo22 = wkbWriter.write(geomFactory.createPoint(new Coordinate(2.0, 2.0)));
+
+        var rec1 = new MapValues("foo", Map.of("FOO", Binary.fromConstantByteArray(geo11),
+                "BAR", Binary.fromConstantByteArray(geo12)));
+        var rec2 = new MapValues("bar", Map.of("FOO", Binary.fromConstantByteArray(geo21),
+                "BAR", Binary.fromConstantByteArray(geo22)));
+        var writerTest = new ParquetWriterTest<>(MapValues.class);
+        writerTest.write(rec1, rec2);
+
+        try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+            GenericRecord avroRecord = avroReader.read();
+            assertEquals(rec1.name(), avroRecord.get("name").toString());
+            Map<Object, Object> map1 = (Map<Object, Object>) byteBufferMap(avroRecord.get("values"));
+            assertTrue(map1.containsKey("FOO"));
+            assertBinaryEquals(geo11, ((ByteBuffer) map1.get("FOO")).array());
+            assertTrue(map1.containsKey("BAR"));
+            assertBinaryEquals(geo12, ((ByteBuffer) map1.get("BAR")).array());
+
+            avroRecord = avroReader.read();
+            assertEquals(rec2.name(), avroRecord.get("name").toString());
+            Map<Object, Object> map2 = (Map<Object, Object>) byteBufferMap(avroRecord.get("values"));
+            assertTrue(map2.containsKey("FOO"));
+            assertBinaryEquals(geo21, ((ByteBuffer) map2.get("FOO")).array());
+            assertTrue(map2.containsKey("BAR"));
+            assertBinaryEquals(geo22, ((ByteBuffer) map2.get("BAR")).array());
+        }
+
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec1, carpetReader.read());
+            assertEquals(rec2, carpetReader.read());
+        }
+    }
+
+    @Test
+    void mapGeographyValue() throws IOException {
+
+        record MapValues(String name, Map<String, @ParquetGeography Binary> values) {
+        }
+        byte[] geo11 = wkbWriter.write(geomFactory.createPoint(new Coordinate(1.0, 1.0)));
+        byte[] geo12 = wkbWriter.write(geomFactory.createPoint(new Coordinate(1.0, 2.0)));
+        byte[] geo21 = wkbWriter.write(geomFactory.createPoint(new Coordinate(2.0, 1.0)));
+        byte[] geo22 = wkbWriter.write(geomFactory.createPoint(new Coordinate(2.0, 2.0)));
+
+        var rec1 = new MapValues("foo", Map.of("FOO", Binary.fromConstantByteArray(geo11),
+                "BAR", Binary.fromConstantByteArray(geo12)));
+        var rec2 = new MapValues("bar", Map.of("FOO", Binary.fromConstantByteArray(geo21),
+                "BAR", Binary.fromConstantByteArray(geo22)));
+        var writerTest = new ParquetWriterTest<>(MapValues.class);
+        writerTest.write(rec1, rec2);
+
+        try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+            GenericRecord avroRecord = avroReader.read();
+            assertEquals(rec1.name(), avroRecord.get("name").toString());
+            Map<Object, Object> map1 = (Map<Object, Object>) byteBufferMap(avroRecord.get("values"));
+            assertTrue(map1.containsKey("FOO"));
+            assertBinaryEquals(geo11, ((ByteBuffer) map1.get("FOO")).array());
+            assertTrue(map1.containsKey("BAR"));
+            assertBinaryEquals(geo12, ((ByteBuffer) map1.get("BAR")).array());
+
+            avroRecord = avroReader.read();
+            assertEquals(rec2.name(), avroRecord.get("name").toString());
+            Map<Object, Object> map2 = (Map<Object, Object>) byteBufferMap(avroRecord.get("values"));
+            assertTrue(map2.containsKey("FOO"));
+            assertBinaryEquals(geo21, ((ByteBuffer) map2.get("FOO")).array());
+            assertTrue(map2.containsKey("BAR"));
+            assertBinaryEquals(geo22, ((ByteBuffer) map2.get("BAR")).array());
+        }
+
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec1, carpetReader.read());
+            assertEquals(rec2, carpetReader.read());
+        }
+    }
+
+    private static void assertBinaryEquals(byte[] expected, byte[] actualBytes) {
+        assertEquals(expected.length, actualBytes.length);
+        for (int i = 0; i < expected.length; i++) {
+            assertEquals(expected[i], actualBytes[i]);
         }
     }
 
@@ -758,6 +899,22 @@ class CarpetWriterMapTest {
             for (var e : map.entrySet()) {
                 Object key = e.getKey() instanceof Utf8 u ? u.toString() : e.getKey();
                 Object value = e.getValue() instanceof ByteBuffer u ? new String(u.array(), "UTF-8") : e.getValue();
+                if (value instanceof Map) {
+                    value = unByteBufferMap(value);
+                }
+                res.put(key, value);
+            }
+            return res;
+        }
+        return obj;
+    }
+
+    private Object byteBufferMap(Object obj) throws IOException {
+        if (obj instanceof Map<?, ?> map) {
+            Map<Object, Object> res = new HashMap<>();
+            for (var e : map.entrySet()) {
+                Object key = e.getKey() instanceof Utf8 u ? u.toString() : e.getKey();
+                Object value = e.getValue();
                 if (value instanceof Map) {
                     value = unByteBufferMap(value);
                 }
