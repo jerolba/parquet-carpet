@@ -28,6 +28,8 @@ import static com.jerolba.carpet.impl.write.SchemaBuilder.buildLocalTimeType;
 import static com.jerolba.carpet.impl.write.SchemaBuilder.buildUuidType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.bsonType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.enumType;
+import static org.apache.parquet.schema.LogicalTypeAnnotation.geographyType;
+import static org.apache.parquet.schema.LogicalTypeAnnotation.geometryType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.intType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.jsonType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.stringType;
@@ -57,6 +59,8 @@ import org.apache.parquet.schema.Types.PrimitiveBuilder;
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.annotation.ParquetBson;
 import com.jerolba.carpet.annotation.ParquetEnum;
+import com.jerolba.carpet.annotation.ParquetGeography;
+import com.jerolba.carpet.annotation.ParquetGeometry;
 import com.jerolba.carpet.annotation.ParquetJson;
 import com.jerolba.carpet.annotation.ParquetString;
 import com.jerolba.carpet.annotation.PrecisionScale;
@@ -264,6 +268,13 @@ class JavaRecord2Schema {
             binary = binary.as(jsonType());
         } else if (javaType.isAnnotatedWith(ParquetBson.class)) {
             binary = binary.as(bsonType());
+        } else if (javaType.isAnnotatedWith(ParquetGeometry.class)) {
+            ParquetGeometry geometry = javaType.getAnnotation(ParquetGeometry.class);
+            String csr = geometry.value();
+            binary = binary.as(geometryType(csr == null || csr.isEmpty() ? null : csr));
+        } else if (javaType.isAnnotatedWith(ParquetGeography.class)) {
+            ParquetGeography geography = javaType.getAnnotation(ParquetGeography.class);
+            binary = binary.as(geographyType(geography.crs(), geography.edgeAlgorithm().getAlgorithm()));
         }
         return binary.named(name);
     }
