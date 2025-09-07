@@ -510,7 +510,7 @@ class CarpetWriterTest {
         }
 
         @Test
-        void goemetryAsBinaryObject() throws IOException {
+        void geometryAsBinaryObject() throws IOException {
 
             record GeometryAsBinaryObject(@ParquetGeometry Binary value) {
             }
@@ -535,7 +535,7 @@ class CarpetWriterTest {
         }
 
         @Test
-        void goemetryWithCrsAsBinaryObject() throws IOException {
+        void geometryWithCrsAsBinaryObject() throws IOException {
 
             record GeometryAsBinaryObject(@ParquetGeometry("OGC:CRS84") Binary value) {
             }
