@@ -26,6 +26,8 @@ import java.util.function.Consumer;
 
 import org.apache.parquet.io.api.Converter;
 import org.apache.parquet.schema.LogicalTypeAnnotation.DecimalLogicalTypeAnnotation;
+import org.apache.parquet.schema.LogicalTypeAnnotation.GeographyLogicalTypeAnnotation;
+import org.apache.parquet.schema.LogicalTypeAnnotation.GeometryLogicalTypeAnnotation;
 import org.apache.parquet.schema.LogicalTypeAnnotation.IntLogicalTypeAnnotation;
 import org.apache.parquet.schema.LogicalTypeAnnotation.TimeLogicalTypeAnnotation;
 import org.apache.parquet.schema.LogicalTypeAnnotation.TimestampLogicalTypeAnnotation;
@@ -36,6 +38,7 @@ import com.jerolba.carpet.impl.JavaType;
 import com.jerolba.carpet.impl.read.converter.BinaryConverter;
 import com.jerolba.carpet.impl.read.converter.DecimalConverter;
 import com.jerolba.carpet.impl.read.converter.EnumConverter;
+import com.jerolba.carpet.impl.read.converter.GeometryConverter;
 import com.jerolba.carpet.impl.read.converter.InstantConverter;
 import com.jerolba.carpet.impl.read.converter.LocalDateConverter;
 import com.jerolba.carpet.impl.read.converter.LocalDateTimeConverter;
@@ -86,8 +89,16 @@ class LogicalTypeConverters {
             return converterForJsonType(type, consumer);
         } else if (logicalTypeAnnotation.equals(bsonType())) {
             return converterForBsonType(type, consumer);
+        } else if (logicalTypeAnnotation instanceof GeometryLogicalTypeAnnotation && type.isGeometry()) {
+            return converterForGeometry(consumer);
+        } else if (logicalTypeAnnotation instanceof GeographyLogicalTypeAnnotation && type.isGeometry()) {
+            return converterForGeometry(consumer);
         }
         return null;
+    }
+
+    private static Converter converterForGeometry(Consumer<Object> consumer) {
+        return new GeometryConverter(consumer);
     }
 
     private static Converter converterForStringOrEnumType(JavaType type, Consumer<Object> consumer) {

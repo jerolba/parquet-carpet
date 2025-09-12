@@ -33,7 +33,9 @@ import org.apache.avro.util.Utf8;
 import org.apache.parquet.io.api.Binary;
 import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.io.WKBWriter;
 
 import com.jerolba.carpet.ParquetWriterTest;
@@ -324,6 +326,44 @@ class CarpetWriterCollectionTwoLevelTest {
     }
 
     @Test
+    void simpleGeometryJtsCollection() throws IOException {
+
+        record SimpleTypeCollection(String name, List<@ParquetGeometry Geometry> values) {
+        }
+
+        Point point1 = geomFactory.createPoint(new Coordinate(1.0, 1.0));
+        Point point2 = geomFactory.createPoint(new Coordinate(2.0, 2.0));
+
+        var rec = new SimpleTypeCollection("foo", List.of(point1, point2));
+        var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class).withLevel(TWO);
+        writerTest.write(rec);
+
+        try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+            GenericRecord avroRecord = avroReader.read();
+            assertEquals(rec.name(), avroRecord.get("name").toString());
+
+            List<ByteBuffer> ids = (List<ByteBuffer>) avroRecord.get("values");
+            assertEquals(2, ids.size());
+            // Avro does not support Geometry
+            byte[] fromAvro1 = ids.get(0).array();
+            byte[] wkb1 = wkbWriter.write(point1);
+            assertEquals(wkb1.length, fromAvro1.length);
+            for (int i = 0; i < wkb1.length; i++) {
+                assertEquals(wkb1[i], fromAvro1[i]);
+            }
+            byte[] fromAvro2 = ids.get(1).array();
+            byte[] wkb2 = wkbWriter.write(point2);
+            assertEquals(wkb2.length, fromAvro2.length);
+            for (int i = 0; i < wkb2.length; i++) {
+                assertEquals(wkb2[i], fromAvro2[i]);
+            }
+        }
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec, carpetReader.read());
+        }
+    }
+
+    @Test
     void simpleGeographyCollection() throws IOException {
 
         record SimpleTypeCollection(String name, List<@ParquetGeography Binary> values) {
@@ -358,6 +398,44 @@ class CarpetWriterCollectionTwoLevelTest {
         }
         try (var carpetReader = writerTest.getCarpetReader()) {
             assertEquals(rec, carpetReader.read());
+        }
+    }
+
+    @Test
+    void simpleGeographyJtsCollection() throws IOException {
+
+        record SimpleTypeCollection(String name, List<@ParquetGeography Geometry> values) {
+        }
+
+        Point point1 = geomFactory.createPoint(new Coordinate(1.0, 1.0));
+        Point point2 = geomFactory.createPoint(new Coordinate(2.0, 2.0));
+
+        var rec = new SimpleTypeCollection("foo", List.of(point1, point2));
+        var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class).withLevel(TWO);
+        writerTest.write(rec);
+
+        try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+            GenericRecord avroRecord = avroReader.read();
+            assertEquals(rec.name(), avroRecord.get("name").toString());
+
+            List<ByteBuffer> ids = (List<ByteBuffer>) avroRecord.get("values");
+            assertEquals(2, ids.size());
+            // Avro does not support Geometry
+            byte[] fromAvro1 = ids.get(0).array();
+            byte[] wkb1 = wkbWriter.write(point1);
+            assertEquals(wkb1.length, fromAvro1.length);
+            for (int i = 0; i < wkb1.length; i++) {
+                assertEquals(wkb1[i], fromAvro1[i]);
+            }
+            byte[] fromAvro2 = ids.get(1).array();
+            byte[] wkb2 = wkbWriter.write(point2);
+            assertEquals(wkb2.length, fromAvro2.length);
+            for (int i = 0; i < wkb2.length; i++) {
+                assertEquals(wkb2[i], fromAvro2[i]);
+            }
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec, carpetReader.read());
+            }
         }
     }
 

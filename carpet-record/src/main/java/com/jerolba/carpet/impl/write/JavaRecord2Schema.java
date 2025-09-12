@@ -242,6 +242,8 @@ class JavaRecord2Schema {
             return buildLocalDateTimeType(repetition, name, carpetConfiguration.defaultTimeUnit());
         } else if (javaType.isInstant()) {
             return buildInstantType(repetition, name, carpetConfiguration.defaultTimeUnit());
+        } else if (javaType.isGeometry()) {
+            return buildJtsGeometryType(javaType, repetition, name);
         } else if (javaType.isRecord()) {
             List<Type> childFields = buildCompositeChild(javaType.getJavaType(), visited);
             return new GroupType(repetition, name, childFields);
@@ -284,6 +286,24 @@ class JavaRecord2Schema {
             return primitive(BINARY, repetition).as(stringType()).named(name);
         }
         return primitive(BINARY, repetition).as(enumType()).named(name);
+    }
+
+    private Type buildJtsGeometryType(JavaType javaType, Repetition repetition, String name) {
+        ParquetGeometry geometry = javaType.getAnnotation(ParquetGeometry.class);
+        if (geometry != null) {
+            String csr = geometry.value();
+            return primitive(BINARY, repetition)
+                    .as(geometryType(csr == null || csr.isEmpty() ? null : csr))
+                    .named(name);
+        }
+        ParquetGeography geography = javaType.getAnnotation(ParquetGeography.class);
+        if (geography != null) {
+            return primitive(BINARY, repetition)
+                    .as(geographyType(geography.crs(), geography.algorithm().getAlgorithm()))
+                    .named(name);
+        }
+        throw new RecordTypeConversionException(
+                "JTS Geometry field must be annotated with @ParquetGeometry or @ParquetGeography");
     }
 
     private void validateNotVisitedRecord(Class<?> recordClass, Set<Class<?>> visited) {
