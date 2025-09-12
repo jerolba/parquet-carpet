@@ -274,7 +274,7 @@ class JavaRecord2Schema {
             binary = binary.as(geometryType(csr == null || csr.isEmpty() ? null : csr));
         } else if (javaType.isAnnotatedWith(ParquetGeography.class)) {
             ParquetGeography geography = javaType.getAnnotation(ParquetGeography.class);
-            binary = binary.as(geographyType(geography.crs(), geography.edgeAlgorithm().getAlgorithm()));
+            binary = binary.as(geographyType(geography.crs(), geography.algorithm().getAlgorithm()));
         }
         return binary.named(name);
     }

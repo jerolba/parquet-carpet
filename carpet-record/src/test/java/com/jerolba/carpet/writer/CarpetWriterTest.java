@@ -582,7 +582,7 @@ class CarpetWriterTest {
         void geographyWithCrsAsBinaryObject() throws IOException {
 
             record GeographyAsBinaryObject(
-                    @ParquetGeography(crs = "OGC:CRS84", edgeAlgorithm = EdgeAlgorithm.VINCENTY) Binary value) {
+                    @ParquetGeography(crs = "OGC:CRS84", algorithm = EdgeAlgorithm.VINCENTY) Binary value) {
             }
 
             Binary point = Binary

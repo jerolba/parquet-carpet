@@ -372,7 +372,7 @@ class JavaRecord2SchemaTest {
 
         @Test
         void geographyFieldFromBinaryWithAlgorithmConfiguresDefaultCrs() {
-            record GeographyRecord(long id, @ParquetGeography(edgeAlgorithm = EdgeAlgorithm.ANDOYER) Binary value) {
+            record GeographyRecord(long id, @ParquetGeography(algorithm = EdgeAlgorithm.ANDOYER) Binary value) {
             }
             MessageType schema = defaultConfigSchema.createSchema(GeographyRecord.class);
             String expected = """

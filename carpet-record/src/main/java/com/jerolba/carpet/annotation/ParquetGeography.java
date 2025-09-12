@@ -38,8 +38,8 @@ public @interface ParquetGeography {
 
         private final EdgeInterpolationAlgorithm algorithm;
 
-        private EdgeAlgorithm(EdgeInterpolationAlgorithm value) {
-            this.algorithm = value;
+        private EdgeAlgorithm(EdgeInterpolationAlgorithm algorithm) {
+            this.algorithm = algorithm;
         }
 
         public EdgeInterpolationAlgorithm getAlgorithm() {
@@ -50,6 +50,6 @@ public @interface ParquetGeography {
 
     String crs() default "";
 
-    EdgeAlgorithm edgeAlgorithm() default EdgeAlgorithm.NULL;
+    EdgeAlgorithm algorithm() default EdgeAlgorithm.NULL;
 
 }
