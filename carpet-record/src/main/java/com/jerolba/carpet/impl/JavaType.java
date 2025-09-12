@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.Map;
 
 import org.apache.parquet.io.api.Binary;
+import org.locationtech.jts.geom.Geometry;
 
 public class JavaType {
 
@@ -116,6 +117,10 @@ public class JavaType {
 
     public boolean isInstant() {
         return typeName.equals("java.time.Instant");
+    }
+
+    public boolean isGeometry() {
+        return typeName.equals("org.locationtech.jts.geom.Geometry") || Geometry.class.isAssignableFrom(type);
     }
 
     public boolean isRecord() {

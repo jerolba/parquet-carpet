@@ -27,7 +27,9 @@ import java.util.Map;
 import org.apache.parquet.io.api.Binary;
 import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.io.WKBWriter;
 
 import com.jerolba.carpet.ParquetWriterTest;
@@ -229,6 +231,24 @@ class CarpetWriterCollectionOneLevelTest {
     }
 
     @Test
+    void simpleGeometryJtsCollection() throws IOException {
+
+        record SimpleTypeCollection(String name, List<@ParquetGeometry Geometry> values) {
+        }
+
+        Point point1 = geomFactory.createPoint(new Coordinate(1.0, 1.0));
+        Point point2 = geomFactory.createPoint(new Coordinate(2.0, 2.0));
+
+        var rec = new SimpleTypeCollection("foo", List.of(point1, point2));
+        var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class).withLevel(ONE);
+        writerTest.write(rec);
+
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec, carpetReader.read());
+        }
+    }
+
+    @Test
     void simpleGeographyCollection() throws IOException {
 
         record SimpleTypeCollection(String name, List<@ParquetGeography Binary> values) {
@@ -238,6 +258,24 @@ class CarpetWriterCollectionOneLevelTest {
                 .fromConstantByteArray(wkbWriter.write(geomFactory.createPoint(new Coordinate(1.0, 1.0))));
         Binary point2 = Binary
                 .fromConstantByteArray(wkbWriter.write(geomFactory.createPoint(new Coordinate(2.0, 2.0))));
+
+        var rec = new SimpleTypeCollection("foo", List.of(point1, point2));
+        var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class).withLevel(ONE);
+        writerTest.write(rec);
+
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec, carpetReader.read());
+        }
+    }
+
+    @Test
+    void simpleGeographyJtsCollection() throws IOException {
+
+        record SimpleTypeCollection(String name, List<@ParquetGeography Geometry> values) {
+        }
+
+        Point point1 = geomFactory.createPoint(new Coordinate(1.0, 1.0));
+        Point point2 = geomFactory.createPoint(new Coordinate(2.0, 2.0));
 
         var rec = new SimpleTypeCollection("foo", List.of(point1, point2));
         var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class).withLevel(ONE);

@@ -37,6 +37,8 @@ import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.schema.MessageType;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.Polygon;
 
 import com.jerolba.carpet.AnnotatedLevels;
 import com.jerolba.carpet.ColumnNamingStrategy;
@@ -265,125 +267,278 @@ class JavaRecord2SchemaTest {
     @Nested
     class GeometryType {
 
-        @Test
-        void geometryFieldFromBinaryWithoutCsr() {
-            record GeometryRecord(long id, @ParquetGeometry Binary value) {
-            }
-            MessageType schema = defaultConfigSchema.createSchema(GeometryRecord.class);
-            String expected = """
-                    message GeometryRecord {
-                      required int64 id;
-                      optional binary value (GEOMETRY);
-                    }
-                    """;
-            assertEquals(expected, schema.toString());
-        }
+        @Nested
+        class FromBinary {
 
-        @Test
-        void notNullGeometryFieldFromBinary() {
-            record GeometryRecord(long id, @ParquetGeometry @NotNull Binary value) {
+            @Test
+            void geometryFieldFromBinaryWithoutCsr() {
+                record GeometryRecord(long id, @ParquetGeometry Binary value) {
+                }
+                MessageType schema = defaultConfigSchema.createSchema(GeometryRecord.class);
+                String expected = """
+                        message GeometryRecord {
+                          required int64 id;
+                          optional binary value (GEOMETRY);
+                        }
+                        """;
+                assertEquals(expected, schema.toString());
             }
 
-            MessageType schema = defaultConfigSchema.createSchema(GeometryRecord.class);
-            String expected = """
-                    message GeometryRecord {
-                      required int64 id;
-                      required binary value (GEOMETRY);
-                    }
-                    """;
-            assertEquals(expected, schema.toString());
-        }
+            @Test
+            void notNullGeometryFieldFromBinary() {
+                record GeometryRecord(long id, @ParquetGeometry @NotNull Binary value) {
+                }
 
-        @Test
-        void geometryFieldFromBinaryWithSridCsr() {
-            record GeometryRecord(long id, @ParquetGeometry("srid:5070") Binary value) {
+                MessageType schema = defaultConfigSchema.createSchema(GeometryRecord.class);
+                String expected = """
+                        message GeometryRecord {
+                          required int64 id;
+                          required binary value (GEOMETRY);
+                        }
+                        """;
+                assertEquals(expected, schema.toString());
             }
-            MessageType schema = defaultConfigSchema.createSchema(GeometryRecord.class);
-            String expected = """
-                    message GeometryRecord {
-                      required int64 id;
-                      optional binary value (GEOMETRY(srid:5070));
-                    }
-                    """;
-            assertEquals(expected, schema.toString());
-        }
 
-        @Test
-        void geometryFieldFromBinaryWithProjjsonCsr() {
-            record GeometryRecord(long id, @ParquetGeometry("projjson:projjson_epsg_5070") Binary value) {
+            @Test
+            void geometryFieldFromBinaryWithSridCsr() {
+                record GeometryRecord(long id, @ParquetGeometry("srid:5070") Binary value) {
+                }
+                MessageType schema = defaultConfigSchema.createSchema(GeometryRecord.class);
+                String expected = """
+                        message GeometryRecord {
+                          required int64 id;
+                          optional binary value (GEOMETRY(srid:5070));
+                        }
+                        """;
+                assertEquals(expected, schema.toString());
             }
-            MessageType schema = defaultConfigSchema.createSchema(GeometryRecord.class);
-            String expected = """
-                    message GeometryRecord {
-                      required int64 id;
-                      optional binary value (GEOMETRY(projjson:projjson_epsg_5070));
-                    }
-                    """;
-            assertEquals(expected, schema.toString());
+
+            @Test
+            void geometryFieldFromBinaryWithProjjsonCsr() {
+                record GeometryRecord(long id, @ParquetGeometry("projjson:projjson_epsg_5070") Binary value) {
+                }
+                MessageType schema = defaultConfigSchema.createSchema(GeometryRecord.class);
+                String expected = """
+                        message GeometryRecord {
+                          required int64 id;
+                          optional binary value (GEOMETRY(projjson:projjson_epsg_5070));
+                        }
+                        """;
+                assertEquals(expected, schema.toString());
+            }
+
         }
 
+        @Nested
+        class FromJts {
+
+            @Test
+            void geometryFieldFromBinaryWithoutCsr() {
+                record GeometryRecord(long id, @ParquetGeometry Geometry value) {
+                }
+                MessageType schema = defaultConfigSchema.createSchema(GeometryRecord.class);
+                String expected = """
+                        message GeometryRecord {
+                          required int64 id;
+                          optional binary value (GEOMETRY);
+                        }
+                        """;
+                assertEquals(expected, schema.toString());
+            }
+
+            @Test
+            void notNullGeometryFieldFromBinary() {
+                record GeometryRecord(long id, @ParquetGeometry @NotNull Geometry value) {
+                }
+
+                MessageType schema = defaultConfigSchema.createSchema(GeometryRecord.class);
+                String expected = """
+                        message GeometryRecord {
+                          required int64 id;
+                          required binary value (GEOMETRY);
+                        }
+                        """;
+                assertEquals(expected, schema.toString());
+            }
+
+            @Test
+            void geometryFieldFromBinaryWithSridCsr() {
+                record GeometryRecord(long id, @ParquetGeometry("srid:5070") Geometry value) {
+                }
+                MessageType schema = defaultConfigSchema.createSchema(GeometryRecord.class);
+                String expected = """
+                        message GeometryRecord {
+                          required int64 id;
+                          optional binary value (GEOMETRY(srid:5070));
+                        }
+                        """;
+                assertEquals(expected, schema.toString());
+            }
+
+            @Test
+            void geometryFieldFromBinaryWithProjjsonCsr() {
+                record GeometryRecord(long id, @ParquetGeometry("projjson:projjson_epsg_5070") Geometry value) {
+                }
+                MessageType schema = defaultConfigSchema.createSchema(GeometryRecord.class);
+                String expected = """
+                        message GeometryRecord {
+                          required int64 id;
+                          optional binary value (GEOMETRY(projjson:projjson_epsg_5070));
+                        }
+                        """;
+                assertEquals(expected, schema.toString());
+            }
+
+        }
     }
 
     @Nested
     class GeographyType {
 
-        @Test
-        void geographyFieldFromBinaryWithoutAnnotatedValues() {
-            record GeographyRecord(long id, @ParquetGeography Binary value) {
-            }
-            MessageType schema = defaultConfigSchema.createSchema(GeographyRecord.class);
-            String expected = """
-                    message GeographyRecord {
-                      required int64 id;
-                      optional binary value (GEOGRAPHY);
-                    }
-                    """;
-            assertEquals(expected, schema.toString());
-        }
-
-        @Test
-        void notNullGeographyFieldFromBinary() {
-            record GeographyRecord(long id, @ParquetGeography @NotNull Binary value) {
+        @Nested
+        class FromBinary {
+            @Test
+            void geographyFieldFromBinaryWithoutAnnotatedValues() {
+                record GeographyRecord(long id, @ParquetGeography Binary value) {
+                }
+                MessageType schema = defaultConfigSchema.createSchema(GeographyRecord.class);
+                String expected = """
+                        message GeographyRecord {
+                          required int64 id;
+                          optional binary value (GEOGRAPHY);
+                        }
+                        """;
+                assertEquals(expected, schema.toString());
             }
 
-            MessageType schema = defaultConfigSchema.createSchema(GeographyRecord.class);
-            String expected = """
-                    message GeographyRecord {
-                      required int64 id;
-                      required binary value (GEOGRAPHY);
-                    }
-                    """;
-            assertEquals(expected, schema.toString());
-        }
+            @Test
+            void notNullGeographyFieldFromBinary() {
+                record GeographyRecord(long id, @ParquetGeography @NotNull Binary value) {
+                }
 
-        @Test
-        void geographyFieldFromBinaryWithSridCsrConfiguresDefaultAlgorithm() {
-            record GeographyRecord(long id, @ParquetGeography(crs = "srid:5070") Binary value) {
+                MessageType schema = defaultConfigSchema.createSchema(GeographyRecord.class);
+                String expected = """
+                        message GeographyRecord {
+                          required int64 id;
+                          required binary value (GEOGRAPHY);
+                        }
+                        """;
+                assertEquals(expected, schema.toString());
             }
-            MessageType schema = defaultConfigSchema.createSchema(GeographyRecord.class);
-            String expected = """
-                    message GeographyRecord {
-                      required int64 id;
-                      optional binary value (GEOGRAPHY(srid:5070,SPHERICAL));
-                    }
-                    """;
-            assertEquals(expected, schema.toString());
-        }
 
-        @Test
-        void geographyFieldFromBinaryWithAlgorithmConfiguresDefaultCrs() {
-            record GeographyRecord(long id, @ParquetGeography(algorithm = EdgeAlgorithm.ANDOYER) Binary value) {
+            @Test
+            void geographyFieldFromBinaryWithSridCsrConfiguresDefaultAlgorithm() {
+                record GeographyRecord(long id, @ParquetGeography(crs = "srid:5070") Binary value) {
+                }
+                MessageType schema = defaultConfigSchema.createSchema(GeographyRecord.class);
+                String expected = """
+                        message GeographyRecord {
+                          required int64 id;
+                          optional binary value (GEOGRAPHY(srid:5070,SPHERICAL));
+                        }
+                        """;
+                assertEquals(expected, schema.toString());
             }
-            MessageType schema = defaultConfigSchema.createSchema(GeographyRecord.class);
-            String expected = """
-                    message GeographyRecord {
-                      required int64 id;
-                      optional binary value (GEOGRAPHY(OGC:CRS84,ANDOYER));
-                    }
-                    """;
-            assertEquals(expected, schema.toString());
+
+            @Test
+            void geographyFieldFromBinaryWithAlgorithmConfiguresDefaultCrs() {
+                record GeographyRecord(long id, @ParquetGeography(algorithm = EdgeAlgorithm.ANDOYER) Binary value) {
+                }
+                MessageType schema = defaultConfigSchema.createSchema(GeographyRecord.class);
+                String expected = """
+                        message GeographyRecord {
+                          required int64 id;
+                          optional binary value (GEOGRAPHY(OGC:CRS84,ANDOYER));
+                        }
+                        """;
+                assertEquals(expected, schema.toString());
+            }
         }
 
+        @Nested
+        class FromJts {
+
+            @Test
+            void geographyFieldFromBinaryWithoutAnnotatedValues() {
+                record GeographyRecord(long id, @ParquetGeography Geometry value) {
+                }
+                MessageType schema = defaultConfigSchema.createSchema(GeographyRecord.class);
+                String expected = """
+                        message GeographyRecord {
+                          required int64 id;
+                          optional binary value (GEOGRAPHY);
+                        }
+                        """;
+                assertEquals(expected, schema.toString());
+            }
+
+            @Test
+            void notNullGeographyFieldFromBinary() {
+                record GeographyRecord(long id, @ParquetGeography @NotNull Geometry value) {
+                }
+
+                MessageType schema = defaultConfigSchema.createSchema(GeographyRecord.class);
+                String expected = """
+                        message GeographyRecord {
+                          required int64 id;
+                          required binary value (GEOGRAPHY);
+                        }
+                        """;
+                assertEquals(expected, schema.toString());
+            }
+
+            @Test
+            void geographyFieldFromBinaryWithSridCsrConfiguresDefaultAlgorithm() {
+                record GeographyRecord(long id, @ParquetGeography(crs = "srid:5070") Geometry value) {
+                }
+                MessageType schema = defaultConfigSchema.createSchema(GeographyRecord.class);
+                String expected = """
+                        message GeographyRecord {
+                          required int64 id;
+                          optional binary value (GEOGRAPHY(srid:5070,SPHERICAL));
+                        }
+                        """;
+                assertEquals(expected, schema.toString());
+            }
+
+            @Test
+            void geographyFieldFromBinaryWithAlgorithmConfiguresDefaultCrs() {
+                record GeographyRecord(long id,
+                        @ParquetGeography(algorithm = EdgeAlgorithm.ANDOYER) Geometry value) {
+                }
+                MessageType schema = defaultConfigSchema.createSchema(GeographyRecord.class);
+                String expected = """
+                        message GeographyRecord {
+                          required int64 id;
+                          optional binary value (GEOGRAPHY(OGC:CRS84,ANDOYER));
+                        }
+                        """;
+                assertEquals(expected, schema.toString());
+            }
+        }
+    }
+
+    @Test
+    void canMapAnyGeometrySubtype() {
+        record GeometryRecord(long id, @ParquetGeometry Polygon value) {
+        }
+        MessageType schema = defaultConfigSchema.createSchema(GeometryRecord.class);
+        String expected = """
+                message GeometryRecord {
+                  required int64 id;
+                  optional binary value (GEOMETRY);
+                }
+                """;
+        assertEquals(expected, schema.toString());
+    }
+
+    @Test
+    void jtsGeometryFieldMustBeAnnotated() {
+        record GeometryRecord(long id, Geometry value) {
+        }
+        assertThrows(RecordTypeConversionException.class,
+                () -> defaultConfigSchema.createSchema(GeometryRecord.class),
+                "JTS Geometry field must be annotated with @ParquetGeometry or @ParquetGeography");
     }
 
     @Nested
@@ -1182,8 +1337,38 @@ class JavaRecord2SchemaTest {
         }
 
         @Test
+        void nestedJtsGeometryCollection() {
+            record SimpleTypeCollection(String id, List<@ParquetGeometry Geometry> values) {
+            }
+
+            MessageType schema = schemaFactory.createSchema(SimpleTypeCollection.class);
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      repeated binary values (GEOMETRY);
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
         void nestedGeographyCollection() {
             record SimpleTypeCollection(String id, List<@ParquetGeography Binary> values) {
+            }
+
+            MessageType schema = schemaFactory.createSchema(SimpleTypeCollection.class);
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      repeated binary values (GEOGRAPHY);
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedJtsGeographyCollection() {
+            record SimpleTypeCollection(String id, List<@ParquetGeography Geometry> values) {
             }
 
             MessageType schema = schemaFactory.createSchema(SimpleTypeCollection.class);
@@ -1447,8 +1632,42 @@ class JavaRecord2SchemaTest {
         }
 
         @Test
+        void nestedJtsGeometryCollection() {
+            record SimpleTypeCollection(String id, List<@ParquetGeometry Geometry> values) {
+            }
+
+            MessageType schema = schemaFactory.createSchema(SimpleTypeCollection.class);
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated binary element (GEOMETRY);
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
         void nestedGeographyCollection() {
             record SimpleTypeCollection(String id, List<@ParquetGeography Binary> values) {
+            }
+
+            MessageType schema = schemaFactory.createSchema(SimpleTypeCollection.class);
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated binary element (GEOGRAPHY);
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedJtsGeographyCollection() {
+            record SimpleTypeCollection(String id, List<@ParquetGeography Geometry> values) {
             }
 
             MessageType schema = schemaFactory.createSchema(SimpleTypeCollection.class);
@@ -1886,8 +2105,46 @@ class JavaRecord2SchemaTest {
         }
 
         @Test
+        void nestedJtsGeometryCollection() {
+            record SimpleTypeCollection(String id, List<@ParquetGeometry Geometry> values) {
+            }
+
+            MessageType schema = schemaFactory.createSchema(SimpleTypeCollection.class);
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated group list {
+                          optional binary element (GEOMETRY);
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
         void nestedGeographyCollection() {
             record SimpleTypeCollection(String id, List<@ParquetGeography Binary> values) {
+            }
+
+            MessageType schema = schemaFactory.createSchema(SimpleTypeCollection.class);
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated group list {
+                          optional binary element (GEOGRAPHY);
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedJtsGeographyCollection() {
+            record SimpleTypeCollection(String id, List<@ParquetGeography Geometry> values) {
             }
 
             MessageType schema = schemaFactory.createSchema(SimpleTypeCollection.class);

@@ -29,6 +29,8 @@ import java.lang.reflect.RecordComponent;
 import org.apache.parquet.schema.GroupType;
 import org.apache.parquet.schema.LogicalTypeAnnotation;
 import org.apache.parquet.schema.LogicalTypeAnnotation.DecimalLogicalTypeAnnotation;
+import org.apache.parquet.schema.LogicalTypeAnnotation.GeographyLogicalTypeAnnotation;
+import org.apache.parquet.schema.LogicalTypeAnnotation.GeometryLogicalTypeAnnotation;
 import org.apache.parquet.schema.LogicalTypeAnnotation.IntLogicalTypeAnnotation;
 import org.apache.parquet.schema.LogicalTypeAnnotation.TimeLogicalTypeAnnotation;
 import org.apache.parquet.schema.LogicalTypeAnnotation.TimeUnit;
@@ -167,6 +169,12 @@ public class SchemaValidation {
             return name == PrimitiveTypeName.BINARY;
         }
         if (bsonType().equals(logicalType) && type.isBinary()) {
+            return name == PrimitiveTypeName.BINARY;
+        }
+        if (logicalType instanceof GeometryLogicalTypeAnnotation && type.isGeometry()) {
+            return name == PrimitiveTypeName.BINARY;
+        }
+        if (logicalType instanceof GeographyLogicalTypeAnnotation && type.isGeometry()) {
             return name == PrimitiveTypeName.BINARY;
         }
         if (logicalType.equals(uuidType()) && (type.isString() || type.isUuid())) {
