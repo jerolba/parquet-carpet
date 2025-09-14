@@ -16,6 +16,8 @@
 package com.jerolba.carpet.impl.write;
 
 import com.jerolba.carpet.model.BigDecimalType;
+import com.jerolba.carpet.model.BinaryAliasedType;
+import com.jerolba.carpet.model.BinaryGeospatialType;
 import com.jerolba.carpet.model.BinaryLogicalType;
 import com.jerolba.carpet.model.BinaryType;
 import com.jerolba.carpet.model.BooleanType;
@@ -24,6 +26,7 @@ import com.jerolba.carpet.model.DoubleType;
 import com.jerolba.carpet.model.EnumType;
 import com.jerolba.carpet.model.FieldType;
 import com.jerolba.carpet.model.FloatType;
+import com.jerolba.carpet.model.GeometryType;
 import com.jerolba.carpet.model.InstantType;
 import com.jerolba.carpet.model.IntegerType;
 import com.jerolba.carpet.model.ListType;
@@ -82,6 +85,14 @@ class FieldTypeInspect {
         return fieldType instanceof BinaryType;
     }
 
+    public boolean isBinaryGeospatial() {
+        return fieldType instanceof BinaryGeospatialType;
+    }
+
+    public boolean isJtsGeometry() {
+        return fieldType instanceof GeometryType;
+    }
+
     public boolean isEnum() {
         return fieldType instanceof EnumType;
     }
@@ -123,15 +134,31 @@ class FieldTypeInspect {
     }
 
     public BinaryLogicalType binaryLogicalType() {
-        if (fieldType instanceof BinaryType binary) {
-            return binary.logicalType();
+        if (fieldType instanceof BinaryAliasedType binaryAliased) {
+            return binaryAliased.logicalType();
         } else if (fieldType instanceof StringType string) {
             return string.logicalType();
         } else if (fieldType instanceof EnumType enumType) {
             return enumType.logicalType();
+        } else if (fieldType instanceof BinaryType) {
+            return null;
         } else {
             throw new IllegalStateException("Field type is not a binary type");
         }
+    }
+
+    public GeometryType geometryType() {
+        if (fieldType instanceof GeometryType geometry) {
+            return geometry;
+        }
+        throw new IllegalStateException("Field type is not a geometry type");
+    }
+
+    public BinaryGeospatialType binaryGeospatialType() {
+        if (fieldType instanceof BinaryGeospatialType geospatial) {
+            return geospatial;
+        }
+        throw new IllegalStateException("Field type is not a BinaryGeospatialType");
     }
 
 }

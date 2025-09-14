@@ -51,6 +51,7 @@ import java.util.Locale.Category;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.parquet.column.schema.EdgeInterpolationAlgorithm;
 import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.schema.MessageType;
 import org.junit.jupiter.api.Nested;
@@ -63,6 +64,9 @@ import com.jerolba.carpet.TimeUnit;
 import com.jerolba.carpet.annotation.NotNull;
 import com.jerolba.carpet.annotation.ParquetBson;
 import com.jerolba.carpet.annotation.ParquetEnum;
+import com.jerolba.carpet.annotation.ParquetGeography;
+import com.jerolba.carpet.annotation.ParquetGeography.EdgeAlgorithm;
+import com.jerolba.carpet.annotation.ParquetGeometry;
 import com.jerolba.carpet.annotation.ParquetJson;
 import com.jerolba.carpet.model.WriteRecordModelType;
 
@@ -309,6 +313,162 @@ class WriteRecord2SchemaTest {
                     message BsonRecord {
                       required int64 id;
                       required binary value (BSON);
+                    }
+                    """;
+            assertEquals(expected, schemaWithRootType(rootType).toString());
+        }
+
+    }
+
+    @Nested
+    class GeometryType {
+
+        @Test
+        void geometryFieldFromBinaryWithoutCsr() {
+            record GeometryRecord(long id, @ParquetGeometry Binary value) {
+            }
+
+            var rootType = writeRecordModel(GeometryRecord.class)
+                    .withField("id", LONG.notNull(), GeometryRecord::id)
+                    .withField("value", BINARY.asParquetGeometry(null), GeometryRecord::value);
+
+            String expected = """
+                    message GeometryRecord {
+                      required int64 id;
+                      optional binary value (GEOMETRY);
+                    }
+                    """;
+            assertEquals(expected, schemaWithRootType(rootType).toString());
+        }
+
+        @Test
+        void notNullGeometryFieldFromBinary() {
+            record GeometryRecord(long id, @ParquetGeometry @NotNull Binary value) {
+            }
+
+            var rootType = writeRecordModel(GeometryRecord.class)
+                    .withField("id", LONG.notNull(), GeometryRecord::id)
+                    .withField("value", BINARY.asParquetGeometry(null).notNull(), GeometryRecord::value);
+
+            String expected = """
+                    message GeometryRecord {
+                      required int64 id;
+                      required binary value (GEOMETRY);
+                    }
+                    """;
+            assertEquals(expected, schemaWithRootType(rootType).toString());
+        }
+
+        @Test
+        void geometryFieldFromBinaryWithSridCsr() {
+            record GeometryRecord(long id, @ParquetGeometry("srid:5070") Binary value) {
+            }
+
+            var rootType = writeRecordModel(GeometryRecord.class)
+                    .withField("id", LONG.notNull(), GeometryRecord::id)
+                    .withField("value", BINARY.asParquetGeometry("srid:5070"), GeometryRecord::value);
+
+            String expected = """
+                    message GeometryRecord {
+                      required int64 id;
+                      optional binary value (GEOMETRY(srid:5070));
+                    }
+                    """;
+            assertEquals(expected, schemaWithRootType(rootType).toString());
+        }
+
+        @Test
+        void geometryFieldFromBinaryWithProjjsonCsr() {
+            record GeometryRecord(long id, @ParquetGeometry("projjson:projjson_epsg_5070") Binary value) {
+            }
+
+            var rootType = writeRecordModel(GeometryRecord.class)
+                    .withField("id", LONG.notNull(), GeometryRecord::id)
+                    .withField("value", BINARY.asParquetGeometry("projjson:projjson_epsg_5070"),
+                            GeometryRecord::value);
+
+            String expected = """
+                    message GeometryRecord {
+                      required int64 id;
+                      optional binary value (GEOMETRY(projjson:projjson_epsg_5070));
+                    }
+                    """;
+            assertEquals(expected, schemaWithRootType(rootType).toString());
+        }
+
+    }
+
+    @Nested
+    class GeographyType {
+
+        @Test
+        void geographyFieldFromBinaryWithoutAnnotatedValues() {
+            record GeographyRecord(long id, @ParquetGeography Binary value) {
+            }
+
+            var rootType = writeRecordModel(GeographyRecord.class)
+                    .withField("id", LONG.notNull(), GeographyRecord::id)
+                    .withField("value", BINARY.asParquetGeography(null, null), GeographyRecord::value);
+
+            String expected = """
+                    message GeographyRecord {
+                      required int64 id;
+                      optional binary value (GEOGRAPHY);
+                    }
+                    """;
+            assertEquals(expected, schemaWithRootType(rootType).toString());
+        }
+
+        @Test
+        void notNullGeographyFieldFromBinary() {
+            record GeographyRecord(long id, @ParquetGeography @NotNull Binary value) {
+            }
+
+            var rootType = writeRecordModel(GeographyRecord.class)
+                    .withField("id", LONG.notNull(), GeographyRecord::id)
+                    .withField("value", BINARY.asParquetGeography(null, null).notNull(), GeographyRecord::value);
+
+            String expected = """
+                    message GeographyRecord {
+                      required int64 id;
+                      required binary value (GEOGRAPHY);
+                    }
+                    """;
+            assertEquals(expected, schemaWithRootType(rootType).toString());
+        }
+
+        @Test
+        void geographyFieldFromBinaryWithSridCsrConfiguresDefaultAlgorithm() {
+            record GeographyRecord(long id, @ParquetGeography(crs = "srid:5070") Binary value) {
+            }
+
+            var rootType = writeRecordModel(GeographyRecord.class)
+                    .withField("id", LONG.notNull(), GeographyRecord::id)
+                    .withField("value", BINARY.asParquetGeography("srid:5070", null), GeographyRecord::value);
+
+            String expected = """
+                    message GeographyRecord {
+                      required int64 id;
+                      optional binary value (GEOGRAPHY(srid:5070,SPHERICAL));
+                    }
+                    """;
+            assertEquals(expected, schemaWithRootType(rootType).toString());
+        }
+
+        @Test
+        void geographyFieldFromBinaryWithAlgorithmConfiguresDefaultCrs() {
+            record GeographyRecord(long id, @ParquetGeography(algorithm = EdgeAlgorithm.ANDOYER) Binary value) {
+            }
+
+            var rootType = writeRecordModel(GeographyRecord.class)
+                    .withField("id", LONG.notNull(), GeographyRecord::id)
+                    .withField("value", BINARY.asParquetGeography(null, EdgeInterpolationAlgorithm.ANDOYER),
+                            GeographyRecord::value);
+
+            String expected = """
+                    message GeographyRecord {
+                      required int64 id;
+                      optional binary value (GEOGRAPHY(OGC:CRS84,ANDOYER));
                     }
                     """;
             assertEquals(expected, schemaWithRootType(rootType).toString());
@@ -1209,6 +1369,49 @@ class WriteRecord2SchemaTest {
         }
 
         @Test
+        void nestedGeometryCollection() {
+            record SimpleTypeCollection(String id, List<@ParquetGeometry Binary> values) {
+            }
+
+            var rootType = writeRecordModel(SimpleTypeCollection.class)
+                    .withField("id", STRING, SimpleTypeCollection::id)
+                    .withField("values", LIST.ofType(BINARY.asParquetGeometry(null)), SimpleTypeCollection::values);
+
+            var config = config().annotatedLevels(AnnotatedLevels.ONE).build();
+            MessageType schema = new WriteRecordModel2Schema(config).createSchema(rootType);
+
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      repeated binary values (GEOMETRY);
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedGeographyCollection() {
+            record SimpleTypeCollection(String id, List<@ParquetGeography Binary> values) {
+            }
+
+            var rootType = writeRecordModel(SimpleTypeCollection.class)
+                    .withField("id", STRING, SimpleTypeCollection::id)
+                    .withField("values", LIST.ofType(BINARY.asParquetGeography(null, null)),
+                            SimpleTypeCollection::values);
+
+            var config = config().annotatedLevels(AnnotatedLevels.ONE).build();
+            MessageType schema = new WriteRecordModel2Schema(config).createSchema(rootType);
+
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      repeated binary values (GEOGRAPHY);
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
         void consecutiveNestedCollections() {
             record ConsecutiveNestedCollection(String id, List<List<Integer>> values) {
             }
@@ -1501,6 +1704,53 @@ class WriteRecord2SchemaTest {
                       optional binary id (STRING);
                       optional group values (LIST) {
                         repeated binary element (BSON);
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedGeometryCollection() {
+            record SimpleTypeCollection(String id, List<@ParquetGeometry Binary> values) {
+            }
+
+            var rootType = writeRecordModel(SimpleTypeCollection.class)
+                    .withField("id", STRING, SimpleTypeCollection::id)
+                    .withField("values", LIST.ofType(BINARY.asParquetGeometry(null)), SimpleTypeCollection::values);
+
+            var config = config().annotatedLevels(AnnotatedLevels.TWO).build();
+            MessageType schema = new WriteRecordModel2Schema(config).createSchema(rootType);
+
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated binary element (GEOMETRY);
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedGeographyCollection() {
+            record SimpleTypeCollection(String id, List<@ParquetGeography Binary> values) {
+            }
+
+            var rootType = writeRecordModel(SimpleTypeCollection.class)
+                    .withField("id", STRING, SimpleTypeCollection::id)
+                    .withField("values", LIST.ofType(BINARY.asParquetGeography(null, null)),
+                            SimpleTypeCollection::values);
+
+            var config = config().annotatedLevels(AnnotatedLevels.TWO).build();
+            MessageType schema = new WriteRecordModel2Schema(config).createSchema(rootType);
+
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated binary element (GEOGRAPHY);
                       }
                     }
                     """;
@@ -2017,6 +2267,57 @@ class WriteRecord2SchemaTest {
                       optional group values (LIST) {
                         repeated group list {
                           optional binary element (BSON);
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedGeometryCollection() {
+            record SimpleTypeCollection(String id, List<@ParquetGeometry Binary> values) {
+            }
+
+            var rootType = writeRecordModel(SimpleTypeCollection.class)
+                    .withField("id", STRING, SimpleTypeCollection::id)
+                    .withField("values", LIST.ofType(BINARY.asParquetGeometry(null)), SimpleTypeCollection::values);
+
+            var config = config().annotatedLevels(AnnotatedLevels.THREE).build();
+            MessageType schema = new WriteRecordModel2Schema(config).createSchema(rootType);
+
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated group list {
+                          optional binary element (GEOMETRY);
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedGeographyCollection() {
+            record SimpleTypeCollection(String id, List<@ParquetGeography Binary> values) {
+            }
+
+            var rootType = writeRecordModel(SimpleTypeCollection.class)
+                    .withField("id", STRING, SimpleTypeCollection::id)
+                    .withField("values", LIST.ofType(BINARY.asParquetGeography(null, null)),
+                            SimpleTypeCollection::values);
+
+            var config = config().annotatedLevels(AnnotatedLevels.THREE).build();
+            MessageType schema = new WriteRecordModel2Schema(config).createSchema(rootType);
+
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated group list {
+                          optional binary element (GEOGRAPHY);
                         }
                       }
                     }

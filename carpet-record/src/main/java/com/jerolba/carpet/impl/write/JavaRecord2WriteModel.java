@@ -32,6 +32,8 @@ import java.util.function.ToLongFunction;
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.annotation.ParquetBson;
 import com.jerolba.carpet.annotation.ParquetEnum;
+import com.jerolba.carpet.annotation.ParquetGeography;
+import com.jerolba.carpet.annotation.ParquetGeometry;
 import com.jerolba.carpet.annotation.ParquetJson;
 import com.jerolba.carpet.annotation.ParquetString;
 import com.jerolba.carpet.annotation.PrecisionScale;
@@ -43,6 +45,7 @@ import com.jerolba.carpet.model.BinaryType;
 import com.jerolba.carpet.model.EnumType;
 import com.jerolba.carpet.model.FieldType;
 import com.jerolba.carpet.model.FieldTypes;
+import com.jerolba.carpet.model.GeometryTypeBuilder;
 import com.jerolba.carpet.model.ListTypeBuilder;
 import com.jerolba.carpet.model.MapTypeBuilder;
 import com.jerolba.carpet.model.StringType;
@@ -231,6 +234,9 @@ public class JavaRecord2WriteModel {
         if (javaType.isInstant()) {
             return isNotNull ? FieldTypes.INSTANT.notNull() : FieldTypes.INSTANT;
         }
+        if (javaType.isGeometry()) {
+            return geometryType(javaType, isNotNull);
+        }
         return null;
     }
 
@@ -247,15 +253,37 @@ public class JavaRecord2WriteModel {
     private static FieldType binaryType(JavaType javaType, boolean isNotNull) {
         BinaryType binary = isNotNull ? FieldTypes.BINARY.notNull() : FieldTypes.BINARY;
         if (javaType.isAnnotatedWith(ParquetString.class)) {
-            binary = binary.asString();
+            return binary.asString();
         } else if (javaType.isAnnotatedWith(ParquetJson.class)) {
-            binary = binary.asJson();
+            return binary.asJson();
         } else if (javaType.isAnnotatedWith(ParquetEnum.class)) {
-            binary = binary.asEnum();
+            return binary.asEnum();
         } else if (javaType.isAnnotatedWith(ParquetBson.class)) {
-            binary = binary.asBson();
+            return binary.asBson();
+        } else if (javaType.isAnnotatedWith(ParquetGeometry.class)) {
+            ParquetGeometry geometry = javaType.getAnnotation(ParquetGeometry.class);
+            String csr = geometry.value();
+            return binary.asParquetGeometry(csr == null || csr.isEmpty() ? null : csr);
+        } else if (javaType.isAnnotatedWith(ParquetGeography.class)) {
+            ParquetGeography geography = javaType.getAnnotation(ParquetGeography.class);
+            return binary.asParquetGeography(geography.crs(), geography.algorithm().getAlgorithm());
         }
         return binary;
+    }
+
+    private static FieldType geometryType(JavaType javaType, boolean isNotNull) {
+        GeometryTypeBuilder builder = isNotNull ? FieldTypes.GEOMETRY.notNull() : FieldTypes.GEOMETRY;
+        if (javaType.isAnnotatedWith(ParquetGeometry.class)) {
+            ParquetGeometry geometry = javaType.getAnnotation(ParquetGeometry.class);
+            String csr = geometry.value();
+            return builder.asParquetGeometry(csr == null || csr.isEmpty() ? null : csr);
+        } else if (javaType.isAnnotatedWith(ParquetGeography.class)) {
+            ParquetGeography geography = javaType.getAnnotation(ParquetGeography.class);
+            String csr = geography.crs();
+            return builder.asParquetGeography(csr == null || csr.isEmpty() ? null : csr,
+                    geography.algorithm().getAlgorithm());
+        }
+        throw new RecordTypeConversionException("Geometry or Geography annotation is required for Geometry types");
     }
 
     private static FieldType enumType(JavaType javaType, boolean isNotNull) {

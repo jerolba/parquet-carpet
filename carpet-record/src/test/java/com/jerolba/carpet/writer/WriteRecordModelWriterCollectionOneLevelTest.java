@@ -21,6 +21,7 @@ import static com.jerolba.carpet.model.FieldTypes.BINARY;
 import static com.jerolba.carpet.model.FieldTypes.BOOLEAN;
 import static com.jerolba.carpet.model.FieldTypes.DOUBLE;
 import static com.jerolba.carpet.model.FieldTypes.ENUM;
+import static com.jerolba.carpet.model.FieldTypes.GEOMETRY;
 import static com.jerolba.carpet.model.FieldTypes.INTEGER;
 import static com.jerolba.carpet.model.FieldTypes.LIST;
 import static com.jerolba.carpet.model.FieldTypes.MAP;
@@ -37,17 +38,28 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.parquet.column.schema.EdgeInterpolationAlgorithm;
 import org.apache.parquet.io.api.Binary;
 import org.junit.jupiter.api.Test;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Point;
+import org.locationtech.jts.io.WKBWriter;
 
 import com.jerolba.carpet.ParquetWriterTest;
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.annotation.ParquetBson;
 import com.jerolba.carpet.annotation.ParquetEnum;
+import com.jerolba.carpet.annotation.ParquetGeography;
+import com.jerolba.carpet.annotation.ParquetGeometry;
 import com.jerolba.carpet.annotation.ParquetJson;
 import com.jerolba.carpet.writer.CarpetWriterCollectionThreeLevelTest.Category;
 
 class WriteRecordModelWriterCollectionOneLevelTest {
+
+    private final GeometryFactory geomFactory = new GeometryFactory();
+    private final WKBWriter wkbWriter = new WKBWriter();
 
     @Test
     void simpleTypeCollection() throws IOException {
@@ -231,6 +243,103 @@ class WriteRecordModelWriterCollectionOneLevelTest {
         byte[] mockBson2 = new byte[] { 3, 4 };
         var rec = new SimpleTypeCollection("foo",
                 List.of(Binary.fromConstantByteArray(mockBson1), Binary.fromConstantByteArray(mockBson2)));
+        var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class).withLevel(ONE);
+        writerTest.write(mapper, rec);
+
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec, carpetReader.read());
+        }
+    }
+
+    @Test
+    void simpleGeometryCollection() throws IOException {
+
+        record SimpleTypeCollection(String name, List<@ParquetGeometry Binary> values) {
+        }
+
+        var mapper = writeRecordModel(SimpleTypeCollection.class)
+                .withField("name", STRING, SimpleTypeCollection::name)
+                .withField("values", LIST.ofType(BINARY.asParquetGeometry("OGC:CRS84")), SimpleTypeCollection::values);
+
+        Binary point1 = Binary
+                .fromConstantByteArray(wkbWriter.write(geomFactory.createPoint(new Coordinate(1.0, 1.0))));
+        Binary point2 = Binary
+                .fromConstantByteArray(wkbWriter.write(geomFactory.createPoint(new Coordinate(2.0, 2.0))));
+
+        var rec = new SimpleTypeCollection("foo", List.of(point1, point2));
+        var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class).withLevel(ONE);
+        writerTest.write(mapper, rec);
+
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec, carpetReader.read());
+        }
+    }
+
+    @Test
+    void simpleGeometryJtsCollection() throws IOException {
+
+        record SimpleTypeCollection(String name, List<@ParquetGeometry Geometry> values) {
+        }
+
+        var mapper = writeRecordModel(SimpleTypeCollection.class)
+                .withField("name", STRING, SimpleTypeCollection::name)
+                .withField("values",
+                        LIST.ofType(GEOMETRY.asParquetGeometry("OGC:CRS84")), SimpleTypeCollection::values);
+
+        Point point1 = geomFactory.createPoint(new Coordinate(1.0, 1.0));
+        Point point2 = geomFactory.createPoint(new Coordinate(2.0, 2.0));
+
+        var rec = new SimpleTypeCollection("foo", List.of(point1, point2));
+        var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class).withLevel(ONE);
+        writerTest.write(mapper, rec);
+
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec, carpetReader.read());
+        }
+    }
+
+    @Test
+    void simpleGeographyCollection() throws IOException {
+
+        record SimpleTypeCollection(String name, List<@ParquetGeography Binary> values) {
+        }
+
+        var mapper = writeRecordModel(SimpleTypeCollection.class)
+                .withField("name", STRING, SimpleTypeCollection::name)
+                .withField("values",
+                        LIST.ofType(BINARY.asParquetGeography("OGC:CRS84", EdgeInterpolationAlgorithm.ANDOYER)),
+                        SimpleTypeCollection::values);
+
+        Binary point1 = Binary
+                .fromConstantByteArray(wkbWriter.write(geomFactory.createPoint(new Coordinate(1.0, 1.0))));
+        Binary point2 = Binary
+                .fromConstantByteArray(wkbWriter.write(geomFactory.createPoint(new Coordinate(2.0, 2.0))));
+
+        var rec = new SimpleTypeCollection("foo", List.of(point1, point2));
+        var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class).withLevel(ONE);
+        writerTest.write(mapper, rec);
+
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec, carpetReader.read());
+        }
+    }
+
+    @Test
+    void simpleGeographyJtsCollection() throws IOException {
+
+        record SimpleTypeCollection(String name, List<@ParquetGeography Geometry> values) {
+        }
+
+        var mapper = writeRecordModel(SimpleTypeCollection.class)
+                .withField("name", STRING, SimpleTypeCollection::name)
+                .withField("values",
+                        LIST.ofType(GEOMETRY.asParquetGeography("OGC:CRS84", EdgeInterpolationAlgorithm.ANDOYER)),
+                        SimpleTypeCollection::values);
+
+        Point point1 = geomFactory.createPoint(new Coordinate(1.0, 1.0));
+        Point point2 = geomFactory.createPoint(new Coordinate(2.0, 2.0));
+
+        var rec = new SimpleTypeCollection("foo", List.of(point1, point2));
         var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class).withLevel(ONE);
         writerTest.write(mapper, rec);
 
