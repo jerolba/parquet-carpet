@@ -588,6 +588,8 @@ class CarpetReaderTest {
             }
         }
 
+        // Geospatial types are not supported by Avro. They are tested in writer tests.
+
         @Nested
         class ReadBigDecimal {
 

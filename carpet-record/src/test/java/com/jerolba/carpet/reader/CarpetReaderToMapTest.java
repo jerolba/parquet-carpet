@@ -39,11 +39,17 @@ import org.apache.parquet.io.api.Binary;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Point;
 
 import com.jerolba.carpet.AnnotatedLevels;
 import com.jerolba.carpet.ParquetWriterTest;
 import com.jerolba.carpet.annotation.ParquetBson;
 import com.jerolba.carpet.annotation.ParquetEnum;
+import com.jerolba.carpet.annotation.ParquetGeography;
+import com.jerolba.carpet.annotation.ParquetGeometry;
 import com.jerolba.carpet.annotation.ParquetJson;
 import com.jerolba.carpet.annotation.ParquetString;
 
@@ -148,6 +154,29 @@ class CarpetReaderToMapTest {
                     "enumValue", "two",
                     "bson", Binary.fromConstantByteArray(new byte[] { 1, 2, 3 }),
                     "binary", Binary.fromConstantByteArray(new byte[] { 4, 5, 6 }));
+            Map<String, Object> actual = reader.read();
+            assertEquals(expected, actual);
+        }
+
+        @Test
+        void convertRootGroupGeospatialTypesToMap() throws IOException {
+
+            record MainTypeWrite(String id, @ParquetGeometry Geometry geometry, @ParquetGeography Geometry geography) {
+            }
+
+            GeometryFactory geomFactory = new GeometryFactory();
+            Point point1 = geomFactory.createPoint(new Coordinate(1.0, 1.0));
+            Point point2 = geomFactory.createPoint(new Coordinate(2.0, 2.0));
+
+            ParquetWriterTest<MainTypeWrite> writerTest = new ParquetWriterTest<>(MainTypeWrite.class);
+            var root = new MainTypeWrite("root", point1, point2);
+            writerTest.write(root);
+
+            var reader = writerTest.getCarpetReader(Map.class);
+            var expected = Map.of(
+                    "id", "root",
+                    "geometry", point1,
+                    "geography", point2);
             Map<String, Object> actual = reader.read();
             assertEquals(expected, actual);
         }
