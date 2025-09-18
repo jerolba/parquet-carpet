@@ -24,6 +24,8 @@ import static com.jerolba.carpet.impl.write.SchemaBuilder.buildLocalTimeType;
 import static com.jerolba.carpet.impl.write.SchemaBuilder.buildUuidType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.bsonType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.enumType;
+import static org.apache.parquet.schema.LogicalTypeAnnotation.geographyType;
+import static org.apache.parquet.schema.LogicalTypeAnnotation.geometryType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.intType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.jsonType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.stringType;
@@ -38,6 +40,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.parquet.column.schema.EdgeInterpolationAlgorithm;
 import org.apache.parquet.schema.ConversionPatterns;
 import org.apache.parquet.schema.GroupType;
 import org.apache.parquet.schema.MessageType;
@@ -48,9 +51,12 @@ import org.apache.parquet.schema.Types;
 
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.model.BigDecimalType;
+import com.jerolba.carpet.model.BinaryGeospatialType;
 import com.jerolba.carpet.model.BinaryLogicalType;
 import com.jerolba.carpet.model.CollectionType;
 import com.jerolba.carpet.model.FieldType;
+import com.jerolba.carpet.model.GeometryType;
+import com.jerolba.carpet.model.GeometryType.GeospatialType;
 import com.jerolba.carpet.model.MapType;
 import com.jerolba.carpet.model.WriteRecordModelType;
 
@@ -200,6 +206,14 @@ class WriteRecordModel2Schema {
             return primitive(PrimitiveTypeName.INT32, repetition).as(intType(8, true)).named(parquetFieldName);
         } else if (javaType.isString()) {
             return buildStringType(javaType.binaryLogicalType(), repetition, parquetFieldName);
+        } else if (javaType.isJtsGeometry()) {
+            GeometryType geometryType = javaType.geometryType();
+            return buildGeospatialType(repetition, parquetFieldName,
+                    geometryType.geospatialType(), geometryType.crs(), geometryType.algorithm());
+        } else if (javaType.isBinaryGeospatial()) {
+            BinaryGeospatialType geospatial = javaType.binaryGeospatialType();
+            return buildGeospatialType(repetition, parquetFieldName,
+                    geospatial.geospatialType(), geospatial.crs(), geospatial.algorithm());
         } else if (javaType.isBinary()) {
             return buildBinaryType(javaType.binaryLogicalType(), repetition, parquetFieldName);
         } else if (javaType.isEnum()) {
@@ -250,6 +264,14 @@ class WriteRecordModel2Schema {
         case ENUM -> binary.as(enumType()).named(parquetFieldName);
         case JSON -> binary.as(jsonType()).named(parquetFieldName);
         case BSON -> binary.as(bsonType()).named(parquetFieldName);
+        };
+    }
+
+    private Type buildGeospatialType(Repetition repetition, String parquetFieldName, GeospatialType geospatialType,
+            String crs, EdgeInterpolationAlgorithm algorithm) {
+        return switch (geospatialType) {
+        case GEOMETRY -> primitive(BINARY, repetition).as(geometryType(crs)).named(parquetFieldName);
+        case GEOGRAPHY -> primitive(BINARY, repetition).as(geographyType(crs, algorithm)).named(parquetFieldName);
         };
     }
 

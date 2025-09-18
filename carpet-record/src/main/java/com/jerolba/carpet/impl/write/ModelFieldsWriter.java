@@ -16,6 +16,7 @@
 package com.jerolba.carpet.impl.write;
 
 import static com.jerolba.carpet.impl.write.BigDecimalWrite.buildDecimalConfig;
+import static com.jerolba.carpet.impl.write.GeometryWrite.geometryCosumer;
 import static com.jerolba.carpet.impl.write.TimeWrite.instantCosumer;
 import static com.jerolba.carpet.impl.write.TimeWrite.localDateTimeConsumer;
 import static com.jerolba.carpet.impl.write.TimeWrite.localTimeConsumer;
@@ -68,7 +69,7 @@ class ModelFieldsWriter {
         if (type.isShort() || type.isByte()) {
             return (consumer, v) -> consumer.addInteger(((Number) v).intValue());
         }
-        if (type.isBinary()) {
+        if (type.isBinary() || type.isBinaryGeospatial()) {
             return (consumer, v) -> consumer.addBinary((Binary) v);
         }
         if (fieldType instanceof EnumType enumType) {
@@ -95,6 +96,9 @@ class ModelFieldsWriter {
             var config = buildDecimalConfig(bigDecimalType.precision(), bigDecimalType.scale(),
                     bigDecimalType.roundingMode(), carpetConfiguration.decimalConfig());
             return new BigDecimalWrite(config)::write;
+        }
+        if (type.isJtsGeometry()) {
+            return geometryCosumer();
         }
         if (fieldType instanceof WriteRecordModelType<?> recordType) {
             var recordWriter = new WriteRecordModelWriter(recordConsumer, recordType, carpetConfiguration);

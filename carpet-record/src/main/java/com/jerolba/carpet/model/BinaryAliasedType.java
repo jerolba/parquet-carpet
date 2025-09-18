@@ -15,16 +15,22 @@
  */
 package com.jerolba.carpet.model;
 
-public sealed interface FieldType
-        permits BooleanType, ByteType, ShortType, IntegerType,
-        LongType, FloatType, DoubleType, StringType, BinaryType, EnumType,
-        UuidType, BigDecimalType, LocalDateType, LocalTimeType,
-        LocalDateTimeType, InstantType, GeometryType,
-        CollectionType, ListType, SetType, MapType,
-        WriteRecordModelType {
+public final class BinaryAliasedType extends BinaryType {
 
-    boolean isNotNull();
+    private final BinaryLogicalType logicalType;
 
-    Class<?> getClassType();
+    BinaryAliasedType(boolean isNotNull, BinaryLogicalType logicalType) {
+        super(isNotNull);
+        this.logicalType = logicalType;
+    }
+
+    @Override
+    public BinaryAliasedType notNull() {
+        return new BinaryAliasedType(true, logicalType);
+    }
+
+    public BinaryLogicalType logicalType() {
+        return logicalType;
+    }
 
 }

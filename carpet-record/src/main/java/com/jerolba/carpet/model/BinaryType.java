@@ -15,28 +15,50 @@
  */
 package com.jerolba.carpet.model;
 
+import org.apache.parquet.column.schema.EdgeInterpolationAlgorithm;
 import org.apache.parquet.io.api.Binary;
 
-public record BinaryType(boolean isNotNull, BinaryLogicalType logicalType) implements FieldType {
+import com.jerolba.carpet.model.GeometryType.GeospatialType;
+
+public sealed class BinaryType implements FieldType permits BinaryGeospatialType, BinaryAliasedType {
+
+    private final boolean isNotNull;
+
+    BinaryType(boolean isNotNull) {
+        this.isNotNull = isNotNull;
+    }
+
+    @Override
+    public boolean isNotNull() {
+        return isNotNull;
+    }
 
     public BinaryType notNull() {
-        return new BinaryType(true, logicalType);
+        return new BinaryType(true);
     }
 
-    public BinaryType asString() {
-        return new BinaryType(isNotNull, BinaryLogicalType.STRING);
+    public BinaryAliasedType asString() {
+        return new BinaryAliasedType(isNotNull, BinaryLogicalType.STRING);
     }
 
-    public BinaryType asEnum() {
-        return new BinaryType(isNotNull, BinaryLogicalType.ENUM);
+    public BinaryAliasedType asEnum() {
+        return new BinaryAliasedType(isNotNull, BinaryLogicalType.ENUM);
     }
 
-    public BinaryType asJson() {
-        return new BinaryType(isNotNull, BinaryLogicalType.JSON);
+    public BinaryAliasedType asJson() {
+        return new BinaryAliasedType(isNotNull, BinaryLogicalType.JSON);
     }
 
-    public BinaryType asBson() {
-        return new BinaryType(isNotNull, BinaryLogicalType.BSON);
+    public BinaryAliasedType asBson() {
+        return new BinaryAliasedType(isNotNull, BinaryLogicalType.BSON);
+    }
+
+    public BinaryGeospatialType asParquetGeometry(String crs) {
+        return new BinaryGeospatialType(isNotNull, GeospatialType.GEOMETRY, crs, null);
+    }
+
+    public BinaryGeospatialType asParquetGeography(String crs, EdgeInterpolationAlgorithm algorithm) {
+        return new BinaryGeospatialType(isNotNull, GeospatialType.GEOGRAPHY, crs, algorithm);
     }
 
     @Override

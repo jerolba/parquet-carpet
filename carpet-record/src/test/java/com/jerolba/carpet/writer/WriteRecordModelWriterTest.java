@@ -55,15 +55,22 @@ import org.apache.avro.Conversions.DecimalConversion;
 import org.apache.avro.data.TimeConversions;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
+import org.apache.parquet.column.schema.EdgeInterpolationAlgorithm;
 import org.apache.parquet.io.api.Binary;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.io.WKBWriter;
 
 import com.jerolba.carpet.ParquetWriterTest;
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.TimeUnit;
 import com.jerolba.carpet.annotation.ParquetBson;
+import com.jerolba.carpet.annotation.ParquetGeography;
+import com.jerolba.carpet.annotation.ParquetGeography.EdgeAlgorithm;
+import com.jerolba.carpet.annotation.ParquetGeometry;
 import com.jerolba.carpet.annotation.ParquetJson;
 import com.jerolba.carpet.annotation.ParquetString;
 import com.jerolba.carpet.model.FieldTypes;
@@ -77,6 +84,9 @@ class WriteRecordModelWriterTest {
 
     @Nested
     class SimpleTypes {
+
+        private final GeometryFactory geomFactory = new GeometryFactory();
+        private final WKBWriter wkbWriter = new WKBWriter();
 
         @Test
         void intPrimitive() throws IOException {
@@ -551,6 +561,113 @@ class WriteRecordModelWriterTest {
             };
             var rec = new BsonAsBinaryObject(Binary.fromConstantByteArray(bson));
             var writerTest = new ParquetWriterTest<>(BsonAsBinaryObject.class);
+            writerTest.write(mapper, rec);
+
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                ByteBuffer asByteBuffer = (ByteBuffer) avroReader.read().get("value");
+                assertEquals(rec.value, Binary.fromReusedByteBuffer(asByteBuffer));
+            }
+
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec, carpetReader.read());
+            }
+        }
+
+        @Test
+        void geometryAsBinaryObject() throws IOException {
+
+            record GeometryAsBinaryObject(@ParquetGeometry Binary value) {
+            }
+
+            var mapper = writeRecordModel(GeometryAsBinaryObject.class)
+                    .withField("value", BINARY.asParquetGeometry("OGC:CRS84"), GeometryAsBinaryObject::value);
+
+            Binary point = Binary
+                    .fromConstantByteArray(wkbWriter.write(geomFactory.createPoint(new Coordinate(1.0, 1.0))));
+
+            var rec = new GeometryAsBinaryObject(point);
+            var writerTest = new ParquetWriterTest<>(GeometryAsBinaryObject.class);
+            writerTest.write(mapper, rec);
+
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                ByteBuffer asByteBuffer = (ByteBuffer) avroReader.read().get("value");
+                assertEquals(rec.value, Binary.fromReusedByteBuffer(asByteBuffer));
+            }
+
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec, carpetReader.read());
+            }
+        }
+
+        @Test
+        void geometryWithCrsAsBinaryObject() throws IOException {
+
+            record GeometryAsBinaryObject(@ParquetGeometry("OGC:CRS84") Binary value) {
+            }
+
+            var mapper = writeRecordModel(GeometryAsBinaryObject.class)
+                    .withField("value", BINARY.asParquetGeometry("OGC:CRS84"), GeometryAsBinaryObject::value);
+
+            Binary point = Binary
+                    .fromConstantByteArray(wkbWriter.write(geomFactory.createPoint(new Coordinate(1.0, 1.0))));
+
+            var rec = new GeometryAsBinaryObject(point);
+            var writerTest = new ParquetWriterTest<>(GeometryAsBinaryObject.class);
+            writerTest.write(mapper, rec);
+
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                ByteBuffer asByteBuffer = (ByteBuffer) avroReader.read().get("value");
+                assertEquals(rec.value, Binary.fromReusedByteBuffer(asByteBuffer));
+            }
+
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec, carpetReader.read());
+            }
+        }
+
+        @Test
+        void geographyAsBinaryObject() throws IOException {
+
+            record GeographyAsBinaryObject(@ParquetGeography Binary value) {
+            }
+
+            var mapper = writeRecordModel(GeographyAsBinaryObject.class)
+                    .withField("value", BINARY.asParquetGeography("OGC:CRS84", EdgeInterpolationAlgorithm.ANDOYER),
+                            GeographyAsBinaryObject::value);
+
+            Binary point = Binary
+                    .fromConstantByteArray(wkbWriter.write(geomFactory.createPoint(new Coordinate(1.0, 1.0))));
+
+            var rec = new GeographyAsBinaryObject(point);
+            var writerTest = new ParquetWriterTest<>(GeographyAsBinaryObject.class);
+            writerTest.write(mapper, rec);
+
+            try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+                ByteBuffer asByteBuffer = (ByteBuffer) avroReader.read().get("value");
+                assertEquals(rec.value, Binary.fromReusedByteBuffer(asByteBuffer));
+            }
+
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec, carpetReader.read());
+            }
+        }
+
+        @Test
+        void geographyWithCrsAsBinaryObject() throws IOException {
+
+            record GeographyAsBinaryObject(
+                    @ParquetGeography(crs = "OGC:CRS84", algorithm = EdgeAlgorithm.VINCENTY) Binary value) {
+            }
+
+            var mapper = writeRecordModel(GeographyAsBinaryObject.class)
+                    .withField("value", BINARY.asParquetGeography("OGC:CRS84", EdgeInterpolationAlgorithm.VINCENTY),
+                            GeographyAsBinaryObject::value);
+
+            Binary point = Binary
+                    .fromConstantByteArray(wkbWriter.write(geomFactory.createPoint(new Coordinate(1.0, 1.0))));
+
+            var rec = new GeographyAsBinaryObject(point);
+            var writerTest = new ParquetWriterTest<>(GeographyAsBinaryObject.class);
             writerTest.write(mapper, rec);
 
             try (var avroReader = writerTest.getAvroGenericRecordReader()) {
