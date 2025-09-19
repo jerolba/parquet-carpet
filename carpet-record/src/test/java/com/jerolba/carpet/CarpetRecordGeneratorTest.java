@@ -31,8 +31,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.parquet.io.api.Binary;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.locationtech.jts.geom.Geometry;
+
+import com.jerolba.carpet.annotation.ParquetBson;
+import com.jerolba.carpet.annotation.ParquetGeography;
+import com.jerolba.carpet.annotation.ParquetGeography.EdgeAlgorithm;
+import com.jerolba.carpet.annotation.ParquetGeometry;
+import com.jerolba.carpet.annotation.ParquetJson;
+import com.jerolba.carpet.annotation.PrecisionScale;
 
 class CarpetRecordGeneratorTest {
 
@@ -106,20 +115,76 @@ class CarpetRecordGeneratorTest {
             A, B;
         }
 
-        record Sample(Byte a, Short b, Integer c, Long d, Float e, Double f, Boolean g, String h, FromEnum i, UUID j,
-                BigDecimal k) {
+        record Sample(Byte a, Short b, Integer c, Long d, Float e, Double f, Boolean g, String h, FromEnum i, UUID j) {
         }
 
         String filePath = newTempFile("objectTypes");
         try (var writer = new CarpetWriter.Builder<>(new FileOutputStream(filePath), Sample.class)
                 .withDefaultDecimal(10, 2).build()) {
-            writer.write(new Sample((byte) 1, (short) 2, 3, 4L, 5.0f, 6.0, true, "A", FromEnum.B, UUID.randomUUID(),
-                    BigDecimal.TEN));
+            writer.write(new Sample((byte) 1, (short) 2, 3, 4L, 5.0f, 6.0, true, "A", FromEnum.B, UUID.randomUUID()));
         }
 
         List<String> classes = generateCode(filePath);
         assertTrue(classes.contains(
-                "record Sample(Byte a, Short b, Integer c, Long d, Float e, Double f, Boolean g, String h, String i, UUID j, BigDecimal k) {}"));
+                "record Sample(Byte a, Short b, Integer c, Long d, Float e, Double f, Boolean g, String h, String i, UUID j) {}"));
+    }
+
+    @Test
+    void bigDecimalType() throws IOException {
+
+        record Sample(@PrecisionScale(precision = 10, scale = 2) BigDecimal a, BigDecimal b) {
+        }
+
+        String filePath = newTempFile("decimalTypes");
+        try (var writer = new CarpetWriter.Builder<>(new FileOutputStream(filePath), Sample.class)
+                .withDefaultDecimal(20, 4).build()) {
+            writer.write(new Sample(BigDecimal.TEN, BigDecimal.ONE));
+        }
+
+        List<String> classes = generateCode(filePath);
+        assertTrue(classes.contains(
+                "record Sample("
+                        + "@PrecisionScale(precision = 10, scale = 2) BigDecimal a, "
+                        + "@PrecisionScale(precision = 20, scale = 4) BigDecimal b) {}"));
+    }
+
+    @Test
+    void geoSpatialTypes() throws IOException {
+
+        record Sample(
+                @ParquetGeometry("OGC:CRS84") Geometry geometry,
+                @ParquetGeometry Geometry geometryUntyped,
+                @ParquetGeography(crs = "OGC:CRS84", algorithm = EdgeAlgorithm.VINCENTY) Geometry geography,
+                @ParquetGeography Geometry geographyUntyped) {
+        }
+
+        String filePath = newTempFile("objectTypes");
+        try (var writer = new CarpetWriter<>(new FileOutputStream(filePath), Sample.class)) {
+            writer.write(new Sample(null, null, null, null));
+        }
+
+        List<String> classes = generateCode(filePath);
+        assertTrue(classes.contains(
+                "record Sample(@ParquetGeometry(OGC:CRS84) geometry, "
+                        + "@ParquetGeometry geometryUntyped, "
+                        + "@ParquetGeography(csr=\"OGC:CRS84\", EdgeInterpolationAlgorithm.algorithm=VINCENTY) geography, "
+                        + "@ParquetGeography geographyUntyped) {}"));
+    }
+
+    @Test
+    void annotatedJsonBsonTypes() throws IOException {
+
+        record Sample(@ParquetBson Binary bson, @ParquetJson String json) {
+        }
+
+        String filePath = newTempFile("objectTypes");
+        try (var writer = new CarpetWriter<>(new FileOutputStream(filePath), Sample.class)) {
+            writer.write(new Sample(null, null));
+        }
+
+        List<String> classes = generateCode(filePath);
+        assertTrue(classes.contains(
+                "record Sample(@ParquetBson Binary bson, @ParquetJson String json) {}"));
     }
 
     @Test
