@@ -295,6 +295,18 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
         }
 
         /**
+         * Sets the Parquet format row group row count limit used by the constructed
+         * writer.
+         *
+         * @param rowCount limit for the number of rows stored in a row group
+         * @return this builder for method chaining
+         */
+        public Builder<T> withRowGroupRowCountLimit(int rowCount) {
+            builder.withRowGroupRowCountLimit(rowCount);
+            return this;
+        }
+
+        /**
          * Sets the Parquet format page row count limit used by the constructed writer.
          *
          * @param rowCount limit for the number of rows stored in a page
@@ -516,6 +528,58 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
          */
         public Builder<T> withStatisticsTruncateLength(int length) {
             builder.withStatisticsTruncateLength(length);
+            return this;
+        }
+
+        /**
+         * Sets the statistics enabled/disabled for the specified column. All column
+         * statistics are enabled by default.
+         *
+         * @param columnPath the path of the column (dot-string)
+         * @param enabled    whether to write calculate statistics for the column
+         * @return this builder for method chaining
+         */
+        public Builder<T> withStatisticsEnabled(String columnPath, boolean enabled) {
+            builder.withStatisticsEnabled(columnPath, enabled);
+            return this;
+        }
+
+        /**
+         * Sets whether statistics are enabled globally. When disabled, statistics will
+         * not be collected for any column unless explicitly enabled for specific
+         * columns.
+         *
+         * @param enabled whether to collect statistics globally
+         * @return this builder for method chaining
+         */
+        public Builder<T> withStatisticsEnabled(boolean enabled) {
+            builder.withStatisticsEnabled(enabled);
+            return this;
+        }
+
+        /**
+         * Sets the size statistics enabled/disabled for the specified column. All
+         * column size statistics are enabled by default.
+         *
+         * @param columnPath the path of the column (dot-string)
+         * @param enabled    whether to collect size statistics for the column
+         * @return this builder for method chaining
+         */
+        public Builder<T> withSizeStatisticsEnabled(String columnPath, boolean enabled) {
+            builder.withSizeStatisticsEnabled(columnPath, enabled);
+            return this;
+        }
+
+        /**
+         * Sets whether size statistics are enabled globally. When disabled, size
+         * statistics will not be collected for any column unless explicitly enabled for
+         * specific columns.
+         *
+         * @param enabled whether to collect size statistics globally
+         * @return this builder for method chaining
+         */
+        public Builder<T> withSizeStatisticsEnabled(boolean enabled) {
+            builder.withSizeStatisticsEnabled(enabled);
             return this;
         }
 
