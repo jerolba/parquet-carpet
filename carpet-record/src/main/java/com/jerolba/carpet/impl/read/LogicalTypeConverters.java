@@ -89,16 +89,11 @@ class LogicalTypeConverters {
             return converterForJsonType(type, consumer);
         } else if (logicalTypeAnnotation.equals(bsonType())) {
             return converterForBsonType(type, consumer);
-        } else if (logicalTypeAnnotation instanceof GeometryLogicalTypeAnnotation && type.isGeometry()) {
-            return converterForGeometry(consumer);
-        } else if (logicalTypeAnnotation instanceof GeographyLogicalTypeAnnotation && type.isGeometry()) {
-            return converterForGeometry(consumer);
+        } else if (logicalTypeAnnotation instanceof GeometryLogicalTypeAnnotation ||
+                logicalTypeAnnotation instanceof GeographyLogicalTypeAnnotation) {
+            return converterForGeospatial(type, consumer);
         }
         return null;
-    }
-
-    private static Converter converterForGeometry(Consumer<Object> consumer) {
-        return new GeometryConverter(consumer);
     }
 
     private static Converter converterForStringOrEnumType(JavaType type, Consumer<Object> consumer) {
@@ -198,6 +193,13 @@ class LogicalTypeConverters {
             PrimitiveTypeName typeName, DecimalLogicalTypeAnnotation decimalType) {
         if (type == null || type.isBigDecimal()) {
             return new DecimalConverter(consumer, typeName, decimalType.getScale());
+        }
+        return null;
+    }
+
+    private static Converter converterForGeospatial(JavaType type, Consumer<Object> consumer) {
+        if (type == null || type.isGeometry()) {
+            return new GeometryConverter(consumer);
         }
         return null;
     }
