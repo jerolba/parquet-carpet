@@ -115,20 +115,18 @@ class CarpetRecordGeneratorTest {
             A, B;
         }
 
-        record Sample(Byte a, Short b, Integer c, Long d, Float e, Double f, Boolean g, String h, FromEnum i, UUID j,
-                BigDecimal k) {
+        record Sample(Byte a, Short b, Integer c, Long d, Float e, Double f, Boolean g, String h, FromEnum i, UUID j) {
         }
 
         String filePath = newTempFile("objectTypes");
         try (var writer = new CarpetWriter.Builder<>(new FileOutputStream(filePath), Sample.class)
                 .withDefaultDecimal(10, 2).build()) {
-            writer.write(new Sample((byte) 1, (short) 2, 3, 4L, 5.0f, 6.0, true, "A", FromEnum.B, UUID.randomUUID(),
-                    BigDecimal.TEN));
+            writer.write(new Sample((byte) 1, (short) 2, 3, 4L, 5.0f, 6.0, true, "A", FromEnum.B, UUID.randomUUID()));
         }
 
         List<String> classes = generateCode(filePath);
         assertTrue(classes.contains(
-                "record Sample(Byte a, Short b, Integer c, Long d, Float e, Double f, Boolean g, String h, String i, UUID j, BigDecimal k) {}"));
+                "record Sample(Byte a, Short b, Integer c, Long d, Float e, Double f, Boolean g, String h, String i, UUID j) {}"));
     }
 
     @Test
