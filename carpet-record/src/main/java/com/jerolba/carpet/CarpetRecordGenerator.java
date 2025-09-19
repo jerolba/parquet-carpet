@@ -16,8 +16,10 @@
 package com.jerolba.carpet;
 
 import static com.jerolba.carpet.impl.read.SchemaValidation.isThreeLevel;
+import static org.apache.parquet.schema.LogicalTypeAnnotation.bsonType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.dateType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.enumType;
+import static org.apache.parquet.schema.LogicalTypeAnnotation.jsonType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.listType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.mapType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.stringType;
@@ -35,14 +37,18 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringJoiner;
 
 import org.apache.parquet.ParquetReadOptions;
+import org.apache.parquet.column.schema.EdgeInterpolationAlgorithm;
 import org.apache.parquet.conf.PlainParquetConfiguration;
 import org.apache.parquet.hadoop.ParquetFileReader;
 import org.apache.parquet.io.InputFile;
 import org.apache.parquet.schema.GroupType;
 import org.apache.parquet.schema.LogicalTypeAnnotation;
 import org.apache.parquet.schema.LogicalTypeAnnotation.DecimalLogicalTypeAnnotation;
+import org.apache.parquet.schema.LogicalTypeAnnotation.GeographyLogicalTypeAnnotation;
+import org.apache.parquet.schema.LogicalTypeAnnotation.GeometryLogicalTypeAnnotation;
 import org.apache.parquet.schema.LogicalTypeAnnotation.IntLogicalTypeAnnotation;
 import org.apache.parquet.schema.LogicalTypeAnnotation.TimeLogicalTypeAnnotation;
 import org.apache.parquet.schema.LogicalTypeAnnotation.TimestampLogicalTypeAnnotation;
@@ -87,13 +93,14 @@ public class CarpetRecordGenerator {
 
         private List<String> calculate(InputFile inputFile) throws IOException {
             ParquetReadOptions readOptions = ParquetReadOptions.builder(new PlainParquetConfiguration()).build();
-            ParquetFileReader fileReader = ParquetFileReader.open(inputFile, readOptions);
-            MessageType schema = fileReader.getFileMetaData().getSchema();
-            SchemaInspector inspector = new SchemaInspector();
-            RecordMetadata generated = inspector.inspectGroup(schema, schema.getName()).recordClass();
-            Set<RecordMetadata> allClasses = new TreeTraversal().locateClassesInTree(generated);
-            CodeGenerator codeGenerator = new CodeGenerator();
-            return allClasses.stream().map(codeGenerator::recordToString).toList();
+            try (ParquetFileReader fileReader = ParquetFileReader.open(inputFile, readOptions)) {
+                MessageType schema = fileReader.getFileMetaData().getSchema();
+                SchemaInspector inspector = new SchemaInspector();
+                RecordMetadata generated = inspector.inspectGroup(schema, schema.getName()).recordClass();
+                Set<RecordMetadata> allClasses = new TreeTraversal().locateClassesInTree(generated);
+                CodeGenerator codeGenerator = new CodeGenerator();
+                return allClasses.stream().map(codeGenerator::recordToString).toList();
+            }
         }
 
         private static class TreeTraversal {
@@ -225,7 +232,7 @@ public class CarpetRecordGenerator {
 
         @Override
         public String getJavaType() {
-            return notNull ? type.primitive : type.object;
+            return notNull ? type.primitive() : type.object();
         }
 
     }
@@ -265,36 +272,115 @@ public class CarpetRecordGenerator {
 
     }
 
-    private enum BasicTypes {
-        BYTE_TYPE("byte", "Byte"),
-        SHORT_TYPE("short", "Short"),
-        INT_TYPE("int", "Integer"),
-        LONG_TYPE("long", "Long"),
-        FLOAT_TYPE("float", "Float"),
-        DOUBLE_TYPE("double", "Double"),
-        BOOLEAN_TYPE("boolean", "Boolean"),
-        STRING_TYPE("String"),
-        ENUM_TYPE("String"),
-        UUID_TYPE("UUID"),
-        LOCAL_DATE_TYPE("LocalDate"),
-        LOCAL_TIME_TYPE("LocalTime"),
-        LOCAL_DATE_TIME_TYPE("LocalDateTime"),
-        INSTANT_TYPE("Instant"),
-        DECIMAL_TYPE("BigDecimal"),
-        BINARY("Binary");
+    private interface BasicTypes {
 
-        private final String primitive;
-        private final String object;
-
-        private BasicTypes(String primitive, String object) {
-            this.primitive = primitive;
-            this.object = object;
+        default String primitive() {
+            return null;
         }
 
-        private BasicTypes(String object) {
+        String object();
+
+    }
+
+    private record BasicTypeInfo(String primitive, String object) implements BasicTypes {
+        public BasicTypeInfo(String object) {
             this(object, object);
         }
     }
+
+    private static class GeometryType implements BasicTypes {
+
+        private final String csr;
+
+        public GeometryType(String csr) {
+            this.csr = csr;
+        }
+
+        @Override
+        public String object() {
+            if (csr != null) {
+                return "@ParquetGeometry(" + csr + ")";
+            }
+            return "@ParquetGeometry";
+        }
+
+    }
+
+    private static class GeographyType implements BasicTypes {
+
+        private final String csr;
+        private final EdgeInterpolationAlgorithm algorithm;
+
+        public GeographyType(String csr, EdgeInterpolationAlgorithm algorithm) {
+            this.csr = csr;
+            this.algorithm = algorithm;
+        }
+
+        @Override
+        public String object() {
+            String algoParam = algorithm != null ? "algorithm=" + algorithm.name() : "";
+            String csrParam = csr != null ? "csr=\"" + csr + "\"" : "";
+            if (csrParam.isEmpty() && algoParam.isEmpty()) {
+                return "@ParquetGeography";
+            }
+            String params = new StringJoiner(", ")
+                    .add(csrParam)
+                    .add("EdgeInterpolationAlgorithm." + algoParam)
+                    .toString();
+            return "@ParquetGeography(" + params + ")";
+        }
+
+    }
+
+    private static class BigDecimalType implements BasicTypes {
+
+        private final int scale;
+        private final int precision;
+
+        public BigDecimalType(int scale, int precision) {
+            this.scale = scale;
+            this.precision = precision;
+        }
+
+        @Override
+        public String object() {
+            return "@PrecisionScale(precision = " + precision + ", scale = " + scale + ") BigDecimal";
+        }
+
+    }
+
+    private static class BinaryAnnotatedType implements BasicTypes {
+
+        private final String annotation;
+        private final String object;
+
+        public BinaryAnnotatedType(String annotation, String object) {
+            this.annotation = annotation;
+            this.object = object;
+        }
+
+        @Override
+        public String object() {
+            return "@" + annotation + " " + object;
+        }
+
+    }
+
+    private static final BasicTypeInfo BYTE_TYPE = new BasicTypeInfo("byte", "Byte");
+    private static final BasicTypeInfo SHORT_TYPE = new BasicTypeInfo("short", "Short");
+    private static final BasicTypeInfo INT_TYPE = new BasicTypeInfo("int", "Integer");
+    private static final BasicTypeInfo LONG_TYPE = new BasicTypeInfo("long", "Long");
+    private static final BasicTypeInfo FLOAT_TYPE = new BasicTypeInfo("float", "Float");
+    private static final BasicTypeInfo DOUBLE_TYPE = new BasicTypeInfo("double", "Double");
+    private static final BasicTypeInfo BOOLEAN_TYPE = new BasicTypeInfo("boolean", "Boolean");
+    private static final BasicTypeInfo STRING_TYPE = new BasicTypeInfo("String");
+    private static final BasicTypeInfo ENUM_TYPE = new BasicTypeInfo("String");
+    private static final BasicTypeInfo UUID_TYPE = new BasicTypeInfo("UUID");
+    private static final BasicTypeInfo LOCAL_DATE_TYPE = new BasicTypeInfo("LocalDate");
+    private static final BasicTypeInfo LOCAL_TIME_TYPE = new BasicTypeInfo("LocalTime");
+    private static final BasicTypeInfo LOCAL_DATE_TIME_TYPE = new BasicTypeInfo("LocalDateTime");
+    private static final BasicTypeInfo INSTANT_TYPE = new BasicTypeInfo("Instant");
+    private static final BasicTypeInfo BINARY = new BasicTypeInfo("Binary");
 
     private static class PrimitiveFieldFactory {
 
@@ -303,12 +389,12 @@ public class CarpetRecordGenerator {
             BasicTypes basicType = buildFromLogicalType(parquetField);
             if (basicType == null) {
                 basicType = switch (typeName) {
-                case INT32 -> BasicTypes.INT_TYPE;
-                case INT64 -> BasicTypes.LONG_TYPE;
-                case FLOAT -> BasicTypes.FLOAT_TYPE;
-                case DOUBLE -> BasicTypes.DOUBLE_TYPE;
-                case BOOLEAN -> BasicTypes.BOOLEAN_TYPE;
-                case BINARY -> BasicTypes.BINARY;
+                case INT32 -> INT_TYPE;
+                case INT64 -> LONG_TYPE;
+                case FLOAT -> FLOAT_TYPE;
+                case DOUBLE -> DOUBLE_TYPE;
+                case BOOLEAN -> BOOLEAN_TYPE;
+                case BINARY -> BINARY;
                 default -> throw new RecordTypeConversionException(typeName + " deserialization not supported");
                 };
             }
@@ -322,42 +408,61 @@ public class CarpetRecordGenerator {
                 return null;
             }
 
-            if (logicalType.equals(stringType()) || logicalType.equals(enumType())) {
-                return BasicTypes.STRING_TYPE;
+            if (logicalType.equals(stringType())) {
+                return STRING_TYPE;
+            }
+            if (logicalType.equals(enumType())) {
+                return ENUM_TYPE;
+            }
+            if (logicalType.equals(jsonType())) {
+                return new BinaryAnnotatedType("ParquetJson", "String");
+            }
+            if (logicalType.equals(bsonType())) {
+                return new BinaryAnnotatedType("ParquetBson", "Binary");
             }
 
             if (logicalType instanceof IntLogicalTypeAnnotation intType) {
                 return switch (intType.getBitWidth()) {
-                case 8 -> BasicTypes.BYTE_TYPE;
-                case 16 -> BasicTypes.SHORT_TYPE;
-                default -> BasicTypes.INT_TYPE;
+                case 8 -> BYTE_TYPE;
+                case 16 -> SHORT_TYPE;
+                default -> INT_TYPE;
                 };
             }
 
-            if (logicalType instanceof DecimalLogicalTypeAnnotation) {
-                return BasicTypes.DECIMAL_TYPE;
+            if (logicalType instanceof DecimalLogicalTypeAnnotation decimal) {
+                return new BigDecimalType(decimal.getScale(), decimal.getPrecision());
             }
 
             var primitiveTypeName = parquetField.asPrimitiveType().getPrimitiveTypeName();
             if (logicalType.equals(uuidType()) && primitiveTypeName == FIXED_LEN_BYTE_ARRAY) {
-                return BasicTypes.UUID_TYPE;
+                return UUID_TYPE;
             }
 
             if (logicalType.equals(dateType()) && primitiveTypeName == INT32) {
-                return BasicTypes.LOCAL_DATE_TYPE;
+                return LOCAL_DATE_TYPE;
             }
 
             if (logicalType instanceof TimeLogicalTypeAnnotation
                     && (primitiveTypeName == INT32 || primitiveTypeName == INT64)) {
-                return BasicTypes.LOCAL_TIME_TYPE;
+                return LOCAL_TIME_TYPE;
             }
 
             if (logicalType instanceof TimestampLogicalTypeAnnotation timeStamp && primitiveTypeName == INT64) {
                 if (timeStamp.isAdjustedToUTC()) {
-                    return BasicTypes.INSTANT_TYPE;
+                    return INSTANT_TYPE;
                 } else {
-                    return BasicTypes.LOCAL_DATE_TIME_TYPE;
+                    return LOCAL_DATE_TIME_TYPE;
                 }
+            }
+
+            if (logicalType instanceof GeometryLogicalTypeAnnotation geometry) {
+                String crs = geometry.getCrs();
+                return new GeometryType(crs);
+            }
+            if (logicalType instanceof GeographyLogicalTypeAnnotation geography) {
+                String crs = geography.getCrs();
+                EdgeInterpolationAlgorithm algorithm = geography.getAlgorithm();
+                return new GeographyType(crs, algorithm);
             }
             return null;
         }
@@ -374,7 +479,7 @@ public class CarpetRecordGenerator {
     }
 
     private static String capitalize(String str) {
-        if (str == null || str.length() == 0) {
+        if (str == null || str.isEmpty()) {
             return str;
         }
         if (str.length() == 1) {
