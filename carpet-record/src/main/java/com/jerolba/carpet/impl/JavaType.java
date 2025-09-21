@@ -123,6 +123,10 @@ public class JavaType {
         return typeName.equals("org.locationtech.jts.geom.Geometry") || Geometry.class.isAssignableFrom(type);
     }
 
+    public boolean isVariant() {
+        return typeName.equals("org.apache.parquet.variant.Variant");
+    }
+
     public boolean isRecord() {
         return type.isRecord();
     }

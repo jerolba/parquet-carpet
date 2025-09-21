@@ -102,6 +102,9 @@ class FieldsWriter {
         if (type.isGeometry()) {
             return geometryCosumer();
         }
+        if (type.isVariant()) {
+            return VariantWriter.simpleVariantWriter();
+        }
         if (type.isRecord()) {
             var recordWriter = new CarpetRecordWriter(recordConsumer, type.getJavaType(), carpetConfiguration);
             return (consumer, v) -> {

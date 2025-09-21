@@ -16,6 +16,10 @@
 package com.jerolba.carpet.writer;
 
 import static com.jerolba.carpet.AnnotatedLevels.TWO;
+import static com.jerolba.carpet.writer.VariantHelper.assertMatchesVariantWithNestedFields;
+import static com.jerolba.carpet.writer.VariantHelper.assertMatchesVariantWithSingleValue;
+import static com.jerolba.carpet.writer.VariantHelper.givenVariantWithNestedFields;
+import static com.jerolba.carpet.writer.VariantHelper.givenVariantWithSingleValue;
 import static java.util.Collections.emptyList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -31,6 +35,7 @@ import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.util.Utf8;
 import org.apache.parquet.io.api.Binary;
+import org.apache.parquet.variant.Variant;
 import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
@@ -433,9 +438,49 @@ class CarpetWriterCollectionTwoLevelTest {
             for (int i = 0; i < wkb2.length; i++) {
                 assertEquals(wkb2[i], fromAvro2[i]);
             }
-            try (var carpetReader = writerTest.getCarpetReader()) {
-                assertEquals(rec, carpetReader.read());
-            }
+        }
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec, carpetReader.read());
+        }
+    }
+
+    @Test
+    void simpleVariantCollection() throws IOException {
+
+        record SimpleTypeCollection(String name, List<Variant> values) {
+        }
+
+        Variant variant1 = givenVariantWithNestedFields();
+        Variant variant2 = givenVariantWithSingleValue();
+
+        var rec = new SimpleTypeCollection("foo", List.of(variant1, variant2));
+        var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class).withLevel(TWO);
+        writerTest.write(rec);
+
+        try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+            GenericRecord avroRecord = avroReader.read();
+            assertEquals(rec.name(), avroRecord.get("name").toString());
+
+            List<GenericRecord> values = (List<GenericRecord>) avroRecord.get("values");
+            assertEquals(2, values.size());
+
+            GenericRecord var1 = values.get(0);
+            Variant readVariant1 = new Variant(
+                    (ByteBuffer) var1.get("value"),
+                    (ByteBuffer) var1.get("metadata"));
+            assertMatchesVariantWithNestedFields(readVariant1);
+
+            GenericRecord var2 = values.get(1);
+            Variant readVariant2 = new Variant(
+                    (ByteBuffer) var2.get("value"),
+                    (ByteBuffer) var2.get("metadata"));
+            assertMatchesVariantWithSingleValue(readVariant2);
+        }
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            SimpleTypeCollection simpleTypeCollection = carpetReader.read();
+            assertEquals(2, simpleTypeCollection.values().size());
+            assertMatchesVariantWithNestedFields(simpleTypeCollection.values().get(0));
+            assertMatchesVariantWithSingleValue(simpleTypeCollection.values().get(1));
         }
     }
 

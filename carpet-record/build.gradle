@@ -23,6 +23,7 @@ dependencies {
     api "org.apache.parquet:parquet-common:${parquetVersion}"
     api "org.apache.parquet:parquet-column:${parquetVersion}"
     api "org.apache.parquet:parquet-hadoop:${parquetVersion}"
+    implementation "org.apache.parquet:parquet-variant:${parquetVersion}"
     implementation("org.apache.hadoop:hadoop-mapreduce-client-core:${hadoopVersion}"){
         exclude group: 'com.fasterxml.jackson.core', module: 'jackson-databind'
         exclude group: 'org.apache.hadoop', module: 'hadoop-yarn-client'
@@ -97,6 +98,7 @@ dependencies {
 
     testImplementation 'org.apache.commons:commons-lang3:3.12.0'
     testImplementation "org.apache.parquet:parquet-avro:${parquetVersion}"
+    testImplementation "org.apache.parquet:parquet-variant:${parquetVersion}"
     testImplementation 'org.slf4j:slf4j-simple:1.7.36'
     testImplementation "org.junit.jupiter:junit-jupiter:${junitVersion}"
     testRuntimeOnly "org.junit.platform:junit-platform-launcher"

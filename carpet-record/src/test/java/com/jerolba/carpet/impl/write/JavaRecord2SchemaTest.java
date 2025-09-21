@@ -35,6 +35,7 @@ import java.util.UUID;
 
 import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.schema.MessageType;
+import org.apache.parquet.variant.Variant;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Geometry;
@@ -539,6 +540,46 @@ class JavaRecord2SchemaTest {
         assertThrows(RecordTypeConversionException.class,
                 () -> defaultConfigSchema.createSchema(GeometryRecord.class),
                 "JTS Geometry field must be annotated with @ParquetGeometry or @ParquetGeography");
+    }
+
+    @Nested
+    class VariantSupport {
+
+        @Test
+        void recordWithVariant() {
+            record RecordWithVariant(long id, Variant data) {
+            }
+
+            MessageType schema = defaultConfigSchema.createSchema(RecordWithVariant.class);
+            String expected = """
+                    message RecordWithVariant {
+                      required int64 id;
+                      optional group data (VARIANT(1)) {
+                        required binary metadata;
+                        required binary value;
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void recordWithNotNullVariant() {
+            record RecordWithVariant(long id, @NotNull Variant data) {
+            }
+
+            MessageType schema = defaultConfigSchema.createSchema(RecordWithVariant.class);
+            String expected = """
+                    message RecordWithVariant {
+                      required int64 id;
+                      required group data (VARIANT(1)) {
+                        required binary metadata;
+                        required binary value;
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
     }
 
     @Nested
@@ -1382,6 +1423,24 @@ class JavaRecord2SchemaTest {
         }
 
         @Test
+        void nestedVariantCollection() {
+            record SimpleTypeCollection(String id, List<Variant> values) {
+            }
+
+            MessageType schema = schemaFactory.createSchema(SimpleTypeCollection.class);
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      repeated group values (VARIANT(1)) {
+                        required binary metadata;
+                        required binary value;
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
         void consecutiveNestedCollections() {
             record ConsecutiveNestedCollection(String id, List<List<Integer>> values) {
             }
@@ -1676,6 +1735,26 @@ class JavaRecord2SchemaTest {
                       optional binary id (STRING);
                       optional group values (LIST) {
                         repeated binary element (GEOGRAPHY);
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedVariantCollection() {
+            record SimpleTypeCollection(String id, List<Variant> values) {
+            }
+
+            MessageType schema = schemaFactory.createSchema(SimpleTypeCollection.class);
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated group element (VARIANT(1)) {
+                          required binary metadata;
+                          required binary value;
+                        }
                       }
                     }
                     """;
@@ -2162,6 +2241,28 @@ class JavaRecord2SchemaTest {
         }
 
         @Test
+        void nestedVariantCollection() {
+            record SimpleTypeCollection(String id, List<Variant> values) {
+            }
+
+            MessageType schema = schemaFactory.createSchema(SimpleTypeCollection.class);
+            String expected = """
+                    message SimpleTypeCollection {
+                      optional binary id (STRING);
+                      optional group values (LIST) {
+                        repeated group list {
+                          optional group element (VARIANT(1)) {
+                            required binary metadata;
+                            required binary value;
+                          }
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
         void nestedRecordCollection() {
 
             record ChildRecord(String id, Boolean loaded) {
@@ -2551,6 +2652,29 @@ class JavaRecord2SchemaTest {
                           optional group value {
                             optional binary id (STRING);
                             optional boolean loaded;
+                          }
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedVariantTypeMap() {
+            record VariantTypeMap(String id, Map<String, Variant> values) {
+            }
+
+            MessageType schema = schemaFactory.createSchema(VariantTypeMap.class);
+            String expected = """
+                    message VariantTypeMap {
+                      optional binary id (STRING);
+                      optional group values (MAP) {
+                        repeated group key_value {
+                          required binary key (STRING);
+                          optional group value (VARIANT(1)) {
+                            required binary metadata;
+                            required binary value;
                           }
                         }
                       }

@@ -31,6 +31,7 @@ import java.util.Map;
 
 import org.apache.parquet.schema.GroupType;
 import org.apache.parquet.schema.LogicalTypeAnnotation;
+import org.apache.parquet.schema.LogicalTypeAnnotation.VariantLogicalTypeAnnotation;
 import org.apache.parquet.schema.MessageType;
 import org.apache.parquet.schema.PrimitiveType;
 import org.apache.parquet.schema.Type;
@@ -114,6 +115,12 @@ class SchemaFilter {
                 inProjection.put(parquetFieldName, type);
                 continue;
             }
+            if (asGroupType.getLogicalTypeAnnotation() instanceof VariantLogicalTypeAnnotation &&
+                    new JavaType(recordComponent.getType()).isVariant()) {
+                validation.validateNullability(parquetType, recordComponent);
+                inProjection.put(parquetFieldName, parquetType);
+                continue;
+            }
 
             if (recordComponent.getType().isRecord()) {
                 validation.validateNullability(parquetType, recordComponent);
@@ -171,8 +178,13 @@ class SchemaFilter {
             validation.validatePrimitiveCompatibility(primitiveType, parameterized.getActualJavaType());
             return parquetType;
         }
-        // if collection type is Java "Record"
         var asGroupType = parquetType.asGroupType();
+        JavaType actualJavaType = parameterized.getActualJavaType();
+        if (actualJavaType.isVariant()
+                && asGroupType.getLogicalTypeAnnotation() instanceof VariantLogicalTypeAnnotation) {
+            return parquetType;
+        }
+        // if collection type is Java "Record"
         var actualCollectionType = parameterized.getActualType();
         if (actualCollectionType.isRecord()) {
             return filter(actualCollectionType, column, asGroupType);
@@ -230,13 +242,19 @@ class SchemaFilter {
             validation.validatePrimitiveCompatibility(primitiveType, parameterized.getActualJavaType());
             return parentGroupType;
         }
+        JavaType actualJavaType = parameterized.getActualJavaType();
+        if (actualJavaType.isVariant()
+                && childElement.getLogicalTypeAnnotation() instanceof VariantLogicalTypeAnnotation) {
+            Type listGroupMapped = rewrapListIfExists(listGroup, childElement.asGroupType());
+            return parentGroupType.withNewFields(listGroupMapped);
+        }
         var actualCollectionType = parameterized.getActualType();
         if (actualCollectionType.isRecord()) {
             GroupType childMapped = filter(actualCollectionType, column, childElement.asGroupType());
             Type listGroupMapped = rewrapListIfExists(listGroup, childMapped);
             return parentGroupType.withNewFields(listGroupMapped);
         }
-        if (isBasicSupportedType(parameterized.getActualJavaType()) && !childElement.isPrimitive()) {
+        if (isBasicSupportedType(actualJavaType) && !childElement.isPrimitive()) {
             throw new RecordTypeConversionException(
                     childElement.getName() + " is not compatible with " + actualCollectionType.getName());
         }
@@ -291,6 +309,13 @@ class SchemaFilter {
                 }
                 var parameterizedChild = parameterized.getValueTypeAsMap();
                 value = analizeMapStructure(column, name, parameterizedChild, value.asGroupType());
+            }
+        } else if (parameterized.getValueActualJavaType().isVariant()) {
+            if (value.getLogicalTypeAnnotation() instanceof VariantLogicalTypeAnnotation) {
+                if (!parameterized.getValueActualJavaType().isVariant()) {
+                    throw new RecordTypeConversionException("Field " + name + " of " + column.getClassName()
+                            + " is not a variant type");
+                }
             }
         } else {
             Class<?> valueActualType = parameterized.getValueActualType();

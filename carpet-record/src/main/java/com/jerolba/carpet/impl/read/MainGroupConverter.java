@@ -33,6 +33,7 @@ import org.apache.parquet.io.api.Converter;
 import org.apache.parquet.io.api.GroupConverter;
 import org.apache.parquet.schema.GroupType;
 import org.apache.parquet.schema.LogicalTypeAnnotation;
+import org.apache.parquet.schema.LogicalTypeAnnotation.VariantLogicalTypeAnnotation;
 import org.apache.parquet.schema.Type;
 import org.apache.parquet.schema.Type.Repetition;
 
@@ -98,6 +99,9 @@ class MainGroupConverter {
             }
             if (Map.class.isAssignableFrom(recordComponent.getType())) {
                 return new CarpetGroupAsMapConverter(recordComponent.getType(), asGroupType, consumer);
+            }
+            if (logicalType instanceof VariantLogicalTypeAnnotation) {
+                return new VariantConverter(asGroupType, consumer);
             }
             return new CarpetGroupConverter(asGroupType, recordComponent.getType(), consumer);
         }
@@ -205,6 +209,9 @@ class MainGroupConverter {
                 var parameterizedMap = parameterized.getParametizedAsMap();
                 return new CarpetMapConverter(listElement.asGroupType(), parameterizedMap, consumer);
             }
+            if (logicalType instanceof VariantLogicalTypeAnnotation) {
+                return new VariantConverter(listElement.asGroupType(), consumer);
+            }
         }
         GroupType groupType = listElement.asGroupType();
         Class<?> listType = parameterized.getActualType();
@@ -290,6 +297,11 @@ class MainGroupConverter {
                         this::consumeValue);
                 return;
             }
+            if (logicalType instanceof VariantLogicalTypeAnnotation) {
+                converterValue = new VariantConverter(mapValueType.asGroupType(),
+                        this::consumeValue);
+                return;
+            }
             Class<?> mapValueActualType = parameterized.getValueActualType();
             converterValue = new CarpetGroupConverter(mapValueType.asGroupType(), mapValueActualType,
                     this::consumeValue);
@@ -367,6 +379,9 @@ class MainGroupConverter {
         var asGroupType = parquetField.asGroupType();
         if (parameterized.isMap()) {
             return new CarpetMapConverter(asGroupType, parameterized.getParametizedAsMap(), consumer);
+        }
+        if (parameterized.getActualJavaType().isVariant()) {
+            return new VariantConverter(parquetField.asGroupType(), consumer);
         }
         var actualCollectionType = parameterized.getActualType();
         if (actualCollectionType.isRecord()) {

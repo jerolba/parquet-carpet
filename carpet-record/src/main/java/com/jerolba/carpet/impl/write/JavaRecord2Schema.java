@@ -33,10 +33,12 @@ import static org.apache.parquet.schema.LogicalTypeAnnotation.geometryType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.intType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.jsonType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.stringType;
+import static org.apache.parquet.schema.LogicalTypeAnnotation.variantType;
 import static org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName.BINARY;
 import static org.apache.parquet.schema.Type.Repetition.OPTIONAL;
 import static org.apache.parquet.schema.Type.Repetition.REPEATED;
 import static org.apache.parquet.schema.Type.Repetition.REQUIRED;
+import static org.apache.parquet.schema.Types.buildGroup;
 import static org.apache.parquet.schema.Types.primitive;
 
 import java.lang.reflect.RecordComponent;
@@ -244,11 +246,21 @@ class JavaRecord2Schema {
             return buildInstantType(repetition, name, carpetConfiguration.defaultTimeUnit());
         } else if (javaType.isGeometry()) {
             return buildJtsGeometryType(javaType, repetition, name);
+        } else if (javaType.isVariant()) {
+            return buildUnshreddedVariantType(repetition, name);
         } else if (javaType.isRecord()) {
             List<Type> childFields = buildCompositeChild(javaType.getJavaType(), visited);
             return new GroupType(repetition, name, childFields);
         }
         return null;
+    }
+
+    private Type buildUnshreddedVariantType(Repetition repetition, String name) {
+        return buildGroup(repetition)
+                .as(variantType((byte) 1))
+                .addField(primitive(BINARY, REQUIRED).named("metadata"))
+                .addField(primitive(BINARY, REQUIRED).named("value"))
+                .named(name);
     }
 
     private Type buildStringType(JavaType javaType, Repetition repetition, String name) {
