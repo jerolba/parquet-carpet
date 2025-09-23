@@ -32,7 +32,10 @@ import static com.jerolba.carpet.model.FieldTypes.LOCAL_TIME;
 import static com.jerolba.carpet.model.FieldTypes.LONG;
 import static com.jerolba.carpet.model.FieldTypes.SHORT;
 import static com.jerolba.carpet.model.FieldTypes.STRING;
+import static com.jerolba.carpet.model.FieldTypes.VARIANT;
 import static com.jerolba.carpet.model.FieldTypes.writeRecordModel;
+import static com.jerolba.carpet.writer.VariantHelper.assertMatchesVariantWithNestedFields;
+import static com.jerolba.carpet.writer.VariantHelper.givenVariantWithNestedFields;
 import static java.time.ZoneOffset.ofHours;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -57,6 +60,7 @@ import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.parquet.column.schema.EdgeInterpolationAlgorithm;
 import org.apache.parquet.io.api.Binary;
+import org.apache.parquet.variant.Variant;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -2384,6 +2388,33 @@ class WriteRecordModelWriterTest {
                 assertEquals(rec1.id, avroReader.read().get("id").toString());
                 assertEquals(rec2.id, avroReader.read().get("id").toString());
             }
+        }
+    }
+
+    @Test
+    void variantType() throws IOException {
+        record VariantRecord(int id, Variant variantValue) {
+        }
+
+        var mapper = writeRecordModel(VariantRecord.class)
+                .withField("id", INTEGER, VariantRecord::id)
+                .withField("variantValue", VARIANT, VariantRecord::variantValue);
+
+        Variant variant = givenVariantWithNestedFields();
+
+        var writerTest = new ParquetWriterTest<>(VariantRecord.class);
+        writerTest.write(mapper, new VariantRecord(1, variant), new VariantRecord(2, null));
+        try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+            GenericRecord record1 = avroReader.read();
+            GenericRecord variantRecord = (GenericRecord) record1.get("variantValue");
+            Variant readVariant = new Variant(
+                    (ByteBuffer) variantRecord.get("value"),
+                    (ByteBuffer) variantRecord.get("metadata"));
+
+            assertMatchesVariantWithNestedFields(readVariant);
+
+            GenericRecord record2 = avroReader.read();
+            assertNull(record2.get("variantValue"));
         }
     }
 

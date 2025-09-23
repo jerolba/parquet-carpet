@@ -25,7 +25,12 @@ import static com.jerolba.carpet.model.FieldTypes.INTEGER;
 import static com.jerolba.carpet.model.FieldTypes.LIST;
 import static com.jerolba.carpet.model.FieldTypes.MAP;
 import static com.jerolba.carpet.model.FieldTypes.STRING;
+import static com.jerolba.carpet.model.FieldTypes.VARIANT;
 import static com.jerolba.carpet.model.FieldTypes.writeRecordModel;
+import static com.jerolba.carpet.writer.VariantHelper.assertMatchesVariantWithNestedFields;
+import static com.jerolba.carpet.writer.VariantHelper.assertMatchesVariantWithSingleValue;
+import static com.jerolba.carpet.writer.VariantHelper.givenVariantWithNestedFields;
+import static com.jerolba.carpet.writer.VariantHelper.givenVariantWithSingleValue;
 import static java.util.Collections.emptyMap;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -45,6 +50,7 @@ import org.apache.avro.util.Utf8;
 import org.apache.parquet.column.schema.EdgeInterpolationAlgorithm;
 import org.apache.parquet.io.InvalidRecordException;
 import org.apache.parquet.io.api.Binary;
+import org.apache.parquet.variant.Variant;
 import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
@@ -587,6 +593,52 @@ class WriteRecordModelWriterMapTest {
         assertEquals(expected.length, actualBytes.length);
         for (int i = 0; i < expected.length; i++) {
             assertEquals(expected[i], actualBytes[i]);
+        }
+    }
+
+    @Test
+    void mapVariantValue() throws IOException {
+
+        record MapValues(String name, Map<String, Variant> values) {
+        }
+
+        var mapper = writeRecordModel(MapValues.class)
+                .withField("name", STRING, MapValues::name)
+                .withField("values", MAP.ofTypes(STRING, VARIANT), MapValues::values);
+
+        Variant variant1 = givenVariantWithNestedFields();
+        Variant variant2 = givenVariantWithSingleValue();
+
+        var rec1 = new MapValues("foo", Map.of("FOO", variant1));
+        var rec2 = new MapValues("bar", Map.of("BAR", variant2));
+        var writerTest = new ParquetWriterTest<>(MapValues.class);
+        writerTest.write(mapper, rec1, rec2);
+
+        try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+            GenericRecord avroRecord = avroReader.read();
+            assertEquals(rec1.name(), avroRecord.get("name").toString());
+            Map<Object, Object> map1 = (Map<Object, Object>) byteBufferMap(avroRecord.get("values"));
+            assertTrue(map1.containsKey("FOO"));
+            GenericRecord variantRecord1 = (GenericRecord) map1.get("FOO");
+            Variant readVariant1 = new Variant(
+                    (ByteBuffer) variantRecord1.get("value"),
+                    (ByteBuffer) variantRecord1.get("metadata"));
+            assertMatchesVariantWithNestedFields(readVariant1);
+
+            avroRecord = avroReader.read();
+            assertEquals(rec2.name(), avroRecord.get("name").toString());
+            Map<Object, Object> map2 = (Map<Object, Object>) byteBufferMap(avroRecord.get("values"));
+            assertTrue(map2.containsKey("BAR"));
+            GenericRecord variantRecord2 = (GenericRecord) map2.get("BAR");
+            Variant readVariant2 = new Variant(
+                    (ByteBuffer) variantRecord2.get("value"),
+                    (ByteBuffer) variantRecord2.get("metadata"));
+            assertMatchesVariantWithSingleValue(readVariant2);
+        }
+
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertMatchesVariantWithNestedFields(carpetReader.read().values().get("FOO"));
+            assertMatchesVariantWithSingleValue(carpetReader.read().values().get("BAR"));
         }
     }
 

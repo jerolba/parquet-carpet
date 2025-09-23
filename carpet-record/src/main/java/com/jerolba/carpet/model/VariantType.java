@@ -15,16 +15,17 @@
  */
 package com.jerolba.carpet.model;
 
-public sealed interface FieldType
-        permits BooleanType, ByteType, ShortType, IntegerType,
-        LongType, FloatType, DoubleType, StringType, BinaryType, EnumType,
-        UuidType, BigDecimalType, LocalDateType, LocalTimeType,
-        LocalDateTimeType, InstantType, GeometryType, VariantType,
-        CollectionType, ListType, SetType, MapType,
-        WriteRecordModelType {
+import org.apache.parquet.variant.Variant;
 
-    boolean isNotNull();
+public record VariantType(boolean isNotNull) implements FieldType {
 
-    Class<?> getClassType();
+    public VariantType notNull() {
+        return new VariantType(true);
+    }
+
+    @Override
+    public Class<Variant> getClassType() {
+        return Variant.class;
+    }
 
 }

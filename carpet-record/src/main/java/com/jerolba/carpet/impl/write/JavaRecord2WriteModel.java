@@ -237,6 +237,9 @@ public class JavaRecord2WriteModel {
         if (javaType.isGeometry()) {
             return geometryType(javaType, isNotNull);
         }
+        if (javaType.isVariant()) {
+            return isNotNull ? FieldTypes.VARIANT.notNull() : FieldTypes.VARIANT;
+        }
         return null;
     }
 

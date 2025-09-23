@@ -37,7 +37,7 @@ class VariantWriter {
             .addField(primitive(BINARY, REQUIRED).named("value"))
             .named("variant");
 
-    public static BiConsumer<RecordConsumer, Object> simpleVariantWriter() {
+    public static BiConsumer<RecordConsumer, Object> simpleVariantConsumer() {
         return (consumer, v) -> VariantValueWriter.write(consumer, SIMPLE_VARIANT_SCHEMA, (Variant) v);
     }
 

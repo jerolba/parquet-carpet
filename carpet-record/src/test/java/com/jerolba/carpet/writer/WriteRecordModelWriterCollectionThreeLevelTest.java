@@ -27,7 +27,12 @@ import static com.jerolba.carpet.model.FieldTypes.LIST;
 import static com.jerolba.carpet.model.FieldTypes.MAP;
 import static com.jerolba.carpet.model.FieldTypes.SET;
 import static com.jerolba.carpet.model.FieldTypes.STRING;
+import static com.jerolba.carpet.model.FieldTypes.VARIANT;
 import static com.jerolba.carpet.model.FieldTypes.writeRecordModel;
+import static com.jerolba.carpet.writer.VariantHelper.assertMatchesVariantWithNestedFields;
+import static com.jerolba.carpet.writer.VariantHelper.assertMatchesVariantWithSingleValue;
+import static com.jerolba.carpet.writer.VariantHelper.givenVariantWithNestedFields;
+import static com.jerolba.carpet.writer.VariantHelper.givenVariantWithSingleValue;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -43,6 +48,7 @@ import java.util.Set;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.parquet.column.schema.EdgeInterpolationAlgorithm;
 import org.apache.parquet.io.api.Binary;
+import org.apache.parquet.variant.Variant;
 import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
@@ -420,10 +426,56 @@ class WriteRecordModelWriterCollectionThreeLevelTest {
             for (int i = 0; i < wkb2.length; i++) {
                 assertEquals(wkb2[i], fromAvro2[i]);
             }
-            try (var carpetReader = writerTest.getCarpetReader()) {
-                assertEquals(rec, carpetReader.read());
-            }
         }
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            assertEquals(rec, carpetReader.read());
+        }
+    }
+
+    @Test
+    void simpleVariantCollection() throws IOException {
+
+        record SimpleTypeCollection(String name, List<Variant> values) {
+        }
+
+        var mapper = writeRecordModel(SimpleTypeCollection.class)
+                .withField("name", STRING, SimpleTypeCollection::name)
+                .withField("values", LIST.ofType(VARIANT), SimpleTypeCollection::values);
+
+        Variant variant1 = givenVariantWithNestedFields();
+        Variant variant2 = givenVariantWithSingleValue();
+
+        var rec = new SimpleTypeCollection("foo", List.of(variant1, variant2));
+        var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class);
+        writerTest.write(mapper, rec);
+
+        try (var avroReader = writerTest.getAvroGenericRecordReader()) {
+            GenericRecord avroRecord = avroReader.read();
+            assertEquals(rec.name(), avroRecord.get("name").toString());
+
+            List<GenericRecord> values = (List<GenericRecord>) avroRecord.get("values");
+            assertEquals(2, values.size());
+
+            GenericRecord var1 = (GenericRecord) values.get(0).get("element");
+            Variant readVariant1 = new Variant(
+                    (ByteBuffer) var1.get("value"),
+                    (ByteBuffer) var1.get("metadata"));
+            assertMatchesVariantWithNestedFields(readVariant1);
+
+            GenericRecord var2 = (GenericRecord) values.get(1).get("element");
+            Variant readVariant2 = new Variant(
+                    (ByteBuffer) var2.get("value"),
+                    (ByteBuffer) var2.get("metadata"));
+            assertMatchesVariantWithSingleValue(readVariant2);
+        }
+
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            SimpleTypeCollection simpleTypeCollection = carpetReader.read();
+            assertEquals(2, simpleTypeCollection.values().size());
+            assertMatchesVariantWithNestedFields(simpleTypeCollection.values().get(0));
+            assertMatchesVariantWithSingleValue(simpleTypeCollection.values().get(1));
+        }
+
     }
 
     @Test

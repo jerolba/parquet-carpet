@@ -34,6 +34,7 @@ public class FieldTypes {
     public static final LocalTimeType LOCAL_TIME = new LocalTimeType(false);
     public static final LocalDateTimeType LOCAL_DATE_TIME = new LocalDateTimeType(false);
     public static final InstantType INSTANT = new InstantType(false);
+    public static final VariantType VARIANT = new VariantType(false);
     public static final ListTypeBuilder LIST = new ListTypeBuilder();
     public static final SetTypeBuilder SET = new SetTypeBuilder();
     public static final MapTypeBuilder MAP = new MapTypeBuilder();
