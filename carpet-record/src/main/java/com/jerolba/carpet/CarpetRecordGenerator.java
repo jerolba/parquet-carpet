@@ -52,6 +52,7 @@ import org.apache.parquet.schema.LogicalTypeAnnotation.GeometryLogicalTypeAnnota
 import org.apache.parquet.schema.LogicalTypeAnnotation.IntLogicalTypeAnnotation;
 import org.apache.parquet.schema.LogicalTypeAnnotation.TimeLogicalTypeAnnotation;
 import org.apache.parquet.schema.LogicalTypeAnnotation.TimestampLogicalTypeAnnotation;
+import org.apache.parquet.schema.LogicalTypeAnnotation.VariantLogicalTypeAnnotation;
 import org.apache.parquet.schema.MessageType;
 import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
 import org.apache.parquet.schema.Type;
@@ -186,6 +187,8 @@ public class CarpetRecordGenerator {
                     return inspectListField(asGroupType, fieldName);
                 } else if (mapType().equals(logicalType)) {
                     return inspectMapField(asGroupType, fieldName);
+                } else if (logicalType instanceof VariantLogicalTypeAnnotation) {
+                    return new BasicType(VARIANT_TYPE, field.getRepetition() == Repetition.REQUIRED);
                 }
                 return inspectGroup(field.asGroupType(), fieldName);
             }
@@ -380,7 +383,8 @@ public class CarpetRecordGenerator {
     private static final BasicTypeInfo LOCAL_TIME_TYPE = new BasicTypeInfo("LocalTime");
     private static final BasicTypeInfo LOCAL_DATE_TIME_TYPE = new BasicTypeInfo("LocalDateTime");
     private static final BasicTypeInfo INSTANT_TYPE = new BasicTypeInfo("Instant");
-    private static final BasicTypeInfo BINARY = new BasicTypeInfo("Binary");
+    private static final BasicTypeInfo BINARY_TYPE = new BasicTypeInfo("Binary");
+    private static final BasicTypeInfo VARIANT_TYPE = new BasicTypeInfo("Variant");
 
     private static class PrimitiveFieldFactory {
 
@@ -394,7 +398,7 @@ public class CarpetRecordGenerator {
                 case FLOAT -> FLOAT_TYPE;
                 case DOUBLE -> DOUBLE_TYPE;
                 case BOOLEAN -> BOOLEAN_TYPE;
-                case BINARY -> BINARY;
+                case BINARY -> BINARY_TYPE;
                 default -> throw new RecordTypeConversionException(typeName + " deserialization not supported");
                 };
             }
