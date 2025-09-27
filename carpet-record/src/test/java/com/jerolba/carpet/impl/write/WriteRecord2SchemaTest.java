@@ -37,6 +37,7 @@ import static com.jerolba.carpet.model.FieldTypes.MAP;
 import static com.jerolba.carpet.model.FieldTypes.SHORT;
 import static com.jerolba.carpet.model.FieldTypes.STRING;
 import static com.jerolba.carpet.model.FieldTypes.UUID;
+import static com.jerolba.carpet.model.FieldTypes.VARIANT;
 import static com.jerolba.carpet.model.FieldTypes.writeRecordModel;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -54,6 +55,7 @@ import java.util.UUID;
 import org.apache.parquet.column.schema.EdgeInterpolationAlgorithm;
 import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.schema.MessageType;
+import org.apache.parquet.variant.Variant;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -474,6 +476,52 @@ class WriteRecord2SchemaTest {
             assertEquals(expected, schemaWithRootType(rootType).toString());
         }
 
+    }
+
+    @Nested
+    class VariantSupport {
+
+        @Test
+        void recordWithVariant() {
+            record RecordWithVariant(long id, Variant data) {
+            }
+
+            var rootType = writeRecordModel(RecordWithVariant.class)
+                    .withField("id", LONG.notNull(), RecordWithVariant::id)
+                    .withField("data", VARIANT, RecordWithVariant::data);
+
+            String expected = """
+                    message RecordWithVariant {
+                      required int64 id;
+                      optional group data (VARIANT(1)) {
+                        required binary metadata;
+                        required binary value;
+                      }
+                    }
+                    """;
+            assertEquals(expected, schemaWithRootType(rootType).toString());
+        }
+
+        @Test
+        void recordWithNotNullVariant() {
+            record RecordWithVariant(long id, @NotNull Variant data) {
+            }
+
+            var rootType = writeRecordModel(RecordWithVariant.class)
+                    .withField("id", LONG.notNull(), RecordWithVariant::id)
+                    .withField("data", VARIANT.notNull(), RecordWithVariant::data);
+
+            String expected = """
+                    message RecordWithVariant {
+                      required int64 id;
+                      required group data (VARIANT(1)) {
+                        required binary metadata;
+                        required binary value;
+                      }
+                    }
+                    """;
+            assertEquals(expected, schemaWithRootType(rootType).toString());
+        }
     }
 
     @Nested

@@ -21,6 +21,7 @@ import static com.jerolba.carpet.impl.write.TimeWrite.instantCosumer;
 import static com.jerolba.carpet.impl.write.TimeWrite.localDateTimeConsumer;
 import static com.jerolba.carpet.impl.write.TimeWrite.localTimeConsumer;
 import static com.jerolba.carpet.impl.write.UuidWrite.uuidToBinary;
+import static com.jerolba.carpet.impl.write.VariantWriter.simpleVariantConsumer;
 
 import java.time.LocalDate;
 import java.util.function.BiConsumer;
@@ -99,6 +100,9 @@ class ModelFieldsWriter {
         }
         if (type.isJtsGeometry()) {
             return geometryCosumer();
+        }
+        if (type.isVariant()) {
+            return simpleVariantConsumer();
         }
         if (fieldType instanceof WriteRecordModelType<?> recordType) {
             var recordWriter = new WriteRecordModelWriter(recordConsumer, recordType, carpetConfiguration);

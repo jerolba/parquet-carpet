@@ -35,6 +35,7 @@ import java.util.UUID;
 
 import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.schema.MessageType;
+import org.apache.parquet.variant.Variant;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -379,6 +380,45 @@ class JavaRecordMapper2SchemaTest {
                     message GeographyRecord {
                       required int64 id;
                       optional binary value (GEOGRAPHY(OGC:CRS84,ANDOYER));
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+    }
+
+    @Nested
+    class VariantType {
+
+        @Test
+        void variantField() {
+            record VariantRecord(long id, Variant value) {
+            }
+            MessageType schema = class2Model2Schema(VariantRecord.class);
+            String expected = """
+                    message VariantRecord {
+                      required int64 id;
+                      optional group value (VARIANT(1)) {
+                        required binary metadata;
+                        required binary value;
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void notNullVariantField() {
+            record VariantRecord(long id, @NotNull Variant value) {
+            }
+            MessageType schema = class2Model2Schema(VariantRecord.class);
+            String expected = """
+                    message VariantRecord {
+                      required int64 id;
+                      required group value (VARIANT(1)) {
+                        required binary metadata;
+                        required binary value;
+                      }
                     }
                     """;
             assertEquals(expected, schema.toString());

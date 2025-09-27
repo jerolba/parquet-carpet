@@ -29,10 +29,12 @@ import static org.apache.parquet.schema.LogicalTypeAnnotation.geometryType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.intType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.jsonType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.stringType;
+import static org.apache.parquet.schema.LogicalTypeAnnotation.variantType;
 import static org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName.BINARY;
 import static org.apache.parquet.schema.Type.Repetition.OPTIONAL;
 import static org.apache.parquet.schema.Type.Repetition.REPEATED;
 import static org.apache.parquet.schema.Type.Repetition.REQUIRED;
+import static org.apache.parquet.schema.Types.buildGroup;
 import static org.apache.parquet.schema.Types.primitive;
 
 import java.util.ArrayList;
@@ -234,6 +236,8 @@ class WriteRecordModel2Schema {
             return buildLocalDateTimeType(repetition, parquetFieldName, carpetConfiguration.defaultTimeUnit());
         } else if (javaType.isInstant()) {
             return buildInstantType(repetition, parquetFieldName, carpetConfiguration.defaultTimeUnit());
+        } else if (javaType.isVariant()) {
+            return buildUnshreddedVariantType(repetition, parquetFieldName);
         } else if (type instanceof WriteRecordModelType<?> childWriteRecordType) {
             List<Type> childFields = buildChildFields(childWriteRecordType, visited);
             return new GroupType(repetition, parquetFieldName, childFields);
@@ -286,6 +290,14 @@ class WriteRecordModel2Schema {
         case BSON, JSON -> throw new RecordTypeConversionException(
                 "Unsupported logical type for String: " + logicalType);
         };
+    }
+
+    private Type buildUnshreddedVariantType(Repetition repetition, String parquetFieldName) {
+        return buildGroup(repetition)
+                .as(variantType((byte) 1))
+                .addField(primitive(BINARY, REQUIRED).named("metadata"))
+                .addField(primitive(BINARY, REQUIRED).named("value"))
+                .named(parquetFieldName);
     }
 
     private List<Type> buildChildFields(WriteRecordModelType<?> writeRecordType, Set<WriteRecordModelType<?>> visited) {

@@ -39,6 +39,7 @@ import com.jerolba.carpet.model.SetType;
 import com.jerolba.carpet.model.ShortType;
 import com.jerolba.carpet.model.StringType;
 import com.jerolba.carpet.model.UuidType;
+import com.jerolba.carpet.model.VariantType;
 import com.jerolba.carpet.model.WriteRecordModelType;
 
 class FieldTypeInspect {
@@ -119,6 +120,10 @@ class FieldTypeInspect {
 
     public boolean isInstant() {
         return fieldType instanceof InstantType;
+    }
+
+    public boolean isVariant() {
+        return fieldType instanceof VariantType;
     }
 
     public boolean isRecord() {
