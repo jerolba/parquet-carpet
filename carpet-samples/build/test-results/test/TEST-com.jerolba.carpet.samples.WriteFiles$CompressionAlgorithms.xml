@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.jerolba.carpet.samples.WriteFiles$CompressionAlgorithms" tests="7" skipped="0" failures="0" errors="0" timestamp="2025-09-27T17:06:58.678Z" hostname="runnervm3ublj" time="0.03">
+<testsuite name="com.jerolba.carpet.samples.WriteFiles$CompressionAlgorithms" tests="7" skipped="0" failures="0" errors="0" timestamp="2025-09-27T17:15:33.245Z" hostname="runnervm3ublj" time="0.029">
   <properties/>
-  <testcase name="lz4Raw()" classname="com.jerolba.carpet.samples.WriteFiles$CompressionAlgorithms" time="0.003"/>
+  <testcase name="lz4Raw()" classname="com.jerolba.carpet.samples.WriteFiles$CompressionAlgorithms" time="0.004"/>
   <testcase name="snappyByDefault()" classname="com.jerolba.carpet.samples.WriteFiles$CompressionAlgorithms" time="0.002"/>
   <testcase name="lz4()" classname="com.jerolba.carpet.samples.WriteFiles$CompressionAlgorithms" time="0.01"/>
   <testcase name="lzo()" classname="com.jerolba.carpet.samples.WriteFiles$CompressionAlgorithms" time="0.002"/>
   <testcase name="gzip()" classname="com.jerolba.carpet.samples.WriteFiles$CompressionAlgorithms" time="0.003"/>
   <testcase name="zstd()" classname="com.jerolba.carpet.samples.WriteFiles$CompressionAlgorithms" time="0.003"/>
-  <testcase name="uncompressed()" classname="com.jerolba.carpet.samples.WriteFiles$CompressionAlgorithms" time="0.003"/>
+  <testcase name="uncompressed()" classname="com.jerolba.carpet.samples.WriteFiles$CompressionAlgorithms" time="0.002"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

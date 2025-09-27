@@ -1,22 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.jerolba.carpet.CarpetRecordGeneratorTest" tests="1" skipped="0" failures="1" errors="0" timestamp="2025-09-27T17:09:26.354Z" hostname="runnervm3ublj" time="1.677">
+<testsuite name="com.jerolba.carpet.CarpetRecordGeneratorTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2025-09-27T17:17:51.637Z" hostname="runnervm3ublj" time="1.414">
   <properties/>
-  <testcase name="variantType()" classname="com.jerolba.carpet.CarpetRecordGeneratorTest" time="1.677">
-    <failure message="org.opentest4j.AssertionFailedError: expected: &lt;true&gt; but was: &lt;false&gt;" type="org.opentest4j.AssertionFailedError">org.opentest4j.AssertionFailedError: expected: &lt;true&gt; but was: &lt;false&gt;
-	at app//org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
-	at app//org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
-	at app//org.junit.jupiter.api.AssertTrue.failNotTrue(AssertTrue.java:63)
-	at app//org.junit.jupiter.api.AssertTrue.assertTrue(AssertTrue.java:36)
-	at app//org.junit.jupiter.api.AssertTrue.assertTrue(AssertTrue.java:31)
-	at app//org.junit.jupiter.api.Assertions.assertTrue(Assertions.java:183)
-	at app//com.jerolba.carpet.CarpetRecordGeneratorTest.variantType(CarpetRecordGeneratorTest.java:593)
-	at java.base@17.0.16/java.lang.reflect.Method.invoke(Method.java:569)
-	at java.base@17.0.16/java.util.ArrayList.forEach(ArrayList.java:1511)
-	at java.base@17.0.16/java.util.ArrayList.forEach(ArrayList.java:1511)
-</failure>
-  </testcase>
-  <system-out><![CDATA[Generated classes: [record Data(Binary metadata, Binary value) {}, record Sample(int id, Data data) {}]
-]]></system-out>
+  <testcase name="variantType()" classname="com.jerolba.carpet.CarpetRecordGeneratorTest" time="1.406"/>
+  <testcase name="variantTypeNotNull()" classname="com.jerolba.carpet.CarpetRecordGeneratorTest" time="0.008"/>
+  <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[[Test worker] INFO org.apache.hadoop.io.compress.CodecPool - Got brand-new compressor [.snappy]
 ]]></system-err>
 </testsuite>

@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.jerolba.carpet.samples.ReadFiles" tests="16" skipped="0" failures="0" errors="0" timestamp="2025-09-27T17:06:57.755Z" hostname="runnervm3ublj" time="0.714">
+<testsuite name="com.jerolba.carpet.samples.ReadFiles" tests="16" skipped="0" failures="0" errors="0" timestamp="2025-09-27T17:15:32.403Z" hostname="runnervm3ublj" time="0.692">
   <properties/>
   <testcase name="readColumnNamesInSnakeCase()" classname="com.jerolba.carpet.samples.ReadFiles" time="0.504"/>
-  <testcase name="configureBigDecimalPrecision()" classname="com.jerolba.carpet.samples.ReadFiles" time="0.01"/>
-  <testcase name="supportUnmappedFields()" classname="com.jerolba.carpet.samples.ReadFiles" time="0.017"/>
-  <testcase name="filtering()" classname="com.jerolba.carpet.samples.ReadFiles" time="0.024"/>
+  <testcase name="configureBigDecimalPrecision()" classname="com.jerolba.carpet.samples.ReadFiles" time="0.013"/>
+  <testcase name="supportUnmappedFields()" classname="com.jerolba.carpet.samples.ReadFiles" time="0.019"/>
+  <testcase name="filtering()" classname="com.jerolba.carpet.samples.ReadFiles" time="0.027"/>
   <testcase name="toList()" classname="com.jerolba.carpet.samples.ReadFiles" time="0.007"/>
-  <testcase name="forLoop()" classname="com.jerolba.carpet.samples.ReadFiles" time="0.009"/>
-  <testcase name="configureTimeUnitsPrecision()" classname="com.jerolba.carpet.samples.ReadFiles" time="0.008"/>
-  <testcase name="streaming()" classname="com.jerolba.carpet.samples.ReadFiles" time="0.009"/>
-  <testcase name="toMap()" classname="com.jerolba.carpet.samples.ReadFiles" time="0.008"/>
+  <testcase name="forLoop()" classname="com.jerolba.carpet.samples.ReadFiles" time="0.007"/>
+  <testcase name="configureTimeUnitsPrecision()" classname="com.jerolba.carpet.samples.ReadFiles" time="0.009"/>
+  <testcase name="streaming()" classname="com.jerolba.carpet.samples.ReadFiles" time="0.01"/>
+  <testcase name="toMap()" classname="com.jerolba.carpet.samples.ReadFiles" time="0.007"/>
   <testcase name="readStructuredRecord()" classname="com.jerolba.carpet.samples.ReadFiles" time="0.024"/>
-  <testcase name="createParquetReader()" classname="com.jerolba.carpet.samples.ReadFiles" time="0.007"/>
-  <testcase name="schemaCanBeProjected()" classname="com.jerolba.carpet.samples.ReadFiles" time="0.015"/>
-  <testcase name="readColumnNamesWithAlias()" classname="com.jerolba.carpet.samples.ReadFiles" time="0.009"/>
-  <testcase name="iterator()" classname="com.jerolba.carpet.samples.ReadFiles" time="0.009"/>
+  <testcase name="createParquetReader()" classname="com.jerolba.carpet.samples.ReadFiles" time="0.006"/>
+  <testcase name="schemaCanBeProjected()" classname="com.jerolba.carpet.samples.ReadFiles" time="0.011"/>
+  <testcase name="readColumnNamesWithAlias()" classname="com.jerolba.carpet.samples.ReadFiles" time="0.007"/>
+  <testcase name="iterator()" classname="com.jerolba.carpet.samples.ReadFiles" time="0.006"/>
   <testcase name="unmappedFields()" classname="com.jerolba.carpet.samples.ReadFiles" time="0.009"/>
-  <testcase name="readRecordWithBson()" classname="com.jerolba.carpet.samples.ReadFiles" time="0.037"/>
+  <testcase name="readRecordWithBson()" classname="com.jerolba.carpet.samples.ReadFiles" time="0.016"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
 SLF4J: Defaulting to no-operation (NOP) logger implementation

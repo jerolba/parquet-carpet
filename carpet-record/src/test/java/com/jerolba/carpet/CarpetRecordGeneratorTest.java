@@ -32,9 +32,12 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.parquet.io.api.Binary;
+import org.apache.parquet.variant.Variant;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Geometry;
+
+import com.jerolba.carpet.annotation.NotNull;
 
 import com.jerolba.carpet.annotation.ParquetBson;
 import com.jerolba.carpet.annotation.ParquetGeography;
@@ -579,17 +582,33 @@ class CarpetRecordGeneratorTest {
 
     @Test
     void variantType() throws IOException {
-        record Sample(int id, org.apache.parquet.variant.Variant data) {
+        record Sample(int id, Variant data) {
         }
 
         String filePath = newTempFile("variantType");
         try (var writer = new CarpetWriter<>(new FileOutputStream(filePath), Sample.class)) {
-            writer.write(new Sample(1, null)); // Just write null for now to test schema generation
+            writer.write(new Sample(1, null)); // Write null for schema generation test
         }
 
         List<String> classes = generateCode(filePath);
-        System.out.println("Generated classes: " + classes);
         // Should generate a record with Variant type
+        assertTrue(classes.contains("record Sample(int id, Variant data) {}"));
+    }
+
+    @Test
+    void variantTypeNotNull() throws IOException {
+        record Sample(int id, @NotNull Variant data) {
+        }
+
+        String filePath = newTempFile("variantTypeNotNull");
+        // Create a simple variant for testing
+        try (var writer = new CarpetWriter<>(new FileOutputStream(filePath), Sample.class)) {
+            // We still write null because the schema is what we're testing
+            writer.write(new Sample(1, null));
+        }
+
+        List<String> classes = generateCode(filePath);
+        // Should generate a record with Variant type (not null annotation doesn't affect generated Java record)
         assertTrue(classes.contains("record Sample(int id, Variant data) {}"));
     }
 

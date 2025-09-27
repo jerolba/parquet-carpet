@@ -24,6 +24,7 @@ import static org.apache.parquet.schema.LogicalTypeAnnotation.listType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.mapType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.stringType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.uuidType;
+import static org.apache.parquet.schema.LogicalTypeAnnotation.variantType;
 import static org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY;
 import static org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName.INT32;
 import static org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName.INT64;
@@ -52,6 +53,7 @@ import org.apache.parquet.schema.LogicalTypeAnnotation.GeometryLogicalTypeAnnota
 import org.apache.parquet.schema.LogicalTypeAnnotation.IntLogicalTypeAnnotation;
 import org.apache.parquet.schema.LogicalTypeAnnotation.TimeLogicalTypeAnnotation;
 import org.apache.parquet.schema.LogicalTypeAnnotation.TimestampLogicalTypeAnnotation;
+import org.apache.parquet.schema.LogicalTypeAnnotation.VariantLogicalTypeAnnotation;
 import org.apache.parquet.schema.MessageType;
 import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
 import org.apache.parquet.schema.Type;
@@ -186,6 +188,9 @@ public class CarpetRecordGenerator {
                     return inspectListField(asGroupType, fieldName);
                 } else if (mapType().equals(logicalType)) {
                     return inspectMapField(asGroupType, fieldName);
+                } else if (logicalType instanceof VariantLogicalTypeAnnotation) {
+                    // Handle VARIANT logical type annotation
+                    return new BasicType(VARIANT_TYPE, field.isRepetition(Repetition.REQUIRED));
                 }
                 return inspectGroup(field.asGroupType(), fieldName);
             }
@@ -381,6 +386,7 @@ public class CarpetRecordGenerator {
     private static final BasicTypeInfo LOCAL_DATE_TIME_TYPE = new BasicTypeInfo("LocalDateTime");
     private static final BasicTypeInfo INSTANT_TYPE = new BasicTypeInfo("Instant");
     private static final BasicTypeInfo BINARY = new BasicTypeInfo("Binary");
+    private static final BasicTypeInfo VARIANT_TYPE = new BasicTypeInfo("Variant");
 
     private static class PrimitiveFieldFactory {
 
