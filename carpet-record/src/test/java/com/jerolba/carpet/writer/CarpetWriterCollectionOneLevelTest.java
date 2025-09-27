@@ -16,6 +16,10 @@
 package com.jerolba.carpet.writer;
 
 import static com.jerolba.carpet.AnnotatedLevels.ONE;
+import static com.jerolba.carpet.writer.VariantHelper.assertMatchesVariantWithNestedFields;
+import static com.jerolba.carpet.writer.VariantHelper.assertMatchesVariantWithSingleValue;
+import static com.jerolba.carpet.writer.VariantHelper.givenVariantWithNestedFields;
+import static com.jerolba.carpet.writer.VariantHelper.givenVariantWithSingleValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -25,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.parquet.io.api.Binary;
+import org.apache.parquet.variant.Variant;
 import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
@@ -283,6 +288,27 @@ class CarpetWriterCollectionOneLevelTest {
 
         try (var carpetReader = writerTest.getCarpetReader()) {
             assertEquals(rec, carpetReader.read());
+        }
+    }
+
+    @Test
+    void simpleVariantCollection() throws IOException {
+
+        record SimpleTypeCollection(String name, List<Variant> values) {
+        }
+
+        Variant variant1 = givenVariantWithNestedFields();
+        Variant variant2 = givenVariantWithSingleValue();
+
+        var rec = new SimpleTypeCollection("foo", List.of(variant1, variant2));
+        var writerTest = new ParquetWriterTest<>(SimpleTypeCollection.class).withLevel(ONE);
+        writerTest.write(rec);
+
+        try (var carpetReader = writerTest.getCarpetReader()) {
+            SimpleTypeCollection simpleTypeCollection = carpetReader.read();
+            assertEquals(2, simpleTypeCollection.values().size());
+            assertMatchesVariantWithNestedFields(simpleTypeCollection.values().get(0));
+            assertMatchesVariantWithSingleValue(simpleTypeCollection.values().get(1));
         }
     }
 

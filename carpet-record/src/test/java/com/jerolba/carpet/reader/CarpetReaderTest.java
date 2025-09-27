@@ -61,6 +61,11 @@ import org.apache.parquet.hadoop.ParquetWriter;
 import org.apache.parquet.io.InputFile;
 import org.apache.parquet.io.OutputFile;
 import org.apache.parquet.io.api.Binary;
+import org.apache.parquet.variant.Variant;
+import org.apache.parquet.variant.Variant.ObjectField;
+import org.apache.parquet.variant.Variant.Type;
+import org.apache.parquet.variant.VariantBuilder;
+import org.apache.parquet.variant.VariantObjectBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
@@ -2778,6 +2783,48 @@ class CarpetReaderTest {
             }
 
         }
+    }
+
+    @Nested
+    class VariantTypes {
+
+        @Test
+        void canReadVariantTypes() throws IOException {
+
+            record VariantRecord(String name, Variant value) {
+            }
+
+            VariantBuilder builder = new VariantBuilder();
+            VariantObjectBuilder startObject = builder.startObject();
+            startObject.appendKey("a");
+            startObject.appendString("some_value");
+            startObject.appendKey("b");
+            startObject.appendInt(42);
+            builder.endObject();
+            Variant variant = builder.build();
+
+            VariantRecord rec1 = new VariantRecord("foo", variant);
+            VariantRecord rec2 = new VariantRecord("bar", null);
+
+            var writerTest = new ParquetWriterTest<>(VariantRecord.class);
+            writerTest.write(rec1, rec2);
+
+            var reader = writerTest.getCarpetReader();
+            VariantRecord read1 = reader.read();
+            Variant readVariant = read1.value();
+            assertEquals(Type.OBJECT, readVariant.getType());
+            assertEquals(2, readVariant.numObjectElements());
+            ObjectField f0 = readVariant.getFieldAtIndex(0);
+            assertEquals("a", f0.key);
+            assertEquals(Type.STRING, f0.value.getType());
+            assertEquals("some_value", f0.value.getString());
+            ObjectField f1 = readVariant.getFieldAtIndex(1);
+            assertEquals("b", f1.key);
+            assertEquals(Type.INT, f1.value.getType());
+            assertEquals(42, f1.value.getInt());
+            assertEquals(rec2, reader.read());
+        }
+
     }
 
     @Nested

@@ -25,11 +25,13 @@ import static org.apache.parquet.schema.LogicalTypeAnnotation.intType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.jsonType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.stringType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.uuidType;
+import static org.apache.parquet.schema.LogicalTypeAnnotation.variantType;
 import static org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName.BINARY;
 import static org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY;
 import static org.apache.parquet.schema.Type.Repetition.OPTIONAL;
 import static org.apache.parquet.schema.Type.Repetition.REPEATED;
 import static org.apache.parquet.schema.Type.Repetition.REQUIRED;
+import static org.apache.parquet.schema.Types.buildGroup;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -48,6 +50,7 @@ import org.apache.parquet.schema.PrimitiveType;
 import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
 import org.apache.parquet.schema.Type;
 import org.apache.parquet.schema.Types;
+import org.apache.parquet.variant.Variant;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -704,6 +707,53 @@ class SchemaFilterTest {
 
             SchemaFilter filterStrict = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
             assertEquals(groupType, filterStrict.project(CastToEnum.class, groupType));
+        }
+
+    }
+
+    @Nested
+    class GroupVariantConversion {
+
+        @Test
+        void fieldRequired() {
+            Type field = buildGroup(REQUIRED)
+                    .as(variantType((byte) 1))
+                    .addField(Types.primitive(BINARY, REQUIRED).named("metadata"))
+                    .addField(Types.primitive(BINARY, REQUIRED).named("value"))
+                    .named("value");
+            GroupType groupType = new MessageType("foo", field);
+            SchemaFilter filter = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+
+            record NotNullVariant(@NotNull Variant value) {
+            }
+            assertEquals(groupType, filter.project(NotNullVariant.class, groupType));
+
+            record NullableVariant(Variant value) {
+            }
+            assertEquals(groupType, filter.project(NullableVariant.class, groupType));
+        }
+
+        @Test
+        void fieldOptional() {
+            Type field = buildGroup(OPTIONAL)
+                    .as(variantType((byte) 1))
+                    .addField(Types.primitive(BINARY, REQUIRED).named("metadata"))
+                    .addField(Types.primitive(BINARY, REQUIRED).named("value"))
+                    .named("value");
+            GroupType groupType = new MessageType("foo", field);
+            SchemaFilter filterDefault = new SchemaFilter(defaultReadConfig, defaultFieldMapper);
+            SchemaFilter filterFailOnNotNullable = new SchemaFilter(failOnNullForPrimitives, defaultFieldMapper);
+
+            record NotNullVariant(@NotNull Variant value) {
+            }
+            assertEquals(groupType, filterDefault.project(NotNullVariant.class, groupType));
+            assertThrows(RecordTypeConversionException.class,
+                    () -> filterFailOnNotNullable.project(NotNullVariant.class, groupType));
+
+            record NullableVariant(Variant value) {
+            }
+            assertEquals(groupType, filterDefault.project(NullableVariant.class, groupType));
+            assertEquals(groupType, filterFailOnNotNullable.project(NullableVariant.class, groupType));
         }
 
     }
