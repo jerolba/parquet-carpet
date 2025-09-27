@@ -36,9 +36,14 @@ import java.util.TreeMap;
 import java.util.UUID;
 
 import org.apache.parquet.io.api.Binary;
+import org.apache.parquet.variant.Variant;
+import org.apache.parquet.variant.VariantBuilder;
+import org.apache.parquet.variant.VariantObjectBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
@@ -208,48 +213,15 @@ class CarpetReaderToMapTest {
             assertEquals(expected, actual);
         }
 
-        @Test
-        void convertSingleLevelListValues() throws IOException {
+        @ParameterizedTest
+        @EnumSource(AnnotatedLevels.class)
+        void convertListValues(AnnotatedLevels level) throws IOException {
 
             record MainTypeWrite(String id, List<String> values) {
             }
 
             ParquetWriterTest<MainTypeWrite> writerTest = new ParquetWriterTest<>(MainTypeWrite.class)
-                    .withLevel(AnnotatedLevels.ONE);
-            var root = new MainTypeWrite("root", List.of("Madrid", "Barcelona"));
-            writerTest.write(root);
-
-            var reader = writerTest.getCarpetReader(Map.class);
-            var expected = Map.of("id", "root", "values", List.of("Madrid", "Barcelona"));
-            Map<String, Object> actual = reader.read();
-            assertEquals(expected, actual);
-        }
-
-        @Test
-        void convertTwoLevelListValues() throws IOException {
-
-            record MainTypeWrite(String id, List<String> values) {
-            }
-
-            ParquetWriterTest<MainTypeWrite> writerTest = new ParquetWriterTest<>(MainTypeWrite.class)
-                    .withLevel(AnnotatedLevels.TWO);
-            var root = new MainTypeWrite("root", List.of("Madrid", "Barcelona"));
-            writerTest.write(root);
-
-            var reader = writerTest.getCarpetReader(Map.class);
-            var expected = Map.of("id", "root", "values", List.of("Madrid", "Barcelona"));
-            Map<String, Object> actual = reader.read();
-            assertEquals(expected, actual);
-        }
-
-        @Test
-        void convertThreeLevelListValues() throws IOException {
-
-            record MainTypeWrite(String id, List<String> values) {
-            }
-
-            ParquetWriterTest<MainTypeWrite> writerTest = new ParquetWriterTest<>(MainTypeWrite.class)
-                    .withLevel(AnnotatedLevels.THREE);
+                    .withLevel(level);
             var root = new MainTypeWrite("root", List.of("Madrid", "Barcelona"));
             writerTest.write(root);
 
@@ -273,6 +245,114 @@ class CarpetReaderToMapTest {
             var expected = Map.of("id", "root", "values", Map.of("Madrid", 120, "Barcelona", 230));
             Map<String, Object> actual = reader.read();
             assertEquals(expected, actual);
+        }
+
+    }
+
+    @Nested
+    class VariantType {
+
+        @Test
+        void fromRecord() throws IOException {
+
+            record VariantRecord(String name, Variant value) {
+            }
+
+            VariantBuilder builder = new VariantBuilder();
+            VariantObjectBuilder startObject = builder.startObject();
+            startObject.appendKey("a");
+            startObject.appendString("some_value");
+            startObject.appendKey("b");
+            startObject.appendInt(42);
+            builder.endObject();
+            Variant variant = builder.build();
+
+            VariantRecord rec1 = new VariantRecord("foo", variant);
+            VariantRecord rec2 = new VariantRecord("bar", null);
+
+            var writerTest = new ParquetWriterTest<>(VariantRecord.class);
+            writerTest.write(rec1, rec2);
+
+            var reader = writerTest.getCarpetReader(Map.class);
+            Map<String, Object> read1 = reader.read();
+
+            assertEquals("foo", read1.get("name"));
+            assertTrue(read1.containsKey("value"));
+            Map read1Variant = (Map) read1.get("value");
+            assertEquals(2, read1Variant.size());
+            assertEquals("some_value", read1Variant.get("a"));
+            assertEquals(42, read1Variant.get("b"));
+
+            Map<String, Object> read2 = reader.read();
+            assertEquals("bar", read2.get("name"));
+            assertTrue(read2.containsKey("value"));
+            assertNull(read2.get("value"));
+        }
+
+        @ParameterizedTest
+        @EnumSource(AnnotatedLevels.class)
+        void fromList(AnnotatedLevels level) throws IOException {
+
+            record VariantList(String name, List<Variant> values) {
+            }
+
+            VariantBuilder builder = new VariantBuilder();
+            VariantObjectBuilder startObject = builder.startObject();
+            startObject.appendKey("a");
+            startObject.appendString("some_value");
+            startObject.appendKey("b");
+            startObject.appendInt(42);
+            builder.endObject();
+            Variant variant = builder.build();
+
+            VariantList rec1 = new VariantList("foo", List.of(variant));
+
+            var writerTest = new ParquetWriterTest<>(VariantList.class)
+                    .withLevel(level);
+            writerTest.write(rec1);
+
+            var reader = writerTest.getCarpetReader(Map.class);
+            Map<String, Object> read1 = reader.read();
+
+            assertEquals("foo", read1.get("name"));
+            List<Map> values = (List<Map>) read1.get("values");
+            assertEquals(1, values.size());
+
+            Map read1Variant = values.get(0);
+            assertEquals("some_value", read1Variant.get("a"));
+            assertEquals(42, read1Variant.get("b"));
+        }
+
+        @Test
+        void fromMap() throws IOException {
+
+            record VariantMap(String name, Map<String, Variant> values) {
+            }
+
+            VariantBuilder builder = new VariantBuilder();
+            VariantObjectBuilder startObject = builder.startObject();
+            startObject.appendKey("a");
+            startObject.appendString("some_value");
+            startObject.appendKey("b");
+            startObject.appendInt(42);
+            builder.endObject();
+            Variant variant = builder.build();
+
+            VariantMap rec1 = new VariantMap("foo", Map.of("key", variant));
+
+            var writerTest = new ParquetWriterTest<>(VariantMap.class);
+            writerTest.write(rec1);
+
+            var reader = writerTest.getCarpetReader(Map.class);
+            Map<String, Object> read1 = reader.read();
+
+            assertEquals("foo", read1.get("name"));
+            Map<String, Map> values = (Map<String, Map>) read1.get("values");
+            assertEquals(1, values.size());
+
+            Map read1Variant = values.get("key");
+            assertEquals("some_value", read1Variant.get("a"));
+            assertEquals(42, read1Variant.get("b"));
         }
 
     }

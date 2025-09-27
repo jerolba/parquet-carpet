@@ -40,9 +40,11 @@ import org.apache.parquet.io.api.Converter;
 import org.apache.parquet.io.api.GroupConverter;
 import org.apache.parquet.schema.GroupType;
 import org.apache.parquet.schema.LogicalTypeAnnotation;
+import org.apache.parquet.schema.LogicalTypeAnnotation.VariantLogicalTypeAnnotation;
 import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
 import org.apache.parquet.schema.Type;
 import org.apache.parquet.schema.Type.Repetition;
+import org.apache.parquet.variant.Variant;
 
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.impl.read.converter.BinaryConverter;
@@ -51,6 +53,7 @@ import com.jerolba.carpet.impl.read.converter.ToDoubleConverter;
 import com.jerolba.carpet.impl.read.converter.ToFloatConverter;
 import com.jerolba.carpet.impl.read.converter.ToIntegerConverter;
 import com.jerolba.carpet.impl.read.converter.ToLongConverter;
+import com.jerolba.carpet.impl.read.converter.VariantRead;
 
 public class CarpetGroupAsMapConverter extends GroupConverter {
 
@@ -78,18 +81,7 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
         if (schemaField.isRepetition(Repetition.REPEATED)) {
             return createSingleLevelConverter(idx, name, schemaField, mapHolder);
         }
-        if (schemaField.isPrimitive()) {
-            return buildConverters(schemaField, consumer);
-        }
-        GroupType asGroupType = schemaField.asGroupType();
-        LogicalTypeAnnotation logicalType = asGroupType.getLogicalTypeAnnotation();
-        if (listType().equals(logicalType)) {
-            return new CarpetListAsMapConverter(mapClass, asGroupType, consumer);
-        }
-        if (mapType().equals(logicalType)) {
-            return new CarpetMapAsMapConverter(mapClass, asGroupType, consumer);
-        }
-        return new CarpetGroupAsMapConverter(mapClass, asGroupType, consumer);
+        return createValueConverter(mapClass, schemaField, consumer);
     }
 
     @Override
@@ -108,7 +100,6 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
     }
 
     private static Converter buildConverters(Type parquetField, Consumer<Object> consumer) {
-
         Converter fromLogicalType = buildFromLogicalTypeConverter(null, parquetField, consumer);
         if (fromLogicalType != null) {
             return fromLogicalType;
@@ -136,6 +127,11 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
         if (mapType().equals(asGroupType.getLogicalTypeAnnotation())) {
             return new CarpetMapAsMapConverter(mapClass, asGroupType, consumer);
         }
+        if (asGroupType.getLogicalTypeAnnotation() instanceof VariantLogicalTypeAnnotation) {
+            VariantRead variantRead = new VariantRead();
+            return new VariantConverter(asGroupType,
+                    variant -> consumer.accept(variantRead.deserialize((Variant) variant)));
+        }
         return new CarpetGroupAsMapConverter(mapClass, asGroupType, consumer);
     }
 
@@ -154,7 +150,7 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
             if (threeLevel) {
                 converter = new CarpetListAsMapIntermediateConverter(mapClass, listChild, collectionHolder);
             } else {
-                converter = createCollectionConverter(mapClass, listChild, collectionHolder::add);
+                converter = createValueConverter(mapClass, listChild, collectionHolder::add);
             }
         }
 
@@ -175,21 +171,27 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
 
     }
 
-    private static Converter createCollectionConverter(Class<?> mapClass, Type listElement, Consumer<Object> consumer) {
-        if (listElement.isPrimitive()) {
-            return buildConverters(listElement, consumer);
+    private static Converter createValueConverter(Class<?> mapClass, Type parquetField, Consumer<Object> consumer) {
+        if (parquetField.isPrimitive()) {
+            return buildConverters(parquetField, consumer);
         }
-        GroupType groupType = listElement.asGroupType();
-        LogicalTypeAnnotation logicalType = listElement.getLogicalTypeAnnotation();
-        if (logicalType != null) {
-            if (listType().equals(logicalType)) {
-                return new CarpetListAsMapConverter(mapClass, groupType, consumer);
-            }
-            if (mapType().equals(logicalType)) {
-                return new CarpetMapAsMapConverter(mapClass, groupType, consumer);
-            }
+        return buildGroupConverter(mapClass, parquetField, consumer);
+    }
+
+    private static GroupConverter buildGroupConverter(Class<?> mapClass, Type valueType, Consumer<Object> consumer) {
+        LogicalTypeAnnotation logicalType = valueType.getLogicalTypeAnnotation();
+        GroupType groupType = valueType.asGroupType();
+        if (listType().equals(logicalType)) {
+            return new CarpetListAsMapConverter(mapClass, groupType, consumer);
+        } else if (mapType().equals(logicalType)) {
+            return new CarpetMapAsMapConverter(mapClass, groupType, consumer);
+        } else if (logicalType instanceof VariantLogicalTypeAnnotation) {
+            VariantRead variantRead = new VariantRead();
+            return new VariantConverter(groupType,
+                    variant -> consumer.accept(variantRead.deserialize((Variant) variant)));
+        } else {
+            return new CarpetGroupAsMapConverter(mapClass, groupType, consumer);
         }
-        return new CarpetGroupAsMapConverter(mapClass, groupType, consumer);
     }
 
     private static class CarpetListAsMapIntermediateConverter extends GroupConverter {
@@ -201,7 +203,7 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
         CarpetListAsMapIntermediateConverter(Class<?> mapClass, Type rootListType, CollectionHolder collectionHolder) {
             this.collectionHolder = collectionHolder;
             List<Type> fields = rootListType.asGroupType().getFields();
-            converter = createCollectionConverter(mapClass, fields.get(0), value -> elementValue = value);
+            converter = createValueConverter(mapClass, fields.get(0), value -> elementValue = value);
         }
 
         @Override
@@ -280,20 +282,7 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
             }
 
             // Value
-            Type mapValueType = fields.get(1);
-            if (mapValueType.isPrimitive()) {
-                converterValue = buildConverters(mapValueType, this::consumeValue);
-            } else {
-                LogicalTypeAnnotation logicalType = mapValueType.getLogicalTypeAnnotation();
-                GroupType groupType = mapValueType.asGroupType();
-                if (listType().equals(logicalType)) {
-                    converterValue = new CarpetListAsMapConverter(mapClass, groupType, this::consumeValue);
-                } else if (mapType().equals(logicalType)) {
-                    converterValue = new CarpetMapAsMapConverter(mapClass, groupType, this::consumeValue);
-                } else {
-                    converterValue = new CarpetGroupAsMapConverter(mapClass, groupType, this::consumeValue);
-                }
-            }
+            converterValue = createValueConverter(mapClass, fields.get(1), this::consumeValue);
         }
 
         @Override
