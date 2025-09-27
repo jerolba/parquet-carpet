@@ -32,8 +32,11 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.parquet.io.api.Binary;
+import org.apache.parquet.variant.Variant;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.locationtech.jts.geom.Geometry;
 
 import com.jerolba.carpet.annotation.ParquetBson;
@@ -172,6 +175,20 @@ class CarpetRecordGeneratorTest {
     }
 
     @Test
+    void variantType() throws IOException {
+        record Sample(int id, Variant data) {
+        }
+
+        String filePath = newTempFile("variantType");
+        try (var writer = new CarpetWriter<>(new FileOutputStream(filePath), Sample.class)) {
+            writer.write(new Sample(1, null));
+        }
+
+        List<String> classes = generateCode(filePath);
+        assertTrue(classes.contains("record Sample(int id, Variant data) {}"));
+    }
+
+    @Test
     void annotatedJsonBsonTypes() throws IOException {
 
         record Sample(@ParquetBson Binary bson, @ParquetJson String json) {
@@ -224,50 +241,27 @@ class CarpetRecordGeneratorTest {
         assertTrue(classes.contains("record Sample(String a, int b, Name name) {}"));
     }
 
-    @Nested
-    class NestedListSimpleChild {
+    @ParameterizedTest
+    @EnumSource(AnnotatedLevels.class)
+    void NestedListSimpleChild(AnnotatedLevels level) throws IOException {
 
         record Sample(String a, int b, List<Long> c) {
         }
 
         Sample value = new Sample("A", 1, List.of(2L));
 
-        @Test
-        void oneLevel() throws IOException {
-            String filePath = newTempFile("nestedList1");
-            try (var writer = new CarpetWriter.Builder<>(new FileOutputStream(filePath), Sample.class)
-                    .withLevelStructure(AnnotatedLevels.ONE).build()) {
-                writer.write(value);
-            }
-            List<String> classes = generateCode(filePath);
-            assertTrue(classes.contains("record Sample(String a, int b, List<Long> c) {}"));
+        String filePath = newTempFile("nestedList");
+        try (var writer = new CarpetWriter.Builder<>(new FileOutputStream(filePath), Sample.class)
+                .withLevelStructure(level).build()) {
+            writer.write(value);
         }
-
-        @Test
-        void twoLevel() throws IOException {
-            String filePath = newTempFile("nestedList2");
-            try (var writer = new CarpetWriter.Builder<>(new FileOutputStream(filePath), Sample.class)
-                    .withLevelStructure(AnnotatedLevels.TWO).build()) {
-                writer.write(value);
-            }
-            List<String> classes = generateCode(filePath);
-            assertTrue(classes.contains("record Sample(String a, int b, List<Long> c) {}"));
-        }
-
-        @Test
-        void threeLevel() throws IOException {
-            String filePath = newTempFile("nestedList3");
-            try (var writer = new CarpetWriter.Builder<>(new FileOutputStream(filePath), Sample.class)
-                    .withLevelStructure(AnnotatedLevels.THREE).build()) {
-                writer.write(value);
-            }
-            List<String> classes = generateCode(filePath);
-            assertTrue(classes.contains("record Sample(String a, int b, List<Long> c) {}"));
-        }
+        List<String> classes = generateCode(filePath);
+        assertTrue(classes.contains("record Sample(String a, int b, List<Long> c) {}"));
     }
 
-    @Nested
-    class NestedListWithRecord {
+    @ParameterizedTest
+    @EnumSource(AnnotatedLevels.class)
+    void nestedListWithRecord(AnnotatedLevels level) throws IOException {
 
         record Child(String d, double e) {
         }
@@ -277,45 +271,37 @@ class CarpetRecordGeneratorTest {
 
         Sample value = new Sample("A", 1, List.of(new Child("B", 1.2)));
 
-        @Test
-        void oneLevel() throws IOException {
-            String filePath = newTempFile("nestedList1Child");
-            try (var writer = new CarpetWriter.Builder<>(new FileOutputStream(filePath), Sample.class)
-                    .withLevelStructure(AnnotatedLevels.ONE).build()) {
-                writer.write(value);
-            }
-            List<String> classes = generateCode(filePath);
-            assertTrue(classes.contains("record Sample(String a, int b, List<Child> child) {}"));
-            assertTrue(classes.contains("record Child(String d, double e) {}"));
+        String filePath = newTempFile("nestedListChild");
+        try (var writer = new CarpetWriter.Builder<>(new FileOutputStream(filePath), Sample.class)
+                .withLevelStructure(level).build()) {
+            writer.write(value);
         }
-
-        @Test
-        void twoLevel() throws IOException {
-            String filePath = newTempFile("nestedList2Child");
-            try (var writer = new CarpetWriter.Builder<>(new FileOutputStream(filePath), Sample.class)
-                    .withLevelStructure(AnnotatedLevels.TWO).build()) {
-                writer.write(value);
-            }
-            List<String> classes = generateCode(filePath);
-            assertTrue(classes.contains("record Sample(String a, int b, List<Child> child) {}"));
-            assertTrue(classes.contains("record Child(String d, double e) {}"));
-        }
-
-        @Test
-        void threeLevel() throws IOException {
-            String filePath = newTempFile("nestedList3Child");
-            try (var writer = new CarpetWriter.Builder<>(new FileOutputStream(filePath), Sample.class)
-                    .withLevelStructure(AnnotatedLevels.THREE).build()) {
-                writer.write(value);
-            }
-            List<String> classes = generateCode(filePath);
-            assertTrue(classes.contains("record Sample(String a, int b, List<Child> child) {}"));
-            assertTrue(classes.contains("record Child(String d, double e) {}"));
-        }
+        List<String> classes = generateCode(filePath);
+        assertTrue(classes.contains("record Sample(String a, int b, List<Child> child) {}"));
+        assertTrue(classes.contains("record Child(String d, double e) {}"));
     }
 
-    @Nested
-    class NestedListWithMap {
+    @ParameterizedTest
+    @EnumSource(AnnotatedLevels.class)
+    void nestedListWithVariant(AnnotatedLevels level) throws IOException {
+
+        record Sample(String a, int b, List<Variant> c) {
+        }
+
+        Sample value = new Sample("A", 1, List.of());
+
+        String filePath = newTempFile("nestedListVariant");
+        try (var writer = new CarpetWriter.Builder<>(new FileOutputStream(filePath), Sample.class)
+                .withLevelStructure(level).build()) {
+            writer.write(value);
+        }
+        List<String> classes = generateCode(filePath);
+        assertTrue(classes.contains("record Sample(String a, int b, List<Variant> c) {}"));
+    }
+
+    @ParameterizedTest
+    @EnumSource(AnnotatedLevels.class)
+    void nestedListWithMap(AnnotatedLevels level) throws IOException {
 
         record Child(String d, double e) {
         }
@@ -325,41 +311,14 @@ class CarpetRecordGeneratorTest {
 
         Sample value = new Sample("A", 1, List.of(Map.of("foo", new Child("bar", 3))));
 
-        @Test
-        void oneLevel() throws IOException {
-            String filePath = newTempFile("nestedList3Child");
-            try (var writer = new CarpetWriter.Builder<>(new FileOutputStream(filePath), Sample.class)
-                    .withLevelStructure(AnnotatedLevels.ONE).build()) {
-                writer.write(value);
-            }
-            List<String> classes = generateCode(filePath);
-            assertTrue(classes.contains("record Sample(String a, int b, List<Map<String, Option>> option) {}"));
-            assertTrue(classes.contains("record Option(String d, double e) {}"));
+        String filePath = newTempFile("nestedListChild");
+        try (var writer = new CarpetWriter.Builder<>(new FileOutputStream(filePath), Sample.class)
+                .withLevelStructure(level).build()) {
+            writer.write(value);
         }
-
-        @Test
-        void twoLevel() throws IOException {
-            String filePath = newTempFile("nestedListMap2Child");
-            try (var writer = new CarpetWriter.Builder<>(new FileOutputStream(filePath), Sample.class)
-                    .withLevelStructure(AnnotatedLevels.TWO).build()) {
-                writer.write(value);
-            }
-            List<String> classes = generateCode(filePath);
-            assertTrue(classes.contains("record Sample(String a, int b, List<Map<String, Option>> option) {}"));
-            assertTrue(classes.contains("record Option(String d, double e) {}"));
-        }
-
-        @Test
-        void threeLevel() throws IOException {
-            String filePath = newTempFile("nestedListMap3Child");
-            try (var writer = new CarpetWriter.Builder<>(new FileOutputStream(filePath), Sample.class)
-                    .withLevelStructure(AnnotatedLevels.THREE).build()) {
-                writer.write(value);
-            }
-            List<String> classes = generateCode(filePath);
-            assertTrue(classes.contains("record Sample(String a, int b, List<Map<String, Option>> option) {}"));
-            assertTrue(classes.contains("record Option(String d, double e) {}"));
-        }
+        List<String> classes = generateCode(filePath);
+        assertTrue(classes.contains("record Sample(String a, int b, List<Map<String, Option>> option) {}"));
+        assertTrue(classes.contains("record Option(String d, double e) {}"));
     }
 
     @Nested
