@@ -1,0 +1,11 @@
+FROM python:3.12.1-bullseye
+RUN pip install --upgrade pip
+RUN pip install pip install pandas==2.2.0 pyarrow==14.0.2
+
+RUN mkdir /home/data
+
+WORKDIR /home
+
+COPY . /home
+
+CMD python /home/python_parquet.py

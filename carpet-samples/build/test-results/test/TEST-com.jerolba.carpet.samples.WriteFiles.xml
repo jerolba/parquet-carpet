@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jerolba.carpet.samples.WriteFiles" tests="9" skipped="0" failures="0" errors="0" timestamp="2025-09-27T17:06:58.617Z" hostname="runnervm3ublj" time="0.059">
+  <properties/>
+  <testcase name="configureBigDecimalPrecision()" classname="com.jerolba.carpet.samples.WriteFiles" time="0.005"/>
+  <testcase name="writeBsonField()" classname="com.jerolba.carpet.samples.WriteFiles" time="0.003"/>
+  <testcase name="configureTimeUnitsPrecision()" classname="com.jerolba.carpet.samples.WriteFiles" time="0.008"/>
+  <testcase name="writeColumnNamesWithAlias()" classname="com.jerolba.carpet.samples.WriteFiles" time="0.004"/>
+  <testcase name="writeSimpleRecord()" classname="com.jerolba.carpet.samples.WriteFiles" time="0.005"/>
+  <testcase name="tuneParquetParameters()" classname="com.jerolba.carpet.samples.WriteFiles" time="0.004"/>
+  <testcase name="writeStructuredRecord()" classname="com.jerolba.carpet.samples.WriteFiles" time="0.005"/>
+  <testcase name="createParquetWriter()" classname="com.jerolba.carpet.samples.WriteFiles" time="0.012"/>
+  <testcase name="writeColumnNamesInSnakeCase()" classname="com.jerolba.carpet.samples.WriteFiles" time="0.006"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

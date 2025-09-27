@@ -577,6 +577,22 @@ class CarpetRecordGeneratorTest {
 
     }
 
+    @Test
+    void variantType() throws IOException {
+        record Sample(int id, org.apache.parquet.variant.Variant data) {
+        }
+
+        String filePath = newTempFile("variantType");
+        try (var writer = new CarpetWriter<>(new FileOutputStream(filePath), Sample.class)) {
+            writer.write(new Sample(1, null)); // Just write null for now to test schema generation
+        }
+
+        List<String> classes = generateCode(filePath);
+        System.out.println("Generated classes: " + classes);
+        // Should generate a record with Variant type
+        assertTrue(classes.contains("record Sample(int id, Variant data) {}"));
+    }
+
     private String newTempFile(String name) throws IOException {
         return createTempFile(name, ".parquet").toString();
     }
