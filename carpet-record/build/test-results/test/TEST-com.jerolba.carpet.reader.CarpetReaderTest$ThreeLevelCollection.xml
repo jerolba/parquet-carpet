@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jerolba.carpet.reader.CarpetReaderTest$ThreeLevelCollection" tests="12" skipped="0" failures="0" errors="0" timestamp="2025-09-27T17:18:31.547Z" hostname="runnervm3ublj" time="0.128">
+  <properties/>
+  <testcase name="collectionPrimitive()" classname="com.jerolba.carpet.reader.CarpetReaderTest$ThreeLevelCollection" time="0.009"/>
+  <testcase name="collectionComposite()" classname="com.jerolba.carpet.reader.CarpetReaderTest$ThreeLevelCollection" time="0.01"/>
+  <testcase name="collectionCompositeProjected()" classname="com.jerolba.carpet.reader.CarpetReaderTest$ThreeLevelCollection" time="0.01"/>
+  <testcase name="setCollection()" classname="com.jerolba.carpet.reader.CarpetReaderTest$ThreeLevelCollection" time="0.009"/>
+  <testcase name="collectionPrimitiveEnum()" classname="com.jerolba.carpet.reader.CarpetReaderTest$ThreeLevelCollection" time="0.008"/>
+  <testcase name="collectionNestedCollectionPrimitive()" classname="com.jerolba.carpet.reader.CarpetReaderTest$ThreeLevelCollection" time="0.009"/>
+  <testcase name="collectionNestedCollectionComposite()" classname="com.jerolba.carpet.reader.CarpetReaderTest$ThreeLevelCollection" time="0.01"/>
+  <testcase name="emptyCollection()" classname="com.jerolba.carpet.reader.CarpetReaderTest$ThreeLevelCollection" time="0.009"/>
+  <testcase name="collectionPrimitiveNullValues()" classname="com.jerolba.carpet.reader.CarpetReaderTest$ThreeLevelCollection" time="0.026"/>
+  <testcase name="collectionFilteredByProjection()" classname="com.jerolba.carpet.reader.CarpetReaderTest$ThreeLevelCollection" time="0.009"/>
+  <testcase name="collectionNestedMap()" classname="com.jerolba.carpet.reader.CarpetReaderTest$ThreeLevelCollection" time="0.009"/>
+  <testcase name="collectionPrimitiveString()" classname="com.jerolba.carpet.reader.CarpetReaderTest$ThreeLevelCollection" time="0.008"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - RecordReader initialized will read a total of 2 records.
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - at row 0. reading next block
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - block read in memory in 1 ms. row count = 2
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - RecordReader initialized will read a total of 2 records.
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - at row 0. reading next block
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - block read in memory in 0 ms. row count = 2
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - RecordReader initialized will read a total of 2 records.
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - at row 0. reading next block
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - block read in memory in 0 ms. row count = 2
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - RecordReader initialized will read a total of 1 records.
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - at row 0. reading next block
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - block read in memory in 0 ms. row count = 1
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - RecordReader initialized will read a total of 2 records.
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - at row 0. reading next block
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - block read in memory in 0 ms. row count = 2
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - RecordReader initialized will read a total of 2 records.
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - at row 0. reading next block
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - block read in memory in 0 ms. row count = 2
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - RecordReader initialized will read a total of 2 records.
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - at row 0. reading next block
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - block read in memory in 0 ms. row count = 2
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - RecordReader initialized will read a total of 3 records.
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - at row 0. reading next block
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - block read in memory in 1 ms. row count = 3
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - RecordReader initialized will read a total of 2 records.
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - at row 0. reading next block
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - block read in memory in 0 ms. row count = 2
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - RecordReader initialized will read a total of 2 records.
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - at row 0. reading next block
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - block read in memory in 0 ms. row count = 2
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - RecordReader initialized will read a total of 2 records.
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - at row 0. reading next block
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - block read in memory in 0 ms. row count = 2
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - RecordReader initialized will read a total of 2 records.
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - at row 0. reading next block
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - block read in memory in 0 ms. row count = 2
+]]></system-err>
+</testsuite>

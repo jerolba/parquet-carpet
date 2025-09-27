@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jerolba.carpet.impl.read.SchemaFilterTest$FieldEnumConversion" tests="4" skipped="0" failures="0" errors="0" timestamp="2025-09-27T17:18:28.287Z" hostname="runnervm3ublj" time="0.003">
+  <properties/>
+  <testcase name="stringCastToEnumIsSupported()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$FieldEnumConversion" time="0.0"/>
+  <testcase name="fieldRequired()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$FieldEnumConversion" time="0.0"/>
+  <testcase name="fieldOptional()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$FieldEnumConversion" time="0.0"/>
+  <testcase name="castToStringIsSupported()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$FieldEnumConversion" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

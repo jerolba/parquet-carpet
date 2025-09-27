@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jerolba.carpet.impl.CaseConverterTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2025-09-27T17:18:28.105Z" hostname="runnervm3ublj" time="0.005">
+  <properties/>
+  <testcase name="weirdCasesTest()" classname="com.jerolba.carpet.impl.CaseConverterTest" time="0.002"/>
+  <testcase name="withSomeKindOfSnakeCaseTest()" classname="com.jerolba.carpet.impl.CaseConverterTest" time="0.0"/>
+  <testcase name="dolar()" classname="com.jerolba.carpet.impl.CaseConverterTest" time="0.0"/>
+  <testcase name="withNumbersTest()" classname="com.jerolba.carpet.impl.CaseConverterTest" time="0.0"/>
+  <testcase name="camelToSnakeCaseTest()" classname="com.jerolba.carpet.impl.CaseConverterTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

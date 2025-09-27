@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jerolba.carpet.impl.read.converter.VariantReadTest" tests="32" skipped="0" failures="0" errors="0" timestamp="2025-09-27T17:18:28.325Z" hostname="runnervm3ublj" time="0.037">
+  <properties/>
+  <testcase name="deserializeAllTypesInArray()" classname="com.jerolba.carpet.impl.read.converter.VariantReadTest" time="0.01"/>
+  <testcase name="deserializeInt()" classname="com.jerolba.carpet.impl.read.converter.VariantReadTest" time="0.0"/>
+  <testcase name="deserializeLargeBinaryData()" classname="com.jerolba.carpet.impl.read.converter.VariantReadTest" time="0.001"/>
+  <testcase name="deserializeString()" classname="com.jerolba.carpet.impl.read.converter.VariantReadTest" time="0.0"/>
+  <testcase name="deserializeEmptyObject()" classname="com.jerolba.carpet.impl.read.converter.VariantReadTest" time="0.002"/>
+  <testcase name="deserializeMixedNestedStructures()" classname="com.jerolba.carpet.impl.read.converter.VariantReadTest" time="0.002"/>
+  <testcase name="deserializeBoolean()" classname="com.jerolba.carpet.impl.read.converter.VariantReadTest" time="0.0"/>
+  <testcase name="deserializeTimestampTz()" classname="com.jerolba.carpet.impl.read.converter.VariantReadTest" time="0.0"/>
+  <testcase name="deserializeNestedObject()" classname="com.jerolba.carpet.impl.read.converter.VariantReadTest" time="0.001"/>
+  <testcase name="deserializeAllTypesInObject()" classname="com.jerolba.carpet.impl.read.converter.VariantReadTest" time="0.001"/>
+  <testcase name="deserializeTimestampNanosNtz()" classname="com.jerolba.carpet.impl.read.converter.VariantReadTest" time="0.0"/>
+  <testcase name="deserializeNullType()" classname="com.jerolba.carpet.impl.read.converter.VariantReadTest" time="0.0"/>
+  <testcase name="deserializeNestedArray()" classname="com.jerolba.carpet.impl.read.converter.VariantReadTest" time="0.001"/>
+  <testcase name="deserializeTimestampNtz()" classname="com.jerolba.carpet.impl.read.converter.VariantReadTest" time="0.001"/>
+  <testcase name="deserializeArrayDeepNesting()" classname="com.jerolba.carpet.impl.read.converter.VariantReadTest" time="0.0"/>
+  <testcase name="deserializeLargeString()" classname="com.jerolba.carpet.impl.read.converter.VariantReadTest" time="0.001"/>
+  <testcase name="deserializeDecimal()" classname="com.jerolba.carpet.impl.read.converter.VariantReadTest" time="0.001"/>
+  <testcase name="deserializeArrayWithPrimitives()" classname="com.jerolba.carpet.impl.read.converter.VariantReadTest" time="0.001"/>
+  <testcase name="deserializeObjectDeepNesting()" classname="com.jerolba.carpet.impl.read.converter.VariantReadTest" time="0.0"/>
+  <testcase name="deserializeFloat()" classname="com.jerolba.carpet.impl.read.converter.VariantReadTest" time="0.001"/>
+  <testcase name="deserializeShort()" classname="com.jerolba.carpet.impl.read.converter.VariantReadTest" time="0.0"/>
+  <testcase name="deserializeByte()" classname="com.jerolba.carpet.impl.read.converter.VariantReadTest" time="0.0"/>
+  <testcase name="deserializeDate()" classname="com.jerolba.carpet.impl.read.converter.VariantReadTest" time="0.0"/>
+  <testcase name="deserializeLong()" classname="com.jerolba.carpet.impl.read.converter.VariantReadTest" time="0.0"/>
+  <testcase name="deserializeTime()" classname="com.jerolba.carpet.impl.read.converter.VariantReadTest" time="0.001"/>
+  <testcase name="deserializeUUID()" classname="com.jerolba.carpet.impl.read.converter.VariantReadTest" time="0.0"/>
+  <testcase name="deserializeObjectWithFields()" classname="com.jerolba.carpet.impl.read.converter.VariantReadTest" time="0.001"/>
+  <testcase name="deserializeNullValue()" classname="com.jerolba.carpet.impl.read.converter.VariantReadTest" time="0.0"/>
+  <testcase name="deserializeEmptyArray()" classname="com.jerolba.carpet.impl.read.converter.VariantReadTest" time="0.0"/>
+  <testcase name="deserializeBinary()" classname="com.jerolba.carpet.impl.read.converter.VariantReadTest" time="0.0"/>
+  <testcase name="deserializeTimestampNanosTz()" classname="com.jerolba.carpet.impl.read.converter.VariantReadTest" time="0.0"/>
+  <testcase name="deserializeDouble()" classname="com.jerolba.carpet.impl.read.converter.VariantReadTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

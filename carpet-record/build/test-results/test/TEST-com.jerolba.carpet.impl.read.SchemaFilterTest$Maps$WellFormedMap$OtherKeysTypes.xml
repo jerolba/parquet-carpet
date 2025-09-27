@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jerolba.carpet.impl.read.SchemaFilterTest$Maps$WellFormedMap$OtherKeysTypes" tests="13" skipped="0" failures="0" errors="0" timestamp="2025-09-27T17:18:28.151Z" hostname="runnervm3ublj" time="0.016">
+  <properties/>
+  <testcase name="integerKey()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Maps$WellFormedMap$OtherKeysTypes" time="0.001"/>
+  <testcase name="nestedCollectionsKeyAreNotSupported()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Maps$WellFormedMap$OtherKeysTypes" time="0.001"/>
+  <testcase name="enumKey()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Maps$WellFormedMap$OtherKeysTypes" time="0.001"/>
+  <testcase name="nestedMapsKeyAreNotSupported()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Maps$WellFormedMap$OtherKeysTypes" time="0.001"/>
+  <testcase name="doubleKey()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Maps$WellFormedMap$OtherKeysTypes" time="0.001"/>
+  <testcase name="shortKey()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Maps$WellFormedMap$OtherKeysTypes" time="0.001"/>
+  <testcase name="compositeKey()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Maps$WellFormedMap$OtherKeysTypes" time="0.0"/>
+  <testcase name="enumToStringKey()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Maps$WellFormedMap$OtherKeysTypes" time="0.002"/>
+  <testcase name="floatFromDoubleKey()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Maps$WellFormedMap$OtherKeysTypes" time="0.001"/>
+  <testcase name="longKey()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Maps$WellFormedMap$OtherKeysTypes" time="0.001"/>
+  <testcase name="byteKey()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Maps$WellFormedMap$OtherKeysTypes" time="0.001"/>
+  <testcase name="compositeValueMatchFields()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Maps$WellFormedMap$OtherKeysTypes" time="0.001"/>
+  <testcase name="floatKey()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Maps$WellFormedMap$OtherKeysTypes" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

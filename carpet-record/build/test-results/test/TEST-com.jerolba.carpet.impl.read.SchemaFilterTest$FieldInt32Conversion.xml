@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jerolba.carpet.impl.read.SchemaFilterTest$FieldInt32Conversion" tests="7" skipped="0" failures="0" errors="0" timestamp="2025-09-27T17:18:28.317Z" hostname="runnervm3ublj" time="0.006">
+  <properties/>
+  <testcase name="castToByteIsSupportedIfStrictNotActive()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$FieldInt32Conversion" time="0.001"/>
+  <testcase name="castToByteIsSupportedWithLogicalTypeInt8()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$FieldInt32Conversion" time="0.001"/>
+  <testcase name="fieldRequired()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$FieldInt32Conversion" time="0.0"/>
+  <testcase name="castToShortIsSupportedWithLogicalTypeInt16()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$FieldInt32Conversion" time="0.0"/>
+  <testcase name="fieldOptional()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$FieldInt32Conversion" time="0.001"/>
+  <testcase name="castToShortIsSupportedIfStrictNotActive()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$FieldInt32Conversion" time="0.001"/>
+  <testcase name="castToLongIsSupported()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$FieldInt32Conversion" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

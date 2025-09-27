@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jerolba.carpet.reader.CarpetReaderToMapTest$MapClassSelection" tests="2" skipped="0" failures="0" errors="0" timestamp="2025-09-27T17:18:32.347Z" hostname="runnervm3ublj" time="0.014">
+  <properties/>
+  <testcase name="hashMapDoesntContainNullElements()" classname="com.jerolba.carpet.reader.CarpetReaderToMapTest$MapClassSelection" time="0.008"/>
+  <testcase name="carpetMapSupportsNullElements()" classname="com.jerolba.carpet.reader.CarpetReaderToMapTest$MapClassSelection" time="0.006"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - RecordReader initialized will read a total of 1 records.
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - at row 0. reading next block
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - block read in memory in 1 ms. row count = 1
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - RecordReader initialized will read a total of 1 records.
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - at row 0. reading next block
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - block read in memory in 0 ms. row count = 1
+]]></system-err>
+</testsuite>

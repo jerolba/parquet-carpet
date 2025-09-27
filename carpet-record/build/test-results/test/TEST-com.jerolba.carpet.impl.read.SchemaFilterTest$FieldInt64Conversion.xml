@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jerolba.carpet.impl.read.SchemaFilterTest$FieldInt64Conversion" tests="5" skipped="0" failures="0" errors="0" timestamp="2025-09-27T17:18:28.311Z" hostname="runnervm3ublj" time="0.005">
+  <properties/>
+  <testcase name="castToByteIsSupportedIfStrictNotActive()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$FieldInt64Conversion" time="0.001"/>
+  <testcase name="fieldRequired()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$FieldInt64Conversion" time="0.001"/>
+  <testcase name="fieldOptional()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$FieldInt64Conversion" time="0.001"/>
+  <testcase name="castToShortIsSupportedIfStrictNotActive()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$FieldInt64Conversion" time="0.001"/>
+  <testcase name="castToIntIsSupportedIfStrictNotActive()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$FieldInt64Conversion" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

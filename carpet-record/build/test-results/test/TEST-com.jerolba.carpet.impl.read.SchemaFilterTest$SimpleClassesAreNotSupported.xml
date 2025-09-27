@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jerolba.carpet.impl.read.SchemaFilterTest$SimpleClassesAreNotSupported" tests="4" skipped="0" failures="0" errors="0" timestamp="2025-09-27T17:18:28.270Z" hostname="runnervm3ublj" time="0.004">
+  <properties/>
+  <testcase name="javaBeanCanNotBePartOfRecord()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$SimpleClassesAreNotSupported" time="0.001"/>
+  <testcase name="bigIntegerIsNotSupported()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$SimpleClassesAreNotSupported" time="0.001"/>
+  <testcase name="javaBeanCanNotBeDeserialized()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$SimpleClassesAreNotSupported" time="0.001"/>
+  <testcase name="bigDecimalIsNotSupported()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$SimpleClassesAreNotSupported" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

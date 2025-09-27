@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jerolba.carpet.impl.write.WriteRecord2SchemaTest$UuidTypes" tests="2" skipped="0" failures="0" errors="0" timestamp="2025-09-27T17:18:28.720Z" hostname="runnervm3ublj" time="0.001">
+  <properties/>
+  <testcase name="withNotNullEnum()" classname="com.jerolba.carpet.impl.write.WriteRecord2SchemaTest$UuidTypes" time="0.0"/>
+  <testcase name="withUuid()" classname="com.jerolba.carpet.impl.write.WriteRecord2SchemaTest$UuidTypes" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

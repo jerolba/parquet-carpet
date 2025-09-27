@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jerolba.carpet.writer.WriteRecordModelWriterTest$InListTypes" tests="12" skipped="0" failures="0" errors="0" timestamp="2025-09-27T17:18:35.217Z" hostname="runnervm3ublj" time="0.069">
+  <properties/>
+  <testcase name="floatList()" classname="com.jerolba.carpet.writer.WriteRecordModelWriterTest$InListTypes" time="0.005"/>
+  <testcase name="longList()" classname="com.jerolba.carpet.writer.WriteRecordModelWriterTest$InListTypes" time="0.005"/>
+  <testcase name="enumList()" classname="com.jerolba.carpet.writer.WriteRecordModelWriterTest$InListTypes" time="0.005"/>
+  <testcase name="shortList()" classname="com.jerolba.carpet.writer.WriteRecordModelWriterTest$InListTypes" time="0.006"/>
+  <testcase name="byteList()" classname="com.jerolba.carpet.writer.WriteRecordModelWriterTest$InListTypes" time="0.005"/>
+  <testcase name="booleanList()" classname="com.jerolba.carpet.writer.WriteRecordModelWriterTest$InListTypes" time="0.006"/>
+  <testcase name="stringList()" classname="com.jerolba.carpet.writer.WriteRecordModelWriterTest$InListTypes" time="0.005"/>
+  <testcase name="localDateList()" classname="com.jerolba.carpet.writer.WriteRecordModelWriterTest$InListTypes" time="0.005"/>
+  <testcase name="doubleList()" classname="com.jerolba.carpet.writer.WriteRecordModelWriterTest$InListTypes" time="0.006"/>
+  <testcase name="integerList()" classname="com.jerolba.carpet.writer.WriteRecordModelWriterTest$InListTypes" time="0.006"/>
+  <testcase name="uuidList()" classname="com.jerolba.carpet.writer.WriteRecordModelWriterTest$InListTypes" time="0.006"/>
+  <testcase name="bigDecimalList()" classname="com.jerolba.carpet.writer.WriteRecordModelWriterTest$InListTypes" time="0.005"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - RecordReader initialized will read a total of 2 records.
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - at row 0. reading next block
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - block read in memory in 1 ms. row count = 2
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - RecordReader initialized will read a total of 2 records.
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - at row 0. reading next block
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - block read in memory in 0 ms. row count = 2
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - RecordReader initialized will read a total of 2 records.
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - at row 0. reading next block
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - block read in memory in 0 ms. row count = 2
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - RecordReader initialized will read a total of 2 records.
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - at row 0. reading next block
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - block read in memory in 0 ms. row count = 2
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - RecordReader initialized will read a total of 2 records.
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - at row 0. reading next block
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - block read in memory in 0 ms. row count = 2
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - RecordReader initialized will read a total of 2 records.
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - at row 0. reading next block
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - block read in memory in 0 ms. row count = 2
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - RecordReader initialized will read a total of 2 records.
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - at row 0. reading next block
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - block read in memory in 1 ms. row count = 2
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - RecordReader initialized will read a total of 2 records.
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - at row 0. reading next block
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - block read in memory in 0 ms. row count = 2
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - RecordReader initialized will read a total of 2 records.
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - at row 0. reading next block
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - block read in memory in 0 ms. row count = 2
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - RecordReader initialized will read a total of 2 records.
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - at row 0. reading next block
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - block read in memory in 0 ms. row count = 2
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - RecordReader initialized will read a total of 2 records.
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - at row 0. reading next block
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - block read in memory in 1 ms. row count = 2
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - RecordReader initialized will read a total of 2 records.
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - at row 0. reading next block
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - block read in memory in 0 ms. row count = 2
+]]></system-err>
+</testsuite>

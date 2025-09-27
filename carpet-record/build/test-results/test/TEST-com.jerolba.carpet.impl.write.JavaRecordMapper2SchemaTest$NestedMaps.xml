@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jerolba.carpet.impl.write.JavaRecordMapper2SchemaTest$NestedMaps" tests="13" skipped="0" failures="0" errors="0" timestamp="2025-09-27T17:18:28.520Z" hostname="runnervm3ublj" time="0.02">
+  <properties/>
+  <testcase name="nonConsecutiveNestedMaps()" classname="com.jerolba.carpet.impl.write.JavaRecordMapper2SchemaTest$NestedMaps" time="0.001"/>
+  <testcase name="consecutiveTripleNestedSimpleTypeMap()" classname="com.jerolba.carpet.impl.write.JavaRecordMapper2SchemaTest$NestedMaps" time="0.001"/>
+  <testcase name="nestedSimpleTypeMap()" classname="com.jerolba.carpet.impl.write.JavaRecordMapper2SchemaTest$NestedMaps" time="0.001"/>
+  <testcase name="consecutiveNestedMapCollection()" classname="com.jerolba.carpet.impl.write.JavaRecordMapper2SchemaTest$NestedMaps" time="0.002"/>
+  <testcase name="consecutiveTripleNestedMap()" classname="com.jerolba.carpet.impl.write.JavaRecordMapper2SchemaTest$NestedMaps" time="0.002"/>
+  <testcase name="nestedNotNullableTypeMap()" classname="com.jerolba.carpet.impl.write.JavaRecordMapper2SchemaTest$NestedMaps" time="0.001"/>
+  <testcase name="genericValueMapNotSupported()" classname="com.jerolba.carpet.impl.write.JavaRecordMapper2SchemaTest$NestedMaps" time="0.001"/>
+  <testcase name="genericKeyMapNotSupported()" classname="com.jerolba.carpet.impl.write.JavaRecordMapper2SchemaTest$NestedMaps" time="0.001"/>
+  <testcase name="mapWithKeyRecord()" classname="com.jerolba.carpet.impl.write.JavaRecordMapper2SchemaTest$NestedMaps" time="0.001"/>
+  <testcase name="nestedRecordMap()" classname="com.jerolba.carpet.impl.write.JavaRecordMapper2SchemaTest$NestedMaps" time="0.001"/>
+  <testcase name="consecutiveTripleNestedNotNullMap()" classname="com.jerolba.carpet.impl.write.JavaRecordMapper2SchemaTest$NestedMaps" time="0.001"/>
+  <testcase name="consecutiveNestedSimpleTypeMap()" classname="com.jerolba.carpet.impl.write.JavaRecordMapper2SchemaTest$NestedMaps" time="0.001"/>
+  <testcase name="consecutiveNestedRecordMap()" classname="com.jerolba.carpet.impl.write.JavaRecordMapper2SchemaTest$NestedMaps" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jerolba.carpet.impl.read.SchemaFilterTest$Collections$OneLevelCollection" tests="14" skipped="0" failures="0" errors="0" timestamp="2025-09-27T17:18:28.254Z" hostname="runnervm3ublj" time="0.015">
+  <properties/>
+  <testcase name="enumCollection()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Collections$OneLevelCollection" time="0.001"/>
+  <testcase name="nestedCollectionsAreNotSupported()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Collections$OneLevelCollection" time="0.001"/>
+  <testcase name="doubleCollection()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Collections$OneLevelCollection" time="0.001"/>
+  <testcase name="stringCollection()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Collections$OneLevelCollection" time="0.001"/>
+  <testcase name="floatFromDoubleCollection()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Collections$OneLevelCollection" time="0.001"/>
+  <testcase name="enumToStringCollection()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Collections$OneLevelCollection" time="0.0"/>
+  <testcase name="collectionCanBeFiltered()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Collections$OneLevelCollection" time="0.0"/>
+  <testcase name="floatCollection()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Collections$OneLevelCollection" time="0.0"/>
+  <testcase name="longCollection()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Collections$OneLevelCollection" time="0.0"/>
+  <testcase name="integerCollection()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Collections$OneLevelCollection" time="0.0"/>
+  <testcase name="compositeCollectionMatchFields()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Collections$OneLevelCollection" time="0.0"/>
+  <testcase name="compositeCollection()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Collections$OneLevelCollection" time="0.0"/>
+  <testcase name="byteCollection()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Collections$OneLevelCollection" time="0.001"/>
+  <testcase name="shortCollection()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Collections$OneLevelCollection" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

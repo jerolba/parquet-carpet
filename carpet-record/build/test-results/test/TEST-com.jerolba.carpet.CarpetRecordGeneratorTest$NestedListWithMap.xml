@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jerolba.carpet.CarpetRecordGeneratorTest$NestedListWithMap" tests="3" skipped="0" failures="0" errors="0" timestamp="2025-09-27T17:18:28.029Z" hostname="runnervm3ublj" time="0.029">
+  <properties/>
+  <testcase name="threeLevel()" classname="com.jerolba.carpet.CarpetRecordGeneratorTest$NestedListWithMap" time="0.009"/>
+  <testcase name="twoLevel()" classname="com.jerolba.carpet.CarpetRecordGeneratorTest$NestedListWithMap" time="0.007"/>
+  <testcase name="oneLevel()" classname="com.jerolba.carpet.CarpetRecordGeneratorTest$NestedListWithMap" time="0.012"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

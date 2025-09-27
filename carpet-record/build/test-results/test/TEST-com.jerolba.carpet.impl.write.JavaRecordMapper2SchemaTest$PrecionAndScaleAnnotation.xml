@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jerolba.carpet.impl.write.JavaRecordMapper2SchemaTest$PrecionAndScaleAnnotation" tests="8" skipped="0" failures="0" errors="0" timestamp="2025-09-27T17:18:28.622Z" hostname="runnervm3ublj" time="0.007">
+  <properties/>
+  <testcase name="invalidConfig()" classname="com.jerolba.carpet.impl.write.JavaRecordMapper2SchemaTest$PrecionAndScaleAnnotation" time="0.002"/>
+  <testcase name="mapKeyAndValue()" classname="com.jerolba.carpet.impl.write.JavaRecordMapper2SchemaTest$PrecionAndScaleAnnotation" time="0.001"/>
+  <testcase name="intPrecision()" classname="com.jerolba.carpet.impl.write.JavaRecordMapper2SchemaTest$PrecionAndScaleAnnotation" time="0.0"/>
+  <testcase name="nestedMapKeyAndValue()" classname="com.jerolba.carpet.impl.write.JavaRecordMapper2SchemaTest$PrecionAndScaleAnnotation" time="0.001"/>
+  <testcase name="nestedCollectionValue()" classname="com.jerolba.carpet.impl.write.JavaRecordMapper2SchemaTest$PrecionAndScaleAnnotation" time="0.0"/>
+  <testcase name="collectionValue()" classname="com.jerolba.carpet.impl.write.JavaRecordMapper2SchemaTest$PrecionAndScaleAnnotation" time="0.001"/>
+  <testcase name="recordField()" classname="com.jerolba.carpet.impl.write.JavaRecordMapper2SchemaTest$PrecionAndScaleAnnotation" time="0.001"/>
+  <testcase name="longPrecision()" classname="com.jerolba.carpet.impl.write.JavaRecordMapper2SchemaTest$PrecionAndScaleAnnotation" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

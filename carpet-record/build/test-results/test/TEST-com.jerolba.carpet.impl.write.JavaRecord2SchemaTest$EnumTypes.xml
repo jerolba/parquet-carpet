@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jerolba.carpet.impl.write.JavaRecord2SchemaTest$EnumTypes" tests="5" skipped="0" failures="0" errors="0" timestamp="2025-09-27T17:18:28.441Z" hostname="runnervm3ublj" time="0.003">
+  <properties/>
+  <testcase name="enumAsString()" classname="com.jerolba.carpet.impl.write.JavaRecord2SchemaTest$EnumTypes" time="0.001"/>
+  <testcase name="withNotNullEnum()" classname="com.jerolba.carpet.impl.write.JavaRecord2SchemaTest$EnumTypes" time="0.0"/>
+  <testcase name="withEnum()" classname="com.jerolba.carpet.impl.write.JavaRecord2SchemaTest$EnumTypes" time="0.0"/>
+  <testcase name="binaryAsEnum()" classname="com.jerolba.carpet.impl.write.JavaRecord2SchemaTest$EnumTypes" time="0.001"/>
+  <testcase name="stringAsEnum()" classname="com.jerolba.carpet.impl.write.JavaRecord2SchemaTest$EnumTypes" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

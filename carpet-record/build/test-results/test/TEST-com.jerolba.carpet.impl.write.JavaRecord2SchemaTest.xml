@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jerolba.carpet.impl.write.JavaRecord2SchemaTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2025-09-27T17:18:28.363Z" hostname="runnervm3ublj" time="0.009">
+  <properties/>
+  <testcase name="dateTypesRecordTest()" classname="com.jerolba.carpet.impl.write.JavaRecord2SchemaTest" time="0.001"/>
+  <testcase name="jtsGeometryFieldMustBeAnnotated()" classname="com.jerolba.carpet.impl.write.JavaRecord2SchemaTest" time="0.001"/>
+  <testcase name="privitiveObjectsTypesRecordTest()" classname="com.jerolba.carpet.impl.write.JavaRecord2SchemaTest" time="0.001"/>
+  <testcase name="unannotatedBinaryHasNoLogicalType()" classname="com.jerolba.carpet.impl.write.JavaRecord2SchemaTest" time="0.001"/>
+  <testcase name="binaryAsStringRecordTest()" classname="com.jerolba.carpet.impl.write.JavaRecord2SchemaTest" time="0.001"/>
+  <testcase name="notNullFieldRecordTest()" classname="com.jerolba.carpet.impl.write.JavaRecord2SchemaTest" time="0.001"/>
+  <testcase name="simpleRecordTest()" classname="com.jerolba.carpet.impl.write.JavaRecord2SchemaTest" time="0.001"/>
+  <testcase name="canMapAnyGeometrySubtype()" classname="com.jerolba.carpet.impl.write.JavaRecord2SchemaTest" time="0.0"/>
+  <testcase name="privitiveTypesRecordTest()" classname="com.jerolba.carpet.impl.write.JavaRecord2SchemaTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

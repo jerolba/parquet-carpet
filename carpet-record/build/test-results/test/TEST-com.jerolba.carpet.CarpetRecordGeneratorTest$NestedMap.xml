@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jerolba.carpet.CarpetRecordGeneratorTest$NestedMap" tests="5" skipped="0" failures="0" errors="0" timestamp="2025-09-27T17:18:27.934Z" hostname="runnervm3ublj" time="0.061">
+  <properties/>
+  <testcase name="simpleKeyAndMapValue()" classname="com.jerolba.carpet.CarpetRecordGeneratorTest$NestedMap" time="0.015"/>
+  <testcase name="recordKeyAndSimpleValue()" classname="com.jerolba.carpet.CarpetRecordGeneratorTest$NestedMap" time="0.013"/>
+  <testcase name="simpleKeyAndListValue()" classname="com.jerolba.carpet.CarpetRecordGeneratorTest$NestedMap" time="0.014"/>
+  <testcase name="simpleKeyAndRecordValue()" classname="com.jerolba.carpet.CarpetRecordGeneratorTest$NestedMap" time="0.009"/>
+  <testcase name="simpleKeyAndValue()" classname="com.jerolba.carpet.CarpetRecordGeneratorTest$NestedMap" time="0.006"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

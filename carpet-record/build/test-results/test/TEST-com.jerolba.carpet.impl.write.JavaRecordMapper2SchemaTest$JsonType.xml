@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jerolba.carpet.impl.write.JavaRecordMapper2SchemaTest$JsonType" tests="4" skipped="0" failures="0" errors="0" timestamp="2025-09-27T17:18:28.648Z" hostname="runnervm3ublj" time="0.003">
+  <properties/>
+  <testcase name="notNullJsonFieldFromBinary()" classname="com.jerolba.carpet.impl.write.JavaRecordMapper2SchemaTest$JsonType" time="0.001"/>
+  <testcase name="notNullJsonFieldFromString()" classname="com.jerolba.carpet.impl.write.JavaRecordMapper2SchemaTest$JsonType" time="0.0"/>
+  <testcase name="jsonFieldFromBinary()" classname="com.jerolba.carpet.impl.write.JavaRecordMapper2SchemaTest$JsonType" time="0.001"/>
+  <testcase name="jsonFieldFromString()" classname="com.jerolba.carpet.impl.write.JavaRecordMapper2SchemaTest$JsonType" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

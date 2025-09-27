@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jerolba.carpet.writer.WriteRecordModelWriterTest$DateTypes$LocalDateTimeType" tests="5" skipped="2" failures="0" errors="0" timestamp="2025-09-27T17:18:35.323Z" hostname="runnervm3ublj" time="0.017">
+  <properties/>
+  <testcase name="micros()" classname="com.jerolba.carpet.writer.WriteRecordModelWriterTest$DateTypes$LocalDateTimeType" time="0.0">
+    <skipped/>
+  </testcase>
+  <testcase name="millis()" classname="com.jerolba.carpet.writer.WriteRecordModelWriterTest$DateTypes$LocalDateTimeType" time="0.0">
+    <skipped/>
+  </testcase>
+  <testcase name="millisByLong()" classname="com.jerolba.carpet.writer.WriteRecordModelWriterTest$DateTypes$LocalDateTimeType" time="0.005"/>
+  <testcase name="nanos()" classname="com.jerolba.carpet.writer.WriteRecordModelWriterTest$DateTypes$LocalDateTimeType" time="0.005"/>
+  <testcase name="microsByLong()" classname="com.jerolba.carpet.writer.WriteRecordModelWriterTest$DateTypes$LocalDateTimeType" time="0.006"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - RecordReader initialized will read a total of 2 records.
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - at row 0. reading next block
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - block read in memory in 0 ms. row count = 2
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - RecordReader initialized will read a total of 2 records.
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - at row 0. reading next block
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - block read in memory in 0 ms. row count = 2
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - RecordReader initialized will read a total of 2 records.
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - at row 0. reading next block
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - block read in memory in 0 ms. row count = 2
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - RecordReader initialized will read a total of 2 records.
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - at row 0. reading next block
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - block read in memory in 1 ms. row count = 2
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - RecordReader initialized will read a total of 2 records.
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - at row 0. reading next block
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - block read in memory in 0 ms. row count = 2
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - RecordReader initialized will read a total of 2 records.
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - at row 0. reading next block
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - block read in memory in 0 ms. row count = 2
+]]></system-err>
+</testsuite>

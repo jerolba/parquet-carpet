@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jerolba.carpet.impl.write.JavaRecord2SchemaTest$NestedCollection1Level" tests="16" skipped="0" failures="0" errors="0" timestamp="2025-09-27T17:18:28.426Z" hostname="runnervm3ublj" time="0.013">
+  <properties/>
+  <testcase name="nestedStringCollection()" classname="com.jerolba.carpet.impl.write.JavaRecord2SchemaTest$NestedCollection1Level" time="0.0"/>
+  <testcase name="nestedJtsGeographyCollection()" classname="com.jerolba.carpet.impl.write.JavaRecord2SchemaTest$NestedCollection1Level" time="0.0"/>
+  <testcase name="nestedGeographyCollection()" classname="com.jerolba.carpet.impl.write.JavaRecord2SchemaTest$NestedCollection1Level" time="0.0"/>
+  <testcase name="nestedSimpleTypeCollection()" classname="com.jerolba.carpet.impl.write.JavaRecord2SchemaTest$NestedCollection1Level" time="0.001"/>
+  <testcase name="nestedGeometryCollection()" classname="com.jerolba.carpet.impl.write.JavaRecord2SchemaTest$NestedCollection1Level" time="0.001"/>
+  <testcase name="nestedVariantCollection()" classname="com.jerolba.carpet.impl.write.JavaRecord2SchemaTest$NestedCollection1Level" time="0.0"/>
+  <testcase name="nestedStringAsEnumCollection()" classname="com.jerolba.carpet.impl.write.JavaRecord2SchemaTest$NestedCollection1Level" time="0.0"/>
+  <testcase name="nestedEnumCollection()" classname="com.jerolba.carpet.impl.write.JavaRecord2SchemaTest$NestedCollection1Level" time="0.001"/>
+  <testcase name="nonConsecutiveNestedCollections()" classname="com.jerolba.carpet.impl.write.JavaRecord2SchemaTest$NestedCollection1Level" time="0.0"/>
+  <testcase name="consecutiveNestedCollections()" classname="com.jerolba.carpet.impl.write.JavaRecord2SchemaTest$NestedCollection1Level" time="0.001"/>
+  <testcase name="nestedJtsGeometryCollection()" classname="com.jerolba.carpet.impl.write.JavaRecord2SchemaTest$NestedCollection1Level" time="0.0"/>
+  <testcase name="nestedGenericIsNotSupported()" classname="com.jerolba.carpet.impl.write.JavaRecord2SchemaTest$NestedCollection1Level" time="0.001"/>
+  <testcase name="nestedBsonCollection()" classname="com.jerolba.carpet.impl.write.JavaRecord2SchemaTest$NestedCollection1Level" time="0.0"/>
+  <testcase name="nestedBinaryCollection()" classname="com.jerolba.carpet.impl.write.JavaRecord2SchemaTest$NestedCollection1Level" time="0.0"/>
+  <testcase name="nestedMapInCollection()" classname="com.jerolba.carpet.impl.write.JavaRecord2SchemaTest$NestedCollection1Level" time="0.001"/>
+  <testcase name="nestedJsonCollection()" classname="com.jerolba.carpet.impl.write.JavaRecord2SchemaTest$NestedCollection1Level" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

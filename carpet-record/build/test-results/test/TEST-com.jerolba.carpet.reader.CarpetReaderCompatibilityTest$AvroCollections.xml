@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jerolba.carpet.reader.CarpetReaderCompatibilityTest$AvroCollections" tests="1" skipped="0" failures="0" errors="0" timestamp="2025-09-27T17:18:28.859Z" hostname="runnervm3ublj" time="0.312">
+  <properties/>
+  <testcase name="parquet2069Original()" classname="com.jerolba.carpet.reader.CarpetReaderCompatibilityTest$AvroCollections" time="0.312"/>
+  <system-out><![CDATA[{"destination_addresses": [{"element": "Washington, DC, USA"}, {"element": "Philadelphia, PA, USA"}, {"element": "Santa Barbara, CA, USA"}, {"element": "Miami, FL, USA"}, {"element": "Austin, TX, USA"}, {"element": "Napa County, CA, USA"}], "origin_addresses": [{"element": "New York, NY, USA"}], "rows": [{"element": {"elements": [{"element": {"distance": {"text": "227 mi", "value": 365468}, "duration": {"text": "3 hours 54 mins", "value": 14064}, "status": "OK"}}, {"element": {"distance": {"text": "94.6 mi", "value": 152193}, "duration": {"text": "1 hour 44 mins", "value": 6227}, "status": "OK"}}, {"element": {"distance": {"text": "2,878 mi", "value": 4632197}, "duration": {"text": "1 day 18 hours", "value": 151772}, "status": "OK"}}, {"element": {"distance": {"text": "1,286 mi", "value": 2069031}, "duration": {"text": "18 hours 43 mins", "value": 67405}, "status": "OK"}}, {"element": {"distance": {"text": "1,742 mi", "value": 2802972}, "duration": {"text": "1 day 2 hours", "value": 93070}, "status": "OK"}}, {"element": {"distance": {"text": "2,871 mi", "value": 4620514}, "duration": {"text": "1 day 18 hours", "value": 152913}, "status": "OK"}}]}}], "status": "OK"}
+]]></system-out>
+  <system-err><![CDATA[[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - RecordReader initialized will read a total of 1 records.
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - at row 0. reading next block
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - block read in memory in 1 ms. row count = 1
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - RecordReader initialized will read a total of 1 records.
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - at row 0. reading next block
+[Test worker] INFO org.apache.parquet.hadoop.InternalParquetRecordReader - block read in memory in 1 ms. row count = 1
+]]></system-err>
+</testsuite>

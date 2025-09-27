@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jerolba.carpet.impl.read.SchemaFilterTest$Collections$ThreeLevelCollection" tests="16" skipped="0" failures="0" errors="0" timestamp="2025-09-27T17:18:28.206Z" hostname="runnervm3ublj" time="0.022">
+  <properties/>
+  <testcase name="enumCollection()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Collections$ThreeLevelCollection" time="0.001"/>
+  <testcase name="doubleCollection()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Collections$ThreeLevelCollection" time="0.001"/>
+  <testcase name="nestedCollectionsWithGroupAreSupported()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Collections$ThreeLevelCollection" time="0.001"/>
+  <testcase name="stringCollection()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Collections$ThreeLevelCollection" time="0.001"/>
+  <testcase name="floatFromDoubleCollection()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Collections$ThreeLevelCollection" time="0.001"/>
+  <testcase name="enumToStringCollection()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Collections$ThreeLevelCollection" time="0.0"/>
+  <testcase name="collectionCanBeFiltered()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Collections$ThreeLevelCollection" time="0.0"/>
+  <testcase name="floatCollection()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Collections$ThreeLevelCollection" time="0.0"/>
+  <testcase name="longCollection()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Collections$ThreeLevelCollection" time="0.001"/>
+  <testcase name="nestedMapsAreSupported()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Collections$ThreeLevelCollection" time="0.001"/>
+  <testcase name="nestedCollectionsWithPrimitivesAreSupported()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Collections$ThreeLevelCollection" time="0.001"/>
+  <testcase name="integerCollection()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Collections$ThreeLevelCollection" time="0.001"/>
+  <testcase name="compositeCollectionMatchFields()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Collections$ThreeLevelCollection" time="0.001"/>
+  <testcase name="compositeCollection()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Collections$ThreeLevelCollection" time="0.001"/>
+  <testcase name="byteCollection()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Collections$ThreeLevelCollection" time="0.002"/>
+  <testcase name="shortCollection()" classname="com.jerolba.carpet.impl.read.SchemaFilterTest$Collections$ThreeLevelCollection" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jerolba.carpet.impl.write.JavaRecordMapper2SchemaTest$BsonType" tests="2" skipped="0" failures="0" errors="0" timestamp="2025-09-27T17:18:28.646Z" hostname="runnervm3ublj" time="0.001">
+  <properties/>
+  <testcase name="bsonFieldFromBinary()" classname="com.jerolba.carpet.impl.write.JavaRecordMapper2SchemaTest$BsonType" time="0.0"/>
+  <testcase name="notNullBsonFieldFromBinary()" classname="com.jerolba.carpet.impl.write.JavaRecordMapper2SchemaTest$BsonType" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

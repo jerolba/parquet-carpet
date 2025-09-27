@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jerolba.carpet.model.BigDecimalTypeTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2025-09-27T17:18:28.766Z" hostname="runnervm3ublj" time="0.004">
+  <properties/>
+  <testcase name="validPrecisionAndScaleUsingBuilder()" classname="com.jerolba.carpet.model.BigDecimalTypeTest" time="0.0"/>
+  <testcase name="validPrecisionAndScale()" classname="com.jerolba.carpet.model.BigDecimalTypeTest" time="0.001"/>
+  <testcase name="scaleMustBeLessThanOrEqualToPrecision()" classname="com.jerolba.carpet.model.BigDecimalTypeTest" time="0.0"/>
+  <testcase name="precisionMustBeGreaterThanZero()" classname="com.jerolba.carpet.model.BigDecimalTypeTest" time="0.001"/>
+  <testcase name="scaleMustBeZeroOrPositive()" classname="com.jerolba.carpet.model.BigDecimalTypeTest" time="0.0"/>
+  <testcase name="scaleMustBeSpecifiedIfPrecisionIsSpecified()" classname="com.jerolba.carpet.model.BigDecimalTypeTest" time="0.001"/>
+  <testcase name="nullPrecisionAndScaleAreValid()" classname="com.jerolba.carpet.model.BigDecimalTypeTest" time="0.0"/>
+  <testcase name="precisionMustBeSpecifiedIfScaleIsSpecified()" classname="com.jerolba.carpet.model.BigDecimalTypeTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
