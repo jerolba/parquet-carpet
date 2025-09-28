@@ -90,12 +90,10 @@ class MainGroupConverter {
             GroupType asGroupType = schemaField.asGroupType();
             LogicalTypeAnnotation logicalType = asGroupType.getLogicalTypeAnnotation();
             if (listType().equals(logicalType)) {
-                var parameterized = getParameterizedCollection(recordComponent);
-                return new CarpetListConverter(asGroupType, parameterized, consumer);
+                return new CarpetListConverter(asGroupType, getParameterizedCollection(recordComponent), consumer);
             }
             if (mapType().equals(logicalType)) {
-                var parameterized = getParameterizedMap(recordComponent);
-                return new CarpetMapConverter(asGroupType, parameterized, consumer);
+                return new CarpetMapConverter(asGroupType, getParameterizedMap(recordComponent), consumer);
             }
             if (Map.class.isAssignableFrom(recordComponent.getType())) {
                 return new CarpetGroupAsMapConverter(recordComponent.getType(), asGroupType, consumer);
@@ -199,23 +197,18 @@ class MainGroupConverter {
         if (listElement.isPrimitive()) {
             return buildPrimitiveConverter(listElement, parameterized.getActualType(), consumer);
         }
-        LogicalTypeAnnotation logicalType = listElement.getLogicalTypeAnnotation();
-        if (logicalType != null) {
-            if (listType().equals(logicalType) && parameterized.isCollection()) {
-                var parameterizedList = parameterized.getParametizedAsCollection();
-                return new CarpetListConverter(listElement.asGroupType(), parameterizedList, consumer);
-            }
-            if (mapType().equals(logicalType) && parameterized.isMap()) {
-                var parameterizedMap = parameterized.getParametizedAsMap();
-                return new CarpetMapConverter(listElement.asGroupType(), parameterizedMap, consumer);
-            }
-            if (logicalType instanceof VariantLogicalTypeAnnotation) {
-                return new VariantConverter(listElement.asGroupType(), consumer);
-            }
-        }
         GroupType groupType = listElement.asGroupType();
-        Class<?> listType = parameterized.getActualType();
-        return new CarpetGroupConverter(groupType, listType, consumer);
+        LogicalTypeAnnotation logicalType = listElement.getLogicalTypeAnnotation();
+        if (logicalType == listType() && parameterized.isCollection()) {
+            return new CarpetListConverter(groupType, parameterized.getAsCollection(), consumer);
+        }
+        if (logicalType == mapType() && parameterized.isMap()) {
+            return new CarpetMapConverter(groupType, parameterized.getAsMap(), consumer);
+        }
+        if (logicalType instanceof VariantLogicalTypeAnnotation) {
+            return new VariantConverter(groupType, consumer);
+        }
+        return new CarpetGroupConverter(groupType, parameterized.getActualType(), consumer);
     }
 
     class CarpetMapConverter extends GroupConverter {
@@ -269,41 +262,18 @@ class MainGroupConverter {
             }
 
             // Key
+            ParameterizedCollection genericKey = parameterized.getGenericKey();
             Type mapKeyType = fields.get(0);
-            Class<?> mapKeyActualType = parameterized.getKeyActualType();
             if (mapKeyType.isPrimitive()) {
-                converterKey = buildPrimitiveConverter(mapKeyType, mapKeyActualType, this::consumeKey);
+                converterKey = buildPrimitiveConverter(mapKeyType, genericKey.getActualType(),
+                        this::consumeKey);
             } else {
-                converterKey = new CarpetGroupConverter(mapKeyType.asGroupType(), mapKeyActualType, this::consumeKey);
+                converterKey = new CarpetGroupConverter(mapKeyType.asGroupType(), genericKey.getActualType(),
+                        this::consumeKey);
             }
 
             // Value
-            Type mapValueType = fields.get(1);
-            if (mapValueType.isPrimitive()) {
-                converterValue = buildPrimitiveConverter(mapValueType, parameterized.getValueActualType(),
-                        this::consumeValue);
-                return;
-            }
-            LogicalTypeAnnotation logicalType = mapValueType.getLogicalTypeAnnotation();
-            if (logicalType == listType() && parameterized.valueIsCollection()) {
-                var parameterizedList = parameterized.getValueTypeAsCollection();
-                converterValue = new CarpetListConverter(mapValueType.asGroupType(), parameterizedList,
-                        this::consumeValue);
-                return;
-            }
-            if (logicalType == mapType() && parameterized.valueIsMap()) {
-                var parameterizedMap = parameterized.getValueTypeAsMap();
-                converterValue = new CarpetMapConverter(mapValueType.asGroupType(), parameterizedMap,
-                        this::consumeValue);
-                return;
-            }
-            if (logicalType instanceof VariantLogicalTypeAnnotation) {
-                converterValue = new VariantConverter(mapValueType.asGroupType(),
-                        this::consumeValue);
-                return;
-            }
-            Class<?> mapValueActualType = parameterized.getValueActualType();
-            converterValue = new CarpetGroupConverter(mapValueType.asGroupType(), mapValueActualType,
+            converterValue = createCollectionConverter(fields.get(1), parameterized.getGenericValue(),
                     this::consumeValue);
         }
 
@@ -378,7 +348,7 @@ class MainGroupConverter {
         }
         var asGroupType = parquetField.asGroupType();
         if (parameterized.isMap()) {
-            return new CarpetMapConverter(asGroupType, parameterized.getParametizedAsMap(), consumer);
+            return new CarpetMapConverter(asGroupType, parameterized.getAsMap(), consumer);
         }
         if (parameterized.getActualJavaType().isVariant()) {
             return new VariantConverter(parquetField.asGroupType(), consumer);

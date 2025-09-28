@@ -105,7 +105,8 @@ class WriteRecordModel2Schema {
             Set<WriteRecordModelType<?>> visited) {
         if (fieldtype instanceof CollectionType collectionType) {
             return createCollectionType(parquetFieldName, collectionType.type(), repetition, visited);
-        } else if (fieldtype instanceof MapType mapType) {
+        }
+        if (fieldtype instanceof MapType mapType) {
             return createMapType(parquetFieldName, mapType, repetition, visited);
         }
         return buildIfNonCollectionParquetType(fieldtype, parquetFieldName, repetition, visited);
@@ -136,45 +137,35 @@ class WriteRecordModel2Schema {
     private Type createCollectionTwoLevel(String parquetFieldName, FieldType parametized,
             Repetition repetition, Set<WriteRecordModelType<?>> visited) {
         // Two level collections elements are not nullables
-        Type nested = createNestedCollection(parametized, REPEATED, visited);
+        Type nested = createNestedCollection(parametized, REPEATED, ELEMENT, visited);
         return ConversionPatterns.listType(repetition, parquetFieldName, nested);
     }
 
     private Type createCollectionThreeLevel(String parquetFieldName, FieldType parametized,
             Repetition repetition, Set<WriteRecordModelType<?>> visited) {
-        Type nested = createNestedCollection(parametized, getTypeRepetition(parametized), visited);
+        Type nested = createNestedCollection(parametized, getTypeRepetition(parametized), ELEMENT, visited);
         return ConversionPatterns.listOfElements(repetition, parquetFieldName, nested);
     }
 
-    private Type createNestedCollection(FieldType parametized, Repetition repetition,
+    private Type createNestedCollection(FieldType parametized, Repetition repetition, String fieldName,
             Set<WriteRecordModelType<?>> visited) {
         if (parametized instanceof CollectionType collectionType) {
-            return createCollectionType(ELEMENT, collectionType.type(), repetition, visited);
+            return createCollectionType(fieldName, collectionType.type(), repetition, visited);
         }
         if (parametized instanceof MapType mapType) {
-            return createMapType(ELEMENT, mapType, repetition, visited);
+            return createMapType(fieldName, mapType, repetition, visited);
         }
-        return buildTypeElement(ELEMENT, parametized, repetition, visited);
+        return buildTypeElement(fieldName, parametized, repetition, visited);
     }
 
     private Type createMapType(String parquetFieldName, MapType mapType, Repetition repetition,
             Set<WriteRecordModelType<?>> visited) {
-        FieldType keyType = mapType.keyType();
-        Type nestedKey = buildTypeElement(KEY, keyType, REQUIRED, visited);
-        Type nestedValue = null;
-
-        FieldType valueType = mapType.valueType();
-        Repetition valueRepetition = getTypeRepetition(valueType);
-        if (valueType instanceof CollectionType collectionType) {
-            nestedValue = createCollectionType(VALUE, collectionType.type(), valueRepetition, visited);
-        } else if (valueType instanceof MapType innerMapType) {
-            nestedValue = createMapType(VALUE, innerMapType, valueRepetition, visited);
-        } else {
-            nestedValue = buildTypeElement(VALUE, valueType, valueRepetition, visited);
-        }
-        if (nestedKey != null && nestedValue != null) {
+        Type key = buildTypeElement(KEY, mapType.keyType(), REQUIRED, visited);
+        Type value = createNestedCollection(mapType.valueType(), getTypeRepetition(mapType.valueType()), VALUE,
+                visited);
+        if (key != null && value != null) {
             // TODO: what to change to support generation of older versions?
-            return Types.map(repetition).key(nestedKey).value(nestedValue).named(parquetFieldName);
+            return Types.map(repetition).key(key).value(value).named(parquetFieldName);
         }
         throw new RecordTypeConversionException("Unsuported type in Map");
     }

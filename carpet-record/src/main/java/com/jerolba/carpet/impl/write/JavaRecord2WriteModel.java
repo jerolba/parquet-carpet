@@ -133,34 +133,30 @@ public class JavaRecord2WriteModel {
         return simple == null ? buildRecordModel(javaType.getJavaType(), isNotNull, visited) : simple;
     }
 
-    private FieldType createCollectionType(ParameterizedCollection parametized, boolean isNotNull,
-            Set<Class<?>> visited) {
-        JavaType actualJavaType = parametized.getActualJavaType();
-        boolean typeIsNotNull = isNotNullAnnotated(actualJavaType.getDeclaredAnnotations());
+    private FieldType createCollectionType(ParameterizedCollection generic, boolean isNotNull, Set<Class<?>> visited) {
         ListTypeBuilder list = isNotNull ? LIST.notNull() : LIST;
-        if (parametized.isCollection()) {
-            return list.ofType(createCollectionType(parametized.getParametizedAsCollection(), typeIsNotNull, visited));
-        } else if (parametized.isMap()) {
-            return list.ofType(createMapType(parametized.getParametizedAsMap(), typeIsNotNull, visited));
+        return list.ofType(createGenericType(generic, visited));
+    }
+
+    private FieldType createGenericType(ParameterizedCollection generic, Set<Class<?>> visited) {
+        JavaType actualJavaType = generic.getActualJavaType();
+        boolean typeIsNotNull = isNotNullAnnotated(actualJavaType.getDeclaredAnnotations());
+        if (generic.isCollection()) {
+            return createCollectionType(generic.getAsCollection(), typeIsNotNull, visited);
+        } else if (generic.isMap()) {
+            return createMapType(generic.getAsMap(), typeIsNotNull, visited);
         }
-        return list.ofType(simpleOrCompositeClass(actualJavaType, typeIsNotNull, visited));
+        return simpleOrCompositeClass(actualJavaType, typeIsNotNull, visited);
     }
 
     private FieldType createMapType(ParameterizedMap parametized, boolean isNotNull, Set<Class<?>> visited) {
-        if (parametized.keyIsCollection() || parametized.keyIsMap()) {
+        ParameterizedCollection genericKey = parametized.getGenericKey();
+        if (genericKey.isCollection() || genericKey.isMap()) {
             throw new RuntimeException("Maps with collections or maps as keys are not supported");
         }
-        FieldType nestedKey = simpleOrCompositeClass(parametized.getKeyActualJavaType(), true, visited);
-        JavaType valueActualJavaType = parametized.getValueActualJavaType();
-        boolean valueIsNotNull = isNotNullAnnotated(valueActualJavaType.getDeclaredAnnotations());
-        FieldType nestedValue = null;
-        if (parametized.valueIsCollection()) {
-            nestedValue = createCollectionType(parametized.getValueTypeAsCollection(), valueIsNotNull, visited);
-        } else if (parametized.valueIsMap()) {
-            nestedValue = createMapType(parametized.getValueTypeAsMap(), valueIsNotNull, visited);
-        } else {
-            nestedValue = simpleOrCompositeClass(valueActualJavaType, valueIsNotNull, visited);
-        }
+
+        FieldType nestedKey = simpleOrCompositeClass(genericKey.getActualJavaType(), true, visited);
+        FieldType nestedValue = createGenericType(parametized.getGenericValue(), visited);
         if (nestedKey != null && nestedValue != null) {
             MapTypeBuilder map = isNotNull ? MAP.notNull() : MAP;
             return map.ofTypes(nestedKey, nestedValue);
