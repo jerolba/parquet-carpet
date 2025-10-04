@@ -16,13 +16,47 @@
 package com.jerolba.carpet.annotation;
 
 import static java.lang.annotation.ElementType.RECORD_COMPONENT;
+import static java.lang.annotation.ElementType.TYPE_USE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
+/**
+ * Annotation to explicitly indicate that a field should be stored as a string
+ * type in Parquet format.
+ * <p>
+ * This annotation can be applied to specify that an Enum of Binary annotated
+ * field should be serialized using the STRING logical type in Parquet.
+ * </p>
+ *
+ * <h3>Usage Examples:</h3>
+ *
+ * <pre>
+ * {
+ *     &#64;code
+ *     record UserRecord(
+ *             long id,
+ *             &#64;ParquetString Binary name,
+ *             &#64;CategoryEnum category,
+ *             String email // automatically treated as string without annotation
+ *     ) {
+ *     }
+ * }
+ * </pre>
+ *
+ * <p>
+ * <b>Note:</b> This annotation is primarily used for explicit schema definition
+ * and documentation purposes, as string fields are typically handled
+ * automatically by the Carpet library. It can be particularly useful when
+ * working with schema evolution or when integrating with other Parquet tools
+ * that require explicit type annotations.
+ * </p>
+ *
+ * @see org.apache.parquet.schema.LogicalTypeAnnotation#stringType()
+ */
 @Retention(RUNTIME)
-@Target(RECORD_COMPONENT)
+@Target({ RECORD_COMPONENT, TYPE_USE })
 public @interface ParquetString {
 
 }

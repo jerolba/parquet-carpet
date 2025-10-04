@@ -22,6 +22,25 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
+/**
+ * Annotation to indicate that a field should be stored as BSON (Binary JSON) in
+ * Parquet format.
+ * <p>
+ * This annotation can be applied to Binary type to specify that the annotated
+ * field should be serialized using the BSON logical type in Parquet. BSON is a
+ * binary representation of JSON-like documents that can efficiently store and
+ * transmit structured data.
+ * </p>
+ *
+ * <h3>Usage Example:</h3>
+ *
+ * <pre>{@code
+ * record UserData(String userId, @ParquetBson Binary metadata) {
+ * }
+ * }</pre>
+ *
+ * @see org.apache.parquet.schema.LogicalTypeAnnotation#bsonType()
+ */
 @Retention(RUNTIME)
 @Target({ RECORD_COMPONENT, TYPE_USE })
 public @interface ParquetBson {

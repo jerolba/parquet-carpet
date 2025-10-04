@@ -52,7 +52,7 @@ public abstract class CarpetReaderConfigurationBuilder<T, SELF extends CarpetRea
      * Creates a new {@code Builder} instance from the specified InputFile and
      * record class.
      *
-     * @param inputFile   the input file from which the records will be read
+     * @param file        the input file from which the records will be read
      * @param recordClass the class of the records being read
      */
     public CarpetReaderConfigurationBuilder(InputFile file, Class<T> recordClass) {

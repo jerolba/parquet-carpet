@@ -162,9 +162,6 @@ public class CarpetParquetWriter {
          * record convention. The factory receives all configuration to decide how to
          * build the WriteRecordModelType.
          *
-         * Experimental feature to support custom data models different from record,
-         * like classes or DataFrames
-         *
          * @param writeModelFactory creates WriteRecordModelType given configuration
          *                          specific to Carpet and Parquet
          * @return this builder for method chaining.
@@ -177,9 +174,6 @@ public class CarpetParquetWriter {
 
         /**
          * Configures write data model to use, instead of default record convention.
-         *
-         * Experimental feature to support custom data models different from record,
-         * like classes or DataFrames
          *
          * @param rootWriteRecordModel write record model to use
          * @return this builder for method chaining.

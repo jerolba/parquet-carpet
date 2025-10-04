@@ -22,6 +22,36 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
+/**
+ * Annotation to indicate that a field should be stored as JSON in Parquet
+ * format.
+ * <p>
+ * This annotation can be applied to specify that the annotated field should be
+ * serialized using the JSON logical type in Parquet. This is useful for storing
+ * complex nested structures, dynamic schemas, or any data that is naturally
+ * represented as JSON.
+ * </p>
+ * <p>
+ * The annotated field must be a String or a Binary type that contains valid
+ * JSON data. The annotation will not serialize the field to JSON; it only
+ * indicates how the field should be treated when writing to or reading from
+ * Parquet files.
+ * </p>
+ *
+ * <h3>Usage Examples:</h3>
+ *
+ * <pre>
+ * {
+ *     &#64;code
+ *     record EventData(String eventId,
+ *             &#64;ParquetJson String payload,
+ *             &#64;ParquetJson Binary metadata) {
+ *     }
+ * }
+ * </pre>
+ *
+ * @see org.apache.parquet.schema.LogicalTypeAnnotation#jsonType()
+ */
 @Retention(RUNTIME)
 @Target({ RECORD_COMPONENT, TYPE_USE })
 public @interface ParquetJson {

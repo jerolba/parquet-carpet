@@ -35,10 +35,9 @@ public class ParquetRecordIterator<T> implements CloseableIterator<T> {
 
     /**
      * Creates a new {@code ParquetRecordIterator} instance from the specified
-     * record class and reader.
+     * reader.
      *
-     * @param recordClass the class of the records in the Parquet file
-     * @param reader      the reader for the Parquet data
+     * @param reader the reader for the Parquet data
      * @throws IOException if an I/O error occurs
      */
     public ParquetRecordIterator(ParquetReader<T> reader) throws IOException {

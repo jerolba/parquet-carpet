@@ -22,6 +22,33 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
+/**
+ * Annotation to indicate that a field should be stored as an enumeration type
+ * in Parquet format.
+ * <p>
+ * This annotation can be applied to specify that the annotated String field
+ * should be serialized using the ENUM logical type in Parquet. This is
+ * particularly useful for String fields that represent a finite set of
+ * predefined values.
+ * </p>
+ * <p>
+ * When a field is annotated with {@code @ParquetEnum}, the Carpet library will:
+ * <ul>
+ * <li>Store the field data using Parquet's ENUM logical type annotation</li>
+ * <li>Optimize storage by treating the values as a controlled vocabulary</li>
+ * <li>Enable better compression and query performance for categorical data</li>
+ * </ul>
+ * </p>
+ *
+ * <h3>Usage Example:</h3>
+ *
+ * <pre>{@code
+ * record User(String name, @ParquetEnum String category) {
+ * }
+ * }</pre>
+ *
+ * @see org.apache.parquet.schema.LogicalTypeAnnotation#enumType()
+ */
 @Retention(RUNTIME)
 @Target({ RECORD_COMPONENT, TYPE_USE })
 public @interface ParquetEnum {
