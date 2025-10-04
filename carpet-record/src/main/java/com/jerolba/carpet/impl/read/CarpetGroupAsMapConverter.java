@@ -203,7 +203,7 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
         CarpetListAsMapIntermediateConverter(Class<?> mapClass, Type rootListType, CollectionHolder collectionHolder) {
             this.collectionHolder = collectionHolder;
             List<Type> fields = rootListType.asGroupType().getFields();
-            converter = createValueConverter(mapClass, fields.get(0), value -> elementValue = value);
+            this.converter = createValueConverter(mapClass, fields.get(0), value -> elementValue = value);
         }
 
         @Override
@@ -320,20 +320,21 @@ public class CarpetGroupAsMapConverter extends GroupConverter {
             return new CarpetGroupMapHolder(() -> new CarpetGroupMap<>(indexByName));
         }
         if (Map.class.isAssignableFrom(mapClass)) {
-            Supplier<Map<String, Object>> constructor = null;
-            if (mapClass.equals(HashMap.class)) {
-                constructor = HashMap::new;
-            } else if (mapClass.equals(LinkedHashMap.class)) {
-                constructor = LinkedHashMap::new;
-            } else if (mapClass.equals(TreeMap.class)) {
-                constructor = TreeMap::new;
-            } else {
-                constructor = ReadReflection.getDefaultConstructor(mapClass);
-            }
-            return new SimpleMapHolder(constructor);
+            return new SimpleMapHolder(buildMapConstructor(mapClass));
         }
         Map<String, Integer> indexByName = getSchemaFields(schema);
         return new CarpetGroupMapHolder(() -> new CarpetGroupMap<>(indexByName));
+    }
+
+    private static Supplier<Map<String, Object>> buildMapConstructor(Class<?> mapClass) {
+        if (mapClass.equals(HashMap.class)) {
+            return HashMap::new;
+        } else if (mapClass.equals(LinkedHashMap.class)) {
+            return LinkedHashMap::new;
+        } else if (mapClass.equals(TreeMap.class)) {
+            return TreeMap::new;
+        }
+        return ReadReflection.getDefaultConstructor(mapClass);
     }
 
     private static Map<String, Integer> getSchemaFields(GroupType schema) {

@@ -148,7 +148,7 @@ class JavaRecord2Schema {
                     "Recursive collections not supported in annotated 1-level structures");
         }
         if (parametized.isMap()) {
-            return createMapType(fieldName, parametized.getParametizedAsMap(), REPEATED, visited);
+            return createMapType(fieldName, parametized.getAsMap(), REPEATED, visited);
         }
         return buildTypeElement(fieldName, parametized.getActualJavaType(), REPEATED, visited);
     }
@@ -156,42 +156,35 @@ class JavaRecord2Schema {
     private Type createCollectionTwoLevel(String fieldName, ParameterizedCollection parametized, Repetition repetition,
             Set<Class<?>> visited) {
         // Two level collections elements are not nullables
-        Type nested = createNestedCollection(parametized, REPEATED, visited);
+        Type nested = createNestedGeneric(parametized, ELEMENT, REPEATED, visited);
         return ConversionPatterns.listType(repetition, fieldName, nested);
     }
 
     private Type createCollectionThreeLevel(String fieldName, ParameterizedCollection parametized,
             Repetition repetition, Set<Class<?>> visited) {
         var repetitionCollection = getTypeRepetition(parametized.getActualJavaType());
-        Type nested = createNestedCollection(parametized, repetitionCollection, visited);
+        Type nested = createNestedGeneric(parametized, ELEMENT, repetitionCollection, visited);
         return ConversionPatterns.listOfElements(repetition, fieldName, nested);
     }
 
-    private Type createNestedCollection(ParameterizedCollection parametized, Repetition repetition,
+    private Type createNestedGeneric(ParameterizedCollection parametized, String fieldName, Repetition repetition,
             Set<Class<?>> visited) {
         if (parametized.isCollection()) {
-            return createCollectionType(ELEMENT, parametized.getParametizedAsCollection(), repetition, visited);
+            return createCollectionType(fieldName, parametized.getAsCollection(), repetition, visited);
         }
         if (parametized.isMap()) {
-            return createMapType(ELEMENT, parametized.getParametizedAsMap(), repetition, visited);
+            return createMapType(fieldName, parametized.getAsMap(), repetition, visited);
         }
-        return buildTypeElement(ELEMENT, parametized.getActualJavaType(), repetition, visited);
+        return buildTypeElement(fieldName, parametized.getActualJavaType(), repetition, visited);
     }
 
     private Type createMapType(String fieldName, ParameterizedMap parametized, Repetition repetition,
             Set<Class<?>> visited) {
-        Type nestedKey = buildTypeElement(KEY, parametized.getKeyActualJavaType(), REQUIRED, visited);
-        Type nestedValue = null;
+        Type nestedKey = buildTypeElement(KEY, parametized.getGenericKey().getActualJavaType(), REQUIRED, visited);
 
-        var repetitionValue = getTypeRepetition(parametized.getValueActualJavaType());
-        if (parametized.valueIsCollection()) {
-            nestedValue = createCollectionType(VALUE, parametized.getValueTypeAsCollection(), repetitionValue,
-                    visited);
-        } else if (parametized.valueIsMap()) {
-            nestedValue = createMapType(VALUE, parametized.getValueTypeAsMap(), repetitionValue, visited);
-        } else {
-            nestedValue = buildTypeElement(VALUE, parametized.getValueActualJavaType(), repetitionValue, visited);
-        }
+        ParameterizedCollection genericValue = parametized.getGenericValue();
+        var repetitionValue = getTypeRepetition(genericValue.getActualJavaType());
+        Type nestedValue = createNestedGeneric(genericValue, VALUE, repetitionValue, visited);
         if (nestedKey != null && nestedValue != null) {
             // TODO: what to change to support generation of older versions?
             return Types.map(repetition).key(nestedKey).value(nestedValue).named(fieldName);

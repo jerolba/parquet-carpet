@@ -15,7 +15,6 @@
  */
 package com.jerolba.carpet.impl;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedParameterizedType;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Type;
@@ -37,52 +36,12 @@ public class ParameterizedMap {
         return (Class<?>) mapType;
     }
 
-    public Class<?> getValueActualType() {
-        return Parameterized.getClassFromType(valueAnnotatedMapElementType.getType(), "in Map value");
+    public ParameterizedCollection getGenericKey() {
+        return new ParameterizedCollection(mapType, keyAnnotatedMapElementType);
     }
 
-    public JavaType getValueActualJavaType() {
-        return new JavaType(getValueActualType(), getValueAnnotations());
-    }
-
-    private Annotation[] getValueAnnotations() {
-        return valueAnnotatedMapElementType.getDeclaredAnnotations();
-    }
-
-    public Class<?> getKeyActualType() {
-        return Parameterized.getClassFromType(keyAnnotatedMapElementType.getType(), "in Map key");
-    }
-
-    public JavaType getKeyActualJavaType() {
-        return new JavaType(getKeyActualType(), getKeyAnnotations());
-    }
-
-    private Annotation[] getKeyAnnotations() {
-        return keyAnnotatedMapElementType.getDeclaredAnnotations();
-    }
-
-    public ParameterizedMap getValueTypeAsMap() {
-        return Parameterized.getParameterizedMap(valueAnnotatedMapElementType);
-    }
-
-    public ParameterizedCollection getValueTypeAsCollection() {
-        return Parameterized.getParameterizedCollection(valueAnnotatedMapElementType);
-    }
-
-    public boolean valueIsCollection() {
-        return Parameterized.isCollection(valueAnnotatedMapElementType.getType());
-    }
-
-    public boolean valueIsMap() {
-        return Parameterized.isMap(valueAnnotatedMapElementType.getType());
-    }
-
-    public boolean keyIsCollection() {
-        return Parameterized.isCollection(keyAnnotatedMapElementType.getType());
-    }
-
-    public boolean keyIsMap() {
-        return Parameterized.isMap(keyAnnotatedMapElementType.getType());
+    public ParameterizedCollection getGenericValue() {
+        return new ParameterizedCollection(mapType, valueAnnotatedMapElementType);
     }
 
 }

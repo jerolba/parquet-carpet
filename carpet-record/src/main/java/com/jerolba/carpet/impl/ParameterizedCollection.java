@@ -23,17 +23,19 @@ import java.lang.reflect.Type;
 public class ParameterizedCollection {
 
     private final Type collectionType;
-    private final Type collectionElementType;
     private final AnnotatedType annotatedCollectionElementType;
 
-    public ParameterizedCollection(Type collectionType, AnnotatedParameterizedType type) {
+    public ParameterizedCollection(Type collectionType, AnnotatedType annotatedCollectionElementType) {
         this.collectionType = collectionType;
-        this.annotatedCollectionElementType = type.getAnnotatedActualTypeArguments()[0];
-        this.collectionElementType = annotatedCollectionElementType.getType();
+        this.annotatedCollectionElementType = annotatedCollectionElementType;
+    }
+
+    public ParameterizedCollection(Type collectionType, AnnotatedParameterizedType type) {
+        this(collectionType, type.getAnnotatedActualTypeArguments()[0]);
     }
 
     public Class<?> getActualType() {
-        return Parameterized.getClassFromType(collectionElementType, "in Collection");
+        return Parameterized.getClassFromType(annotatedCollectionElementType.getType(), "in Collection");
     }
 
     public JavaType getActualJavaType() {
@@ -44,20 +46,20 @@ public class ParameterizedCollection {
         return (Class<?>) collectionType;
     }
 
-    public ParameterizedCollection getParametizedAsCollection() {
+    public ParameterizedCollection getAsCollection() {
         return Parameterized.getParameterizedCollection(annotatedCollectionElementType);
     }
 
-    public ParameterizedMap getParametizedAsMap() {
+    public ParameterizedMap getAsMap() {
         return Parameterized.getParameterizedMap(annotatedCollectionElementType);
     }
 
     public boolean isCollection() {
-        return Parameterized.isCollection(collectionElementType);
+        return Parameterized.isCollection(annotatedCollectionElementType.getType());
     }
 
     public boolean isMap() {
-        return Parameterized.isMap(collectionElementType);
+        return Parameterized.isMap(annotatedCollectionElementType.getType());
     }
 
     private Annotation[] getAnnotations() {

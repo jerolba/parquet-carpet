@@ -15,16 +15,14 @@
  */
 package com.jerolba.carpet.impl.write;
 
-import static com.jerolba.carpet.impl.write.CollectionsWriters.MapRecordFieldWriter.writeKeyalueGroup;
-import static com.jerolba.carpet.impl.write.CollectionsWriters.ThreeLevelCollectionRecordFieldWriter.writeGroupElementThree;
-import static com.jerolba.carpet.impl.write.CollectionsWriters.TwoLevelCollectionRecordFieldWriter.writeGroupElementTwo;
+import static com.jerolba.carpet.impl.write.CollectionsWriters.mapRecordFieldWriterFactory;
+import static com.jerolba.carpet.impl.write.CollectionsWriters.threeLevelCollectionRecordFieldWriterFactory;
+import static com.jerolba.carpet.impl.write.CollectionsWriters.twoLevelCollectionRecordFieldWriterFactory;
 import static com.jerolba.carpet.impl.write.ModelFieldsWriter.buildPrimitiveJavaConsumer;
 import static com.jerolba.carpet.impl.write.ModelFieldsWriter.buildSimpleElementConsumer;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -33,8 +31,6 @@ import org.apache.parquet.io.api.RecordConsumer;
 
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.impl.write.CollectionsWriters.OneLevelCollectionFieldWriter;
-import com.jerolba.carpet.impl.write.CollectionsWriters.ThreeLevelCollectionRecordFieldWriter;
-import com.jerolba.carpet.impl.write.CollectionsWriters.TwoLevelCollectionRecordFieldWriter;
 import com.jerolba.carpet.model.CollectionType;
 import com.jerolba.carpet.model.FieldType;
 import com.jerolba.carpet.model.MapType;
@@ -121,99 +117,38 @@ class WriteRecordModelWriter {
     }
 
     private Consumer<Object> createTwoLevelStructureWriter(FieldType parametized, RecordField recordField) {
-        BiConsumer<RecordConsumer, Object> elemConsumer = null;
-        if (parametized instanceof CollectionType collectionType) {
-            Consumer<Object> childWriter = createTwoLevelStructureWriter(collectionType.type(), null);
-            elemConsumer = (consumer, v) -> childWriter.accept(v);
-        } else if (parametized instanceof MapType mapType) {
-            Consumer<Object> childWriter = createMapStructureWriter(mapType, null);
-            elemConsumer = (consumer, v) -> childWriter.accept(v);
-        } else {
-            elemConsumer = buildSimpleElementConsumer(parametized, recordConsumer, carpetConfiguration);
-        }
+        BiConsumer<RecordConsumer, Object> elemConsumer = buildCollectionWriter(parametized);
         if (elemConsumer == null) {
             throw new RecordTypeConversionException("Unsuported type in collection");
         }
-        if (recordField != null) {
-            return new TwoLevelCollectionRecordFieldWriter(recordConsumer, recordField, elemConsumer);
-        }
-        // We are referenced by other collection
-        var innerStructureWriter = elemConsumer;
-        return value -> {
-            Collection<?> coll = (Collection<?>) value;
-            if (coll != null) {
-                writeGroupElementTwo(recordConsumer, innerStructureWriter, coll);
-            }
-        };
+        return twoLevelCollectionRecordFieldWriterFactory(recordConsumer, recordField, elemConsumer);
     }
 
     private Consumer<Object> createThreeLevelStructureWriter(FieldType parametized, RecordField recordField) {
-        BiConsumer<RecordConsumer, Object> elemConsumer = null;
-        if (parametized instanceof CollectionType collectionType) {
-            Consumer<Object> childWriter = createThreeLevelStructureWriter(collectionType.type(), null);
-            elemConsumer = (consumer, v) -> childWriter.accept(v);
-        } else if (parametized instanceof MapType mapType) {
-            Consumer<Object> childWriter = createMapStructureWriter(mapType, null);
-            elemConsumer = (consumer, v) -> childWriter.accept(v);
-        } else {
-            elemConsumer = buildSimpleElementConsumer(parametized, recordConsumer, carpetConfiguration);
-        }
+        BiConsumer<RecordConsumer, Object> elemConsumer = buildCollectionWriter(parametized);
         if (elemConsumer == null) {
             throw new RecordTypeConversionException("Unsuported type in collection");
         }
-        if (recordField != null) {
-            return new ThreeLevelCollectionRecordFieldWriter(recordConsumer, recordField, elemConsumer);
+        return threeLevelCollectionRecordFieldWriterFactory(recordConsumer, recordField, elemConsumer);
+    }
+
+    private BiConsumer<RecordConsumer, Object> buildCollectionWriter(FieldType parametized) {
+        if (parametized instanceof CollectionType collectionType) {
+            Consumer<Object> childWriter = createCollectionWriter(collectionType, null);
+            return (consumer, v) -> childWriter.accept(v);
         }
-        // We are referenced by other collection
-        var innerStructureWriter = elemConsumer;
-        return value -> {
-            Collection<?> coll = (Collection<?>) value;
-            if (coll != null) {
-                recordConsumer.startGroup();
-                if (!coll.isEmpty()) {
-                    writeGroupElementThree(recordConsumer, innerStructureWriter, coll);
-                }
-                recordConsumer.endGroup();
-            }
-        };
+        if (parametized instanceof MapType mapType) {
+            Consumer<Object> childWriter = createMapStructureWriter(mapType, null);
+            return (consumer, v) -> childWriter.accept(v);
+        }
+        return buildSimpleElementConsumer(parametized, recordConsumer, carpetConfiguration);
     }
 
     private Consumer<Object> createMapStructureWriter(MapType mapType, RecordField recordField) {
-        // Key
-        BiConsumer<RecordConsumer, Object> elemKeyConsumer = null;
-        FieldType keyType = mapType.keyType();
-        elemKeyConsumer = buildSimpleElementConsumer(keyType, recordConsumer, carpetConfiguration);
+        BiConsumer<RecordConsumer, Object> keyConsumer = buildSimpleElementConsumer(mapType.keyType(), recordConsumer,
+                carpetConfiguration);
 
-        // Value
-        BiConsumer<RecordConsumer, Object> elemValueConsumer = null;
-        if (mapType.valueType() instanceof CollectionType valueCollectionType) {
-            Consumer<Object> childWriter = createCollectionWriter(valueCollectionType, null);
-            elemValueConsumer = (consumer, v) -> childWriter.accept(v);
-        } else if (mapType.valueType() instanceof MapType valueMapType) {
-            Consumer<Object> childWriter = createMapStructureWriter(valueMapType, null);
-            elemValueConsumer = (consumer, v) -> childWriter.accept(v);
-        } else {
-            elemValueConsumer = buildSimpleElementConsumer(mapType.valueType(), recordConsumer, carpetConfiguration);
-        }
-        if (elemValueConsumer == null || elemKeyConsumer == null) {
-            throw new RecordTypeConversionException("Unsuported type in Map");
-        }
-        if (recordField != null) {
-            return new CollectionsWriters.MapRecordFieldWriter(recordConsumer, recordField, elemKeyConsumer,
-                    elemValueConsumer);
-        }
-        // We are referenced by other collection
-        var innerKeyStructureWriter = elemKeyConsumer;
-        var innerValueStructureWriter = elemValueConsumer;
-        return value -> {
-            if (value != null) {
-                Map<?, ?> map = (Map<?, ?>) value;
-                recordConsumer.startGroup();
-                if (!map.isEmpty()) {
-                    writeKeyalueGroup(recordConsumer, innerKeyStructureWriter, innerValueStructureWriter, map);
-                }
-                recordConsumer.endGroup();
-            }
-        };
+        BiConsumer<RecordConsumer, Object> valueConsumer = buildCollectionWriter(mapType.valueType());
+        return mapRecordFieldWriterFactory(recordConsumer, recordField, keyConsumer, valueConsumer);
     }
 }

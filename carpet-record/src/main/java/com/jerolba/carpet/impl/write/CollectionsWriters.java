@@ -23,26 +23,43 @@ import java.util.function.Function;
 
 import org.apache.parquet.io.api.RecordConsumer;
 
+import com.jerolba.carpet.RecordTypeConversionException;
+
 class CollectionsWriters {
+
+    private static final String LIST = "list";
+    private static final String ELEMENT = "element";
+    private static final String KEY = "key";
+    private static final String VALUE = "value";
+    private static final String KEY_VALUE = "key_value";
 
     private CollectionsWriters() {
     }
 
-    static class OneLevelCollectionFieldWriter implements Consumer<Object> {
+    abstract static class CollectionFieldWriter implements Consumer<Object> {
 
-        private final RecordConsumer recordConsumer;
-        private final String parquetFieldName;
-        private final int idx;
-        private final Function<Object, Object> accesor;
-        private final BiConsumer<RecordConsumer, Object> consumer;
+        protected final RecordConsumer recordConsumer;
+        protected final String parquetFieldName;
+        protected final int idx;
+        protected final Function<Object, Object> accesor;
+        protected final BiConsumer<RecordConsumer, Object> innerStructureWriter;
 
-        OneLevelCollectionFieldWriter(RecordConsumer recordConsumer, RecordField recordField,
-                BiConsumer<RecordConsumer, Object> consumer) {
+        CollectionFieldWriter(RecordConsumer recordConsumer, RecordField recordField,
+                BiConsumer<RecordConsumer, Object> innerStructureWriter) {
             this.recordConsumer = recordConsumer;
             this.parquetFieldName = recordField.parquetFieldName();
             this.idx = recordField.idx();
             this.accesor = recordField.getAccessor();
-            this.consumer = consumer;
+            this.innerStructureWriter = innerStructureWriter;
+        }
+
+    }
+
+    static class OneLevelCollectionFieldWriter extends CollectionFieldWriter {
+
+        OneLevelCollectionFieldWriter(RecordConsumer recordConsumer, RecordField recordField,
+                BiConsumer<RecordConsumer, Object> innerStructureWriter) {
+            super(recordConsumer, recordField, innerStructureWriter);
         }
 
         @Override
@@ -51,34 +68,56 @@ class CollectionsWriters {
             if (coll != null && !coll.isEmpty()) {
                 recordConsumer.startField(parquetFieldName, idx);
                 for (var v : coll) {
-                    consumer.accept(recordConsumer, v);
+                    innerStructureWriter.accept(recordConsumer, v);
                 }
                 recordConsumer.endField(parquetFieldName, idx);
             }
         }
     }
 
-    static class TwoLevelCollectionRecordFieldWriter implements Consumer<Object> {
+    static Consumer<Object> twoLevelCollectionRecordFieldWriterFactory(
+            RecordConsumer recordConsumer,
+            RecordField recordField,
+            BiConsumer<RecordConsumer, Object> elemConsumer) {
+        if (recordField != null) {
+            return new TwoLevelCollectionRecordFieldWriter(recordConsumer, recordField, elemConsumer);
+        }
+        // We are referenced by other collection
+        return value -> {
+            Collection<?> coll = (Collection<?>) value;
+            if (coll != null) {
+                writeGroupElementTwo(recordConsumer, elemConsumer, coll);
+            }
+        };
+    }
 
-        private final RecordConsumer recordConsumer;
-        private final String parquetFieldName;
-        private final int idx;
-        private final Function<Object, Object> accesor;
-        private final BiConsumer<RecordConsumer, Object> innerStructureWriter;
+    private static void writeGroupElementTwo(RecordConsumer recordConsumer,
+            BiConsumer<RecordConsumer, Object> innerStructureWriter, Collection<?> collection) {
+
+        recordConsumer.startGroup();
+        if (!collection.isEmpty()) {
+            recordConsumer.startField(ELEMENT, 0);
+            for (var v : collection) {
+                if (v == null) {
+                    throw new NullPointerException("2-level list structures doesn't support null values");
+                }
+                innerStructureWriter.accept(recordConsumer, v);
+            }
+            recordConsumer.endField(ELEMENT, 0);
+        }
+        recordConsumer.endGroup();
+    }
+
+    private static class TwoLevelCollectionRecordFieldWriter extends CollectionFieldWriter {
 
         TwoLevelCollectionRecordFieldWriter(RecordConsumer recordConsumer, RecordField recordField,
                 BiConsumer<RecordConsumer, Object> innerStructureWriter) {
-            this.recordConsumer = recordConsumer;
-            this.parquetFieldName = recordField.parquetFieldName();
-            this.idx = recordField.idx();
-            this.accesor = recordField.getAccessor();
-            this.innerStructureWriter = innerStructureWriter;
+            super(recordConsumer, recordField, innerStructureWriter);
         }
 
         @Override
         public void accept(Object object) {
-            var value = accesor.apply(object);
-            Collection<?> coll = (Collection<?>) value;
+            Collection<?> coll = (Collection<?>) accesor.apply(object);
             if (coll != null) {
                 recordConsumer.startField(parquetFieldName, idx);
                 writeGroupElementTwo(recordConsumer, innerStructureWriter, coll);
@@ -86,40 +125,49 @@ class CollectionsWriters {
             }
         }
 
-        public static void writeGroupElementTwo(RecordConsumer recordConsumer,
-                BiConsumer<RecordConsumer, Object> innerStructureWriter, Collection<?> coll) {
+    }
 
-            recordConsumer.startGroup();
-            if (!coll.isEmpty()) {
-                recordConsumer.startField("element", 0);
-                for (var v : coll) {
-                    if (v == null) {
-                        throw new NullPointerException("2-level list structures doesn't support null values");
-                    }
-                    innerStructureWriter.accept(recordConsumer, v);
+    static Consumer<Object> threeLevelCollectionRecordFieldWriterFactory(
+            RecordConsumer recordConsumer,
+            RecordField recordField,
+            BiConsumer<RecordConsumer, Object> elemConsumer) {
+        if (recordField != null) {
+            return new ThreeLevelCollectionRecordFieldWriter(recordConsumer, recordField, elemConsumer);
+        }
+        // We are referenced by other collection
+        return value -> {
+            Collection<?> coll = (Collection<?>) value;
+            if (coll != null) {
+                recordConsumer.startGroup();
+                if (!coll.isEmpty()) {
+                    writeGroupElementThree(recordConsumer, elemConsumer, coll);
                 }
-                recordConsumer.endField("element", 0);
+                recordConsumer.endGroup();
+            }
+        };
+    }
+
+    private static void writeGroupElementThree(RecordConsumer recordConsumer,
+            BiConsumer<RecordConsumer, Object> innerStructureWriter, Collection<?> collection) {
+
+        recordConsumer.startField(LIST, 0);
+        for (var v : collection) {
+            recordConsumer.startGroup();
+            if (v != null) {
+                recordConsumer.startField(ELEMENT, 0);
+                innerStructureWriter.accept(recordConsumer, v);
+                recordConsumer.endField(ELEMENT, 0);
             }
             recordConsumer.endGroup();
         }
-
+        recordConsumer.endField(LIST, 0);
     }
 
-    static class ThreeLevelCollectionRecordFieldWriter implements Consumer<Object> {
-
-        private final RecordConsumer recordConsumer;
-        private final String parquetFieldName;
-        private final int idx;
-        private final Function<Object, Object> accesor;
-        private final BiConsumer<RecordConsumer, Object> innerStructureWriter;
+    private static class ThreeLevelCollectionRecordFieldWriter extends CollectionFieldWriter {
 
         ThreeLevelCollectionRecordFieldWriter(RecordConsumer recordConsumer, RecordField recordField,
                 BiConsumer<RecordConsumer, Object> innerStructureWriter) {
-            this.recordConsumer = recordConsumer;
-            this.parquetFieldName = recordField.parquetFieldName();
-            this.idx = recordField.idx();
-            this.accesor = recordField.getAccessor();
-            this.innerStructureWriter = innerStructureWriter;
+            super(recordConsumer, recordField, innerStructureWriter);
         }
 
         @Override
@@ -136,22 +184,54 @@ class CollectionsWriters {
             }
         }
 
-        public static void writeGroupElementThree(RecordConsumer recordConsumer,
-                BiConsumer<RecordConsumer, Object> innerStructureWriter, Collection<?> coll) {
+    }
 
-            recordConsumer.startField("list", 0);
-            for (var v : coll) {
+    static Consumer<Object> mapRecordFieldWriterFactory(
+            RecordConsumer recordConsumer,
+            RecordField recordField,
+            BiConsumer<RecordConsumer, Object> elemKeyConsumer,
+            BiConsumer<RecordConsumer, Object> elemValueConsumer) {
+
+        if (elemValueConsumer == null || elemKeyConsumer == null) {
+            throw new RecordTypeConversionException("Unsuported type in Map");
+        }
+        if (recordField != null) {
+            return new MapRecordFieldWriter(recordConsumer, recordField, elemKeyConsumer, elemValueConsumer);
+        }
+        // We are referenced by other collection
+        return value -> {
+            if (value != null) {
+                Map<?, ?> map = (Map<?, ?>) value;
                 recordConsumer.startGroup();
-                if (v != null) {
-                    recordConsumer.startField("element", 0);
-                    innerStructureWriter.accept(recordConsumer, v);
-                    recordConsumer.endField("element", 0);
+                if (!map.isEmpty()) {
+                    writeKeyValueGroup(recordConsumer, elemKeyConsumer, elemValueConsumer, map);
                 }
                 recordConsumer.endGroup();
             }
-            recordConsumer.endField("list", 0);
-        }
+        };
+    }
 
+    private static void writeKeyValueGroup(RecordConsumer recordConsumer,
+            BiConsumer<RecordConsumer, Object> keyStructureWriter,
+            BiConsumer<RecordConsumer, Object> valueStructureWriter, Map<?, ?> map) {
+
+        recordConsumer.startField(KEY_VALUE, 0);
+        for (var v : map.entrySet()) {
+            recordConsumer.startGroup();
+            if (v.getKey() != null) {
+                recordConsumer.startField(KEY, 0);
+                keyStructureWriter.accept(recordConsumer, v.getKey());
+                recordConsumer.endField(KEY, 0);
+            }
+            var mapValue = v.getValue();
+            if (mapValue != null) {
+                recordConsumer.startField(VALUE, 1);
+                valueStructureWriter.accept(recordConsumer, mapValue);
+                recordConsumer.endField(VALUE, 1);
+            }
+            recordConsumer.endGroup();
+        }
+        recordConsumer.endField(KEY_VALUE, 0);
     }
 
     static class MapRecordFieldWriter implements Consumer<Object> {
@@ -181,34 +261,11 @@ class CollectionsWriters {
                 recordConsumer.startField(parquetFieldName, idx);
                 recordConsumer.startGroup();
                 if (!value.isEmpty()) {
-                    writeKeyalueGroup(recordConsumer, innerKeyStructureWriter, innerValueStructureWriter, value);
+                    writeKeyValueGroup(recordConsumer, innerKeyStructureWriter, innerValueStructureWriter, value);
                 }
                 recordConsumer.endGroup();
                 recordConsumer.endField(parquetFieldName, idx);
             }
-        }
-
-        static void writeKeyalueGroup(RecordConsumer recordConsumer,
-                BiConsumer<RecordConsumer, Object> keyStructureWriter,
-                BiConsumer<RecordConsumer, Object> valueStructureWriter, Map<?, ?> map) {
-
-            recordConsumer.startField("key_value", 0);
-            for (var v : map.entrySet()) {
-                recordConsumer.startGroup();
-                if (v.getKey() != null) {
-                    recordConsumer.startField("key", 0);
-                    keyStructureWriter.accept(recordConsumer, v.getKey());
-                    recordConsumer.endField("key", 0);
-                }
-                var mapValue = v.getValue();
-                if (mapValue != null) {
-                    recordConsumer.startField("value", 1);
-                    valueStructureWriter.accept(recordConsumer, mapValue);
-                    recordConsumer.endField("value", 1);
-                }
-                recordConsumer.endGroup();
-            }
-            recordConsumer.endField("key_value", 0);
         }
 
     }
