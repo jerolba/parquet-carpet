@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.thirdparty.com.google.common.annotations.Beta;
 import org.apache.parquet.conf.ParquetConfiguration;
 import org.apache.parquet.conf.PlainParquetConfiguration;
 import org.apache.parquet.hadoop.ParquetWriter;
@@ -166,7 +165,6 @@ public class CarpetParquetWriter {
          *                          specific to Carpet and Parquet
          * @return this builder for method chaining.
          */
-        @Beta
         public Builder<T> withWriteRecordModel(WriteModelFactory<T> writeModelFactory) {
             this.writeModelFactory = writeModelFactory;
             return self();
@@ -178,7 +176,6 @@ public class CarpetParquetWriter {
          * @param rootWriteRecordModel write record model to use
          * @return this builder for method chaining.
          */
-        @Beta
         public Builder<T> withWriteRecordModel(WriteRecordModelType<T> rootWriteRecordModel) {
             if (!rootWriteRecordModel.getClassType().equals(recordClass)) {
                 throw new IllegalArgumentException("Root Write record Model class ("

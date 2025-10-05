@@ -169,6 +169,7 @@ configurations.all {
 
 test {
     useJUnitPlatform()
+    systemProperties = System.properties as Map
 }
 
 jacocoTestReport {

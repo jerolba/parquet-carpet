@@ -1,4 +1,4 @@
-name: Java Build
+name: Java Build Write Model
 permissions:
   contents: read
   checks: write
@@ -24,8 +24,8 @@ jobs:
     - name: Setup Gradle
       uses: gradle/gradle-build-action@v2
 
-    - name: Run build with Gradle Wrapper
-      run: ./gradlew build jacocoTestReport
+    - name: Run tests with Write Model
+      run: ./gradlew build -Dparquet.carpet.useJavaRecord2WriteModel=true
       continue-on-error: true
       id: gradle-build
 
@@ -33,16 +33,12 @@ jobs:
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: test-reports
+        name: test-reports-write-model
         path: |
           **/build/reports/tests/**/*
         retention-days: 30
 
-    - name: Upload coverage reports to Codecov with GitHub Action
-      uses: codecov/codecov-action@v5
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-
     - name: Fail workflow if build failed
       if: steps.gradle-build.outcome == 'failure'
       run: exit 1
+

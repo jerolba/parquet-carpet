@@ -37,6 +37,7 @@ import com.jerolba.carpet.annotation.ParquetGeometry;
 import com.jerolba.carpet.annotation.ParquetJson;
 import com.jerolba.carpet.annotation.ParquetString;
 import com.jerolba.carpet.annotation.PrecisionScale;
+import com.jerolba.carpet.annotation.Rounding;
 import com.jerolba.carpet.impl.JavaType;
 import com.jerolba.carpet.impl.Parameterized;
 import com.jerolba.carpet.impl.ParameterizedCollection;
@@ -211,10 +212,14 @@ public class JavaRecord2WriteModel {
             return isNotNull ? FieldTypes.UUID.notNull() : FieldTypes.UUID;
         }
         if (javaType.isBigDecimal()) {
-            PrecisionScale precisionScale = javaType.getAnnotation(PrecisionScale.class);
             var bigDecimal = isNotNull ? FieldTypes.BIG_DECIMAL.notNull() : FieldTypes.BIG_DECIMAL;
+            PrecisionScale precisionScale = javaType.getAnnotation(PrecisionScale.class);
             if (precisionScale != null) {
                 bigDecimal = bigDecimal.withPrecisionScale(precisionScale.precision(), precisionScale.scale());
+            }
+            Rounding rounding = javaType.getAnnotation(Rounding.class);
+            if (rounding != null) {
+                bigDecimal = bigDecimal.withRoundingMode(rounding.value());
             }
             return bigDecimal;
         }
@@ -286,11 +291,10 @@ public class JavaRecord2WriteModel {
     }
 
     private static FieldType enumType(JavaType javaType, boolean isNotNull) {
-        if (javaType.isAnnotatedWith(ParquetString.class)) {
-            BinaryType binary = FieldTypes.BINARY.asString();
-            return isNotNull ? binary.notNull() : binary;
-        }
         EnumType enumType = FieldTypes.ENUM.ofType((Class<? extends Enum<?>>) javaType.getJavaType());
+        if (javaType.isAnnotatedWith(ParquetString.class)) {
+            enumType = enumType.asString();
+        }
         return isNotNull ? enumType.notNull() : enumType;
     }
 
