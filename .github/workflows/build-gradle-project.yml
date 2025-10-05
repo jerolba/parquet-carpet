@@ -1,6 +1,8 @@
 name: Java Build
 permissions:
   contents: read
+  checks: write
+  pull-requests: write
 
 on:
   push:
@@ -24,6 +26,16 @@ jobs:
 
     - name: Run build with Gradle Wrapper
       run: ./gradlew build jacocoTestReport
+      continue-on-error: true
+
+    - name: Upload Test Reports
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-reports
+        path: |
+          **/build/reports/tests/**/*
+        retention-days: 30
 
     - name: Upload coverage reports to Codecov with GitHub Action
       uses: codecov/codecov-action@v5

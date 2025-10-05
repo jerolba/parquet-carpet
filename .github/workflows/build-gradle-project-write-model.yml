@@ -1,6 +1,8 @@
 name: Java Build Write Model
 permissions:
   contents: read
+  checks: write
+  pull-requests: write
 
 on:
   push:
@@ -24,4 +26,14 @@ jobs:
 
     - name: Run tests with Write Model
       run: ./gradlew build -Dparquet.carpet.useJavaRecord2WriteModel=true
+      continue-on-error: true
+
+    - name: Upload Test Reports
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-reports-write-model
+        path: |
+          **/build/reports/tests/**/*
+        retention-days: 30
 
