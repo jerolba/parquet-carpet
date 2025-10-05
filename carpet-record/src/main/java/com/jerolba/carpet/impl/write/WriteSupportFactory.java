@@ -34,7 +34,7 @@ public class WriteSupportFactory {
             WriteModelFactory<T> writeModelFactory) {
 
         if (writeModelFactory == null) {
-            if (parquetConfiguration.getBoolean("parquet.carpet.useJavaRecord2WriteModel", false)) {
+            if (useWriteModel(parquetConfiguration)) {
                 JavaRecord2WriteModel javaRecord2WriteModel = new JavaRecord2WriteModel(carpetConfiguration);
                 WriteRecordModelType<T> rootWriteRecordModel = javaRecord2WriteModel.createModel(recordClass);
                 return new WriteRecordModelWriteSupport<>(rootWriteRecordModel, extraMetaData, carpetConfiguration);
@@ -44,6 +44,11 @@ public class WriteSupportFactory {
         var writeConfigurationContext = new WriteConfigurationContext(carpetConfiguration, parquetConfiguration);
         WriteRecordModelType<T> rootWriteRecordModel = writeModelFactory.create(recordClass, writeConfigurationContext);
         return new WriteRecordModelWriteSupport<>(rootWriteRecordModel, extraMetaData, carpetConfiguration);
+    }
+
+    private static boolean useWriteModel(ParquetConfiguration parquetConfiguration) {
+        return parquetConfiguration.getBoolean("parquet.carpet.useJavaRecord2WriteModel", false)
+                || System.getProperty("parquet.carpet.useJavaRecord2WriteModel") != null;
     }
 
 }

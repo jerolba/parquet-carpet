@@ -1,4 +1,4 @@
-name: Java Build
+name: Java Build Write Model
 permissions:
   contents: read
 
@@ -22,10 +22,6 @@ jobs:
     - name: Setup Gradle
       uses: gradle/gradle-build-action@v2
 
-    - name: Run build with Gradle Wrapper
-      run: ./gradlew build jacocoTestReport
+    - name: Run tests with Write Model
+      run: ./gradlew build -Dparquet.carpet.useJavaRecord2WriteModel=true
 
-    - name: Upload coverage reports to Codecov with GitHub Action
-      uses: codecov/codecov-action@v5
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
