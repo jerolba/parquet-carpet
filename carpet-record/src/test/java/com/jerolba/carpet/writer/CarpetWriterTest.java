@@ -616,6 +616,21 @@ class CarpetWriterTest {
         class GeometryAsJtsGeometry {
 
             @Test
+            void unannotatedJtsGeometMustBeAnnotated() {
+
+                record GeometryAsJtsGeometryObject(Geometry value) {
+                }
+
+                Point point = geomFactory.createPoint(new Coordinate(1.0, 1.0));
+                var rec = new GeometryAsJtsGeometryObject(point);
+                assertThrowsExactly(RecordTypeConversionException.class, () -> {
+                    var writerTest = new ParquetWriterTest<>(GeometryAsJtsGeometryObject.class);
+                    writerTest.write(rec);
+                });
+
+            }
+
+            @Test
             void geometryAsJtsGeometry() throws IOException {
 
                 record GeometryAsJtsGeometryObject(@ParquetGeometry Geometry value) {

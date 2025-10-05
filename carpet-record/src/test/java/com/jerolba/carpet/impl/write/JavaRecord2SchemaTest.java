@@ -334,7 +334,7 @@ class JavaRecord2SchemaTest {
         class FromJts {
 
             @Test
-            void geometryFieldFromBinaryWithoutCsr() {
+            void geometryFieldWithoutCsr() {
                 record GeometryRecord(long id, @ParquetGeometry Geometry value) {
                 }
                 MessageType schema = defaultConfigSchema.createSchema(GeometryRecord.class);
@@ -348,7 +348,7 @@ class JavaRecord2SchemaTest {
             }
 
             @Test
-            void notNullGeometryFieldFromBinary() {
+            void notNullGeometryFieldFromGeometry() {
                 record GeometryRecord(long id, @ParquetGeometry @NotNull Geometry value) {
                 }
 
@@ -363,7 +363,7 @@ class JavaRecord2SchemaTest {
             }
 
             @Test
-            void geometryFieldFromBinaryWithSridCsr() {
+            void geometryFieldFromGeometryWithSridCsr() {
                 record GeometryRecord(long id, @ParquetGeometry("srid:5070") Geometry value) {
                 }
                 MessageType schema = defaultConfigSchema.createSchema(GeometryRecord.class);
@@ -377,7 +377,7 @@ class JavaRecord2SchemaTest {
             }
 
             @Test
-            void geometryFieldFromBinaryWithProjjsonCsr() {
+            void geometryFieldFromGeometryWithProjjsonCsr() {
                 record GeometryRecord(long id, @ParquetGeometry("projjson:projjson_epsg_5070") Geometry value) {
                 }
                 MessageType schema = defaultConfigSchema.createSchema(GeometryRecord.class);
@@ -398,6 +398,7 @@ class JavaRecord2SchemaTest {
 
         @Nested
         class FromBinary {
+
             @Test
             void geographyFieldFromBinaryWithoutAnnotatedValues() {
                 record GeographyRecord(long id, @ParquetGeography Binary value) {
@@ -460,7 +461,7 @@ class JavaRecord2SchemaTest {
         class FromJts {
 
             @Test
-            void geographyFieldFromBinaryWithoutAnnotatedValues() {
+            void geographyFieldFromGeometryWithoutAnnotatedValues() {
                 record GeographyRecord(long id, @ParquetGeography Geometry value) {
                 }
                 MessageType schema = defaultConfigSchema.createSchema(GeographyRecord.class);
@@ -474,7 +475,7 @@ class JavaRecord2SchemaTest {
             }
 
             @Test
-            void notNullGeographyFieldFromBinary() {
+            void notNullGeographyFieldFromGeometry() {
                 record GeographyRecord(long id, @ParquetGeography @NotNull Geometry value) {
                 }
 
@@ -489,7 +490,7 @@ class JavaRecord2SchemaTest {
             }
 
             @Test
-            void geographyFieldFromBinaryWithSridCsrConfiguresDefaultAlgorithm() {
+            void geographyFieldFromGeometryWithSridCsrConfiguresDefaultAlgorithm() {
                 record GeographyRecord(long id, @ParquetGeography(crs = "srid:5070") Geometry value) {
                 }
                 MessageType schema = defaultConfigSchema.createSchema(GeographyRecord.class);
@@ -503,7 +504,7 @@ class JavaRecord2SchemaTest {
             }
 
             @Test
-            void geographyFieldFromBinaryWithAlgorithmConfiguresDefaultCrs() {
+            void geographyFieldFromGeometryWithAlgorithmConfiguresDefaultCrs() {
                 record GeographyRecord(long id,
                         @ParquetGeography(algorithm = EdgeAlgorithm.ANDOYER) Geometry value) {
                 }
