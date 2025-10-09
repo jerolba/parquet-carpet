@@ -66,6 +66,47 @@ To configure it, you can use the `@ParquetJson` or `@ParquetBson` annotations to
 
 You can find more information about JSON and BSON in the [Java Type Annotations](../java-type-annotations/) section.
 
+
+## Geospatial Types
+
+Carpet supports storing geospatial data using JTS (Java Topology Suite) Geometry objects or Binary representations with Well-Known Binary (WKB) format.
+
+### JTS Geometry Support
+
+You can use JTS Geometry objects directly in your records. JTS Geometry objects must be annotated with `@ParquetGeometry` or `@ParquetGeography` to specify the type of geospatial data and its configuration.
+
+```java
+record Location(String name, @ParquetGeometry Geometry geom) { }
+
+GeometryFactory factory = new GeometryFactory();
+Point point = factory.createPoint(new Coordinate(1.0, 2.0));
+var location = new Location("Office", point);
+```
+
+Carpet will serialize the Geometry object (any JTS Geometry) to WKB format and store it in a Parquet `binary` field with the appropriate logical type.
+
+### Binary Geometry Support
+
+You can also store geospatial data as Binary using WKB format created from other sources or libraries:
+
+```java
+record GeospatialRecord(String id, @ParquetGeometry Binary geometry) { }
+
+WKBWriter writer = new WKBWriter();
+Binary wkb = Binary.fromConstantByteArray(writer.write(geometry));
+var record = new GeospatialRecord("location1", wkb);
+```
+
+### Geometry vs Geography
+
+- **`@ParquetGeometry`**: For planar/projected coordinate systems
+- **`@ParquetGeography`**: For spherical coordinate systems (latitude/longitude)
+
+Both annotations support additional configuration options like coordinate reference systems (CRS) and edge algorithms.
+
+You can find more information about geospatial annotations and their configuration options in the [Java Type Annotations](../java-type-annotations/#geospatial-type-annotations) section.
+
+
 ## Nested Structures
 
 Parquet supports nested structures, and Carpet can generate them using Java records and Collections.

@@ -54,3 +54,4 @@ nav:
     - Input and Output Files: advanced/input-output-files.md
     - Advanced Configuration: advanced/configuration.md
     - Low Level Parquet Classes: advanced/low-level-parquet.md
+    - Write Model: advanced/write-model.md

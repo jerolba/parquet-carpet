@@ -190,3 +190,119 @@ record Product(
 If the rounding mode is not specified via annotation or writer configuration, the default is `RoundingMode.UNNECESSARY`. This means an exception will be thrown if rounding is necessary, which is useful to ensure data integrity if no changes are expected during conversion.
 
 `@PrecisionScale` and `@Rounding` annotations can be used together or separately, depending on your use case and how you want to configure the precision and scale of `BigDecimal` values in your Parquet files.
+
+## Geospatial Type Annotations
+
+Carpet supports storing geospatial data using specialized annotations that define how geometry and geography data should be stored in Parquet files. These annotations can be applied to `org.locationtech.jts.geom.Geometry` fields, or Parquet `Binary` fields containing Well-Known Binary (WKB) geometry data.
+
+### @ParquetGeometry annotation
+
+The `@ParquetGeometry` annotation is used to specify that a field should be stored as a Parquet geometry type for planar/projected coordinate systems. This annotation is suitable for geometry data that uses projected coordinate reference systems where calculations are performed on a flat plane.
+
+#### With JTS Geometry
+
+The following record uses JTS Geometry objects directly:
+
+```java
+record Location(String name, @ParquetGeometry Geometry geom) { }
+```
+
+This will be converted to a Parquet schema with a `binary` field annotated with the `GEOMETRY` logical type, and Carpet will serialize the Geometry object (any JTS Geometry) to WKB format:
+
+```
+message Location {
+  optional binary name (STRING);
+  optional binary geom (GEOMETRY);
+}
+```
+
+#### With Binary (WKB format)
+
+You can also store geometry data as Binary using Well-Known Binary format:
+
+```java
+record LocationBinary(String name, @ParquetGeometry Binary geom) { }
+```
+
+#### With Coordinate Reference System
+
+You can specify a coordinate reference system by providing a CRS identifier:
+
+```java
+record LocationWithCRS(String name, @ParquetGeometry("EPSG:3857") Geometry geom) { }
+```
+
+This information will be included in the Parquet schema metadata to inform readers about the CRS used.
+
+### @ParquetGeography annotation
+
+The `@ParquetGeography` annotation is used to specify that a field should be stored as a Parquet geography type for spherical coordinate systems. This annotation is suitable for geographic data that uses latitude/longitude coordinates on the Earth's surface.
+
+#### With JTS Geometry
+
+The following record stores geographic data:
+
+```java
+record WorldLocation(String name, @ParquetGeography Geometry location) { }
+```
+
+This will be converted to a Parquet schema with a `binary` field annotated with the `GEOGRAPHY` logical type, and Carpet will serialize the Geometry object (any JTS Geometry) to WKB format:
+
+```
+message WorldLocation {
+  optional binary name (STRING);
+  optional binary location (GEOGRAPHY);
+}
+```
+
+#### With Binary (WKB format)
+
+You can also store geography data as Binary using Well-Known Binary format:
+
+```java
+record WorldLocationBinary(String name, @ParquetGeography Binary location) { }
+```
+
+#### With Configuration Options
+
+The `@ParquetGeography` annotation supports additional configuration for precise geographic calculations:
+
+```java
+record PreciseLocation(
+    String name,
+    @ParquetGeography(crs = "EPSG:4326", algorithm = EdgeAlgorithm.VINCENTY) Geometry location
+) { }
+```
+
+This information will be included in the Parquet schema metadata to inform readers about the CRS and edge calculation algorithm used.
+
+#### Coordinate Reference System (CRS)
+
+The `crs` parameter specifies the coordinate reference system, for example:
+
+- `"EPSG:4326"` - WGS 84 (World Geodetic System 1984) - most common for GPS coordinates
+- `"EPSG:3857"` - Web Mercator projection - commonly used in web mapping
+- `"OGC:CRS84"` - WGS 84 longitude/latitude order
+- `""` (empty) - uses default CRS
+
+#### Edge Interpolation Algorithms
+
+The `algorithm` parameter determines how edges between geographic points are calculated:
+
+- `EdgeAlgorithm.SPHERICAL` - Fast spherical interpolation, assumes Earth is a perfect sphere
+- `EdgeAlgorithm.VINCENTY` - High accuracy geodesic calculations on ellipsoid
+- `EdgeAlgorithm.THOMAS` - Optimized version of Vincenty's formula, good balance of accuracy and performance
+- `EdgeAlgorithm.ANDOYER` - Fast approximation for short distances
+- `EdgeAlgorithm.KARNEY` - Most accurate geodesic calculations, computationally intensive
+
+#### Collection Support
+
+Geospatial annotations can be applied to collection elements:
+
+```java
+record MultiLocationRecord(
+    String name,
+    List<@ParquetGeography Geometry> locations,
+    Map<String, @ParquetGeometry Binary> regions
+) { }
+```
