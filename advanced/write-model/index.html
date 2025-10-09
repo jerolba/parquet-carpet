@@ -1,0 +1,2144 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Parquet Serialization and Deserialization Library for Java">
+      
+      
+      
+        <link rel="canonical" href="https://jerolba.github.io/parquet-carpet/advanced/write-model/">
+      
+      
+        <link rel="prev" href="../low-level-parquet/">
+      
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.21">
+    
+    
+      
+        <title>Write Model - Carpet Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.2a3383ac.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#write-model" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Carpet Documentation" class="md-header__button md-logo" aria-label="Carpet Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Carpet Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Write Model
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/jerolba/parquet-carpet" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jerolba/parquet-carpet
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Carpet Documentation" class="md-nav__button md-logo" aria-label="Carpet Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Carpet Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/jerolba/parquet-carpet" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jerolba/parquet-carpet
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Getting Started
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Getting Started
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Installation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/basic-usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Basic Usage
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/carpetwriter-api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    CarpetWriter API
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/carpetreader-api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    CarpetReader API
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Advanced Usage
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Advanced Usage
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data-types/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Data Types
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../java-type-annotations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Java Types Annotations
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../column-mapping/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Column Mapping
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../projections/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Projections
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../schema-mismatch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Schema Mismatch
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nullability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Nullability
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../input-output-files/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Input and Output Files
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Advanced Configuration
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../low-level-parquet/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Low Level Parquet Classes
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Write Model
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Write Model
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-a-write-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      What is a Write Model?
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#understanding-parquet-context" class="md-nav__link">
+    <span class="md-ellipsis">
+      Understanding Parquet Context
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#basic-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      Basic Usage
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Basic Usage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#creating-a-write-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      Creating a Write Model
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#using-the-write-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      Using the Write Model
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#field-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      Field Mapping
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Field Mapping">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#basic-field-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      Basic Field Types
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#primitive-type-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      Primitive Type Methods
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#object-field-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      Object Field Types
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#working-with-collections" class="md-nav__link">
+    <span class="md-ellipsis">
+      Working with Collections
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Working with Collections">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#lists" class="md-nav__link">
+    <span class="md-ellipsis">
+      Lists
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sets" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sets
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#maps" class="md-nav__link">
+    <span class="md-ellipsis">
+      Maps
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#working-with-nested-records" class="md-nav__link">
+    <span class="md-ellipsis">
+      Working with Nested Records
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Working with Nested Records">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#basic-nested-records" class="md-nav__link">
+    <span class="md-ellipsis">
+      Basic Nested Records
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#inline-nested-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      Inline Nested Models
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multiple-level-nesting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Multiple Level Nesting
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#handling-null-nested-objects" class="md-nav__link">
+    <span class="md-ellipsis">
+      Handling Null Nested Objects
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nested-records-with-collections" class="md-nav__link">
+    <span class="md-ellipsis">
+      Nested Records with Collections
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#advanced-field-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      Advanced Field Types
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Advanced Field Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#enums" class="md-nav__link">
+    <span class="md-ellipsis">
+      Enums
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bigdecimal-with-precision" class="md-nav__link">
+    <span class="md-ellipsis">
+      BigDecimal with Precision
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#date-and-time-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      Date and Time Types
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#geospatial-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      Geospatial Data
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#json-bson-and-binary-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      JSON, BSON and Binary Data
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#custom-field-extraction" class="md-nav__link">
+    <span class="md-ellipsis">
+      Custom Field Extraction
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Custom Field Extraction">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#computed-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      Computed Fields
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#conditional-logic" class="md-nav__link">
+    <span class="md-ellipsis">
+      Conditional Logic
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dynamic-fields-creation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Dynamic fields creation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#field-type-customization" class="md-nav__link">
+    <span class="md-ellipsis">
+      Field Type Customization
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Field Type Customization">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#nullable-vs-not-null-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      Nullable vs Not-Null Fields
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#logical-types-for-binary-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      Logical Types for Binary Fields
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#working-with-non-record-classes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Working with Non-Record Classes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dynamic-model-creation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Dynamic Model Creation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#best-practices" class="md-nav__link">
+    <span class="md-ellipsis">
+      Best Practices
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Best Practices">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#when-to-use-write-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      When to Use Write Models
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#performance-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Performance Considerations
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#error-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      Error Handling
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#complete-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      Complete Example
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-a-write-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      What is a Write Model?
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#understanding-parquet-context" class="md-nav__link">
+    <span class="md-ellipsis">
+      Understanding Parquet Context
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#basic-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      Basic Usage
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Basic Usage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#creating-a-write-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      Creating a Write Model
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#using-the-write-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      Using the Write Model
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#field-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      Field Mapping
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Field Mapping">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#basic-field-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      Basic Field Types
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#primitive-type-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      Primitive Type Methods
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#object-field-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      Object Field Types
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#working-with-collections" class="md-nav__link">
+    <span class="md-ellipsis">
+      Working with Collections
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Working with Collections">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#lists" class="md-nav__link">
+    <span class="md-ellipsis">
+      Lists
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sets" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sets
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#maps" class="md-nav__link">
+    <span class="md-ellipsis">
+      Maps
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#working-with-nested-records" class="md-nav__link">
+    <span class="md-ellipsis">
+      Working with Nested Records
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Working with Nested Records">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#basic-nested-records" class="md-nav__link">
+    <span class="md-ellipsis">
+      Basic Nested Records
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#inline-nested-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      Inline Nested Models
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multiple-level-nesting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Multiple Level Nesting
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#handling-null-nested-objects" class="md-nav__link">
+    <span class="md-ellipsis">
+      Handling Null Nested Objects
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nested-records-with-collections" class="md-nav__link">
+    <span class="md-ellipsis">
+      Nested Records with Collections
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#advanced-field-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      Advanced Field Types
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Advanced Field Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#enums" class="md-nav__link">
+    <span class="md-ellipsis">
+      Enums
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bigdecimal-with-precision" class="md-nav__link">
+    <span class="md-ellipsis">
+      BigDecimal with Precision
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#date-and-time-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      Date and Time Types
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#geospatial-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      Geospatial Data
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#json-bson-and-binary-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      JSON, BSON and Binary Data
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#custom-field-extraction" class="md-nav__link">
+    <span class="md-ellipsis">
+      Custom Field Extraction
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Custom Field Extraction">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#computed-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      Computed Fields
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#conditional-logic" class="md-nav__link">
+    <span class="md-ellipsis">
+      Conditional Logic
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dynamic-fields-creation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Dynamic fields creation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#field-type-customization" class="md-nav__link">
+    <span class="md-ellipsis">
+      Field Type Customization
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Field Type Customization">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#nullable-vs-not-null-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      Nullable vs Not-Null Fields
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#logical-types-for-binary-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      Logical Types for Binary Fields
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#working-with-non-record-classes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Working with Non-Record Classes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dynamic-model-creation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Dynamic Model Creation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#best-practices" class="md-nav__link">
+    <span class="md-ellipsis">
+      Best Practices
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Best Practices">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#when-to-use-write-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      When to Use Write Models
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#performance-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Performance Considerations
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#error-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      Error Handling
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#complete-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      Complete Example
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="write-model">Write Model</h1>
+<p>The Write Model feature in Carpet allows you to customize how your Java objects are written to Parquet files. While Carpet can automatically map Java Records to Parquet schemas using reflection, the Write Model provides fine-grained control over field mapping, data types, and serialization behavior.</p>
+<h2 id="what-is-a-write-model">What is a Write Model?</h2>
+<p>A Write Model is a programmatic specification that defines:</p>
+<ul>
+<li>Which fields from your Java objects should be written to the Parquet file</li>
+<li>How those fields should be named in the Parquet schema</li>
+<li>What Parquet data types should be used for each field</li>
+<li>How to extract values from your objects (accessor functions)</li>
+</ul>
+<p>This is particularly useful when:</p>
+<ul>
+<li>You want to write only specific fields from your objects</li>
+<li>You need to rename fields in the Parquet file</li>
+<li>You're working with classes that aren't records</li>
+<li>You want to customize data types or logical types</li>
+<li>You need to write data in a specific format for compatibility</li>
+</ul>
+<h2 id="understanding-parquet-context">Understanding Parquet Context</h2>
+<p>Parquet is a columnar storage format that requires a predefined schema. When writing data to Parquet:</p>
+<ol>
+<li><strong>Schema Definition</strong>: The structure must be known before writing any data</li>
+<li><strong>Data Types</strong>: Each column has a specific primitive type (INT32, INT64, BINARY, etc.)</li>
+<li><strong>Logical Types</strong>: Additional metadata that defines how to interpret primitive types</li>
+<li><strong>Repetition</strong>: Fields can be required, optional, or repeated (for collections)</li>
+</ol>
+<p>Carpet's Write Model bridges the gap between your Java objects and Parquet's requirements, giving you control over this mapping process.</p>
+<h2 id="basic-usage">Basic Usage</h2>
+<h3 id="creating-a-write-model">Creating a Write Model</h3>
+<p>Use the <code>writeRecordModel()</code> factory method to create a Write Model for your class:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import static</span><span class="w"> </span><span class="nn">com.jerolba.carpet.model.FieldTypes.*</span><span class="p">;</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1">// Define your data class</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="kd">record</span> <span class="nc">Person</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">age</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">email</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="c1">// Create a Write Model</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="kd">var</span><span class="w"> </span><span class="n">writeModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">writeRecordModel</span><span class="p">(</span><span class="n">Person</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;person_name&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">Person</span><span class="p">::</span><span class="n">name</span><span class="p">)</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;person_age&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">INTEGER</span><span class="p">,</span><span class="w"> </span><span class="n">Person</span><span class="p">::</span><span class="n">age</span><span class="p">)</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;email_address&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">Person</span><span class="p">::</span><span class="n">email</span><span class="p">);</span>
+</code></pre></div>
+<h3 id="using-the-write-model">Using the Write Model</h3>
+<p>Apply the Write Model when creating a Parquet writer:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1">// Using CarpetWriter</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="k">try</span><span class="w"> </span><span class="p">(</span><span class="n">CarpetWriter</span><span class="o">&lt;</span><span class="n">Person</span><span class="o">&gt;</span><span class="w"> </span><span class="n">writer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">CarpetWriter</span><span class="p">.</span><span class="na">Builder</span><span class="o">&lt;&gt;</span><span class="p">(</span><span class="n">outputStream</span><span class="p">,</span><span class="w"> </span><span class="n">Person</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">        </span><span class="p">.</span><span class="na">withWriteRecordModel</span><span class="p">(</span><span class="n">writeModel</span><span class="p">)</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">        </span><span class="p">.</span><span class="na">build</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="n">writer</span><span class="p">.</span><span class="na">write</span><span class="p">(</span><span class="n">List</span><span class="p">.</span><span class="na">of</span><span class="p">(</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">        </span><span class="k">new</span><span class="w"> </span><span class="n">Person</span><span class="p">(</span><span class="s">&quot;Alice&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">30</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;alice@example.com&quot;</span><span class="p">),</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">        </span><span class="k">new</span><span class="w"> </span><span class="n">Person</span><span class="p">(</span><span class="s">&quot;Bob&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">25</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;bob@example.com&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">    </span><span class="p">));</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="p">}</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="c1">// Using CarpetParquetWriter</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="k">try</span><span class="w"> </span><span class="p">(</span><span class="n">ParquetWriter</span><span class="o">&lt;</span><span class="n">Person</span><span class="o">&gt;</span><span class="w"> </span><span class="n">writer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">CarpetParquetWriter</span><span class="p">.</span><span class="na">builder</span><span class="p">(</span><span class="n">outputFile</span><span class="p">,</span><span class="w"> </span><span class="n">Person</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">        </span><span class="p">.</span><span class="na">withWriteRecordModel</span><span class="p">(</span><span class="n">writeModel</span><span class="p">)</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">        </span><span class="p">.</span><span class="na">build</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">    </span><span class="n">writer</span><span class="p">.</span><span class="na">write</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">Person</span><span class="p">(</span><span class="s">&quot;Charlie&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">35</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;charlie@example.com&quot;</span><span class="p">));</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="p">}</span>
+</code></pre></div>
+<h2 id="field-mapping">Field Mapping</h2>
+<h3 id="basic-field-types">Basic Field Types</h3>
+<p>Map fields using primitive type accessors and field type constants:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kd">record</span> <span class="nc">Product</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="n">Double</span><span class="w"> </span><span class="n">price</span><span class="p">,</span><span class="w"> </span><span class="kt">boolean</span><span class="w"> </span><span class="n">available</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="kd">var</span><span class="w"> </span><span class="n">writeModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">writeRecordModel</span><span class="p">(</span><span class="n">Product</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;product_id&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">Product</span><span class="p">::</span><span class="n">id</span><span class="p">)</span><span class="w">           </span><span class="c1">// Primitive int</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;name&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">Product</span><span class="p">::</span><span class="n">name</span><span class="p">)</span><span class="w">       </span><span class="c1">// String with type</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;price&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">DOUBLE</span><span class="p">,</span><span class="w"> </span><span class="n">Product</span><span class="p">::</span><span class="n">price</span><span class="p">)</span><span class="w">     </span><span class="c1">// Double object</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;in_stock&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">Product</span><span class="p">::</span><span class="n">available</span><span class="p">);</span><span class="w">     </span><span class="c1">// Primitive boolean</span>
+</code></pre></div>
+<h3 id="primitive-type-methods">Primitive Type Methods</h3>
+<p>For primitive types, you can use specialized accessor methods that avoid boxing and specify the field type implicitly:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kd">record</span> <span class="nc">Metrics</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">count</span><span class="p">,</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">total</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">average</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">ratio</span><span class="p">,</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">               </span><span class="kt">short</span><span class="w"> </span><span class="n">level</span><span class="p">,</span><span class="w"> </span><span class="kt">byte</span><span class="w"> </span><span class="n">flag</span><span class="p">,</span><span class="w"> </span><span class="kt">boolean</span><span class="w"> </span><span class="n">active</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="kd">var</span><span class="w"> </span><span class="n">writeModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">writeRecordModel</span><span class="p">(</span><span class="n">Metrics</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;count&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">Metrics</span><span class="p">::</span><span class="n">count</span><span class="p">)</span><span class="w">         </span><span class="c1">// ToIntFunction</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;total&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">Metrics</span><span class="p">::</span><span class="n">total</span><span class="p">)</span><span class="w">         </span><span class="c1">// ToLongFunction</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;average&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">Metrics</span><span class="p">::</span><span class="n">average</span><span class="p">)</span><span class="w">     </span><span class="c1">// ToFloatFunction</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;ratio&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">Metrics</span><span class="p">::</span><span class="n">ratio</span><span class="p">)</span><span class="w">         </span><span class="c1">// ToDoubleFunction</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;level&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">Metrics</span><span class="p">::</span><span class="n">level</span><span class="p">)</span><span class="w">         </span><span class="c1">// ToShortFunction</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;flag&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">Metrics</span><span class="p">::</span><span class="n">flag</span><span class="p">)</span><span class="w">           </span><span class="c1">// ToByteFunction</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;active&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">Metrics</span><span class="p">::</span><span class="n">active</span><span class="p">);</span><span class="w">      </span><span class="c1">// ToBooleanFunction</span>
+</code></pre></div>
+<h3 id="object-field-types">Object Field Types</h3>
+<p>For object types, you need to specify both the field type and accessor function:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kd">record</span> <span class="nc">Order</span><span class="p">(</span><span class="n">UUID</span><span class="w"> </span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">customerName</span><span class="p">,</span><span class="w"> </span><span class="n">BigDecimal</span><span class="w"> </span><span class="n">amount</span><span class="p">,</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">             </span><span class="n">LocalDate</span><span class="w"> </span><span class="n">orderDate</span><span class="p">,</span><span class="w"> </span><span class="n">LocalDateTime</span><span class="w"> </span><span class="n">createdAt</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="kd">var</span><span class="w"> </span><span class="n">writeModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">writeRecordModel</span><span class="p">(</span><span class="n">Order</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;order_id&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">UUID</span><span class="p">,</span><span class="w"> </span><span class="n">Order</span><span class="p">::</span><span class="n">id</span><span class="p">)</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;customer&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">Order</span><span class="p">::</span><span class="n">customerName</span><span class="p">)</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;amount&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">BIG_DECIMAL</span><span class="p">,</span><span class="w"> </span><span class="n">Order</span><span class="p">::</span><span class="n">amount</span><span class="p">)</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;order_date&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">LOCAL_DATE</span><span class="p">,</span><span class="w"> </span><span class="n">Order</span><span class="p">::</span><span class="n">orderDate</span><span class="p">)</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;created_at&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">LOCAL_DATE_TIME</span><span class="p">,</span><span class="w"> </span><span class="n">Order</span><span class="p">::</span><span class="n">createdAt</span><span class="p">);</span>
+</code></pre></div>
+<h2 id="working-with-collections">Working with Collections</h2>
+<h3 id="lists">Lists</h3>
+<p>Use <code>LIST.ofType()</code> to define list fields:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kd">record</span> <span class="nc">ShoppingCart</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">userId</span><span class="p">,</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">productIds</span><span class="p">,</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">&gt;</span><span class="w"> </span><span class="n">quantities</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="kd">var</span><span class="w"> </span><span class="n">writeModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">writeRecordModel</span><span class="p">(</span><span class="n">ShoppingCart</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;user_id&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">ShoppingCart</span><span class="p">::</span><span class="n">userId</span><span class="p">)</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;products&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">LIST</span><span class="p">.</span><span class="na">ofType</span><span class="p">(</span><span class="n">STRING</span><span class="p">),</span><span class="w"> </span><span class="n">ShoppingCart</span><span class="p">::</span><span class="n">productIds</span><span class="p">)</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;quantities&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">LIST</span><span class="p">.</span><span class="na">ofType</span><span class="p">(</span><span class="n">INTEGER</span><span class="p">),</span><span class="w"> </span><span class="n">ShoppingCart</span><span class="p">::</span><span class="n">quantities</span><span class="p">);</span>
+</code></pre></div>
+<h3 id="sets">Sets</h3>
+<p>Sets are handled similarly to lists and are mapped to Parquet with the same type that lists use:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kd">record</span> <span class="nc">UserProfile</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">username</span><span class="p">,</span><span class="w"> </span><span class="n">Set</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">tags</span><span class="p">,</span><span class="w"> </span><span class="n">Set</span><span class="o">&lt;</span><span class="n">Category</span><span class="o">&gt;</span><span class="w"> </span><span class="n">categories</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="kd">var</span><span class="w"> </span><span class="n">writeModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">writeRecordModel</span><span class="p">(</span><span class="n">UserProfile</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;username&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">UserProfile</span><span class="p">::</span><span class="n">username</span><span class="p">)</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;tags&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">SET</span><span class="p">.</span><span class="na">ofType</span><span class="p">(</span><span class="n">STRING</span><span class="p">),</span><span class="w"> </span><span class="n">UserProfile</span><span class="p">::</span><span class="n">tags</span><span class="p">)</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;categories&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">SET</span><span class="p">.</span><span class="na">ofType</span><span class="p">(</span><span class="n">ENUM</span><span class="p">.</span><span class="na">ofType</span><span class="p">(</span><span class="n">Category</span><span class="p">.</span><span class="na">class</span><span class="p">)),</span><span class="w"> </span><span class="n">UserProfile</span><span class="p">::</span><span class="n">categories</span><span class="p">);</span>
+</code></pre></div>
+<h3 id="maps">Maps</h3>
+<p>Use <code>MAP.ofTypes()</code> for key-value mappings. Maps require both key and value types:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kd">record</span> <span class="nc">Configuration</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">appName</span><span class="p">,</span><span class="w"> </span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">settings</span><span class="p">,</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">                    </span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">Integer</span><span class="o">&gt;</span><span class="w"> </span><span class="n">counters</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="kd">var</span><span class="w"> </span><span class="n">writeModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">writeRecordModel</span><span class="p">(</span><span class="n">Configuration</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;app_name&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">Configuration</span><span class="p">::</span><span class="n">appName</span><span class="p">)</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;settings&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">MAP</span><span class="p">.</span><span class="na">ofTypes</span><span class="p">(</span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">),</span><span class="w"> </span><span class="n">Configuration</span><span class="p">::</span><span class="n">settings</span><span class="p">)</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;counters&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">MAP</span><span class="p">.</span><span class="na">ofTypes</span><span class="p">(</span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">INTEGER</span><span class="p">),</span><span class="w"> </span><span class="n">Configuration</span><span class="p">::</span><span class="n">counters</span><span class="p">);</span>
+</code></pre></div>
+<h2 id="working-with-nested-records">Working with Nested Records</h2>
+<p>Write Models support nested structures by composing multiple <code>writeRecordModel</code> definitions. This allows you to define complex hierarchical data structures where one record contains another record as a field.</p>
+<h3 id="basic-nested-records">Basic Nested Records</h3>
+<p>Define nested structures by using a <code>writeRecordModel</code> as a field type:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="kd">record</span> <span class="nc">Address</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">street</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">city</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">zipCode</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="kd">record</span> <span class="nc">Person</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">age</span><span class="p">,</span><span class="w"> </span><span class="n">Address</span><span class="w"> </span><span class="n">address</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="c1">// Define the nested record model first</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="kd">var</span><span class="w"> </span><span class="n">addressModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">writeRecordModel</span><span class="p">(</span><span class="n">Address</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;street&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">Address</span><span class="p">::</span><span class="n">street</span><span class="p">)</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;city&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">Address</span><span class="p">::</span><span class="n">city</span><span class="p">)</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;zip_code&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">Address</span><span class="p">::</span><span class="n">zipCode</span><span class="p">);</span>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="c1">// Use the nested model in the parent record</span>
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="kd">var</span><span class="w"> </span><span class="n">personModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">writeRecordModel</span><span class="p">(</span><span class="n">Person</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;full_name&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">Person</span><span class="p">::</span><span class="n">name</span><span class="p">)</span>
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;age&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">INTEGER</span><span class="p">,</span><span class="w"> </span><span class="n">Person</span><span class="p">::</span><span class="n">age</span><span class="p">)</span>
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;address&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">addressModel</span><span class="p">,</span><span class="w"> </span><span class="n">Person</span><span class="p">::</span><span class="n">address</span><span class="p">);</span>
+</code></pre></div>
+<h3 id="inline-nested-models">Inline Nested Models</h3>
+<p>You can also define nested models inline for simpler cases:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="kd">record</span> <span class="nc">Department</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">code</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="kd">record</span> <span class="nc">Employee</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="n">Department</span><span class="w"> </span><span class="n">department</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="kd">var</span><span class="w"> </span><span class="n">employeeModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">writeRecordModel</span><span class="p">(</span><span class="n">Employee</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;employee_name&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">Employee</span><span class="p">::</span><span class="n">name</span><span class="p">)</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;dept&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">writeRecordModel</span><span class="p">(</span><span class="n">Department</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">        </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;dept_name&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">Department</span><span class="p">::</span><span class="n">name</span><span class="p">)</span>
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="w">        </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;dept_code&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">Department</span><span class="p">::</span><span class="n">code</span><span class="p">),</span><span class="w"> </span><span class="n">Employee</span><span class="p">::</span><span class="n">department</span><span class="p">);</span>
+</code></pre></div>
+<h3 id="multiple-level-nesting">Multiple Level Nesting</h3>
+<p>Write Models support arbitrary levels of nesting:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="kd">record</span> <span class="nc">Country</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">code</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="kd">record</span> <span class="nc">State</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="n">Country</span><span class="w"> </span><span class="n">country</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="kd">record</span> <span class="nc">City</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="n">State</span><span class="w"> </span><span class="n">state</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="kd">record</span> <span class="nc">Address</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">street</span><span class="p">,</span><span class="w"> </span><span class="n">City</span><span class="w"> </span><span class="n">city</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="c1">// Build models from innermost to outermost</span>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="kd">var</span><span class="w"> </span><span class="n">countryModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">writeRecordModel</span><span class="p">(</span><span class="n">Country</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;name&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">Country</span><span class="p">::</span><span class="n">name</span><span class="p">)</span>
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;code&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">Country</span><span class="p">::</span><span class="n">code</span><span class="p">);</span>
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="kd">var</span><span class="w"> </span><span class="n">stateModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">writeRecordModel</span><span class="p">(</span><span class="n">State</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;name&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">State</span><span class="p">::</span><span class="n">name</span><span class="p">)</span>
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;country&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">countryModel</span><span class="p">,</span><span class="w"> </span><span class="n">State</span><span class="p">::</span><span class="n">country</span><span class="p">);</span>
+<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a>
+<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a><span class="kd">var</span><span class="w"> </span><span class="n">cityModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">writeRecordModel</span><span class="p">(</span><span class="n">City</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;name&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">City</span><span class="p">::</span><span class="n">name</span><span class="p">)</span>
+<a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;state&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">stateModel</span><span class="p">,</span><span class="w"> </span><span class="n">City</span><span class="p">::</span><span class="n">state</span><span class="p">);</span>
+<a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a>
+<a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a><span class="kd">var</span><span class="w"> </span><span class="n">addressModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">writeRecordModel</span><span class="p">(</span><span class="n">Address</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;street&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">Address</span><span class="p">::</span><span class="n">street</span><span class="p">)</span>
+<a id="__codelineno-10-21" name="__codelineno-10-21" href="#__codelineno-10-21"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;city&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">cityModel</span><span class="p">,</span><span class="w"> </span><span class="n">Address</span><span class="p">::</span><span class="n">city</span><span class="p">);</span>
+</code></pre></div>
+<h3 id="handling-null-nested-objects">Handling Null Nested Objects</h3>
+<p>Nested records can be null, and the Write Model handles this gracefully:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="kd">record</span> <span class="nc">ContactInfo</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">email</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">phone</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="kd">record</span> <span class="nc">Customer</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="n">ContactInfo</span><span class="w"> </span><span class="n">contact</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="kd">var</span><span class="w"> </span><span class="n">customerModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">writeRecordModel</span><span class="p">(</span><span class="n">Customer</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;customer_name&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">Customer</span><span class="p">::</span><span class="n">name</span><span class="p">)</span>
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;contact&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">writeRecordModel</span><span class="p">(</span><span class="n">ContactInfo</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="w">        </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;email&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">ContactInfo</span><span class="p">::</span><span class="n">email</span><span class="p">)</span>
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="w">        </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;phone&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">ContactInfo</span><span class="p">::</span><span class="n">phone</span><span class="p">),</span><span class="w"> </span><span class="n">Customer</span><span class="p">::</span><span class="n">contact</span><span class="p">);</span>
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>
+<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a><span class="c1">// Usage with null nested object</span>
+<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a><span class="kd">var</span><span class="w"> </span><span class="n">customer1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Customer</span><span class="p">(</span><span class="s">&quot;John Doe&quot;</span><span class="p">,</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ContactInfo</span><span class="p">(</span><span class="s">&quot;john@example.com&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;555-0123&quot;</span><span class="p">));</span>
+<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a><span class="kd">var</span><span class="w"> </span><span class="n">customer2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Customer</span><span class="p">(</span><span class="s">&quot;Jane Smith&quot;</span><span class="p">,</span><span class="w"> </span><span class="kc">null</span><span class="p">);</span><span class="w"> </span><span class="c1">// Null contact info</span>
+</code></pre></div>
+<h3 id="nested-records-with-collections">Nested Records with Collections</h3>
+<p>Combine nested records with collections for complex data structures:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="kd">record</span> <span class="nc">Item</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="n">BigDecimal</span><span class="w"> </span><span class="n">price</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="kd">record</span> <span class="nc">Order</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">orderId</span><span class="p">,</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="n">Item</span><span class="o">&gt;</span><span class="w"> </span><span class="n">items</span><span class="p">,</span><span class="w"> </span><span class="n">Address</span><span class="w"> </span><span class="n">shippingAddress</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="kd">var</span><span class="w"> </span><span class="n">itemModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">writeRecordModel</span><span class="p">(</span><span class="n">Item</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;product_name&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">Item</span><span class="p">::</span><span class="n">name</span><span class="p">)</span>
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;unit_price&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">BIG_DECIMAL</span><span class="p">.</span><span class="na">withPrecisionScale</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">),</span><span class="w"> </span><span class="n">Item</span><span class="p">::</span><span class="n">price</span><span class="p">);</span>
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="kd">var</span><span class="w"> </span><span class="n">orderModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">writeRecordModel</span><span class="p">(</span><span class="n">Order</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;order_id&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">Order</span><span class="p">::</span><span class="n">orderId</span><span class="p">)</span>
+<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;items&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">LIST</span><span class="p">.</span><span class="na">ofType</span><span class="p">(</span><span class="n">itemModel</span><span class="p">),</span><span class="w"> </span><span class="n">Order</span><span class="p">::</span><span class="n">items</span><span class="p">)</span>
+<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;shipping_address&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">addressModel</span><span class="p">,</span><span class="w"> </span><span class="n">Order</span><span class="p">::</span><span class="n">shippingAddress</span><span class="p">);</span>
+</code></pre></div>
+<p>Nested Write Model can also be used as keys or values in maps.</p>
+<h2 id="advanced-field-types">Advanced Field Types</h2>
+<h3 id="enums">Enums</h3>
+<p>Configure how enums are stored in Parquet:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="kd">enum</span><span class="w"> </span><span class="n">Priority</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">LOW</span><span class="p">,</span><span class="w"> </span><span class="n">MEDIUM</span><span class="p">,</span><span class="w"> </span><span class="n">HIGH</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="kd">record</span> <span class="nc">Task</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">title</span><span class="p">,</span><span class="w"> </span><span class="n">Priority</span><span class="w"> </span><span class="n">priority</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="c1">// Store as enum logical type (default)</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="kd">var</span><span class="w"> </span><span class="n">writeModel1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">writeRecordModel</span><span class="p">(</span><span class="n">Task</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;title&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">Task</span><span class="p">::</span><span class="n">title</span><span class="p">)</span>
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;priority&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">ENUM</span><span class="p">.</span><span class="na">ofType</span><span class="p">(</span><span class="n">Priority</span><span class="p">.</span><span class="na">class</span><span class="p">),</span><span class="w"> </span><span class="n">Task</span><span class="p">::</span><span class="n">priority</span><span class="p">);</span>
+<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a>
+<a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a><span class="c1">// Store as string logical type</span>
+<a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a><span class="kd">var</span><span class="w"> </span><span class="n">writeModel2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">writeRecordModel</span><span class="p">(</span><span class="n">Task</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;title&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">Task</span><span class="p">::</span><span class="n">title</span><span class="p">)</span>
+<a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;priority&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">ENUM</span><span class="p">.</span><span class="na">ofType</span><span class="p">(</span><span class="n">Priority</span><span class="p">.</span><span class="na">class</span><span class="p">).</span><span class="na">asString</span><span class="p">(),</span><span class="w"> </span><span class="n">Task</span><span class="p">::</span><span class="n">priority</span><span class="p">);</span>
+</code></pre></div>
+<h3 id="bigdecimal-with-precision">BigDecimal with Precision</h3>
+<p>Configure decimal precision and scale:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="kd">record</span> <span class="nc">FinancialRecord</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">account</span><span class="p">,</span><span class="w"> </span><span class="n">BigDecimal</span><span class="w"> </span><span class="n">balance</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="kd">var</span><span class="w"> </span><span class="n">writeModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">writeRecordModel</span><span class="p">(</span><span class="n">FinancialRecord</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;account&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">FinancialRecord</span><span class="p">::</span><span class="n">account</span><span class="p">)</span>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;balance&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">BIG_DECIMAL</span><span class="p">.</span><span class="na">withPrecisionScale</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">),</span>
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="w">               </span><span class="n">FinancialRecord</span><span class="p">::</span><span class="n">balance</span><span class="p">);</span>
+</code></pre></div>
+<h3 id="date-and-time-types">Date and Time Types</h3>
+<p>Carpet supports all Java time types with proper Parquet logical type mappings:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="kd">record</span> <span class="nc">EventRecord</span><span class="p">(</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="n">eventId</span><span class="p">,</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">    </span><span class="n">LocalDate</span><span class="w"> </span><span class="n">eventDate</span><span class="p">,</span><span class="w">        </span><span class="c1">// Date only (year-month-day)</span>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="w">    </span><span class="n">LocalTime</span><span class="w"> </span><span class="n">eventTime</span><span class="p">,</span><span class="w">        </span><span class="c1">// Time only (hour-minute-second-nano)</span>
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="w">    </span><span class="n">LocalDateTime</span><span class="w"> </span><span class="n">timestamp</span><span class="p">,</span><span class="w">    </span><span class="c1">// Date and time without timezone</span>
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="w">    </span><span class="n">Instant</span><span class="w"> </span><span class="n">utcTimestamp</span><span class="w">        </span><span class="c1">// UTC timestamp with timezone</span>
+<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a>
+<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="kd">var</span><span class="w"> </span><span class="n">writeModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">writeRecordModel</span><span class="p">(</span><span class="n">EventRecord</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;event_id&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">EventRecord</span><span class="p">::</span><span class="n">eventId</span><span class="p">)</span>
+<a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;event_date&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">LOCAL_DATE</span><span class="p">,</span><span class="w"> </span><span class="n">EventRecord</span><span class="p">::</span><span class="n">eventDate</span><span class="p">)</span>
+<a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;event_time&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">LOCAL_TIME</span><span class="p">,</span><span class="w"> </span><span class="n">EventRecord</span><span class="p">::</span><span class="n">eventTime</span><span class="p">)</span>
+<a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;timestamp&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">LOCAL_DATE_TIME</span><span class="p">,</span><span class="w"> </span><span class="n">EventRecord</span><span class="p">::</span><span class="n">timestamp</span><span class="p">)</span>
+<a id="__codelineno-15-14" name="__codelineno-15-14" href="#__codelineno-15-14"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;utc_timestamp&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">INSTANT</span><span class="p">,</span><span class="w"> </span><span class="n">EventRecord</span><span class="p">::</span><span class="n">utcTimestamp</span><span class="p">);</span>
+</code></pre></div>
+<p>The precision of time fields are globally configured in the CarpetWriter builder via <code>withDefaultTimeUnit</code> configuration method.</p>
+<h3 id="geospatial-data">Geospatial Data</h3>
+<p>Handle geometric data with specific coordinate systems and geospatial types:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">org.locationtech.jts.geom.Geometry</span><span class="p">;</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="kd">record</span> <span class="nc">Location</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="n">Geometry</span><span class="w"> </span><span class="n">geometry</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="kd">var</span><span class="w"> </span><span class="n">geometryModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">writeRecordModel</span><span class="p">(</span><span class="n">Location</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;name&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">Location</span><span class="p">::</span><span class="n">name</span><span class="p">)</span>
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;geometry&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">GEOMETRY</span><span class="p">.</span><span class="na">asParquetGeometry</span><span class="p">(</span><span class="s">&quot;EPSG:4326&quot;</span><span class="p">),</span>
+<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="w">               </span><span class="n">Location</span><span class="p">::</span><span class="n">geometry</span><span class="p">);</span>
+<a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a>
+<a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a><span class="kd">var</span><span class="w"> </span><span class="n">geographyModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">writeRecordModel</span><span class="p">(</span><span class="n">Location</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;name&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">Location</span><span class="p">::</span><span class="n">name</span><span class="p">)</span>
+<a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;geometry&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">GEOMETRY</span><span class="p">.</span><span class="na">asParquetGeography</span><span class="w">  </span><span class="p">(</span><span class="s">&quot;OGC:CRS84&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">EdgeInterpolationAlgorithm</span><span class="p">.</span><span class="na">SPHERICAL</span><span class="p">),</span>
+<a id="__codelineno-16-13" name="__codelineno-16-13" href="#__codelineno-16-13"></a><span class="w">               </span><span class="n">Location</span><span class="p">::</span><span class="n">geometry</span><span class="p">);</span>
+</code></pre></div>
+<h3 id="json-bson-and-binary-data">JSON, BSON and Binary Data</h3>
+<p>Handle JSON strings, BSON and Binary data with logical types:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="kd">record</span> <span class="nc">Document</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">title</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">jsonData</span><span class="p">,</span><span class="w"> </span><span class="n">Binary</span><span class="w"> </span><span class="n">bsonData</span><span class="p">,</span><span class="w"> </span><span class="n">Binary</span><span class="w"> </span><span class="n">content</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="kd">var</span><span class="w"> </span><span class="n">writeModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">writeRecordModel</span><span class="p">(</span><span class="n">Document</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;title&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">Document</span><span class="p">::</span><span class="n">title</span><span class="p">)</span>
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;json_data&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">.</span><span class="na">asJson</span><span class="p">(),</span><span class="w"> </span><span class="n">Document</span><span class="p">::</span><span class="n">jsonData</span><span class="p">)</span>
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;bson_data&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">BINARY</span><span class="p">.</span><span class="na">asBson</span><span class="p">(),</span><span class="w"> </span><span class="n">Document</span><span class="p">::</span><span class="n">bsonData</span><span class="p">)</span>
+<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;content&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">BINARY</span><span class="p">,</span><span class="w"> </span><span class="n">Document</span><span class="p">::</span><span class="n">content</span><span class="p">);</span>
+</code></pre></div>
+<h2 id="custom-field-extraction">Custom Field Extraction</h2>
+<p>You don't need to define new record classes for every use case. You can create custom fields or redefine existing ones using accessor functions.</p>
+<h3 id="computed-fields">Computed Fields</h3>
+<p>Create fields based on calculations or transformations:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="kd">record</span> <span class="nc">Employee</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">firstName</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">lastName</span><span class="p">,</span><span class="w"> </span><span class="n">LocalDate</span><span class="w"> </span><span class="n">birthDate</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="kd">var</span><span class="w"> </span><span class="n">now</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">LocalDate</span><span class="p">.</span><span class="na">now</span><span class="p">();</span>
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="kd">var</span><span class="w"> </span><span class="n">writeModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">writeRecordModel</span><span class="p">(</span><span class="n">Employee</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;first_name&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">Employee</span><span class="p">::</span><span class="n">firstName</span><span class="p">)</span>
+<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;last_name&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">Employee</span><span class="p">::</span><span class="n">lastName</span><span class="p">)</span>
+<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;full_name&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">emp</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">emp</span><span class="p">.</span><span class="na">firstName</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s">&quot; &quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">emp</span><span class="p">.</span><span class="na">lastName</span><span class="p">())</span>
+<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;birth_date&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">LOCAL_DATE</span><span class="p">,</span><span class="w"> </span><span class="n">Employee</span><span class="p">::</span><span class="n">birthDate</span><span class="p">)</span>
+<a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;age_years&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">INTEGER</span><span class="p">,</span><span class="w"> </span><span class="n">emp</span><span class="w"> </span><span class="o">-&gt;</span>
+<a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a><span class="w">        </span><span class="n">Period</span><span class="p">.</span><span class="na">between</span><span class="p">(</span><span class="n">emp</span><span class="p">.</span><span class="na">birthDate</span><span class="p">(),</span><span class="w"> </span><span class="n">now</span><span class="p">).</span><span class="na">getYears</span><span class="p">());</span>
+</code></pre></div>
+<h3 id="conditional-logic">Conditional Logic</h3>
+<p>Apply business logic during field extraction:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="kd">record</span> <span class="nc">Order</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">amount</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">status</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="kd">var</span><span class="w"> </span><span class="n">writeModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">writeRecordModel</span><span class="p">(</span><span class="n">Order</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;order_id&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">Order</span><span class="p">::</span><span class="n">id</span><span class="p">)</span>
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;amount&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">DOUBLE</span><span class="p">,</span><span class="w"> </span><span class="n">Order</span><span class="p">::</span><span class="n">amount</span><span class="p">)</span>
+<a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;status&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">Order</span><span class="p">::</span><span class="n">status</span><span class="p">)</span>
+<a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;is_large_order&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">BOOLEAN</span><span class="p">,</span><span class="w"> </span><span class="n">order</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">order</span><span class="p">.</span><span class="na">amount</span><span class="p">()</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">1000.0</span><span class="p">)</span>
+<a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;amount_category&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">order</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">order</span><span class="p">.</span><span class="na">amount</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">100</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;SMALL&quot;</span><span class="p">;</span>
+<a id="__codelineno-19-10" name="__codelineno-19-10" href="#__codelineno-19-10"></a><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">order</span><span class="p">.</span><span class="na">amount</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">1000</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;MEDIUM&quot;</span><span class="p">;</span>
+<a id="__codelineno-19-11" name="__codelineno-19-11" href="#__codelineno-19-11"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;LARGE&quot;</span><span class="p">;</span>
+<a id="__codelineno-19-12" name="__codelineno-19-12" href="#__codelineno-19-12"></a><span class="w">    </span><span class="p">});</span>
+</code></pre></div>
+<h3 id="dynamic-fields-creation">Dynamic fields creation</h3>
+<p>You can create fields dynamically based on runtime conditions or configurations:</p>
+<p>Following example creates fields based on a list of valid item codes:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="kd">record</span> <span class="nc">Item</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">code</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">value</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">meta</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="kd">record</span> <span class="nc">Order</span><span class="p">(</span><span class="n">UUID</span><span class="w"> </span><span class="n">orderId</span><span class="p">,</span><span class="w"> </span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">Item</span><span class="o">&gt;</span><span class="w"> </span><span class="n">items</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">validCodes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">List</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="s">&quot;a&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;b&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;c&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;d&quot;</span><span class="p">);</span><span class="w"> </span><span class="c1">// Could be loaded from config</span>
+<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="kd">var</span><span class="w"> </span><span class="n">writeModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">writeRecordModel</span><span class="p">(</span><span class="n">Order</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;order_id&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">UUID</span><span class="p">,</span><span class="w"> </span><span class="n">Order</span><span class="p">::</span><span class="n">orderId</span><span class="p">);</span>
+<a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">var</span><span class="w"> </span><span class="n">code</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">validCodes</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a><span class="w">    </span><span class="n">writeModel</span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;item_&quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">code</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s">&quot;_value&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">DOUBLE</span><span class="p">,</span><span class="w"> </span><span class="n">order</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">order</span><span class="p">.</span><span class="na">items</span><span class="p">().</span><span class="na">get</span><span class="p">(</span><span class="n">code</span><span class="p">).</span><span class="na">value</span><span class="p">());</span>
+<a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a><span class="w">    </span><span class="n">writeModel</span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;item_&quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">code</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s">&quot;_meta&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">order</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">order</span><span class="p">.</span><span class="na">items</span><span class="p">().</span><span class="na">get</span><span class="p">(</span><span class="n">code</span><span class="p">).</span><span class="na">meta</span><span class="p">());</span>
+<a id="__codelineno-20-10" name="__codelineno-20-10" href="#__codelineno-20-10"></a><span class="p">}</span>
+</code></pre></div>
+<h2 id="field-type-customization">Field Type Customization</h2>
+<h3 id="nullable-vs-not-null-fields">Nullable vs Not-Null Fields</h3>
+<p>Control field nullability:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="kd">record</span> <span class="nc">Data</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">required</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">optional</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="kd">var</span><span class="w"> </span><span class="n">writeModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">writeRecordModel</span><span class="p">(</span><span class="n">Data</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;required_field&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">.</span><span class="na">notNull</span><span class="p">(),</span><span class="w"> </span><span class="n">Data</span><span class="p">::</span><span class="n">required</span><span class="p">)</span>
+<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;optional_field&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">Data</span><span class="p">::</span><span class="n">optional</span><span class="p">);</span>
+</code></pre></div>
+<h3 id="logical-types-for-binary-fields">Logical Types for Binary Fields</h3>
+<p>Customize how binary data is written in the schema:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="kd">record</span> <span class="nc">BinaryData</span><span class="p">(</span><span class="n">Binary</span><span class="w"> </span><span class="n">jsonData</span><span class="p">,</span><span class="w"> </span><span class="n">Binary</span><span class="w"> </span><span class="n">enumData</span><span class="p">,</span><span class="w"> </span><span class="n">Binary</span><span class="w"> </span><span class="n">stringData</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="kd">var</span><span class="w"> </span><span class="n">writeModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">writeRecordModel</span><span class="p">(</span><span class="n">BinaryData</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;json&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">BINARY</span><span class="p">.</span><span class="na">asJson</span><span class="p">(),</span><span class="w"> </span><span class="n">BinaryData</span><span class="p">::</span><span class="n">jsonData</span><span class="p">)</span>
+<a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;enum&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">BINARY</span><span class="p">.</span><span class="na">asEnum</span><span class="p">(),</span><span class="w"> </span><span class="n">BinaryData</span><span class="p">::</span><span class="n">enumData</span><span class="p">)</span>
+<a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;string&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">BINARY</span><span class="p">.</span><span class="na">asString</span><span class="p">(),</span><span class="w"> </span><span class="n">BinaryData</span><span class="p">::</span><span class="n">stringData</span><span class="p">);</span>
+</code></pre></div>
+<h2 id="working-with-non-record-classes">Working with Non-Record Classes</h2>
+<p>Write Models work with any Java class, not just records:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">LegacyData</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">id</span><span class="p">;</span>
+<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">value</span><span class="p">;</span>
+<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">tags</span><span class="p">;</span>
+<a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a>
+<a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a><span class="w">    </span><span class="c1">// constructors, getters, setters...</span>
+<a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="nf">getId</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">id</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">getValue</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">value</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-23-9" name="__codelineno-23-9" href="#__codelineno-23-9"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">getTags</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">tags</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-23-10" name="__codelineno-23-10" href="#__codelineno-23-10"></a><span class="p">}</span>
+<a id="__codelineno-23-11" name="__codelineno-23-11" href="#__codelineno-23-11"></a>
+<a id="__codelineno-23-12" name="__codelineno-23-12" href="#__codelineno-23-12"></a><span class="kd">var</span><span class="w"> </span><span class="n">writeModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">writeRecordModel</span><span class="p">(</span><span class="n">LegacyData</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-23-13" name="__codelineno-23-13" href="#__codelineno-23-13"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;identifier&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">LegacyData</span><span class="p">::</span><span class="n">getId</span><span class="p">)</span>
+<a id="__codelineno-23-14" name="__codelineno-23-14" href="#__codelineno-23-14"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;value&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">INTEGER</span><span class="p">,</span><span class="w"> </span><span class="n">LegacyData</span><span class="p">::</span><span class="n">getValue</span><span class="p">)</span>
+<a id="__codelineno-23-15" name="__codelineno-23-15" href="#__codelineno-23-15"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;tags&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">LIST</span><span class="p">.</span><span class="na">ofType</span><span class="p">(</span><span class="n">STRING</span><span class="p">),</span><span class="w"> </span><span class="n">LegacyData</span><span class="p">::</span><span class="n">getTags</span><span class="p">);</span>
+</code></pre></div>
+<h2 id="dynamic-model-creation">Dynamic Model Creation</h2>
+<p>You can build Write Models dynamically at runtime based on configuration or metadata. This is particularly useful for:</p>
+<ul>
+<li>Creating flexible data export systems</li>
+<li>Adapting to changing schemas without code changes</li>
+<li>Creating generic data processing utilities</li>
+</ul>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="c1">// Version-aware model creation</span>
+<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="n">WriteRecordModelType</span><span class="o">&lt;</span><span class="n">Foo</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">createVersionedModel</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">schemaVersion</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>
+<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="w">    </span><span class="kd">var</span><span class="w"> </span><span class="n">modelBuilder</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">writeRecordModel</span><span class="p">(</span><span class="n">Foo</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
+<a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a>
+<a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a><span class="w">    </span><span class="c1">// Base fields available in all versions</span>
+<a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a><span class="w">    </span><span class="n">modelBuilder</span>
+<a id="__codelineno-24-8" name="__codelineno-24-8" href="#__codelineno-24-8"></a><span class="w">        </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;id&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">Foo</span><span class="p">::</span><span class="n">id</span><span class="p">)</span>
+<a id="__codelineno-24-9" name="__codelineno-24-9" href="#__codelineno-24-9"></a><span class="w">        </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;name&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">Foo</span><span class="p">::</span><span class="n">name</span><span class="p">);</span>
+<a id="__codelineno-24-10" name="__codelineno-24-10" href="#__codelineno-24-10"></a>
+<a id="__codelineno-24-11" name="__codelineno-24-11" href="#__codelineno-24-11"></a><span class="w">    </span><span class="c1">// Version-specific fields</span>
+<a id="__codelineno-24-12" name="__codelineno-24-12" href="#__codelineno-24-12"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">schemaVersion</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-24-13" name="__codelineno-24-13" href="#__codelineno-24-13"></a><span class="w">        </span><span class="n">modelBuilder</span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;email&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">Foo</span><span class="p">::</span><span class="n">email</span><span class="p">);</span>
+<a id="__codelineno-24-14" name="__codelineno-24-14" href="#__codelineno-24-14"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-24-15" name="__codelineno-24-15" href="#__codelineno-24-15"></a>
+<a id="__codelineno-24-16" name="__codelineno-24-16" href="#__codelineno-24-16"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">schemaVersion</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">3</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-24-17" name="__codelineno-24-17" href="#__codelineno-24-17"></a><span class="w">        </span><span class="n">modelBuilder</span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;created_at&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">INSTANT</span><span class="p">,</span><span class="w"> </span><span class="n">Foo</span><span class="p">::</span><span class="n">createdAt</span><span class="p">);</span>
+<a id="__codelineno-24-18" name="__codelineno-24-18" href="#__codelineno-24-18"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-24-19" name="__codelineno-24-19" href="#__codelineno-24-19"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">modelBuilder</span><span class="p">;</span>
+<a id="__codelineno-24-20" name="__codelineno-24-20" href="#__codelineno-24-20"></a><span class="p">}</span>
+</code></pre></div>
+<h2 id="best-practices">Best Practices</h2>
+<h3 id="when-to-use-write-models">When to Use Write Models</h3>
+<p><strong>Use Write Models when:</strong></p>
+<ul>
+<li>Working with legacy classes that aren't records</li>
+<li>Need to rename fields in the Parquet output</li>
+<li>Want to write only specific fields from your objects</li>
+<li>Need to compute derived fields</li>
+<li>Require specific data type control</li>
+<li>Working with runtime-determined schemas</li>
+</ul>
+<p><strong>Use automatic mapping when:</strong></p>
+<ul>
+<li>Java records map directly to desired Parquet schema</li>
+<li>Field names and types are already correct</li>
+<li>Simple, straightforward data serialization is needed</li>
+</ul>
+<h3 id="performance-considerations">Performance Considerations</h3>
+<ul>
+<li>Write Models have no performance overhead compared to automatic mapping</li>
+<li>Accessor functions are called once per field per instance</li>
+<li>Complex computations in accessors can impact performance</li>
+<li>Consider caching expensive calculations</li>
+</ul>
+<h3 id="error-handling">Error Handling</h3>
+<p>Write Models doesn't validate that field function match with the specified field type. Following code will throw a ClassCastException at runtime trying to write the file:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="c1">// This will throw an exception - mismatched class types</span>
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="kd">var</span><span class="w"> </span><span class="n">invalidModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">writeRecordModel</span><span class="p">(</span><span class="n">Person</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;name&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">INTEGER</span><span class="p">,</span><span class="w"> </span><span class="n">Person</span><span class="p">::</span><span class="n">name</span><span class="p">);</span><span class="w"> </span><span class="c1">// String -&gt; INTEGER mismatch</span>
+</code></pre></div>
+<p>Accessor functions should handle null values appropriately:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="kd">var</span><span class="w"> </span><span class="n">writeModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">writeRecordModel</span><span class="p">(</span><span class="n">Person</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;name_length&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">INTEGER</span><span class="p">,</span><span class="w"> </span><span class="n">person</span><span class="w"> </span><span class="o">-&gt;</span>
+<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a><span class="w">        </span><span class="n">person</span><span class="p">.</span><span class="na">name</span><span class="p">()</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="kc">null</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">person</span><span class="p">.</span><span class="na">name</span><span class="p">().</span><span class="na">length</span><span class="p">()</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+</code></pre></div>
+<h2 id="complete-example">Complete Example</h2>
+<p>Here's a comprehensive example showing various Write Model features:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="kn">import static</span><span class="w"> </span><span class="nn">com.jerolba.carpet.model.FieldTypes.*</span><span class="p">;</span>
+<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>
+<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a><span class="kd">enum</span><span class="w"> </span><span class="n">OrderStatus</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">PENDING</span><span class="p">,</span><span class="w"> </span><span class="n">CONFIRMED</span><span class="p">,</span><span class="w"> </span><span class="n">SHIPPED</span><span class="p">,</span><span class="w"> </span><span class="n">DELIVERED</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a>
+<a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a><span class="kd">record</span> <span class="nc">Item</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">sku</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">quantity</span><span class="p">,</span><span class="w"> </span><span class="n">BigDecimal</span><span class="w"> </span><span class="n">price</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-27-6" name="__codelineno-27-6" href="#__codelineno-27-6"></a>
+<a id="__codelineno-27-7" name="__codelineno-27-7" href="#__codelineno-27-7"></a><span class="kd">record</span> <span class="nc">CustomerOrder</span><span class="p">(</span>
+<a id="__codelineno-27-8" name="__codelineno-27-8" href="#__codelineno-27-8"></a><span class="w">    </span><span class="n">UUID</span><span class="w"> </span><span class="n">orderId</span><span class="p">,</span>
+<a id="__codelineno-27-9" name="__codelineno-27-9" href="#__codelineno-27-9"></a><span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="n">customerEmail</span><span class="p">,</span>
+<a id="__codelineno-27-10" name="__codelineno-27-10" href="#__codelineno-27-10"></a><span class="w">    </span><span class="n">List</span><span class="o">&lt;</span><span class="n">Item</span><span class="o">&gt;</span><span class="w"> </span><span class="n">items</span><span class="p">,</span>
+<a id="__codelineno-27-11" name="__codelineno-27-11" href="#__codelineno-27-11"></a><span class="w">    </span><span class="n">OrderStatus</span><span class="w"> </span><span class="n">status</span><span class="p">,</span>
+<a id="__codelineno-27-12" name="__codelineno-27-12" href="#__codelineno-27-12"></a><span class="w">    </span><span class="n">LocalDateTime</span><span class="w"> </span><span class="n">createdAt</span><span class="p">,</span>
+<a id="__codelineno-27-13" name="__codelineno-27-13" href="#__codelineno-27-13"></a><span class="w">    </span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">metadata</span>
+<a id="__codelineno-27-14" name="__codelineno-27-14" href="#__codelineno-27-14"></a><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-27-15" name="__codelineno-27-15" href="#__codelineno-27-15"></a>
+<a id="__codelineno-27-16" name="__codelineno-27-16" href="#__codelineno-27-16"></a><span class="c1">// Create a comprehensive Write Model</span>
+<a id="__codelineno-27-17" name="__codelineno-27-17" href="#__codelineno-27-17"></a><span class="kd">var</span><span class="w"> </span><span class="n">writeModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">writeRecordModel</span><span class="p">(</span><span class="n">CustomerOrder</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-27-18" name="__codelineno-27-18" href="#__codelineno-27-18"></a><span class="w">    </span><span class="c1">// Basic field mapping with renaming</span>
+<a id="__codelineno-27-19" name="__codelineno-27-19" href="#__codelineno-27-19"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;order_id&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">UUID</span><span class="p">,</span><span class="w"> </span><span class="n">CustomerOrder</span><span class="p">::</span><span class="n">orderId</span><span class="p">)</span>
+<a id="__codelineno-27-20" name="__codelineno-27-20" href="#__codelineno-27-20"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;customer_email&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">CustomerOrder</span><span class="p">::</span><span class="n">customerEmail</span><span class="p">)</span>
+<a id="__codelineno-27-21" name="__codelineno-27-21" href="#__codelineno-27-21"></a>
+<a id="__codelineno-27-22" name="__codelineno-27-22" href="#__codelineno-27-22"></a><span class="w">    </span><span class="c1">// Computed fields</span>
+<a id="__codelineno-27-23" name="__codelineno-27-23" href="#__codelineno-27-23"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;total_items&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">INTEGER</span><span class="p">,</span><span class="w"> </span><span class="n">order</span><span class="w"> </span><span class="o">-&gt;</span>
+<a id="__codelineno-27-24" name="__codelineno-27-24" href="#__codelineno-27-24"></a><span class="w">        </span><span class="n">order</span><span class="p">.</span><span class="na">items</span><span class="p">().</span><span class="na">stream</span><span class="p">().</span><span class="na">mapToInt</span><span class="p">(</span><span class="n">Item</span><span class="p">::</span><span class="n">quantity</span><span class="p">).</span><span class="na">sum</span><span class="p">())</span>
+<a id="__codelineno-27-25" name="__codelineno-27-25" href="#__codelineno-27-25"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;total_amount&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">BIG_DECIMAL</span><span class="p">.</span><span class="na">withPrecisionScale</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">),</span><span class="w"> </span><span class="n">order</span><span class="w"> </span><span class="o">-&gt;</span>
+<a id="__codelineno-27-26" name="__codelineno-27-26" href="#__codelineno-27-26"></a><span class="w">        </span><span class="n">order</span><span class="p">.</span><span class="na">items</span><span class="p">().</span><span class="na">stream</span><span class="p">()</span>
+<a id="__codelineno-27-27" name="__codelineno-27-27" href="#__codelineno-27-27"></a><span class="w">            </span><span class="p">.</span><span class="na">map</span><span class="p">(</span><span class="n">item</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">item</span><span class="p">.</span><span class="na">price</span><span class="p">().</span><span class="na">multiply</span><span class="p">(</span><span class="n">BigDecimal</span><span class="p">.</span><span class="na">valueOf</span><span class="p">(</span><span class="n">item</span><span class="p">.</span><span class="na">quantity</span><span class="p">())))</span>
+<a id="__codelineno-27-28" name="__codelineno-27-28" href="#__codelineno-27-28"></a><span class="w">            </span><span class="p">.</span><span class="na">reduce</span><span class="p">(</span><span class="n">BigDecimal</span><span class="p">.</span><span class="na">ZERO</span><span class="p">,</span><span class="w"> </span><span class="n">BigDecimal</span><span class="p">::</span><span class="n">add</span><span class="p">))</span>
+<a id="__codelineno-27-29" name="__codelineno-27-29" href="#__codelineno-27-29"></a>
+<a id="__codelineno-27-30" name="__codelineno-27-30" href="#__codelineno-27-30"></a><span class="w">    </span><span class="c1">// Complex collections</span>
+<a id="__codelineno-27-31" name="__codelineno-27-31" href="#__codelineno-27-31"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;item_skus&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">LIST</span><span class="p">.</span><span class="na">ofType</span><span class="p">(</span><span class="n">STRING</span><span class="p">),</span><span class="w"> </span><span class="n">order</span><span class="w"> </span><span class="o">-&gt;</span>
+<a id="__codelineno-27-32" name="__codelineno-27-32" href="#__codelineno-27-32"></a><span class="w">        </span><span class="n">order</span><span class="p">.</span><span class="na">items</span><span class="p">().</span><span class="na">stream</span><span class="p">().</span><span class="na">map</span><span class="p">(</span><span class="n">Item</span><span class="p">::</span><span class="n">sku</span><span class="p">).</span><span class="na">toList</span><span class="p">())</span>
+<a id="__codelineno-27-33" name="__codelineno-27-33" href="#__codelineno-27-33"></a>
+<a id="__codelineno-27-34" name="__codelineno-27-34" href="#__codelineno-27-34"></a><span class="w">    </span><span class="c1">// Enum handling</span>
+<a id="__codelineno-27-35" name="__codelineno-27-35" href="#__codelineno-27-35"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;status&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">ENUM</span><span class="p">.</span><span class="na">ofType</span><span class="p">(</span><span class="n">OrderStatus</span><span class="p">.</span><span class="na">class</span><span class="p">),</span><span class="w"> </span><span class="n">CustomerOrder</span><span class="p">::</span><span class="n">status</span><span class="p">)</span>
+<a id="__codelineno-27-36" name="__codelineno-27-36" href="#__codelineno-27-36"></a>
+<a id="__codelineno-27-37" name="__codelineno-27-37" href="#__codelineno-27-37"></a><span class="w">    </span><span class="c1">// Date/time fields</span>
+<a id="__codelineno-27-38" name="__codelineno-27-38" href="#__codelineno-27-38"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;created_at&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">LOCAL_DATE_TIME</span><span class="p">,</span><span class="w"> </span><span class="n">CustomerOrder</span><span class="p">::</span><span class="n">createdAt</span><span class="p">)</span>
+<a id="__codelineno-27-39" name="__codelineno-27-39" href="#__codelineno-27-39"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;created_date&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">LOCAL_DATE</span><span class="p">,</span><span class="w"> </span><span class="n">order</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">order</span><span class="p">.</span><span class="na">createdAt</span><span class="p">().</span><span class="na">toLocalDate</span><span class="p">())</span>
+<a id="__codelineno-27-40" name="__codelineno-27-40" href="#__codelineno-27-40"></a>
+<a id="__codelineno-27-41" name="__codelineno-27-41" href="#__codelineno-27-41"></a><span class="w">    </span><span class="c1">// Map fields</span>
+<a id="__codelineno-27-42" name="__codelineno-27-42" href="#__codelineno-27-42"></a><span class="w">    </span><span class="p">.</span><span class="na">withField</span><span class="p">(</span><span class="s">&quot;metadata&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">MAP</span><span class="p">.</span><span class="na">ofTypes</span><span class="p">(</span><span class="n">STRING</span><span class="p">,</span><span class="w"> </span><span class="n">STRING</span><span class="p">),</span><span class="w"> </span><span class="n">CustomerOrder</span><span class="p">::</span><span class="n">metadata</span><span class="p">);</span>
+<a id="__codelineno-27-43" name="__codelineno-27-43" href="#__codelineno-27-43"></a>
+<a id="__codelineno-27-44" name="__codelineno-27-44" href="#__codelineno-27-44"></a><span class="c1">// Use the Write Model</span>
+<a id="__codelineno-27-45" name="__codelineno-27-45" href="#__codelineno-27-45"></a><span class="k">try</span><span class="w"> </span><span class="p">(</span><span class="n">CarpetWriter</span><span class="o">&lt;</span><span class="n">CustomerOrder</span><span class="o">&gt;</span><span class="w"> </span><span class="n">writer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">CarpetWriter</span><span class="p">.</span><span class="na">Builder</span><span class="o">&lt;&gt;</span><span class="p">(</span><span class="n">outputStream</span><span class="p">,</span><span class="w"> </span><span class="n">CustomerOrder</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-27-46" name="__codelineno-27-46" href="#__codelineno-27-46"></a><span class="w">        </span><span class="p">.</span><span class="na">withWriteRecordModel</span><span class="p">(</span><span class="n">writeModel</span><span class="p">)</span>
+<a id="__codelineno-27-47" name="__codelineno-27-47" href="#__codelineno-27-47"></a><span class="w">        </span><span class="p">.</span><span class="na">build</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-27-48" name="__codelineno-27-48" href="#__codelineno-27-48"></a><span class="w">    </span><span class="n">writer</span><span class="p">.</span><span class="na">write</span><span class="p">(</span><span class="n">orders</span><span class="p">);</span>
+<a id="__codelineno-27-49" name="__codelineno-27-49" href="#__codelineno-27-49"></a><span class="p">}</span>
+</code></pre></div>
+<p>This example demonstrates field renaming, computed fields, collection handling, enum mapping, date/time processing, and complex data type configuration - all the key features of Carpet's Write Model system.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../low-level-parquet/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Low Level Parquet Classes">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Low Level Parquet Classes
+              </div>
+            </div>
+          </a>
+        
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.sections", "navigation.expand", "navigation.path", "navigation.footer", "content.tabs.link", "search.suggest", "search.highlight"], "search": "../../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.f55a23d4.min.js"></script>
+      
+    
+  </body>
+</html>

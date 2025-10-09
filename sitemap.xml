@@ -2,58 +2,62 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://jerolba.github.io/parquet-carpet/</loc>
-         <lastmod>2025-07-23</lastmod>
+         <lastmod>2025-10-09</lastmod>
     </url>
     <url>
          <loc>https://jerolba.github.io/parquet-carpet/advanced/column-mapping/</loc>
-         <lastmod>2025-07-23</lastmod>
+         <lastmod>2025-10-09</lastmod>
     </url>
     <url>
          <loc>https://jerolba.github.io/parquet-carpet/advanced/configuration/</loc>
-         <lastmod>2025-07-23</lastmod>
+         <lastmod>2025-10-09</lastmod>
     </url>
     <url>
          <loc>https://jerolba.github.io/parquet-carpet/advanced/data-types/</loc>
-         <lastmod>2025-07-23</lastmod>
+         <lastmod>2025-10-09</lastmod>
     </url>
     <url>
          <loc>https://jerolba.github.io/parquet-carpet/advanced/input-output-files/</loc>
-         <lastmod>2025-07-23</lastmod>
+         <lastmod>2025-10-09</lastmod>
     </url>
     <url>
          <loc>https://jerolba.github.io/parquet-carpet/advanced/java-type-annotations/</loc>
-         <lastmod>2025-07-23</lastmod>
+         <lastmod>2025-10-09</lastmod>
     </url>
     <url>
          <loc>https://jerolba.github.io/parquet-carpet/advanced/low-level-parquet/</loc>
-         <lastmod>2025-07-23</lastmod>
+         <lastmod>2025-10-09</lastmod>
     </url>
     <url>
          <loc>https://jerolba.github.io/parquet-carpet/advanced/nullability/</loc>
-         <lastmod>2025-07-23</lastmod>
+         <lastmod>2025-10-09</lastmod>
     </url>
     <url>
          <loc>https://jerolba.github.io/parquet-carpet/advanced/projections/</loc>
-         <lastmod>2025-07-23</lastmod>
+         <lastmod>2025-10-09</lastmod>
     </url>
     <url>
          <loc>https://jerolba.github.io/parquet-carpet/advanced/schema-mismatch/</loc>
-         <lastmod>2025-07-23</lastmod>
+         <lastmod>2025-10-09</lastmod>
+    </url>
+    <url>
+         <loc>https://jerolba.github.io/parquet-carpet/advanced/write-model/</loc>
+         <lastmod>2025-10-09</lastmod>
     </url>
     <url>
          <loc>https://jerolba.github.io/parquet-carpet/getting-started/basic-usage/</loc>
-         <lastmod>2025-07-23</lastmod>
+         <lastmod>2025-10-09</lastmod>
     </url>
     <url>
          <loc>https://jerolba.github.io/parquet-carpet/getting-started/carpetreader-api/</loc>
-         <lastmod>2025-07-23</lastmod>
+         <lastmod>2025-10-09</lastmod>
     </url>
     <url>
          <loc>https://jerolba.github.io/parquet-carpet/getting-started/carpetwriter-api/</loc>
-         <lastmod>2025-07-23</lastmod>
+         <lastmod>2025-10-09</lastmod>
     </url>
     <url>
          <loc>https://jerolba.github.io/parquet-carpet/getting-started/installation/</loc>
-         <lastmod>2025-07-23</lastmod>
+         <lastmod>2025-10-09</lastmod>
     </url>
 </urlset>
