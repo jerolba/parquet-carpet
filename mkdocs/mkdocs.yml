@@ -5,6 +5,7 @@ repo_name: jerolba/parquet-carpet
 repo_url: https://github.com/jerolba/parquet-carpet
 theme:
   name: material
+  custom_dir: overrides
   features:
     #- navigation.tabs
     - navigation.sections
