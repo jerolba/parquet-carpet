@@ -1,6 +1,6 @@
 site_name: Carpet Documentation
 site_description: Parquet Serialization and Deserialization Library for Java
-site_url: https://jerolba.github.io/parquet-carpet
+site_url: https://carpet.jerolba.com/
 repo_name: jerolba/parquet-carpet
 repo_url: https://github.com/jerolba/parquet-carpet
 theme:
