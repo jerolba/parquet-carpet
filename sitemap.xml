@@ -1,63 +1,63 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-         <loc>https://jerolba.github.io/parquet-carpet/</loc>
+         <loc>https://carpet.jerolba.com/</loc>
          <lastmod>2025-11-10</lastmod>
     </url>
     <url>
-         <loc>https://jerolba.github.io/parquet-carpet/advanced/column-mapping/</loc>
+         <loc>https://carpet.jerolba.com/advanced/column-mapping/</loc>
          <lastmod>2025-11-10</lastmod>
     </url>
     <url>
-         <loc>https://jerolba.github.io/parquet-carpet/advanced/configuration/</loc>
+         <loc>https://carpet.jerolba.com/advanced/configuration/</loc>
          <lastmod>2025-11-10</lastmod>
     </url>
     <url>
-         <loc>https://jerolba.github.io/parquet-carpet/advanced/data-types/</loc>
+         <loc>https://carpet.jerolba.com/advanced/data-types/</loc>
          <lastmod>2025-11-10</lastmod>
     </url>
     <url>
-         <loc>https://jerolba.github.io/parquet-carpet/advanced/input-output-files/</loc>
+         <loc>https://carpet.jerolba.com/advanced/input-output-files/</loc>
          <lastmod>2025-11-10</lastmod>
     </url>
     <url>
-         <loc>https://jerolba.github.io/parquet-carpet/advanced/java-type-annotations/</loc>
+         <loc>https://carpet.jerolba.com/advanced/java-type-annotations/</loc>
          <lastmod>2025-11-10</lastmod>
     </url>
     <url>
-         <loc>https://jerolba.github.io/parquet-carpet/advanced/low-level-parquet/</loc>
+         <loc>https://carpet.jerolba.com/advanced/low-level-parquet/</loc>
          <lastmod>2025-11-10</lastmod>
     </url>
     <url>
-         <loc>https://jerolba.github.io/parquet-carpet/advanced/nullability/</loc>
+         <loc>https://carpet.jerolba.com/advanced/nullability/</loc>
          <lastmod>2025-11-10</lastmod>
     </url>
     <url>
-         <loc>https://jerolba.github.io/parquet-carpet/advanced/projections/</loc>
+         <loc>https://carpet.jerolba.com/advanced/projections/</loc>
          <lastmod>2025-11-10</lastmod>
     </url>
     <url>
-         <loc>https://jerolba.github.io/parquet-carpet/advanced/schema-mismatch/</loc>
+         <loc>https://carpet.jerolba.com/advanced/schema-mismatch/</loc>
          <lastmod>2025-11-10</lastmod>
     </url>
     <url>
-         <loc>https://jerolba.github.io/parquet-carpet/advanced/write-model/</loc>
+         <loc>https://carpet.jerolba.com/advanced/write-model/</loc>
          <lastmod>2025-11-10</lastmod>
     </url>
     <url>
-         <loc>https://jerolba.github.io/parquet-carpet/getting-started/basic-usage/</loc>
+         <loc>https://carpet.jerolba.com/getting-started/basic-usage/</loc>
          <lastmod>2025-11-10</lastmod>
     </url>
     <url>
-         <loc>https://jerolba.github.io/parquet-carpet/getting-started/carpetreader-api/</loc>
+         <loc>https://carpet.jerolba.com/getting-started/carpetreader-api/</loc>
          <lastmod>2025-11-10</lastmod>
     </url>
     <url>
-         <loc>https://jerolba.github.io/parquet-carpet/getting-started/carpetwriter-api/</loc>
+         <loc>https://carpet.jerolba.com/getting-started/carpetwriter-api/</loc>
          <lastmod>2025-11-10</lastmod>
     </url>
     <url>
-         <loc>https://jerolba.github.io/parquet-carpet/getting-started/installation/</loc>
+         <loc>https://carpet.jerolba.com/getting-started/installation/</loc>
          <lastmod>2025-11-10</lastmod>
     </url>
 </urlset>
