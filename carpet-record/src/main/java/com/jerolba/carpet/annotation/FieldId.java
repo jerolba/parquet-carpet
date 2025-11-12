@@ -31,6 +31,10 @@ import java.lang.annotation.Target;
  * <li>Working with data catalogs that use field IDs for schema management</li>
  * </ul>
  *
+ * <p><b>Important:</b> Field IDs must be unique within the same record (including nested records).
+ * It is the developer's responsibility to ensure uniqueness. Duplicate field IDs within the same
+ * record will result in undefined behavior when reading or writing Parquet files.</p>
+ *
  * <p>Example usage:</p>
  * <pre>
  * record SomeRecord(
@@ -40,6 +44,19 @@ import java.lang.annotation.Target;
  *     &#64;FieldId(4) String error
  * ) {}
  * </pre>
+ *
+ * <p>For nested records, field IDs must be unique within each record scope:</p>
+ * <pre>
+ * record Address(
+ *     &#64;FieldId(100) String street,
+ *     &#64;FieldId(101) String city
+ * ) {}
+ *
+ * record Person(
+ *     &#64;FieldId(1) String name,
+ *     &#64;FieldId(2) Address address
+ * ) {}
+ * </pre>
  */
 @Retention(RUNTIME)
 @Target(RECORD_COMPONENT)
@@ -47,7 +64,15 @@ public @interface FieldId {
 
     /**
      * The unique field ID for this field within the Parquet schema.
-     * Field IDs must be positive integers.
+     * <p>
+     * Field IDs must be:
+     * <ul>
+     * <li>Positive integers</li>
+     * <li>Unique within the same record scope (sibling fields must have different IDs)</li>
+     * </ul>
+     * <p>
+     * Note: Carpet does not validate field ID uniqueness. It is the developer's responsibility
+     * to ensure IDs are unique within each record.
      *
      * @return the field ID
      */
