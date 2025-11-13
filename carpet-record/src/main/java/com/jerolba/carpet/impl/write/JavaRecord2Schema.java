@@ -100,7 +100,18 @@ class JavaRecord2Schema {
 
     private List<Type> createGroupFields(Class<?> recordClass, Set<Class<?>> visited) {
         List<Type> fields = new ArrayList<>();
+        Set<Integer> usedFieldIds = new HashSet<>();
+        
         for (var attr : recordClass.getRecordComponents()) {
+            Integer fieldId = getFieldId(attr);
+            if (fieldId != null) {
+                if (usedFieldIds.contains(fieldId)) {
+                    throw new RecordTypeConversionException(
+                        "Duplicate field ID " + fieldId + " found in record " + recordClass.getSimpleName() + 
+                        ". Field IDs must be unique within the same record scope.");
+                }
+                usedFieldIds.add(fieldId);
+            }
             fields.add(buildRecordField(attr, visited));
         }
         return fields;

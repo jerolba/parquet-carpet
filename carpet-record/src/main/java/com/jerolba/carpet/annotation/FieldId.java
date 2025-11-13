@@ -31,9 +31,19 @@ import java.lang.annotation.Target;
  * <li>Working with data catalogs that use field IDs for schema management</li>
  * </ul>
  *
- * <p><b>Important:</b> Field IDs must be unique within the same record (including nested records).
- * It is the developer's responsibility to ensure uniqueness. Duplicate field IDs within the same
- * record will result in undefined behavior when reading or writing Parquet files.</p>
+ * <p><b>Important Guidelines:</b></p>
+ * <ul>
+ * <li><b>Uniqueness:</b> Field IDs must be unique within the same record scope. Sibling fields
+ * (fields at the same level within a record) must have different field IDs. Duplicate field IDs
+ * within the same record scope will cause a {@link com.jerolba.carpet.RecordTypeConversionException}
+ * to be thrown during schema creation.</li>
+ * <li><b>Reuse across scopes:</b> Field IDs can be reused across different record scopes
+ * (e.g., different nested records).</li>
+ * <li><b>Stability:</b> Once assigned, field IDs should never change for a given field.
+ * Maintain the same IDs across all schema versions to ensure proper schema evolution.</li>
+ * <li><b>No recycling:</b> Never reuse a field ID from a deleted field for a different field.
+ * This prevents misinterpretation by ID-aware readers.</li>
+ * </ul>
  *
  * <p>Example usage:</p>
  * <pre>
@@ -69,10 +79,17 @@ public @interface FieldId {
      * <ul>
      * <li>Positive integers</li>
      * <li>Unique within the same record scope (sibling fields must have different IDs)</li>
+     * <li>Stable across all schema versions - never change an ID once assigned</li>
+     * <li>Never reused for different fields, even after a field is removed</li>
      * </ul>
      * <p>
-     * Note: Carpet does not validate field ID uniqueness. It is the developer's responsibility
-     * to ensure IDs are unique within each record.
+     * Carpet validates field ID uniqueness at schema creation time and will throw a
+     * {@link com.jerolba.carpet.RecordTypeConversionException} if duplicate field IDs
+     * are detected within the same record scope.
+     * <p>
+     * <b>Note:</b> Field IDs are applied to record component fields. Internal Parquet structures
+     * (such as list elements or map key/value containers) do not receive field IDs from annotations,
+     * as these are managed by the library according to Parquet's standard encoding conventions.
      *
      * @return the field ID
      */
