@@ -127,9 +127,9 @@ class JavaRecord2Schema {
         if (parquetType != null) {
             return applyFieldId(parquetType, fieldId);
         } else if (javaType.isCollection()) {
-            return createCollectionType(fieldName, fieldId, getParameterizedCollection(attr), repetition, visited);
+            return applyFieldId(createCollectionType(fieldName, getParameterizedCollection(attr), repetition, visited), fieldId);
         } else if (javaType.isMap()) {
-            return createMapType(fieldName, fieldId, getParameterizedMap(attr), repetition, visited);
+            return applyFieldId(createMapType(fieldName, getParameterizedMap(attr), repetition, visited), fieldId);
         }
         if (attr.getGenericType() instanceof TypeVariable<?>) {
             throw new RecordTypeConversionException(attr.getGenericType().toString() + " generic types not supported");
@@ -145,75 +145,72 @@ class JavaRecord2Schema {
         return fields;
     }
 
-    private Type createCollectionType(String fieldName, Integer fieldId, ParameterizedCollection collectionClass,
-            Repetition repetition, Set<Class<?>> visited) {
+    private Type createCollectionType(String fieldName, ParameterizedCollection collectionClass, Repetition repetition,
+            Set<Class<?>> visited) {
         return switch (carpetConfiguration.annotatedLevels()) {
-        case ONE -> createCollectionOneLevel(fieldName, fieldId, collectionClass, visited);
-        case TWO -> createCollectionTwoLevel(fieldName, fieldId, collectionClass, repetition, visited);
-        case THREE -> createCollectionThreeLevel(fieldName, fieldId, collectionClass, repetition, visited);
+        case ONE -> createCollectionOneLevel(fieldName, collectionClass, visited);
+        case TWO -> createCollectionTwoLevel(fieldName, collectionClass, repetition, visited);
+        case THREE -> createCollectionThreeLevel(fieldName, collectionClass, repetition, visited);
         };
     }
 
-    private Type createCollectionOneLevel(String fieldName, Integer fieldId, ParameterizedCollection parametized,
+    private Type createCollectionOneLevel(String fieldName, ParameterizedCollection parametized,
             Set<Class<?>> visited) {
         if (parametized.isCollection()) {
             throw new RecordTypeConversionException(
                     "Recursive collections not supported in annotated 1-level structures");
         }
         if (parametized.isMap()) {
-            return createMapType(fieldName, fieldId, parametized.getAsMap(), REPEATED, visited);
+            return createMapType(fieldName, parametized.getAsMap(), REPEATED, visited);
         }
-        return buildTypeElement(fieldName, fieldId, parametized.getActualJavaType(), REPEATED, visited);
+        return buildTypeElement(fieldName, parametized.getActualJavaType(), REPEATED, visited);
     }
 
-    private Type createCollectionTwoLevel(String fieldName, Integer fieldId, ParameterizedCollection parametized,
-            Repetition repetition, Set<Class<?>> visited) {
+    private Type createCollectionTwoLevel(String fieldName, ParameterizedCollection parametized, Repetition repetition,
+            Set<Class<?>> visited) {
         // Two level collections elements are not nullables
-        Type nested = createNestedGeneric(parametized, ELEMENT, null, REPEATED, visited);
-        Type result = ConversionPatterns.listType(repetition, fieldName, nested);
-        return applyFieldId(result, fieldId);
+        Type nested = createNestedGeneric(parametized, ELEMENT, REPEATED, visited);
+        return ConversionPatterns.listType(repetition, fieldName, nested);
     }
 
-    private Type createCollectionThreeLevel(String fieldName, Integer fieldId, ParameterizedCollection parametized,
+    private Type createCollectionThreeLevel(String fieldName, ParameterizedCollection parametized,
             Repetition repetition, Set<Class<?>> visited) {
         var repetitionCollection = getTypeRepetition(parametized.getActualJavaType());
-        Type nested = createNestedGeneric(parametized, ELEMENT, null, repetitionCollection, visited);
-        Type result = ConversionPatterns.listOfElements(repetition, fieldName, nested);
-        return applyFieldId(result, fieldId);
+        Type nested = createNestedGeneric(parametized, ELEMENT, repetitionCollection, visited);
+        return ConversionPatterns.listOfElements(repetition, fieldName, nested);
     }
 
-    private Type createNestedGeneric(ParameterizedCollection parametized, String fieldName, Integer fieldId,
-            Repetition repetition, Set<Class<?>> visited) {
+    private Type createNestedGeneric(ParameterizedCollection parametized, String fieldName, Repetition repetition,
+            Set<Class<?>> visited) {
         if (parametized.isCollection()) {
-            return createCollectionType(fieldName, fieldId, parametized.getAsCollection(), repetition, visited);
+            return createCollectionType(fieldName, parametized.getAsCollection(), repetition, visited);
         }
         if (parametized.isMap()) {
-            return createMapType(fieldName, fieldId, parametized.getAsMap(), repetition, visited);
+            return createMapType(fieldName, parametized.getAsMap(), repetition, visited);
         }
-        return buildTypeElement(fieldName, fieldId, parametized.getActualJavaType(), repetition, visited);
+        return buildTypeElement(fieldName, parametized.getActualJavaType(), repetition, visited);
     }
 
-    private Type createMapType(String fieldName, Integer fieldId, ParameterizedMap parametized, Repetition repetition,
+    private Type createMapType(String fieldName, ParameterizedMap parametized, Repetition repetition,
             Set<Class<?>> visited) {
-        Type nestedKey = buildTypeElement(KEY, null, parametized.getGenericKey().getActualJavaType(), REQUIRED, visited);
+        Type nestedKey = buildTypeElement(KEY, parametized.getGenericKey().getActualJavaType(), REQUIRED, visited);
 
         ParameterizedCollection genericValue = parametized.getGenericValue();
         var repetitionValue = getTypeRepetition(genericValue.getActualJavaType());
-        Type nestedValue = createNestedGeneric(genericValue, VALUE, null, repetitionValue, visited);
+        Type nestedValue = createNestedGeneric(genericValue, VALUE, repetitionValue, visited);
         if (nestedKey != null && nestedValue != null) {
             // TODO: what to change to support generation of older versions?
-            var type = Types.map(repetition).key(nestedKey).value(nestedValue).named(fieldName);
-            return applyFieldId(type, fieldId);
+            return Types.map(repetition).key(nestedKey).value(nestedValue).named(fieldName);
         }
         throw new RecordTypeConversionException("Unsupported type in Map");
     }
 
-    private Type buildTypeElement(String name, Integer fieldId, JavaType javaType, Repetition repetition, Set<Class<?>> visited) {
+    private Type buildTypeElement(String name, JavaType javaType, Repetition repetition, Set<Class<?>> visited) {
         Type parquetType = buildType(name, javaType, repetition, visited);
         if (parquetType == null) {
             throw new RecordTypeConversionException("Unsupported type " + javaType.getJavaType());
         }
-        return applyFieldId(parquetType, fieldId);
+        return parquetType;
     }
 
     private Type buildType(String name, JavaType javaType, Repetition repetition, Set<Class<?>> visited) {
@@ -339,16 +336,6 @@ class JavaRecord2Schema {
 
     private static Repetition getTypeRepetition(JavaType javaType) {
         return isNotNullAnnotated(javaType.getDeclaredAnnotations()) ? REQUIRED : OPTIONAL;
-    }
-
-    /**
-     * Applies a field ID to a PrimitiveBuilder and returns the named Type.
-     */
-    private static Type applyFieldId(PrimitiveBuilder<PrimitiveType> builder, Integer fieldId, String name) {
-        if (fieldId != null) {
-            return builder.id(fieldId).named(name);
-        }
-        return builder.named(name);
     }
 
     /**
