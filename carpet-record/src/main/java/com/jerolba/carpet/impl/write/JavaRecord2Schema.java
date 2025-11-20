@@ -59,6 +59,7 @@ import org.apache.parquet.schema.Types;
 import org.apache.parquet.schema.Types.PrimitiveBuilder;
 
 import com.jerolba.carpet.RecordTypeConversionException;
+import com.jerolba.carpet.annotation.FieldId;
 import com.jerolba.carpet.annotation.ParquetBson;
 import com.jerolba.carpet.annotation.ParquetEnum;
 import com.jerolba.carpet.annotation.ParquetGeography;
@@ -99,7 +100,18 @@ class JavaRecord2Schema {
 
     private List<Type> createGroupFields(Class<?> recordClass, Set<Class<?>> visited) {
         List<Type> fields = new ArrayList<>();
+        Set<Integer> usedFieldIds = new HashSet<>();
+        
         for (var attr : recordClass.getRecordComponents()) {
+            Integer fieldId = getFieldId(attr);
+            if (fieldId != null) {
+                if (usedFieldIds.contains(fieldId)) {
+                    throw new RecordTypeConversionException(
+                        "Duplicate field ID " + fieldId + " found in record " + recordClass.getSimpleName() + 
+                        ". Field IDs must be unique within the same record scope.");
+                }
+                usedFieldIds.add(fieldId);
+            }
             fields.add(buildRecordField(attr, visited));
         }
         return fields;
@@ -109,14 +121,15 @@ class JavaRecord2Schema {
         String fieldName = fieldToColumnMapper.getColumnName(attr);
         Repetition repetition = isNotNull(attr) ? REQUIRED : OPTIONAL;
         JavaType javaType = new JavaType(attr);
+        Integer fieldId = getFieldId(attr);
 
         Type parquetType = buildType(fieldName, javaType, repetition, visited);
         if (parquetType != null) {
-            return parquetType;
+            return applyFieldId(parquetType, fieldId);
         } else if (javaType.isCollection()) {
-            return createCollectionType(fieldName, getParameterizedCollection(attr), repetition, visited);
+            return applyFieldId(createCollectionType(fieldName, getParameterizedCollection(attr), repetition, visited), fieldId);
         } else if (javaType.isMap()) {
-            return createMapType(fieldName, getParameterizedMap(attr), repetition, visited);
+            return applyFieldId(createMapType(fieldName, getParameterizedMap(attr), repetition, visited), fieldId);
         }
         if (attr.getGenericType() instanceof TypeVariable<?>) {
             throw new RecordTypeConversionException(attr.getGenericType().toString() + " generic types not supported");
@@ -325,4 +338,28 @@ class JavaRecord2Schema {
         return isNotNullAnnotated(javaType.getDeclaredAnnotations()) ? REQUIRED : OPTIONAL;
     }
 
+    /**
+     * Applies a field ID to an already built Type.
+     */
+    private static Type applyFieldId(Type type, Integer fieldId) {
+        if (fieldId != null) {
+            return type.withId(fieldId);
+        }
+        return type;
+    }
+
+    /**
+     * Gets the field ID from a record component if it has the @FieldId annotation.
+     *
+     * @param recordComponent
+     *            the record component to check
+     * @return the field ID if present, or null if no @FieldId annotation is present
+     */
+    private static Integer getFieldId(RecordComponent recordComponent) {
+        FieldId annotation = recordComponent.getAnnotation(FieldId.class);
+        if (annotation == null) {
+            return null;
+        }
+        return annotation.value();
+    }
 }

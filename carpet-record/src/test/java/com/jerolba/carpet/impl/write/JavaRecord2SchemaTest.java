@@ -19,9 +19,8 @@ import static com.jerolba.carpet.TimeUnit.MICROS;
 import static com.jerolba.carpet.TimeUnit.MILLIS;
 import static com.jerolba.carpet.TimeUnit.NANOS;
 import static com.jerolba.carpet.impl.write.DecimalConfig.decimalConfig;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -33,6 +32,7 @@ import java.util.Locale.Category;
 import java.util.Map;
 import java.util.UUID;
 
+import com.jerolba.carpet.*;
 import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.schema.MessageType;
 import org.apache.parquet.variant.Variant;
@@ -41,11 +41,8 @@ import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.Polygon;
 
-import com.jerolba.carpet.AnnotatedLevels;
-import com.jerolba.carpet.ColumnNamingStrategy;
-import com.jerolba.carpet.RecordTypeConversionException;
-import com.jerolba.carpet.TimeUnit;
 import com.jerolba.carpet.annotation.Alias;
+import com.jerolba.carpet.annotation.FieldId;
 import com.jerolba.carpet.annotation.NotNull;
 import com.jerolba.carpet.annotation.ParquetBson;
 import com.jerolba.carpet.annotation.ParquetEnum;
@@ -1214,6 +1211,343 @@ class JavaRecord2SchemaTest {
             assertEquals(expected, schema.toString());
         }
 
+    }
+
+    @Nested
+    class FieldIdMapping {
+
+        @Test
+        void simpleRecordWithFieldIds() {
+            record SimpleRecord(
+                    @FieldId(1) String uuid,
+                    @FieldId(2) int statusCode,
+                    @FieldId(3) long durationMillis,
+                    @FieldId(4) String error) {
+            }
+
+            MessageType schema = defaultConfigSchema.createSchema(SimpleRecord.class);
+            String expected = """
+                    message SimpleRecord {
+                      optional binary uuid (STRING) = 1;
+                      required int32 statusCode = 2;
+                      required int64 durationMillis = 3;
+                      optional binary error (STRING) = 4;
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void mixedRecordWithAndWithoutFieldIds() {
+            record MixedRecord(
+                    @FieldId(10) String id,
+                    String name,
+                    @FieldId(20) int value) {
+            }
+
+            MessageType schema = defaultConfigSchema.createSchema(MixedRecord.class);
+            String expected = """
+                    message MixedRecord {
+                      optional binary id (STRING) = 10;
+                      optional binary name (STRING);
+                      required int32 value = 20;
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void collectionWithFieldIds() {
+            record CollectionRecord(@FieldId(1) String id, @FieldId(2) List<Integer> values) {}
+
+            MessageType schema = defaultConfigSchema.createSchema(CollectionRecord.class);
+            String expected = """
+                    message CollectionRecord {
+                      optional binary id (STRING) = 1;
+                      optional group values (LIST) = 2 {
+                        repeated group list {
+                          optional int32 element;
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void mapWithFieldIds() {
+            record MapRecord(@FieldId(1) String id, @FieldId(2) java.util.Map<String, Integer> scores) {}
+
+            MessageType schema = defaultConfigSchema.createSchema(MapRecord.class);
+            String expected = """
+                    message MapRecord {
+                      optional binary id (STRING) = 1;
+                      optional group scores (MAP) = 2 {
+                        repeated group key_value {
+                          required binary key (STRING);
+                          optional int32 value;
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedRecordWithFieldIds() {
+            record ChildRecord(@FieldId(100) String key, @FieldId(101) int value) {}
+            record ParentRecord(@FieldId(1) long id, @FieldId(2) String name, @FieldId(3) ChildRecord child) {}
+
+            MessageType schema = defaultConfigSchema.createSchema(ParentRecord.class);
+            String expected = """
+                    message ParentRecord {
+                      required int64 id = 1;
+                      optional binary name (STRING) = 2;
+                      optional group child = 3 {
+                        optional binary key (STRING) = 100;
+                        required int32 value = 101;
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void complexNestedStructureWithFieldIds() {
+            record ChildRecord1(
+                    @FieldId(11) String attribute,
+                    @FieldId(12) long value
+            ) {}
+
+            record ChildRecord2(
+                    @FieldId(21) String attribute,
+                    @FieldId(22) long value
+            ) {}
+
+            record ChildRecord3(
+                    @FieldId(31) String attribute,
+                    @FieldId(32) long value
+            ) {}
+
+            record ParentRecord(
+                    @FieldId(1) String id,
+                    @FieldId(2) int status,
+                    @FieldId(3) long durationMillis,
+                    @FieldId(4) String error,
+                    @FieldId(5) ChildRecord1 foo,
+                    @FieldId(6) List<ChildRecord2> bar,
+                    @FieldId(7) java.util.Map<String, ChildRecord3> baz
+            ) {}
+
+            MessageType schema = defaultConfigSchema.createSchema(ParentRecord.class);
+            String expected = """
+                    message ParentRecord {
+                      optional binary id (STRING) = 1;
+                      required int32 status = 2;
+                      required int64 durationMillis = 3;
+                      optional binary error (STRING) = 4;
+                      optional group foo = 5 {
+                        optional binary attribute (STRING) = 11;
+                        required int64 value = 12;
+                      }
+                      optional group bar (LIST) = 6 {
+                        repeated group list {
+                          optional group element {
+                            optional binary attribute (STRING) = 21;
+                            required int64 value = 22;
+                          }
+                        }
+                      }
+                      optional group baz (MAP) = 7 {
+                        repeated group key_value {
+                          required binary key (STRING);
+                          optional group value {
+                            optional binary attribute (STRING) = 31;
+                            required int64 value = 32;
+                          }
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedRecordsInListElementsShouldHaveFieldIds() {
+            record Item(@FieldId(100) String name, @FieldId(101) int quantity) {}
+            record TestRecord(@FieldId(1) List<Item> items) {}
+
+            MessageType schema = defaultConfigSchema.createSchema(TestRecord.class);
+            String expected = """
+                    message TestRecord {
+                      optional group items (LIST) = 1 {
+                        repeated group list {
+                          optional group element {
+                            optional binary name (STRING) = 100;
+                            required int32 quantity = 101;
+                          }
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedRecordsInMapValuesShouldHaveFieldIds() {
+            record Item(@FieldId(200) String description, @FieldId(201) double price) {}
+            record TestRecord(@FieldId(1) Map<String, Item> products) {}
+
+            MessageType schema = defaultConfigSchema.createSchema(TestRecord.class);
+            String expected = """
+                    message TestRecord {
+                      optional group products (MAP) = 1 {
+                        repeated group key_value {
+                          required binary key (STRING);
+                          optional group value {
+                            optional binary description (STRING) = 200;
+                            required double price = 201;
+                          }
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void nestedCollectionsShouldHandleFieldIdsCorrectly() {
+            record TestRecord(
+                    @FieldId(1) List<List<String>> nestedLists,
+                    @FieldId(2) Map<String, List<Integer>> mapWithLists
+            ) {}
+
+            MessageType schema = defaultConfigSchema.createSchema(TestRecord.class);
+            String expected = """
+                    message TestRecord {
+                      optional group nestedLists (LIST) = 1 {
+                        repeated group list {
+                          optional group element (LIST) {
+                            repeated group list {
+                              optional binary element (STRING);
+                            }
+                          }
+                        }
+                      }
+                      optional group mapWithLists (MAP) = 2 {
+                        repeated group key_value {
+                          required binary key (STRING);
+                          optional group value (LIST) {
+                            repeated group list {
+                              optional int32 element;
+                            }
+                          }
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void sameFieldIdsInDifferentRecordScopesShouldBeAllowed() {
+            record ChildRecord(@FieldId(1) String attr) {}
+            record ParentRecord(
+                    @FieldId(1) String id,
+                    @FieldId(2) ChildRecord child1,
+                    @FieldId(3) Map<String, ChildRecord> child2
+            ) {}
+
+            MessageType schema = defaultConfigSchema.createSchema(ParentRecord.class);
+            String expected = """
+                    message ParentRecord {
+                      optional binary id (STRING) = 1;
+                      optional group child1 = 2 {
+                        optional binary attr (STRING) = 1;
+                      }
+                      optional group child2 (MAP) = 3 {
+                        repeated group key_value {
+                          required binary key (STRING);
+                          optional group value {
+                            optional binary attr (STRING) = 1;
+                          }
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void setWithFieldIdsShouldWorkLikeList() {
+            record TestRecord(@FieldId(1) java.util.Set<String> tags) {}
+
+            MessageType schema = defaultConfigSchema.createSchema(TestRecord.class);
+            String expected = """
+                    message TestRecord {
+                      optional group tags (LIST) = 1 {
+                        repeated group list {
+                          optional binary element (STRING);
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schema.toString());
+        }
+
+        @Test
+        void duplicateFieldIdsInSameRecordShouldThrowException() {
+            record DuplicateIdRecord(
+                    @FieldId(1) String field1,
+                    @FieldId(1) String field2
+            ) {}
+
+            var exception = assertThrows(RecordTypeConversionException.class, () -> {
+                defaultConfigSchema.createSchema(DuplicateIdRecord.class);
+            });
+
+            assertTrue(exception.getMessage().contains("Duplicate field ID 1"));
+            assertTrue(exception.getMessage().contains("DuplicateIdRecord"));
+            assertTrue(exception.getMessage().contains("must be unique within the same record scope"));
+        }
+
+        @Test
+        void duplicateFieldIdsInNestedRecordShouldThrowException() {
+            record NestedDuplicateIdRecord(
+                    @FieldId(10) String attr1,
+                    @FieldId(10) int attr2
+            ) {}
+
+            record ParentRecord(
+                    @FieldId(1) String id,
+                    @FieldId(2) NestedDuplicateIdRecord nested
+            ) {}
+
+            var exception = assertThrows(RecordTypeConversionException.class, () -> {
+                defaultConfigSchema.createSchema(ParentRecord.class);
+            });
+
+            assertTrue(exception.getMessage().contains("Duplicate field ID 10"));
+            assertTrue(exception.getMessage().contains("NestedDuplicateIdRecord"));
+            assertTrue(exception.getMessage().contains("must be unique within the same record scope"));
+        }
+
+        @Test
+        void multipleDuplicateFieldIdsShouldReportFirst() {
+            record MultipleDuplicates(
+                    @FieldId(1) String field1,
+                    @FieldId(2) String field2,
+                    @FieldId(1) String field3,
+                    @FieldId(2) String field4
+            ) {}
+
+            var exception = assertThrows(RecordTypeConversionException.class, () -> {
+                defaultConfigSchema.createSchema(MultipleDuplicates.class);
+            });
+
+            // Should report the first duplicate encountered (field ID 1)
+            assertTrue(exception.getMessage().contains("Duplicate field ID 1"));
+        }
     }
 
     @Nested
