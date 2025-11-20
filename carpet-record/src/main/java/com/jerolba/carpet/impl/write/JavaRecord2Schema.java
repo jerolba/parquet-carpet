@@ -100,34 +100,25 @@ class JavaRecord2Schema {
 
     private List<Type> createGroupFields(Class<?> recordClass, Set<Class<?>> visited) {
         List<Type> fields = new ArrayList<>();
-        Set<Integer> usedFieldIds = new HashSet<>();
-        
+        FieldIdMapper fieldIdMapper = new FieldIdMapper();
         for (var attr : recordClass.getRecordComponents()) {
-            Integer fieldId = getFieldId(attr);
-            if (fieldId != null) {
-                if (usedFieldIds.contains(fieldId)) {
-                    throw new RecordTypeConversionException(
-                        "Duplicate field ID " + fieldId + " found in record " + recordClass.getSimpleName() + 
-                        ". Field IDs must be unique within the same record scope.");
-                }
-                usedFieldIds.add(fieldId);
-            }
-            fields.add(buildRecordField(attr, visited));
+            fields.add(buildRecordField(attr, visited, fieldIdMapper));
         }
         return fields;
     }
 
-    private Type buildRecordField(RecordComponent attr, Set<Class<?>> visited) {
+    private Type buildRecordField(RecordComponent attr, Set<Class<?>> visited, FieldIdMapper fieldIdMapper) {
         String fieldName = fieldToColumnMapper.getColumnName(attr);
         Repetition repetition = isNotNull(attr) ? REQUIRED : OPTIONAL;
         JavaType javaType = new JavaType(attr);
-        Integer fieldId = getFieldId(attr);
+        Integer fieldId = fieldIdMapper.getFieldId(attr);
 
         Type parquetType = buildType(fieldName, javaType, repetition, visited);
         if (parquetType != null) {
             return applyFieldId(parquetType, fieldId);
         } else if (javaType.isCollection()) {
-            return applyFieldId(createCollectionType(fieldName, getParameterizedCollection(attr), repetition, visited), fieldId);
+            return applyFieldId(createCollectionType(fieldName, getParameterizedCollection(attr), repetition, visited),
+                    fieldId);
         } else if (javaType.isMap()) {
             return applyFieldId(createMapType(fieldName, getParameterizedMap(attr), repetition, visited), fieldId);
         }
@@ -338,6 +329,34 @@ class JavaRecord2Schema {
         return isNotNullAnnotated(javaType.getDeclaredAnnotations()) ? REQUIRED : OPTIONAL;
     }
 
+    private static class FieldIdMapper {
+
+        private final Set<Integer> usedFieldIds = new HashSet<>();
+
+        /**
+         * Gets the field ID from a record component if it has the @FieldId annotation.
+         *
+         * @param recordComponent the record component to check
+         * @return the field ID if present, or null if no @FieldId annotation is present
+         */
+        private Integer getFieldId(RecordComponent recordComponent) {
+            FieldId annotation = recordComponent.getAnnotation(FieldId.class);
+            if (annotation == null) {
+                return null;
+            }
+            int fieldId = annotation.value();
+            if (usedFieldIds.contains(fieldId)) {
+                throw new RecordTypeConversionException(
+                        "Duplicate field ID " + fieldId + " found in record "
+                                + recordComponent.getDeclaringRecord().getSimpleName() +
+                                ". Field IDs must be unique within the same record scope.");
+            }
+            usedFieldIds.add(fieldId);
+            return fieldId;
+        }
+
+    }
+
     /**
      * Applies a field ID to an already built Type.
      */
@@ -348,18 +367,4 @@ class JavaRecord2Schema {
         return type;
     }
 
-    /**
-     * Gets the field ID from a record component if it has the @FieldId annotation.
-     *
-     * @param recordComponent
-     *            the record component to check
-     * @return the field ID if present, or null if no @FieldId annotation is present
-     */
-    private static Integer getFieldId(RecordComponent recordComponent) {
-        FieldId annotation = recordComponent.getAnnotation(FieldId.class);
-        if (annotation == null) {
-            return null;
-        }
-        return annotation.value();
-    }
 }
