@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -2420,6 +2421,27 @@ class CarpetWriterTest {
         Map<String, String> metadata = reader.getFileMetaData().getKeyValueMetaData();
         assertEquals("someValue", metadata.get("someKey"));
         assertEquals("bar", metadata.get("foo"));
+    }
+
+
+    @Test
+    void getDataSize() throws IOException {
+
+        record SomeEntity(int value) {
+        }
+
+        var file = createTempFile("data-size", ".parquet").toFile();
+        long dataSize1;
+        long dataSize2;
+        try (var writer = new CarpetWriter<>(new FileSystemOutputFile(file), SomeEntity.class)) {
+            writer.write(new SomeEntity(1));
+            dataSize1 = writer.getDataSize();
+            writer.write(new SomeEntity(2));
+            dataSize2 = writer.getDataSize();
+        }
+        assertTrue(dataSize1 < dataSize2);
+        assertEquals(4, dataSize1);
+        assertEquals(8, dataSize2);
     }
 
     @Nested

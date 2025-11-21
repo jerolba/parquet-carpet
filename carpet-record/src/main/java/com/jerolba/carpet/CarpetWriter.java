@@ -144,6 +144,13 @@ public class CarpetWriter<T> implements Closeable, Consumer<T> {
         }
     }
 
+    /**
+     * @return the total size of data written to the file and buffered in memory
+     */
+    public long getDataSize() {
+        return writer.getDataSize();
+    }
+
     @Override
     public void close() throws IOException {
         writer.close();
