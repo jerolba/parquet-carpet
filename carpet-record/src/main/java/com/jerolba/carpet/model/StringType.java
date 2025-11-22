@@ -17,7 +17,7 @@ package com.jerolba.carpet.model;
 
 import java.util.Set;
 
-public record StringType(boolean isNotNull, BinaryLogicalType logicalType) implements FieldType {
+public record StringType(boolean isNotNull, Integer fieldId, BinaryLogicalType logicalType) implements FieldType {
 
     private static final Set<BinaryLogicalType> VALID_LOGICAL_TYPES = Set.of(
             BinaryLogicalType.STRING,
@@ -31,15 +31,19 @@ public record StringType(boolean isNotNull, BinaryLogicalType logicalType) imple
     }
 
     public StringType notNull() {
-        return new StringType(true, logicalType);
+        return new StringType(true, fieldId, logicalType);
+    }
+
+    public StringType fieldId(Integer fieldId) {
+        return new StringType(isNotNull, fieldId, logicalType);
     }
 
     public StringType asJson() {
-        return new StringType(isNotNull, BinaryLogicalType.JSON);
+        return new StringType(isNotNull, fieldId, BinaryLogicalType.JSON);
     }
 
     public StringType asEnum() {
-        return new StringType(isNotNull, BinaryLogicalType.ENUM);
+        return new StringType(isNotNull, fieldId, BinaryLogicalType.ENUM);
     }
 
     @Override

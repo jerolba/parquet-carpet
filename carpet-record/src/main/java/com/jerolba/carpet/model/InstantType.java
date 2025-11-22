@@ -17,10 +17,14 @@ package com.jerolba.carpet.model;
 
 import java.time.Instant;
 
-public record InstantType(boolean isNotNull) implements FieldType {
+public record InstantType(boolean isNotNull, Integer fieldId) implements FieldType {
 
     public InstantType notNull() {
-        return new InstantType(true);
+        return new InstantType(true, fieldId);
+    }
+
+    public InstantType fieldId(Integer fieldId) {
+        return new InstantType(isNotNull, fieldId);
     }
 
     @Override

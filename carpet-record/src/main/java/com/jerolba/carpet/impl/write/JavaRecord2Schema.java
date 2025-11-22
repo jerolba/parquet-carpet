@@ -59,7 +59,6 @@ import org.apache.parquet.schema.Types;
 import org.apache.parquet.schema.Types.PrimitiveBuilder;
 
 import com.jerolba.carpet.RecordTypeConversionException;
-import com.jerolba.carpet.annotation.FieldId;
 import com.jerolba.carpet.annotation.ParquetBson;
 import com.jerolba.carpet.annotation.ParquetEnum;
 import com.jerolba.carpet.annotation.ParquetGeography;
@@ -327,34 +326,6 @@ class JavaRecord2Schema {
 
     private static Repetition getTypeRepetition(JavaType javaType) {
         return isNotNullAnnotated(javaType.getDeclaredAnnotations()) ? REQUIRED : OPTIONAL;
-    }
-
-    private static class FieldIdMapper {
-
-        private final Set<Integer> usedFieldIds = new HashSet<>();
-
-        /**
-         * Gets the field ID from a record component if it has the @FieldId annotation.
-         *
-         * @param recordComponent the record component to check
-         * @return the field ID if present, or null if no @FieldId annotation is present
-         */
-        private Integer getFieldId(RecordComponent recordComponent) {
-            FieldId annotation = recordComponent.getAnnotation(FieldId.class);
-            if (annotation == null) {
-                return null;
-            }
-            int fieldId = annotation.value();
-            if (usedFieldIds.contains(fieldId)) {
-                throw new RecordTypeConversionException(
-                        "Duplicate field ID " + fieldId + " found in record "
-                                + recordComponent.getDeclaringRecord().getSimpleName() +
-                                ". Field IDs must be unique within the same record scope.");
-            }
-            usedFieldIds.add(fieldId);
-            return fieldId;
-        }
-
     }
 
     /**

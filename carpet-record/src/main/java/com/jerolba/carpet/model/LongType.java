@@ -15,10 +15,14 @@
  */
 package com.jerolba.carpet.model;
 
-public record LongType(boolean isNotNull) implements FieldType {
+public record LongType(boolean isNotNull, Integer fieldId) implements FieldType {
 
     public LongType notNull() {
-        return new LongType(true);
+        return new LongType(true, fieldId);
+    }
+
+    public LongType fieldId(Integer fieldId) {
+        return new LongType(isNotNull, fieldId);
     }
 
     @Override

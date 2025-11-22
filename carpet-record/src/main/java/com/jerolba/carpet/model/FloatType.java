@@ -15,10 +15,14 @@
  */
 package com.jerolba.carpet.model;
 
-public record FloatType(boolean isNotNull) implements FieldType {
+public record FloatType(boolean isNotNull, Integer fieldId) implements FieldType {
 
     public FloatType notNull() {
-        return new FloatType(true);
+        return new FloatType(true, fieldId);
+    }
+
+    public FloatType fieldId(Integer fieldId) {
+        return new FloatType(isNotNull, fieldId);
     }
 
     @Override

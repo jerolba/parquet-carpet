@@ -17,7 +17,7 @@ package com.jerolba.carpet.model;
 
 import java.util.Map;
 
-public record MapType(boolean isNotNull, FieldType keyType, FieldType valueType) implements FieldType {
+public record MapType(boolean isNotNull, Integer fieldId, FieldType keyType, FieldType valueType) implements FieldType {
 
     public MapType {
         if (keyType == null) {
@@ -29,7 +29,11 @@ public record MapType(boolean isNotNull, FieldType keyType, FieldType valueType)
     }
 
     public MapType notNull() {
-        return new MapType(true, keyType, valueType);
+        return new MapType(true, fieldId, keyType, valueType);
+    }
+
+    public MapType fieldId(Integer fieldId) {
+        return new MapType(isNotNull, fieldId, keyType, valueType);
     }
 
     @Override

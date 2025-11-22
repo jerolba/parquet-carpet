@@ -15,10 +15,14 @@
  */
 package com.jerolba.carpet.model;
 
-public record IntegerType(boolean isNotNull) implements FieldType {
+public record IntegerType(boolean isNotNull, Integer fieldId) implements FieldType {
 
     public IntegerType notNull() {
-        return new IntegerType(true);
+        return new IntegerType(true, fieldId);
+    }
+
+    public IntegerType fieldId(Integer fieldId) {
+        return new IntegerType(isNotNull, fieldId);
     }
 
     @Override

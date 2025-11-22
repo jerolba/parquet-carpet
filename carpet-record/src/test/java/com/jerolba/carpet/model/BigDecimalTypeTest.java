@@ -26,7 +26,7 @@ class BigDecimalTypeTest {
 
     @Test
     void validPrecisionAndScale() {
-        BigDecimalType type = new BigDecimalType(true, 10, 2, null);
+        BigDecimalType type = new BigDecimalType(true, null, 10, 2, null);
         assertEquals(10, type.precision());
         assertEquals(2, type.scale());
     }
@@ -41,41 +41,41 @@ class BigDecimalTypeTest {
     @Test
     void precisionMustBeGreaterThanZero() {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> new BigDecimalType(true, 0, 2, null));
+                () -> new BigDecimalType(true, null, 0, 2, null));
         assertEquals("precision must be greater than 0", exception.getMessage());
     }
 
     @Test
     void scaleMustBeZeroOrPositive() {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> new BigDecimalType(true, 10, -1, null));
+                () -> new BigDecimalType(true, null, 10, -1, null));
         assertEquals("scale must be zero or a positive value", exception.getMessage());
     }
 
     @Test
     void scaleMustBeLessThanOrEqualToPrecision() {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> new BigDecimalType(true, 5, 6, null));
+                () -> new BigDecimalType(true, null, 5, 6, null));
         assertEquals("scale must be less than or equal to the precision", exception.getMessage());
     }
 
     @Test
     void scaleMustBeSpecifiedIfPrecisionIsSpecified() {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> new BigDecimalType(true, 10, null, null));
+                () -> new BigDecimalType(true, null, 10, null, null));
         assertEquals("scale must be specified if precision is specified", exception.getMessage());
     }
 
     @Test
     void precisionMustBeSpecifiedIfScaleIsSpecified() {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> new BigDecimalType(true, null, 2, null));
+                () -> new BigDecimalType(true, null, null, 2, null));
         assertEquals("precision must be specified if scale is specified", exception.getMessage());
     }
 
     @Test
     void nullPrecisionAndScaleAreValid() {
-        BigDecimalType type = new BigDecimalType(true, null, null, null);
+        BigDecimalType type = new BigDecimalType(true, null, null, null, null);
         assertNull(type.precision());
         assertNull(type.scale());
     }

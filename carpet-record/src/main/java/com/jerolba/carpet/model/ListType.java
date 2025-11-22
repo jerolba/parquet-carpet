@@ -17,7 +17,7 @@ package com.jerolba.carpet.model;
 
 import java.util.Collection;
 
-public record ListType(boolean isNotNull, FieldType type) implements FieldType, CollectionType {
+public record ListType(boolean isNotNull, Integer fieldId, FieldType type) implements FieldType, CollectionType {
 
     public ListType {
         if (type == null) {
@@ -26,7 +26,11 @@ public record ListType(boolean isNotNull, FieldType type) implements FieldType, 
     }
 
     public ListType notNull() {
-        return new ListType(true, type);
+        return new ListType(true, fieldId, type);
+    }
+
+    public ListType fieldId(Integer fieldId) {
+        return new ListType(isNotNull, fieldId, type);
     }
 
     @Override

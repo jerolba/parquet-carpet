@@ -22,25 +22,31 @@ import com.jerolba.carpet.model.GeometryType.GeospatialType;
 public class GeometryTypeBuilder {
 
     private final boolean notNull;
+    private final Integer fieldId;
 
     GeometryTypeBuilder() {
-        this(false);
+        this(false, null);
     }
 
-    private GeometryTypeBuilder(boolean notNull) {
+    private GeometryTypeBuilder(boolean notNull, Integer fieldId) {
         this.notNull = notNull;
+        this.fieldId = fieldId;
     }
 
     public GeometryTypeBuilder notNull() {
-        return new GeometryTypeBuilder(true);
+        return new GeometryTypeBuilder(true, fieldId);
+    }
+
+    public GeometryTypeBuilder fieldId(Integer fieldId) {
+        return new GeometryTypeBuilder(notNull, fieldId);
     }
 
     public GeometryType asParquetGeometry(String crs) {
-        return new GeometryType(notNull, GeospatialType.GEOMETRY, crs, null);
+        return new GeometryType(notNull, fieldId, GeospatialType.GEOMETRY, crs, null);
     }
 
     public GeometryType asParquetGeography(String crs, EdgeInterpolationAlgorithm algorithm) {
-        return new GeometryType(notNull, GeospatialType.GEOGRAPHY, crs, algorithm);
+        return new GeometryType(notNull, fieldId, GeospatialType.GEOGRAPHY, crs, algorithm);
     }
 
 }

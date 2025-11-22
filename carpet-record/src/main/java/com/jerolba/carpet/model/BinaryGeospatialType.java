@@ -25,9 +25,9 @@ public final class BinaryGeospatialType extends BinaryType {
     private final String crs;
     private final EdgeInterpolationAlgorithm algorithm;
 
-    BinaryGeospatialType(boolean isNotNull, GeospatialType geospatialType, String crs,
+    BinaryGeospatialType(boolean isNotNull, Integer fieldId, GeospatialType geospatialType, String crs,
             EdgeInterpolationAlgorithm algorithm) {
-        super(isNotNull);
+        super(isNotNull, fieldId);
         this.geospatialType = geospatialType;
         this.crs = crs;
         this.algorithm = algorithm;
@@ -35,7 +35,12 @@ public final class BinaryGeospatialType extends BinaryType {
 
     @Override
     public BinaryGeospatialType notNull() {
-        return new BinaryGeospatialType(true, geospatialType, crs, algorithm);
+        return new BinaryGeospatialType(true, fieldId(), geospatialType, crs, algorithm);
+    }
+
+    @Override
+    public BinaryGeospatialType fieldId(Integer fieldId) {
+        return new BinaryGeospatialType(isNotNull(), fieldId, geospatialType, crs, algorithm);
     }
 
     public GeospatialType geospatialType() {

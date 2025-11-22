@@ -18,21 +18,27 @@ package com.jerolba.carpet.model;
 public class ListTypeBuilder {
 
     private final boolean notNull;
+    private final Integer fieldId;
 
     ListTypeBuilder() {
-        this(false);
+        this(false, null);
     }
 
-    private ListTypeBuilder(boolean notNull) {
+    private ListTypeBuilder(boolean notNull, Integer fieldId) {
         this.notNull = notNull;
+        this.fieldId = fieldId;
     }
 
     public ListTypeBuilder notNull() {
-        return new ListTypeBuilder(true);
+        return new ListTypeBuilder(true, fieldId);
+    }
+
+    public ListTypeBuilder fieldId(Integer fieldId) {
+        return new ListTypeBuilder(notNull, fieldId);
     }
 
     public ListType ofType(FieldType type) {
-        return new ListType(notNull, type);
+        return new ListType(notNull, fieldId, type);
     }
 
 }

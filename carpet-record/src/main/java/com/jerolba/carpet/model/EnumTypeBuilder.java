@@ -18,27 +18,33 @@ package com.jerolba.carpet.model;
 public class EnumTypeBuilder {
 
     private final boolean notNull;
+    private final Integer fieldId;
     private final BinaryLogicalType logicalType;
 
     EnumTypeBuilder() {
-        this(false, null);
+        this(false, null, null);
     }
 
-    private EnumTypeBuilder(boolean notNull, BinaryLogicalType logicalType) {
+    private EnumTypeBuilder(boolean notNull, Integer fieldId, BinaryLogicalType logicalType) {
         this.notNull = notNull;
+        this.fieldId = fieldId;
         this.logicalType = logicalType;
     }
 
     public EnumTypeBuilder notNull() {
-        return new EnumTypeBuilder(true, logicalType);
+        return new EnumTypeBuilder(true, fieldId, logicalType);
+    }
+
+    public EnumTypeBuilder fieldId(Integer fieldId) {
+        return new EnumTypeBuilder(notNull, fieldId, logicalType);
     }
 
     public EnumTypeBuilder asString() {
-        return new EnumTypeBuilder(notNull, BinaryLogicalType.STRING);
+        return new EnumTypeBuilder(notNull, fieldId, BinaryLogicalType.STRING);
     }
 
     public EnumType ofType(Class<? extends Enum<?>> enumClass) {
-        return new EnumType(notNull, enumClass, logicalType);
+        return new EnumType(notNull, fieldId, enumClass, logicalType);
     }
 
 }

@@ -17,10 +17,14 @@ package com.jerolba.carpet.model;
 
 import java.util.UUID;
 
-public record UuidType(boolean isNotNull) implements FieldType {
+public record UuidType(boolean isNotNull, Integer fieldId) implements FieldType {
 
     public UuidType notNull() {
-        return new UuidType(true);
+        return new UuidType(true, fieldId);
+    }
+
+    public UuidType fieldId(Integer fieldId) {
+        return new UuidType(isNotNull, fieldId);
     }
 
     @Override

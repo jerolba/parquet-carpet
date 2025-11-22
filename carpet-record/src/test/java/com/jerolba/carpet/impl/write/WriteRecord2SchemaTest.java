@@ -42,6 +42,7 @@ import static com.jerolba.carpet.model.FieldTypes.VARIANT;
 import static com.jerolba.carpet.model.FieldTypes.writeRecordModel;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -51,6 +52,7 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.Locale.Category;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.apache.parquet.column.schema.EdgeInterpolationAlgorithm;
@@ -65,6 +67,7 @@ import com.jerolba.carpet.AnnotatedLevels;
 import com.jerolba.carpet.ColumnNamingStrategy;
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.TimeUnit;
+import com.jerolba.carpet.annotation.FieldId;
 import com.jerolba.carpet.annotation.NotNull;
 import com.jerolba.carpet.annotation.ParquetBson;
 import com.jerolba.carpet.annotation.ParquetEnum;
@@ -3251,6 +3254,404 @@ class WriteRecord2SchemaTest {
             assertEquals(expected, schemaWithRootType(rootType).toString());
         }
 
+    }
+
+    @Nested
+    class FieldIdMapping {
+
+        @Test
+        void simpleRecordWithFieldIds() {
+            record SimpleRecord(
+                    @FieldId(1) String uuid,
+                    @FieldId(2) int statusCode,
+                    @FieldId(3) long durationMillis,
+                    @FieldId(4) String error) {
+            }
+
+            var rootType = writeRecordModel(SimpleRecord.class)
+                    .withField("uuid", STRING.fieldId(1), SimpleRecord::uuid)
+                    .withField("statusCode", INTEGER.notNull().fieldId(2), SimpleRecord::statusCode)
+                    .withField("durationMillis", LONG.notNull().fieldId(3), SimpleRecord::durationMillis)
+                    .withField("error", STRING.fieldId(4), SimpleRecord::error);
+
+            String expected = """
+                    message SimpleRecord {
+                      optional binary uuid (STRING) = 1;
+                      required int32 statusCode = 2;
+                      required int64 durationMillis = 3;
+                      optional binary error (STRING) = 4;
+                    }
+                    """;
+            assertEquals(expected, schemaWithRootType(rootType).toString());
+        }
+
+        @Test
+        void mixedRecordWithAndWithoutFieldIds() {
+            record MixedRecord(
+                    @FieldId(10) String id,
+                    String name,
+                    @FieldId(20) int value) {
+            }
+
+            var rootType = writeRecordModel(MixedRecord.class)
+                    .withField("id", STRING.fieldId(10), MixedRecord::id)
+                    .withField("name", STRING, MixedRecord::name)
+                    .withField("value", INTEGER.notNull().fieldId(20), MixedRecord::value);
+
+            String expected = """
+                    message MixedRecord {
+                      optional binary id (STRING) = 10;
+                      optional binary name (STRING);
+                      required int32 value = 20;
+                    }
+                    """;
+            assertEquals(expected, schemaWithRootType(rootType).toString());
+        }
+
+        @Test
+        void collectionWithFieldIds() {
+            record CollectionRecord(@FieldId(1) String id, @FieldId(2) List<Integer> values) {
+            }
+
+            var rootType = writeRecordModel(CollectionRecord.class)
+                    .withField("id", STRING.fieldId(1), CollectionRecord::id)
+                    .withField("values", LIST.ofType(INTEGER).fieldId(2), CollectionRecord::values);
+
+            String expected = """
+                    message CollectionRecord {
+                      optional binary id (STRING) = 1;
+                      optional group values (LIST) = 2 {
+                        repeated group list {
+                          optional int32 element;
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schemaWithRootType(rootType).toString());
+        }
+
+        @Test
+        void mapWithFieldIds() {
+            record MapRecord(@FieldId(1) String id, @FieldId(2) Map<String, Integer> scores) {
+            }
+
+            var rootType = writeRecordModel(MapRecord.class)
+                    .withField("id", STRING.fieldId(1), MapRecord::id)
+                    .withField("scores", MAP.ofTypes(STRING, INTEGER).fieldId(2), MapRecord::scores);
+
+            String expected = """
+                    message MapRecord {
+                      optional binary id (STRING) = 1;
+                      optional group scores (MAP) = 2 {
+                        repeated group key_value {
+                          required binary key (STRING);
+                          optional int32 value;
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schemaWithRootType(rootType).toString());
+        }
+
+        @Test
+        void nestedRecordWithFieldIds() {
+            record ChildRecord(@FieldId(100) String key, @FieldId(101) int value) {
+            }
+            record ParentRecord(@FieldId(1) long id, @FieldId(2) String name, @FieldId(3) ChildRecord child) {
+            }
+
+            var childType = writeRecordModel(ChildRecord.class)
+                    .withField("key", STRING.fieldId(100), ChildRecord::key)
+                    .withField("value", INTEGER.notNull().fieldId(101), ChildRecord::value);
+
+            var rootType = writeRecordModel(ParentRecord.class)
+                    .withField("id", LONG.notNull().fieldId(1), ParentRecord::id)
+                    .withField("name", STRING.fieldId(2), ParentRecord::name)
+                    .withField("child", childType.fieldId(3), ParentRecord::child);
+
+            String expected = """
+                    message ParentRecord {
+                      required int64 id = 1;
+                      optional binary name (STRING) = 2;
+                      optional group child = 3 {
+                        optional binary key (STRING) = 100;
+                        required int32 value = 101;
+                      }
+                    }
+                    """;
+            assertEquals(expected, schemaWithRootType(rootType).toString());
+        }
+
+        @Test
+        void complexNestedStructureWithFieldIds() {
+            record ChildRecord1(
+                    @FieldId(11) String attribute,
+                    @FieldId(12) long value) {
+            }
+
+            record ChildRecord2(
+                    @FieldId(21) String attribute,
+                    @FieldId(22) long value) {
+            }
+
+            record ChildRecord3(
+                    @FieldId(31) String attribute,
+                    @FieldId(32) long value) {
+            }
+
+            record ParentRecord(
+                    @FieldId(1) String id,
+                    @FieldId(2) int status,
+                    @FieldId(3) long durationMillis,
+                    @FieldId(4) String error,
+                    @FieldId(5) ChildRecord1 foo,
+                    @FieldId(6) List<ChildRecord2> bar,
+                    @FieldId(7) Map<String, ChildRecord3> baz) {
+            }
+
+            var childType1 = writeRecordModel(ChildRecord1.class)
+                    .withField("attribute", STRING.fieldId(11), ChildRecord1::attribute)
+                    .withField("value", LONG.notNull().fieldId(12), ChildRecord1::value);
+
+            var childType2 = writeRecordModel(ChildRecord2.class)
+                    .withField("attribute", STRING.fieldId(21), ChildRecord2::attribute)
+                    .withField("value", LONG.notNull().fieldId(22), ChildRecord2::value);
+
+            var childType3 = writeRecordModel(ChildRecord3.class)
+                    .withField("attribute", STRING.fieldId(31), ChildRecord3::attribute)
+                    .withField("value", LONG.notNull().fieldId(32), ChildRecord3::value);
+
+            var rootType = writeRecordModel(ParentRecord.class)
+                    .withField("id", STRING.fieldId(1), ParentRecord::id)
+                    .withField("status", INTEGER.notNull().fieldId(2), ParentRecord::status)
+                    .withField("durationMillis", LONG.notNull().fieldId(3), ParentRecord::durationMillis)
+                    .withField("error", STRING.fieldId(4), ParentRecord::error)
+                    .withField("foo", childType1.fieldId(5), ParentRecord::foo)
+                    .withField("bar", LIST.ofType(childType2).fieldId(6), ParentRecord::bar)
+                    .withField("baz", MAP.ofTypes(STRING, childType3).fieldId(7), ParentRecord::baz);
+
+            String expected = """
+                    message ParentRecord {
+                      optional binary id (STRING) = 1;
+                      required int32 status = 2;
+                      required int64 durationMillis = 3;
+                      optional binary error (STRING) = 4;
+                      optional group foo = 5 {
+                        optional binary attribute (STRING) = 11;
+                        required int64 value = 12;
+                      }
+                      optional group bar (LIST) = 6 {
+                        repeated group list {
+                          optional group element {
+                            optional binary attribute (STRING) = 21;
+                            required int64 value = 22;
+                          }
+                        }
+                      }
+                      optional group baz (MAP) = 7 {
+                        repeated group key_value {
+                          required binary key (STRING);
+                          optional group value {
+                            optional binary attribute (STRING) = 31;
+                            required int64 value = 32;
+                          }
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schemaWithRootType(rootType).toString());
+        }
+
+        @Test
+        void nestedRecordsInListElementsShouldHaveFieldIds() {
+            record Item(@FieldId(100) String name, @FieldId(101) int quantity) {
+            }
+            record TestRecord(@FieldId(1) List<Item> items) {
+            }
+
+            var itemType = writeRecordModel(Item.class)
+                    .withField("name", STRING.fieldId(100), Item::name)
+                    .withField("quantity", INTEGER.notNull().fieldId(101), Item::quantity);
+
+            var rootType = writeRecordModel(TestRecord.class)
+                    .withField("items", LIST.ofType(itemType).fieldId(1), TestRecord::items);
+
+            String expected = """
+                    message TestRecord {
+                      optional group items (LIST) = 1 {
+                        repeated group list {
+                          optional group element {
+                            optional binary name (STRING) = 100;
+                            required int32 quantity = 101;
+                          }
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schemaWithRootType(rootType).toString());
+        }
+
+        @Test
+        void nestedRecordsInMapValuesShouldHaveFieldIds() {
+            record Item(@FieldId(200) String description, @FieldId(201) double price) {
+            }
+            record TestRecord(@FieldId(1) Map<String, Item> products) {
+            }
+
+            var itemType = writeRecordModel(Item.class)
+                    .withField("description", STRING.fieldId(200), Item::description)
+                    .withField("price", DOUBLE.notNull().fieldId(201), Item::price);
+
+            var rootType = writeRecordModel(TestRecord.class)
+                    .withField("products", MAP.ofTypes(STRING, itemType).fieldId(1), TestRecord::products);
+
+            String expected = """
+                    message TestRecord {
+                      optional group products (MAP) = 1 {
+                        repeated group key_value {
+                          required binary key (STRING);
+                          optional group value {
+                            optional binary description (STRING) = 200;
+                            required double price = 201;
+                          }
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schemaWithRootType(rootType).toString());
+        }
+
+        @Test
+        void nestedCollectionsShouldHandleFieldIdsCorrectly() {
+            record TestRecord(
+                    @FieldId(1) List<List<String>> nestedLists,
+                    @FieldId(2) Map<String, List<Integer>> mapWithLists) {
+            }
+
+            var rootType = writeRecordModel(TestRecord.class)
+                    .withField("nestedLists", LIST.ofType(LIST.ofType(STRING)).fieldId(1), TestRecord::nestedLists)
+                    .withField("mapWithLists", MAP.ofTypes(STRING, LIST.ofType(INTEGER)).fieldId(2),
+                            TestRecord::mapWithLists);
+
+            String expected = """
+                    message TestRecord {
+                      optional group nestedLists (LIST) = 1 {
+                        repeated group list {
+                          optional group element (LIST) {
+                            repeated group list {
+                              optional binary element (STRING);
+                            }
+                          }
+                        }
+                      }
+                      optional group mapWithLists (MAP) = 2 {
+                        repeated group key_value {
+                          required binary key (STRING);
+                          optional group value (LIST) {
+                            repeated group list {
+                              optional int32 element;
+                            }
+                          }
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schemaWithRootType(rootType).toString());
+        }
+
+        @Test
+        void sameFieldIdsInDifferentRecordScopesShouldBeAllowed() {
+            record ChildRecord(@FieldId(1) String attr) {
+            }
+            record ParentRecord(
+                    @FieldId(1) String id,
+                    @FieldId(2) ChildRecord child1,
+                    @FieldId(3) Map<String, ChildRecord> child2) {
+            }
+
+            var childType = writeRecordModel(ChildRecord.class)
+                    .withField("attr", STRING.fieldId(1), ChildRecord::attr);
+
+            var rootType = writeRecordModel(ParentRecord.class)
+                    .withField("id", STRING.fieldId(1), ParentRecord::id)
+                    .withField("child1", childType.fieldId(2), ParentRecord::child1)
+                    .withField("child2", MAP.ofTypes(STRING, childType).fieldId(3), ParentRecord::child2);
+
+            String expected = """
+                    message ParentRecord {
+                      optional binary id (STRING) = 1;
+                      optional group child1 = 2 {
+                        optional binary attr (STRING) = 1;
+                      }
+                      optional group child2 (MAP) = 3 {
+                        repeated group key_value {
+                          required binary key (STRING);
+                          optional group value {
+                            optional binary attr (STRING) = 1;
+                          }
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schemaWithRootType(rootType).toString());
+        }
+
+        @Test
+        void setWithFieldIdsShouldWorkLikeList() {
+            record TestRecord(@FieldId(1) Set<String> tags) {
+            }
+
+            var rootType = writeRecordModel(TestRecord.class)
+                    .withField("tags", LIST.ofType(STRING).fieldId(1), TestRecord::tags);
+
+            String expected = """
+                    message TestRecord {
+                      optional group tags (LIST) = 1 {
+                        repeated group list {
+                          optional binary element (STRING);
+                        }
+                      }
+                    }
+                    """;
+            assertEquals(expected, schemaWithRootType(rootType).toString());
+        }
+
+        @Test
+        void duplicateFieldIdsInSameRecordShouldThrowException() {
+            record DuplicateIdRecord(
+                    @FieldId(1) String field1,
+                    @FieldId(1) String field2) {
+            }
+
+            var exception = assertThrows(RecordTypeConversionException.class,
+                    () -> writeRecordModel(DuplicateIdRecord.class)
+                            .withField("field1", STRING.fieldId(1), DuplicateIdRecord::field1)
+                            .withField("field2", STRING.fieldId(1), DuplicateIdRecord::field2));
+
+            assertTrue(exception.getMessage().contains("Duplicate field ID 1"));
+            assertTrue(exception.getMessage().contains("DuplicateIdRecord"));
+            assertTrue(exception.getMessage().contains("must be unique within the same record scope"));
+        }
+
+        @Test
+        void multipleDuplicateFieldIdsShouldReportFirst() {
+            record MultipleDuplicates(
+                    @FieldId(1) String field1,
+                    @FieldId(2) String field2,
+                    @FieldId(1) String field3,
+                    @FieldId(2) String field4) {
+            }
+
+            var exception = assertThrows(RecordTypeConversionException.class,
+                    () -> writeRecordModel(MultipleDuplicates.class)
+                            .withField("field1", STRING.fieldId(1), MultipleDuplicates::field1)
+                            .withField("field2", STRING.fieldId(2), MultipleDuplicates::field2)
+                            .withField("field3", STRING.fieldId(1), MultipleDuplicates::field3)
+                            .withField("field4", STRING.fieldId(2), MultipleDuplicates::field4));
+
+            // Should report the first duplicate encountered (field ID 1)
+            assertTrue(exception.getMessage().contains("Duplicate field ID 1"));
+        }
     }
 
     public static ConfigurationBuilder config() {
