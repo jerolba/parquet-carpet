@@ -24,10 +24,9 @@ import static com.jerolba.carpet.model.FieldTypes.writeRecordModel;
 import java.lang.reflect.TypeVariable;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.function.ToDoubleFunction;
-import java.util.function.ToIntFunction;
-import java.util.function.ToLongFunction;
+import java.util.function.UnaryOperator;
 
 import com.jerolba.carpet.RecordTypeConversionException;
 import com.jerolba.carpet.annotation.ParquetBson;
@@ -42,18 +41,28 @@ import com.jerolba.carpet.impl.JavaType;
 import com.jerolba.carpet.impl.Parameterized;
 import com.jerolba.carpet.impl.ParameterizedCollection;
 import com.jerolba.carpet.impl.ParameterizedMap;
+import com.jerolba.carpet.model.BigDecimalType;
 import com.jerolba.carpet.model.BinaryType;
+import com.jerolba.carpet.model.BooleanType;
+import com.jerolba.carpet.model.ByteType;
+import com.jerolba.carpet.model.DoubleType;
 import com.jerolba.carpet.model.EnumType;
 import com.jerolba.carpet.model.FieldType;
 import com.jerolba.carpet.model.FieldTypes;
-import com.jerolba.carpet.model.GeometryTypeBuilder;
-import com.jerolba.carpet.model.ListTypeBuilder;
-import com.jerolba.carpet.model.MapTypeBuilder;
+import com.jerolba.carpet.model.FloatType;
+import com.jerolba.carpet.model.GeometryType;
+import com.jerolba.carpet.model.InstantType;
+import com.jerolba.carpet.model.IntegerType;
+import com.jerolba.carpet.model.ListType;
+import com.jerolba.carpet.model.LocalDateTimeType;
+import com.jerolba.carpet.model.LocalDateType;
+import com.jerolba.carpet.model.LocalTimeType;
+import com.jerolba.carpet.model.LongType;
+import com.jerolba.carpet.model.MapType;
+import com.jerolba.carpet.model.ShortType;
 import com.jerolba.carpet.model.StringType;
-import com.jerolba.carpet.model.ToBooleanFunction;
-import com.jerolba.carpet.model.ToByteFunction;
-import com.jerolba.carpet.model.ToFloatFunction;
-import com.jerolba.carpet.model.ToShortFunction;
+import com.jerolba.carpet.model.UuidType;
+import com.jerolba.carpet.model.VariantType;
 import com.jerolba.carpet.model.WriteRecordModelType;
 
 public class JavaRecord2WriteModel {
@@ -65,21 +74,21 @@ public class JavaRecord2WriteModel {
     }
 
     public <T> WriteRecordModelType<T> createModel(Class<T> recordClass) {
-        return buildRecordModel(recordClass, false, new HashSet<>());
+        return buildRecordModel(recordClass, new Modifiers(false), new HashSet<>());
     }
 
-    private <T> WriteRecordModelType<T> buildRecordModel(Class<T> classToModel, boolean isNotNull,
+    private <T> WriteRecordModelType<T> buildRecordModel(Class<T> classToModel, Modifiers modifiers,
             Set<Class<?>> visited) {
         visited = validateNotVisitedRecord(classToModel, visited);
 
         WriteRecordModelType<T> writeModel = writeRecordModel(classToModel);
         createRecordFields(writeModel, classToModel, visited);
-        return isNotNull ? writeModel.notNull() : writeModel;
+        return modifiers.modify(writeModel, WriteRecordModelType::notNull, WriteRecordModelType::fieldId);
     }
 
     private <T> void createRecordFields(WriteRecordModelType<T> writeModel, Class<T> recordClass,
             Set<Class<?>> visited) {
-
+        FieldIdMapper fieldIdMapper = new FieldIdMapper();
         for (var attr : recordClass.getRecordComponents()) {
             java.lang.reflect.Type genericType = attr.getGenericType();
             if (genericType instanceof TypeVariable<?>) {
@@ -87,80 +96,82 @@ public class JavaRecord2WriteModel {
             }
             String parquetFieldName = fieldToColumnMapper.getColumnName(attr);
             Class<?> type = attr.getType();
-            JavaType javaType = new JavaType(type, attr.getDeclaredAnnotations());
+            var javaType = new JavaType(type, attr.getDeclaredAnnotations());
             boolean notNull = type.isPrimitive() || isNotNull(attr);
+            var modifiers = new Modifiers(notNull, fieldIdMapper.getFieldId(attr));
             FieldType fieldType = null;
             if (javaType.isCollection()) {
                 var parameterizedCollection = Parameterized.getParameterizedCollection(attr);
-                fieldType = createCollectionType(parameterizedCollection, notNull, visited);
+                fieldType = createCollectionType(parameterizedCollection, modifiers, visited);
             } else if (javaType.isMap()) {
                 var parameterizedMap = Parameterized.getParameterizedMap(attr);
-                fieldType = createMapType(parameterizedMap, notNull, visited);
+                fieldType = createMapType(parameterizedMap, modifiers, visited);
             } else {
-                fieldType = simpleOrCompositeClass(javaType, notNull, visited);
+                fieldType = simpleOrCompositeClass(javaType, modifiers, visited);
             }
             if (!type.isPrimitive()) {
                 writeModel.withField(parquetFieldName, fieldType,
                         (Function<T, Object>) Reflection.recordAccessor(recordClass, attr));
             } else if (javaType.isInteger()) {
-                writeModel.withField(parquetFieldName,
-                        (ToIntFunction<T>) Reflection.intFieldAccessor(recordClass, attr.getName()));
+                writeModel.withPrimitiveField(parquetFieldName, fieldType,
+                        Reflection.intFieldAccessor(recordClass, attr.getName()));
             } else if (javaType.isLong()) {
-                writeModel.withField(parquetFieldName,
-                        (ToLongFunction<T>) Reflection.longFieldAccessor(recordClass, attr.getName()));
+                writeModel.withPrimitiveField(parquetFieldName, fieldType,
+                        Reflection.longFieldAccessor(recordClass, attr.getName()));
             } else if (javaType.isFloat()) {
-                writeModel.withField(parquetFieldName,
-                        (ToFloatFunction<T>) Reflection.floatFieldAccessor(recordClass, attr.getName()));
+                writeModel.withPrimitiveField(parquetFieldName, fieldType,
+                        Reflection.floatFieldAccessor(recordClass, attr.getName()));
             } else if (javaType.isDouble()) {
-                writeModel.withField(parquetFieldName,
-                        (ToDoubleFunction<T>) Reflection.doubleFieldAccessor(recordClass, attr.getName()));
+                writeModel.withPrimitiveField(parquetFieldName, fieldType,
+                        Reflection.doubleFieldAccessor(recordClass, attr.getName()));
             } else if (javaType.isShort()) {
-                writeModel.withField(parquetFieldName,
-                        (ToShortFunction<T>) Reflection.shortFieldAccessor(recordClass, attr.getName()));
+                writeModel.withPrimitiveField(parquetFieldName, fieldType,
+                        Reflection.shortFieldAccessor(recordClass, attr.getName()));
             } else if (javaType.isByte()) {
-                writeModel.withField(parquetFieldName,
-                        (ToByteFunction<T>) Reflection.byteFieldAccessor(recordClass, attr.getName()));
+                writeModel.withPrimitiveField(parquetFieldName, fieldType,
+                        Reflection.byteFieldAccessor(recordClass, attr.getName()));
             } else if (javaType.isBoolean()) {
-                writeModel.withField(parquetFieldName,
-                        (ToBooleanFunction<T>) Reflection.booleanFieldAccessor(recordClass, attr.getName()));
+                writeModel.withPrimitiveField(parquetFieldName, fieldType,
+                        Reflection.booleanFieldAccessor(recordClass, attr.getName()));
             } else {
                 throw new RecordTypeConversionException("Unsupported primitive type: " + type);
             }
         }
     }
 
-    private FieldType simpleOrCompositeClass(JavaType javaType, boolean isNotNull, Set<Class<?>> visited) {
-        FieldType simple = buildSimpleType(javaType, isNotNull);
-        return simple == null ? buildRecordModel(javaType.getJavaType(), isNotNull, visited) : simple;
+    private FieldType simpleOrCompositeClass(JavaType javaType, Modifiers modifiers, Set<Class<?>> visited) {
+        FieldType simple = buildSimpleType(javaType, modifiers);
+        return simple == null ? buildRecordModel(javaType.getJavaType(), modifiers, visited) : simple;
     }
 
-    private FieldType createCollectionType(ParameterizedCollection generic, boolean isNotNull, Set<Class<?>> visited) {
-        ListTypeBuilder list = isNotNull ? LIST.notNull() : LIST;
-        return list.ofType(createGenericType(generic, visited));
+    private ListType createCollectionType(ParameterizedCollection generic, Modifiers modifiers, Set<Class<?>> visited) {
+        ListType list = LIST.ofType(createGenericType(generic, visited));
+        return modifiers.modify(list, ListType::notNull, ListType::fieldId);
     }
 
     private FieldType createGenericType(ParameterizedCollection generic, Set<Class<?>> visited) {
         JavaType actualJavaType = generic.getActualJavaType();
         boolean typeIsNotNull = isNotNullAnnotated(actualJavaType.getDeclaredAnnotations());
+        var modifiers = new Modifiers(typeIsNotNull);
         if (generic.isCollection()) {
-            return createCollectionType(generic.getAsCollection(), typeIsNotNull, visited);
+            return createCollectionType(generic.getAsCollection(), modifiers, visited);
         } else if (generic.isMap()) {
-            return createMapType(generic.getAsMap(), typeIsNotNull, visited);
+            return createMapType(generic.getAsMap(), modifiers, visited);
         }
-        return simpleOrCompositeClass(actualJavaType, typeIsNotNull, visited);
+        return simpleOrCompositeClass(actualJavaType, modifiers, visited);
     }
 
-    private FieldType createMapType(ParameterizedMap parametized, boolean isNotNull, Set<Class<?>> visited) {
+    private MapType createMapType(ParameterizedMap parametized, Modifiers modifiers, Set<Class<?>> visited) {
         ParameterizedCollection genericKey = parametized.getGenericKey();
         if (genericKey.isCollection() || genericKey.isMap()) {
             throw new RuntimeException("Maps with collections or maps as keys are not supported");
         }
 
-        FieldType nestedKey = simpleOrCompositeClass(genericKey.getActualJavaType(), true, visited);
+        FieldType nestedKey = simpleOrCompositeClass(genericKey.getActualJavaType(), new Modifiers(true), visited);
         FieldType nestedValue = createGenericType(parametized.getGenericValue(), visited);
         if (nestedKey != null && nestedValue != null) {
-            MapTypeBuilder map = isNotNull ? MAP.notNull() : MAP;
-            return map.ofTypes(nestedKey, nestedValue);
+            MapType map = MAP.ofTypes(nestedKey, nestedValue);
+            return modifiers.modify(map, MapType::notNull, MapType::fieldId);
         }
         throw new RecordTypeConversionException("Unsuported type in Map");
     }
@@ -177,85 +188,76 @@ public class JavaRecord2WriteModel {
         return visited;
     }
 
-    public static FieldType buildSimpleType(JavaType javaType, boolean isNotNull) {
+    public static FieldType buildSimpleType(JavaType javaType, Modifiers modifiers) {
         if (javaType.isInteger()) {
-            return isNotNull ? FieldTypes.INTEGER.notNull() : FieldTypes.INTEGER;
+            return modifiers.modify(FieldTypes.INTEGER, IntegerType::notNull, IntegerType::fieldId);
         }
         if (javaType.isLong()) {
-            return isNotNull ? FieldTypes.LONG.notNull() : FieldTypes.LONG;
+            return modifiers.modify(FieldTypes.LONG, LongType::notNull, LongType::fieldId);
         }
         if (javaType.isFloat()) {
-            return isNotNull ? FieldTypes.FLOAT.notNull() : FieldTypes.FLOAT;
+            return modifiers.modify(FieldTypes.FLOAT, FloatType::notNull, FloatType::fieldId);
         }
         if (javaType.isDouble()) {
-            return isNotNull ? FieldTypes.DOUBLE.notNull() : FieldTypes.DOUBLE;
+            return modifiers.modify(FieldTypes.DOUBLE, DoubleType::notNull, DoubleType::fieldId);
         }
         if (javaType.isBoolean()) {
-            return isNotNull ? FieldTypes.BOOLEAN.notNull() : FieldTypes.BOOLEAN;
+            return modifiers.modify(FieldTypes.BOOLEAN, BooleanType::notNull, BooleanType::fieldId);
         }
         if (javaType.isShort()) {
-            return isNotNull ? FieldTypes.SHORT.notNull() : FieldTypes.SHORT;
+            return modifiers.modify(FieldTypes.SHORT, ShortType::notNull, ShortType::fieldId);
         }
         if (javaType.isByte()) {
-            return isNotNull ? FieldTypes.BYTE.notNull() : FieldTypes.BYTE;
+            return modifiers.modify(FieldTypes.BYTE, ByteType::notNull, ByteType::fieldId);
         }
         if (javaType.isString()) {
-            return stringType(javaType, isNotNull);
+            return modifiers.modify(stringType(javaType), StringType::notNull, StringType::fieldId);
         }
         if (javaType.isBinary()) {
-            return binaryType(javaType, isNotNull);
+            return modifiers.modify(binaryType(javaType), BinaryType::notNull, BinaryType::fieldId);
         }
         if (javaType.isEnum()) {
-            return enumType(javaType, isNotNull);
+            return modifiers.modify(enumType(javaType), EnumType::notNull, EnumType::fieldId);
         }
         if (javaType.isUuid()) {
-            return isNotNull ? FieldTypes.UUID.notNull() : FieldTypes.UUID;
+            return modifiers.modify(FieldTypes.UUID, UuidType::notNull, UuidType::fieldId);
         }
         if (javaType.isBigDecimal()) {
-            var bigDecimal = isNotNull ? FieldTypes.BIG_DECIMAL.notNull() : FieldTypes.BIG_DECIMAL;
-            PrecisionScale precisionScale = javaType.getAnnotation(PrecisionScale.class);
-            if (precisionScale != null) {
-                bigDecimal = bigDecimal.withPrecisionScale(precisionScale.precision(), precisionScale.scale());
-            }
-            Rounding rounding = javaType.getAnnotation(Rounding.class);
-            if (rounding != null) {
-                bigDecimal = bigDecimal.withRoundingMode(rounding.value());
-            }
-            return bigDecimal;
+            return modifiers.modify(bigDecimalType(javaType), BigDecimalType::notNull, BigDecimalType::fieldId);
         }
         if (javaType.isLocalDate()) {
-            return isNotNull ? FieldTypes.LOCAL_DATE.notNull() : FieldTypes.LOCAL_DATE;
+            return modifiers.modify(FieldTypes.LOCAL_DATE, LocalDateType::notNull, LocalDateType::fieldId);
         }
         if (javaType.isLocalTime()) {
-            return isNotNull ? FieldTypes.LOCAL_TIME.notNull() : FieldTypes.LOCAL_TIME;
+            return modifiers.modify(FieldTypes.LOCAL_TIME, LocalTimeType::notNull, LocalTimeType::fieldId);
         }
         if (javaType.isLocalDateTime()) {
-            return isNotNull ? FieldTypes.LOCAL_DATE_TIME.notNull() : FieldTypes.LOCAL_DATE_TIME;
+            return modifiers.modify(FieldTypes.LOCAL_DATE_TIME, LocalDateTimeType::notNull, LocalDateTimeType::fieldId);
         }
         if (javaType.isInstant()) {
-            return isNotNull ? FieldTypes.INSTANT.notNull() : FieldTypes.INSTANT;
+            return modifiers.modify(FieldTypes.INSTANT, InstantType::notNull, InstantType::fieldId);
         }
         if (javaType.isGeometry()) {
-            return geometryType(javaType, isNotNull);
+            return modifiers.modify(geometryType(javaType), GeometryType::notNull, GeometryType::fieldId);
         }
         if (javaType.isVariant()) {
-            return isNotNull ? FieldTypes.VARIANT.notNull() : FieldTypes.VARIANT;
+            return modifiers.modify(FieldTypes.VARIANT, VariantType::notNull, VariantType::fieldId);
         }
         return null;
     }
 
-    private static FieldType stringType(JavaType javaType, boolean isNotNull) {
-        StringType type = isNotNull ? FieldTypes.STRING.notNull() : FieldTypes.STRING;
+    private static StringType stringType(JavaType javaType) {
+        StringType type = FieldTypes.STRING;
         if (javaType.isAnnotatedWith(ParquetJson.class)) {
-            type = type.asJson();
+            type = FieldTypes.STRING.asJson();
         } else if (javaType.isAnnotatedWith(ParquetEnum.class)) {
-            type = type.asEnum();
+            type = FieldTypes.STRING.asEnum();
         }
         return type;
     }
 
-    private static FieldType binaryType(JavaType javaType, boolean isNotNull) {
-        BinaryType binary = isNotNull ? FieldTypes.BINARY.notNull() : FieldTypes.BINARY;
+    private static BinaryType binaryType(JavaType javaType) {
+        BinaryType binary = FieldTypes.BINARY;
         if (javaType.isAnnotatedWith(ParquetString.class)) {
             return binary.asString();
         } else if (javaType.isAnnotatedWith(ParquetJson.class)) {
@@ -275,27 +277,54 @@ public class JavaRecord2WriteModel {
         return binary;
     }
 
-    private static FieldType geometryType(JavaType javaType, boolean isNotNull) {
-        GeometryTypeBuilder builder = isNotNull ? FieldTypes.GEOMETRY.notNull() : FieldTypes.GEOMETRY;
+    private static GeometryType geometryType(JavaType javaType) {
         if (javaType.isAnnotatedWith(ParquetGeometry.class)) {
             ParquetGeometry geometry = javaType.getAnnotation(ParquetGeometry.class);
             String csr = geometry.value();
-            return builder.asParquetGeometry(csr == null || csr.isEmpty() ? null : csr);
+            return FieldTypes.GEOMETRY.asParquetGeometry(csr == null || csr.isEmpty() ? null : csr);
         } else if (javaType.isAnnotatedWith(ParquetGeography.class)) {
             ParquetGeography geography = javaType.getAnnotation(ParquetGeography.class);
             String csr = geography.crs();
-            return builder.asParquetGeography(csr == null || csr.isEmpty() ? null : csr,
+            return FieldTypes.GEOMETRY.asParquetGeography(csr == null || csr.isEmpty() ? null : csr,
                     geography.algorithm().getAlgorithm());
         }
         throw new RecordTypeConversionException("Geometry or Geography annotation is required for Geometry types");
     }
 
-    private static FieldType enumType(JavaType javaType, boolean isNotNull) {
+    private static EnumType enumType(JavaType javaType) {
         EnumType enumType = FieldTypes.ENUM.ofType((Class<? extends Enum<?>>) javaType.getJavaType());
         if (javaType.isAnnotatedWith(ParquetString.class)) {
             enumType = enumType.asString();
         }
-        return isNotNull ? enumType.notNull() : enumType;
+        return enumType;
     }
 
+    private static BigDecimalType bigDecimalType(JavaType javaType) {
+        var bigDecimal = FieldTypes.BIG_DECIMAL;
+        PrecisionScale precisionScale = javaType.getAnnotation(PrecisionScale.class);
+        if (precisionScale != null) {
+            bigDecimal = bigDecimal.withPrecisionScale(precisionScale.precision(), precisionScale.scale());
+        }
+        Rounding rounding = javaType.getAnnotation(Rounding.class);
+        if (rounding != null) {
+            bigDecimal = bigDecimal.withRoundingMode(rounding.value());
+        }
+        return bigDecimal;
+    }
+
+    private record Modifiers(boolean isNotNull, Integer fieldId) {
+
+        Modifiers(boolean isNotNull) {
+            this(isNotNull, null);
+        }
+
+        <T extends FieldType> T modify(T value, UnaryOperator<T> toNotNull, BiFunction<T, Integer, T> withFieldId) {
+            T app = isNotNull ? toNotNull.apply(value) : value;
+            if (fieldId != null) {
+                app = withFieldId.apply(app, fieldId);
+            }
+            return app;
+        }
+
+    }
 }

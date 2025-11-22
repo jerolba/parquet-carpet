@@ -60,6 +60,7 @@ import com.jerolba.carpet.model.FieldType;
 import com.jerolba.carpet.model.GeometryType;
 import com.jerolba.carpet.model.GeometryType.GeospatialType;
 import com.jerolba.carpet.model.MapType;
+import com.jerolba.carpet.model.WriteField;
 import com.jerolba.carpet.model.WriteRecordModelType;
 
 class WriteRecordModel2Schema {
@@ -91,7 +92,7 @@ class WriteRecordModel2Schema {
             Repetition repetition = getTypeRepetition(recordField.fieldType());
             Type type = createType(recordField.fieldType(), recordField.parquetFieldName(), repetition, visited);
             if (type != null) {
-                fields.add(type);
+                fields.add(applyFieldId(type, recordField));
             } else {
                 throw new RecordTypeConversionException(
                         "Column '" + recordField.parquetFieldName() + "' of type " +
@@ -308,4 +309,13 @@ class WriteRecordModel2Schema {
     private static Repetition getTypeRepetition(FieldType parametized) {
         return parametized.isNotNull() ? REQUIRED : OPTIONAL;
     }
+
+    private static Type applyFieldId(Type type, WriteField<?> writeField) {
+        Integer fieldId = writeField.fieldType().fieldId();
+        if (fieldId != null) {
+            return type.withId(fieldId);
+        }
+        return type;
+    }
+
 }
