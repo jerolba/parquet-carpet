@@ -15,10 +15,14 @@
  */
 package com.jerolba.carpet.model;
 
-public record ShortType(boolean isNotNull) implements FieldType {
+public record ShortType(boolean isNotNull, Integer fieldId) implements FieldType {
 
     public ShortType notNull() {
-        return new ShortType(true);
+        return new ShortType(true, fieldId);
+    }
+
+    public ShortType fieldId(Integer fieldId) {
+        return new ShortType(isNotNull, fieldId);
     }
 
     @Override

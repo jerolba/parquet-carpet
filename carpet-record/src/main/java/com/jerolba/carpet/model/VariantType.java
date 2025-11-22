@@ -17,10 +17,14 @@ package com.jerolba.carpet.model;
 
 import org.apache.parquet.variant.Variant;
 
-public record VariantType(boolean isNotNull) implements FieldType {
+public record VariantType(boolean isNotNull, Integer fieldId) implements FieldType {
 
     public VariantType notNull() {
-        return new VariantType(true);
+        return new VariantType(true, fieldId);
+    }
+
+    public VariantType fieldId(Integer fieldId) {
+        return new VariantType(isNotNull, fieldId);
     }
 
     @Override

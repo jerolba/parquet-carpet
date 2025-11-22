@@ -15,10 +15,14 @@
  */
 package com.jerolba.carpet.model;
 
-public record BooleanType(boolean isNotNull) implements FieldType {
+public record BooleanType(boolean isNotNull, Integer fieldId) implements FieldType {
 
     public BooleanType notNull() {
-        return new BooleanType(true);
+        return new BooleanType(true, fieldId);
+    }
+
+    public BooleanType fieldId(Integer fieldId) {
+        return new BooleanType(isNotNull, fieldId);
     }
 
     @Override

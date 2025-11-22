@@ -25,6 +25,8 @@ public sealed interface FieldType
 
     boolean isNotNull();
 
+    Integer fieldId();
+
     Class<?> getClassType();
 
 }

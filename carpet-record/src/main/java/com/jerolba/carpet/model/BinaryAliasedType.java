@@ -19,14 +19,19 @@ public final class BinaryAliasedType extends BinaryType {
 
     private final BinaryLogicalType logicalType;
 
-    BinaryAliasedType(boolean isNotNull, BinaryLogicalType logicalType) {
-        super(isNotNull);
+    BinaryAliasedType(boolean isNotNull, Integer fieldId, BinaryLogicalType logicalType) {
+        super(isNotNull, fieldId);
         this.logicalType = logicalType;
     }
 
     @Override
     public BinaryAliasedType notNull() {
-        return new BinaryAliasedType(true, logicalType);
+        return new BinaryAliasedType(true, fieldId(), logicalType);
+    }
+
+    @Override
+    public BinaryAliasedType fieldId(Integer fieldId) {
+        return new BinaryAliasedType(isNotNull(), fieldId, logicalType);
     }
 
     public BinaryLogicalType logicalType() {

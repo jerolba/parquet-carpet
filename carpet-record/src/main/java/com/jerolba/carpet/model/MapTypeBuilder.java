@@ -18,21 +18,27 @@ package com.jerolba.carpet.model;
 public class MapTypeBuilder {
 
     private final boolean notNull;
+    private final Integer fieldId;
 
     MapTypeBuilder() {
-        this(false);
+        this(false, null);
     }
 
-    private MapTypeBuilder(boolean notNull) {
+    private MapTypeBuilder(boolean notNull, Integer fieldId) {
         this.notNull = notNull;
+        this.fieldId = fieldId;
     }
 
     public MapTypeBuilder notNull() {
-        return new MapTypeBuilder(true);
+        return new MapTypeBuilder(true, fieldId);
+    }
+
+    public MapTypeBuilder fieldId(Integer fieldId) {
+        return new MapTypeBuilder(notNull, fieldId);
     }
 
     public MapType ofTypes(FieldType keyType, FieldType valueType) {
-        return new MapType(notNull, keyType, valueType);
+        return new MapType(notNull, fieldId, keyType, valueType);
     }
 
 }

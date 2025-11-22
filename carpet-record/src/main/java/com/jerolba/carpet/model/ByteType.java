@@ -15,10 +15,14 @@
  */
 package com.jerolba.carpet.model;
 
-public record ByteType(boolean isNotNull) implements FieldType {
+public record ByteType(boolean isNotNull, Integer fieldId) implements FieldType {
 
     public ByteType notNull() {
-        return new ByteType(true);
+        return new ByteType(true, fieldId);
+    }
+
+    public ByteType fieldId(Integer fieldId) {
+        return new ByteType(isNotNull, fieldId);
     }
 
     @Override

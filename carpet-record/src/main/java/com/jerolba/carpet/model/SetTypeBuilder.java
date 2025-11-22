@@ -18,21 +18,27 @@ package com.jerolba.carpet.model;
 public class SetTypeBuilder {
 
     private final boolean notNull;
+    private final Integer fieldId;
 
     SetTypeBuilder() {
-        this(false);
+        this(false, null);
     }
 
-    private SetTypeBuilder(boolean notNull) {
+    private SetTypeBuilder(boolean notNull, Integer fieldId) {
         this.notNull = notNull;
+        this.fieldId = fieldId;
     }
 
     public SetTypeBuilder notNull() {
-        return new SetTypeBuilder(true);
+        return new SetTypeBuilder(true, fieldId);
+    }
+
+    public SetTypeBuilder fieldId(Integer fieldId) {
+        return new SetTypeBuilder(notNull, fieldId);
     }
 
     public SetType ofType(FieldType type) {
-        return new SetType(notNull, type);
+        return new SetType(notNull, fieldId, type);
     }
 
 }

@@ -23,9 +23,11 @@ import com.jerolba.carpet.model.GeometryType.GeospatialType;
 public sealed class BinaryType implements FieldType permits BinaryGeospatialType, BinaryAliasedType {
 
     private final boolean isNotNull;
+    private final Integer fieldId;
 
-    BinaryType(boolean isNotNull) {
+    BinaryType(boolean isNotNull, Integer fieldId) {
         this.isNotNull = isNotNull;
+        this.fieldId = fieldId;
     }
 
     @Override
@@ -33,32 +35,41 @@ public sealed class BinaryType implements FieldType permits BinaryGeospatialType
         return isNotNull;
     }
 
+    @Override
+    public Integer fieldId() {
+        return fieldId;
+    }
+
     public BinaryType notNull() {
-        return new BinaryType(true);
+        return new BinaryType(true, fieldId);
+    }
+
+    public BinaryType fieldId(Integer fieldId) {
+        return new BinaryType(isNotNull, fieldId);
     }
 
     public BinaryAliasedType asString() {
-        return new BinaryAliasedType(isNotNull, BinaryLogicalType.STRING);
+        return new BinaryAliasedType(isNotNull, fieldId, BinaryLogicalType.STRING);
     }
 
     public BinaryAliasedType asEnum() {
-        return new BinaryAliasedType(isNotNull, BinaryLogicalType.ENUM);
+        return new BinaryAliasedType(isNotNull, fieldId, BinaryLogicalType.ENUM);
     }
 
     public BinaryAliasedType asJson() {
-        return new BinaryAliasedType(isNotNull, BinaryLogicalType.JSON);
+        return new BinaryAliasedType(isNotNull, fieldId, BinaryLogicalType.JSON);
     }
 
     public BinaryAliasedType asBson() {
-        return new BinaryAliasedType(isNotNull, BinaryLogicalType.BSON);
+        return new BinaryAliasedType(isNotNull, fieldId, BinaryLogicalType.BSON);
     }
 
     public BinaryGeospatialType asParquetGeometry(String crs) {
-        return new BinaryGeospatialType(isNotNull, GeospatialType.GEOMETRY, crs, null);
+        return new BinaryGeospatialType(isNotNull, fieldId, GeospatialType.GEOMETRY, crs, null);
     }
 
     public BinaryGeospatialType asParquetGeography(String crs, EdgeInterpolationAlgorithm algorithm) {
-        return new BinaryGeospatialType(isNotNull, GeospatialType.GEOGRAPHY, crs, algorithm);
+        return new BinaryGeospatialType(isNotNull, fieldId, GeospatialType.GEOGRAPHY, crs, algorithm);
     }
 
     @Override

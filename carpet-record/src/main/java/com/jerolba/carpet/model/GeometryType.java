@@ -25,24 +25,35 @@ public final class GeometryType implements FieldType {
     }
 
     private final boolean isNotNull;
+    private final Integer fieldId;
     private final GeospatialType geospatialType;
     private final String crs;
     private final EdgeInterpolationAlgorithm algorithm;
 
-    GeometryType(boolean isNotNull, GeospatialType geospatialType, String crs, EdgeInterpolationAlgorithm algorithm) {
+    GeometryType(boolean isNotNull, Integer fieldId, GeospatialType geospatialType, String crs, EdgeInterpolationAlgorithm algorithm) {
         this.isNotNull = isNotNull;
+        this.fieldId = fieldId;
         this.geospatialType = geospatialType;
         this.crs = crs;
         this.algorithm = algorithm;
     }
 
     public GeometryType notNull() {
-        return new GeometryType(true, geospatialType, crs, algorithm);
+        return new GeometryType(true, fieldId, geospatialType, crs, algorithm);
+    }
+
+    public GeometryType fieldId(Integer fieldId) {
+        return new GeometryType(isNotNull, fieldId, geospatialType, crs, algorithm);
     }
 
     @Override
     public boolean isNotNull() {
         return isNotNull;
+    }
+
+    @Override
+    public Integer fieldId() {
+        return fieldId;
     }
 
     public GeospatialType geospatialType() {

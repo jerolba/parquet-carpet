@@ -17,10 +17,14 @@ package com.jerolba.carpet.model;
 
 import java.time.LocalDateTime;
 
-public record LocalDateTimeType(boolean isNotNull) implements FieldType {
+public record LocalDateTimeType(boolean isNotNull, Integer fieldId) implements FieldType {
 
     public LocalDateTimeType notNull() {
-        return new LocalDateTimeType(true);
+        return new LocalDateTimeType(true, fieldId);
+    }
+
+    public LocalDateTimeType fieldId(Integer fieldId) {
+        return new LocalDateTimeType(isNotNull, fieldId);
     }
 
     @Override
