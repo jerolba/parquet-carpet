@@ -44,7 +44,7 @@ public final class WriteRecordModelType<T> implements FieldType {
     private final Map<String, WriteField<T>> indexedFields = new HashMap<>();
     private boolean isNotNull = false;
     private Integer fieldId = null;
-    private final Set<Integer> nestedFieldIds = new HashSet<>();
+    private final Set<Integer> usedFieldIds = new HashSet<>();
 
     WriteRecordModelType(Class<T> recordClass) {
         this.recordClass = recordClass;
@@ -90,7 +90,7 @@ public final class WriteRecordModelType<T> implements FieldType {
         if (indexedFields.containsKey(parquetFieldName)) {
             throw new IllegalArgumentException(parquetFieldName + " already defined");
         }
-        addNestedFieldId(type);
+        addUsedFieldId(type);
         var field = new FunctionFieldInfo<>(parquetFieldName, type, accessor);
         fields.add(field);
         indexedFields.put(parquetFieldName, field);
@@ -125,17 +125,33 @@ public final class WriteRecordModelType<T> implements FieldType {
         return withPrimitiveField(parquetFieldName, DOUBLE.notNull(), accessor);
     }
 
+    /**
+     * Adds a primitive field to the record model. The method is defined to for
+     * internal and utilities use. For manual programmatic use call to withField
+     * methods.
+     *
+     * @param parquetFieldName the name of the field in the Parquet schema
+     * @param type             the field type of the primitive defined
+     * @param accessor         the accessor function to get the primitive value from
+     *                         the record
+     * @return the updated WriteRecordModelType instance
+     * @throws IllegalArgumentException if the field name is already defined, if the
+     *                                  type is not a primitive type, or if the
+     *                                  accessor is not a primitive function.
+     */
     public WriteRecordModelType<T> withPrimitiveField(String parquetFieldName, FieldType type, Object accessor) {
         requireNonNull(parquetFieldName);
         requireNonNull(type);
         requireNonNull(accessor);
+        requirePrimitiveFieldType(type);
+        requirePrimitiveAccessor(accessor);
         if (indexedFields.containsKey(parquetFieldName)) {
             throw new IllegalArgumentException(parquetFieldName + " already defined");
         }
         if (!type.isNotNull()) {
             throw new IllegalArgumentException(parquetFieldName + " is not defined as not null");
         }
-        addNestedFieldId(type);
+        addUsedFieldId(type);
         WriteField<T> field = new PrimitiveJavaFieldInfo<>(parquetFieldName, type, accessor);
         fields.add(field);
         indexedFields.put(parquetFieldName, field);
@@ -150,16 +166,40 @@ public final class WriteRecordModelType<T> implements FieldType {
             implements WriteField<T> {
     }
 
-    private void addNestedFieldId(FieldType fieldType) {
-        Integer fieldId = fieldType.fieldId();
-        if (fieldId == null) {
+    private void addUsedFieldId(FieldType fieldType) {
+        Integer id = fieldType.fieldId();
+        if (id == null) {
             return;
         }
-        if (nestedFieldIds.contains(fieldId)) {
+        if (usedFieldIds.contains(id)) {
             throw new RecordTypeConversionException(
-                    "Duplicate field ID " + fieldId + " found in record " + recordClass.getSimpleName() +
+                    "Duplicate field ID " + id + " found in record " + recordClass.getSimpleName() +
                             ". Field IDs must be unique within the same record scope.");
         }
-        nestedFieldIds.add(fieldId);
+        usedFieldIds.add(id);
+    }
+
+    private void requirePrimitiveFieldType(FieldType type) {
+        if (!(type instanceof BooleanType ||
+                type instanceof ByteType ||
+                type instanceof ShortType ||
+                type instanceof IntegerType ||
+                type instanceof LongType ||
+                type instanceof FloatType ||
+                type instanceof DoubleType)) {
+            throw new IllegalArgumentException("Type must be a primitive type");
+        }
+    }
+
+    private void requirePrimitiveAccessor(Object accessor) {
+        if (!(accessor instanceof ToBooleanFunction<?> ||
+                accessor instanceof ToByteFunction<?> ||
+                accessor instanceof ToShortFunction<?> ||
+                accessor instanceof ToIntFunction<?> ||
+                accessor instanceof ToLongFunction<?> ||
+                accessor instanceof ToFloatFunction<?> ||
+                accessor instanceof ToDoubleFunction<?>)) {
+            throw new IllegalArgumentException("Accessor must be a primitive function");
+        }
     }
 }
