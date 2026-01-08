@@ -21,11 +21,17 @@ import static com.jerolba.carpet.model.WriteRecordModelType.writeRecordModel;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.function.Function;
+import java.util.function.ToIntFunction;
+
 import org.junit.jupiter.api.Test;
 
 class WriteRecordTypeTest {
 
     record RootRecord(String id, Integer value) {
+    }
+
+    record RecordWithPrimitives(String id, int value, int key) {
     }
 
     @Test
@@ -43,6 +49,39 @@ class WriteRecordTypeTest {
             writeRecordModel(RootRecord.class)
                     .withField("id", STRING, RootRecord::id)
                     .withField("value", STRING, RootRecord::value);
+        });
+    }
+
+    @Test
+    void supportsPrimitiveFields() {
+        assertDoesNotThrow(() -> {
+            writeRecordModel(RecordWithPrimitives.class)
+                    .withField("id", STRING, RecordWithPrimitives::id)
+                    .withField("value", RecordWithPrimitives::value)
+                    .withPrimitiveField("key", INTEGER.notNull(),
+                            (ToIntFunction<RecordWithPrimitives>) RecordWithPrimitives::key);
+        });
+    }
+
+    @Test
+    void withPrimitiveFieldValidatesProvidedType() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            writeRecordModel(RecordWithPrimitives.class)
+                    .withField("id", STRING, RecordWithPrimitives::id)
+                    .withField("value", RecordWithPrimitives::value)
+                    .withPrimitiveField("key", STRING.notNull(),
+                            (ToIntFunction<RecordWithPrimitives>) RecordWithPrimitives::key);
+        });
+    }
+
+    @Test
+    void withPrimitiveFieldsMethodChecksProvidedFunction() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            writeRecordModel(RecordWithPrimitives.class)
+                    .withField("id", STRING, RecordWithPrimitives::id)
+                    .withField("value", RecordWithPrimitives::value)
+                    .withPrimitiveField("key", INTEGER.notNull(),
+                            (Function<RecordWithPrimitives, Integer>) RecordWithPrimitives::key);
         });
     }
 
