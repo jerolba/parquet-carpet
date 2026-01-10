@@ -39,8 +39,12 @@ public class CarpetParquetWriter {
     private CarpetParquetWriter() {
     }
 
+    public static <T> Builder<T> builder(Class<T> recordClass) {
+        return new Builder<>(recordClass);
+    }
+
     public static <T> Builder<T> builder(OutputFile file, Class<T> recordClass) {
-        return new Builder<>(file, recordClass);
+        return builder(recordClass).withFile(file);
     }
 
     public static class Builder<T> extends ParquetWriter.Builder<T, Builder<T>> {
@@ -53,8 +57,8 @@ public class CarpetParquetWriter {
         private TimeUnit defaultTimeUnit = TimeUnit.MILLIS;
         private DecimalConfig decimalConfig = decimalConfig();
 
-        private Builder(OutputFile file, Class<T> recordClass) {
-            super(file);
+        private Builder(Class<T> recordClass) {
+            super();
             this.recordClass = recordClass;
         }
 

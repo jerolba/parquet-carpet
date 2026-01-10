@@ -26,6 +26,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -44,6 +46,7 @@ import org.apache.avro.data.TimeConversions;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.parquet.hadoop.ParquetFileReader;
+import org.apache.parquet.hadoop.ParquetWriter;
 import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.variant.Variant;
 import org.junit.jupiter.api.Disabled;
@@ -55,6 +58,7 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.io.WKBWriter;
 
+import com.jerolba.carpet.CarpetParquetWriter;
 import com.jerolba.carpet.CarpetReader;
 import com.jerolba.carpet.CarpetWriter;
 import com.jerolba.carpet.FieldMatchingStrategy;
@@ -73,6 +77,7 @@ import com.jerolba.carpet.annotation.PrecisionScale;
 import com.jerolba.carpet.annotation.Rounding;
 import com.jerolba.carpet.io.FileSystemInputFile;
 import com.jerolba.carpet.io.FileSystemOutputFile;
+import com.jerolba.carpet.io.OutputStreamOutputFile;
 
 class CarpetWriterTest {
 
@@ -2517,4 +2522,85 @@ class CarpetWriterTest {
             assertNull(record2.get("variantValue"));
         }
     }
+
+    @Nested
+    class WriterCreation {
+
+        record IntPrimitive(int value) {
+        }
+
+        IntPrimitive rec1 = new IntPrimitive(1);
+        IntPrimitive rec2 = new IntPrimitive(2);
+        ParquetWriterTest<IntPrimitive> writerTest = new ParquetWriterTest<>(IntPrimitive.class);
+
+        @Test
+        void canUseParquetWriterBuilderWithFileInConstructor() throws IOException {
+            File outputFile = writerTest.getTestFile();
+            OutputStreamOutputFile output = new OutputStreamOutputFile(new FileOutputStream(outputFile));
+            try (ParquetWriter<IntPrimitive> parquetWriter = CarpetParquetWriter.builder(output, IntPrimitive.class)
+                    .build()) {
+                parquetWriter.write(rec1);
+                parquetWriter.write(rec2);
+            }
+            assertThatContentIsWritten();
+        }
+
+        @Test
+        void canUseParquetWriterBuilderWithoutFileInConstructor() throws IOException {
+            File outputFile = writerTest.getTestFile();
+            OutputStreamOutputFile output = new OutputStreamOutputFile(new FileOutputStream(outputFile));
+            try (ParquetWriter<IntPrimitive> parquetWriter = CarpetParquetWriter.builder(IntPrimitive.class)
+                    .withFile(output)
+                    .build()) {
+                parquetWriter.write(rec1);
+                parquetWriter.write(rec2);
+            }
+            assertThatContentIsWritten();
+        }
+
+        @Test
+        void aFileMustBeProvidedBuildingParquetWriter() throws IOException {
+            assertThrows(IllegalStateException.class,
+                    () -> CarpetParquetWriter.builder(IntPrimitive.class).build());
+        }
+
+        @Test
+        void canUseCarpetWriterBuilderWithoutFileInConstructor() throws IOException {
+            File outputFile = writerTest.getTestFile();
+            OutputStreamOutputFile output = new OutputStreamOutputFile(new FileOutputStream(outputFile));
+            try (CarpetWriter<IntPrimitive> parquetWriter = new CarpetWriter.Builder<>(IntPrimitive.class)
+                    .withFile(output)
+                    .build()) {
+                parquetWriter.write(rec1);
+                parquetWriter.write(rec2);
+            }
+            assertThatContentIsWritten();
+        }
+
+        @Test
+        void aFileMustBeProvidedBuildingCarpetWriter() throws IOException {
+            assertThrows(IllegalStateException.class,
+                    () -> new CarpetWriter.Builder<>(IntPrimitive.class).build());
+        }
+
+        @Test
+        void canUseCarpetWriterBuilderWithFileInConstructor() throws IOException {
+            File outputFile = writerTest.getTestFile();
+            OutputStreamOutputFile output = new OutputStreamOutputFile(new FileOutputStream(outputFile));
+            try (CarpetWriter<IntPrimitive> parquetWriter = new CarpetWriter.Builder<>(output, IntPrimitive.class)
+                    .build()) {
+                parquetWriter.write(rec1);
+                parquetWriter.write(rec2);
+            }
+            assertThatContentIsWritten();
+        }
+
+        private void assertThatContentIsWritten() throws IOException {
+            try (var carpetReader = writerTest.getCarpetReader()) {
+                assertEquals(rec1, carpetReader.read());
+                assertEquals(rec2, carpetReader.read());
+            }
+        }
+    }
+
 }

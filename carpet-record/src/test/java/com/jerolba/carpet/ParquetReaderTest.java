@@ -78,11 +78,15 @@ public class ParquetReaderTest {
         }
     }
 
+    public InputFile getInputFile() {
+        return new FileSystemInputFile(new File(path));
+    }
+
     public <T> ParquetReader<T> getCarpetReader(Class<T> readType, ReadFlag... flags) throws IOException {
         // Every file must be readed to a Map
         List<Map> list = new CarpetReader<>(new File(path), Map.class).toList();
 
-        InputFile inputFile = new FileSystemInputFile(new File(path));
+        InputFile inputFile = getInputFile();
         Builder<T> builder = CarpetParquetReader.builder(inputFile, readType);
         for (ReadFlag f : flags) {
             if (f.equals(ReadFlag.DONT_FAIL_ON_MISSING_COLUMN)) {
