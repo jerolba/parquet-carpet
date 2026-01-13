@@ -8,7 +8,7 @@ Include Carpet in your Java project using Maven by adding this dependency to you
 <dependency>
     <groupId>com.jerolba</groupId>
     <artifactId>carpet-record</artifactId>
-    <version>0.5.0</version>
+    <version>0.6.0</version>
 </dependency>
 ```
 
@@ -17,7 +17,7 @@ Include Carpet in your Java project using Maven by adding this dependency to you
 If you're using Gradle, add this to your `build.gradle`:
 
 ```gradle
-implementation 'com.jerolba:carpet-record:0.5.0'
+implementation 'com.jerolba:carpet-record:0.6.0'
 ```
 
 ## Transitive dependencies and Hadoop
