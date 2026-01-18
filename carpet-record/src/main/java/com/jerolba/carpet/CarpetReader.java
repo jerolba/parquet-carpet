@@ -51,7 +51,7 @@ public class CarpetReader<T> implements Iterable<T> {
      * @param recordClass the class of the records being read
      */
     public CarpetReader(InputFile inputFile, Class<T> recordClass) {
-        this(new Builder<>(inputFile, recordClass));
+        this(new Builder<>(recordClass).withFile(inputFile));
     }
 
     /**
@@ -183,12 +183,30 @@ public class CarpetReader<T> implements Iterable<T> {
 
     public static class Builder<T> extends CarpetReaderConfigurationBuilder<T, Builder<T>> {
 
+        public Builder(Class<T> readClass) {
+            super(readClass);
+        }
+
         public Builder(InputFile file, Class<T> readClass) {
-            super(file, readClass);
+            super(readClass);
+            withFile(file);
         }
 
         public Builder(File file, Class<T> recordClass) {
-            super(file, recordClass);
+            super(recordClass);
+            withFile(new FileSystemInputFile(file));
+        }
+
+        /**
+         * Sets the InputFile to be used by the Parquet Reader.
+         *
+         * @param inputFile to be used
+         * @return Carpet Reader Builder
+         */
+        @Override
+        public Builder<T> withFile(InputFile inputFile) {
+            super.withFile(inputFile);
+            return this;
         }
 
         @Override

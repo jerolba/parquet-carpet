@@ -103,7 +103,7 @@ public class ParquetWriterTest<T> {
 
     public void write(WriteRecordModelType<T> mapper, Collection<T> values) throws IOException {
         OutputStreamOutputFile output = new OutputStreamOutputFile(new FileOutputStream(path));
-        var builder = CarpetParquetWriter.builder(output, type)
+        var builder = CarpetParquetWriter.builder(type).withFile(output)
                 .withLevelStructure(level)
                 .enableValidation()
                 .withColumnNamingStrategy(nameStrategy)
@@ -140,7 +140,8 @@ public class ParquetWriterTest<T> {
     }
 
     public <R> ParquetReader<R> getCarpetReader(Class<R> readType, ReadFlag... flags) throws IOException {
-        Builder<R> builder = CarpetParquetReader.builder(new FileSystemInputFile(getTestFile()), readType);
+        Builder<R> builder = CarpetParquetReader.builder(readType)
+                .withFile(new FileSystemInputFile(getTestFile()));
         for (ReadFlag f : flags) {
             if (f.equals(ReadFlag.DONT_FAIL_ON_MISSING_COLUMN)) {
                 builder = builder.failOnMissingColumn(false);

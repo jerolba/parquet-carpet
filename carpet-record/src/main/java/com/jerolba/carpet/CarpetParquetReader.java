@@ -15,7 +15,6 @@
  */
 package com.jerolba.carpet;
 
-import org.apache.parquet.conf.PlainParquetConfiguration;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.api.ReadSupport;
 import org.apache.parquet.io.InputFile;
@@ -33,22 +32,25 @@ public class CarpetParquetReader {
     private CarpetParquetReader() {
     }
 
+    public static <T> Builder<T> builder(Class<T> readClass) {
+        return new Builder<>(readClass);
+    }
+
     public static <T> Builder<T> builder(InputFile file, Class<T> readClass) {
-        return new Builder<>(file, readClass);
+        return builder(readClass).withFile(file);
     }
 
     public static class Builder<T> extends ParquetReader.Builder<T> {
 
         private final Class<T> recordClass;
-        private final InputFile inputFile;
+        private InputFile inputFile;
         private boolean failOnMissingColumn = DEFAULT_FAIL_ON_MISSING_COLUMN;
         private boolean failOnNullForPrimitives = DEFAULT_FAIL_ON_NULL_FOR_PRIMITIVES;
         private boolean failNarrowingPrimitiveConversion = DEFAULT_FAIL_NARROWING_PRIMITIVE_CONVERSION;
         private FieldMatchingStrategy fieldMatchingStrategy = DEFAULT_FIELD_MATCHING_STRATEGY;
 
-        private Builder(InputFile file, Class<T> recordClass) {
-            super(file, new PlainParquetConfiguration());
-            this.inputFile = file;
+        private Builder(Class<T> recordClass) {
+            super();
             this.recordClass = recordClass;
         }
 
@@ -68,6 +70,13 @@ public class CarpetParquetReader {
          */
         public Class<T> getRecordClass() {
             return recordClass;
+        }
+
+        @Override
+        public Builder<T> withFile(InputFile file) {
+            super.withFile(file);
+            this.inputFile = file;
+            return this;
         }
 
         /**

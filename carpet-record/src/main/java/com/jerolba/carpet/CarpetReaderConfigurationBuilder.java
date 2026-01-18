@@ -49,14 +49,31 @@ public abstract class CarpetReaderConfigurationBuilder<T, SELF extends CarpetRea
 
     /**
      *
+     * Creates a new {@code Builder} instance from the specified record class.
+     *
+     * The InputFile must be set later.
+     *
+     * @param recordClass the class of the records being read
+     */
+    public CarpetReaderConfigurationBuilder(Class<T> recordClass) {
+        this.builder = CarpetParquetReader.builder(recordClass);
+    }
+
+    /**
+     *
      * Creates a new {@code Builder} instance from the specified InputFile and
      * record class.
+     *
+     * @deprecated use {@link #CarpetReaderConfigurationBuilder(Class)} and call to
+     *             {@link #withFile} instead
      *
      * @param file        the input file from which the records will be read
      * @param recordClass the class of the records being read
      */
+    @Deprecated
     public CarpetReaderConfigurationBuilder(InputFile file, Class<T> recordClass) {
-        this.builder = CarpetParquetReader.builder(file, recordClass);
+        this(recordClass);
+        this.builder.withFile(file);
     }
 
     /**
@@ -64,9 +81,13 @@ public abstract class CarpetReaderConfigurationBuilder<T, SELF extends CarpetRea
      * Creates a new {@code Builder} instance from the specified File and record
      * class.
      *
+     * @deprecated use {@link #CarpetReaderConfigurationBuilder(Class)} and call to
+     *             {@link #withFile} instead
+     *
      * @param file        the File containing the Parquet data
      * @param recordClass the class of the records being read
      */
+    @Deprecated
     public CarpetReaderConfigurationBuilder(File file, Class<T> recordClass) {
         this(new FileSystemInputFile(file), recordClass);
     }
@@ -93,6 +114,17 @@ public abstract class CarpetReaderConfigurationBuilder<T, SELF extends CarpetRea
      */
     public Class<T> getRecordClass() {
         return this.builder.getRecordClass();
+    }
+
+    /**
+     * Sets the InputFile to be used by the Parquet Reader.
+     *
+     * @param inputFile to be used
+     * @return Carpet Reader Builder
+     */
+    protected SELF withFile(InputFile inputFile) {
+        this.builder.withFile(inputFile);
+        return self();
     }
 
     /**

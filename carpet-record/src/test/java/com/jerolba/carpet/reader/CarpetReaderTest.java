@@ -57,6 +57,7 @@ import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericData.Record;
 import org.apache.parquet.avro.AvroParquetWriter;
 import org.apache.parquet.avro.AvroWriteSupport;
+import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.apache.parquet.io.InputFile;
 import org.apache.parquet.io.OutputFile;
@@ -75,6 +76,7 @@ import com.jerolba.carpet.AnnotatedLevels;
 import com.jerolba.carpet.CarpetMissingColumnException;
 import com.jerolba.carpet.CarpetParquetReader;
 import com.jerolba.carpet.CarpetReader;
+import com.jerolba.carpet.CloseableIterator;
 import com.jerolba.carpet.ParquetReaderTest;
 import com.jerolba.carpet.ParquetWriterTest;
 import com.jerolba.carpet.ReadFlag;
@@ -3083,6 +3085,86 @@ class CarpetReaderTest {
             }
         }
 
+    }
+
+    @Nested
+    class ReaderCreation {
+
+        Schema schema = schemaType("IntPrimitive").requiredInt("value").endRecord();
+        ParquetReaderTest readerTest = new ParquetReaderTest(schema);
+
+        record IntPrimitive(int value) {
+        }
+
+        @BeforeEach
+        void setup() throws IOException {
+            readerTest.writer(writer -> {
+                Record record = new Record(schema);
+                record.put("value", 1);
+                writer.write(record);
+                record = new Record(schema);
+                record.put("value", 2);
+                writer.write(record);
+            });
+        }
+
+        @Test
+        void canUseParquetReaderBuilderWithFileInConstructor() throws IOException {
+            InputFile inputFile = readerTest.getInputFile();
+            try (ParquetReader<IntPrimitive> carpetReader = CarpetParquetReader.builder(inputFile, IntPrimitive.class)
+                    .build()) {
+                assertEquals(new IntPrimitive(1), carpetReader.read());
+                assertEquals(new IntPrimitive(2), carpetReader.read());
+            }
+        }
+
+        @Test
+        void canUseParquetReaderBuilderWithoutFileInConstructor() throws IOException {
+            InputFile inputFile = readerTest.getInputFile();
+            try (ParquetReader<IntPrimitive> carpetReader = CarpetParquetReader.builder(IntPrimitive.class)
+                    .withFile(inputFile)
+                    .build()) {
+                assertEquals(new IntPrimitive(1), carpetReader.read());
+                assertEquals(new IntPrimitive(2), carpetReader.read());
+            }
+        }
+
+        @Test
+        void aFileMustBeProvidedBuildingParquetReader() throws IOException {
+            assertThrows(IllegalStateException.class,
+                    () -> CarpetParquetReader.builder(IntPrimitive.class).build());
+        }
+
+        @Test
+        void canUseCarpetReaderBuilderWithFileInConstructor() throws IOException {
+            InputFile inputFile = readerTest.getInputFile();
+            CarpetReader<IntPrimitive> carpetReader = new CarpetReader.Builder<>(inputFile, IntPrimitive.class)
+                    .build();
+
+            CloseableIterator<IntPrimitive> iterator = carpetReader.iterator();
+            assertEquals(new IntPrimitive(1), iterator.next());
+            assertEquals(new IntPrimitive(2), iterator.next());
+            iterator.close();
+        }
+
+        @Test
+        void canUseCarpetReaderBuilderWithoutFileInConstructor() throws IOException {
+            InputFile inputFile = readerTest.getInputFile();
+            CarpetReader<IntPrimitive> carpetReader = new CarpetReader.Builder<>(IntPrimitive.class)
+                    .withFile(inputFile)
+                    .build();
+
+            CloseableIterator<IntPrimitive> iterator = carpetReader.iterator();
+            assertEquals(new IntPrimitive(1), iterator.next());
+            assertEquals(new IntPrimitive(2), iterator.next());
+            iterator.close();
+        }
+
+        @Test
+        void aFileMustBeProvidedBuildingCarpetReader() throws IOException {
+            assertThrows(IllegalStateException.class,
+                    () -> new CarpetReader.Builder<>(IntPrimitive.class).build().iterator());
+        }
     }
 
     private static FieldAssembler<Schema> schemaType(String type) {
