@@ -17,10 +17,11 @@ package com.jerolba.carpet.io;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 
 import org.apache.parquet.io.InputFile;
 import org.apache.parquet.io.SeekableInputStream;
@@ -89,32 +90,37 @@ public class FileSystemInputFile implements InputFile {
 
     private static class SeekableFileInputStream extends SeekableInputStream {
 
-        private static final int COPY_SIZE = 16 * 1024;
-        private final RandomAccessFile file;
-        private final byte[] copyBuffer = new byte[COPY_SIZE];
+        private final SeekableByteChannel channel;
+        private final long fileLength;
         private long markedPos = 0;
 
         SeekableFileInputStream(Path path) throws IOException {
-            this.file = new RandomAccessFile(path.toFile(), "r");
+            this.channel = Files.newByteChannel(path, StandardOpenOption.READ);
+            this.fileLength = channel.size();
         }
 
         public long getLength() throws IOException {
-            return file.length();
+            return fileLength;
         }
 
         @Override
         public int read() throws IOException {
-            return file.read();
+            ByteBuffer buffer = ByteBuffer.allocate(1);
+            int bytesRead = channel.read(buffer);
+            if (bytesRead == -1) {
+                return -1;
+            }
+            return buffer.get(0) & 0xFF;
         }
 
         @Override
         public int read(byte[] b) throws IOException {
-            return file.read(b);
+            return read(b, 0, b.length);
         }
 
         @Override
         public int read(byte[] b, int off, int len) throws IOException {
-            return file.read(b, off, len);
+            return channel.read(ByteBuffer.wrap(b, off, len));
         }
 
         @Override
@@ -145,7 +151,7 @@ public class FileSystemInputFile implements InputFile {
 
         @Override
         public void close() throws IOException {
-            file.close();
+            channel.close();
         }
 
         @Override
@@ -159,7 +165,7 @@ public class FileSystemInputFile implements InputFile {
 
         @Override
         public synchronized void reset() throws IOException {
-            file.seek(markedPos);
+            channel.position(markedPos);
         }
 
         @Override
@@ -169,59 +175,37 @@ public class FileSystemInputFile implements InputFile {
 
         @Override
         public long getPos() throws IOException {
-            return file.getFilePointer();
+            return channel.position();
         }
 
         @Override
         public void seek(long l) throws IOException {
-            file.seek(l);
+            channel.position(l);
         }
 
         @Override
         public void readFully(byte[] bytes) throws IOException {
-            file.readFully(bytes);
+            readFully(bytes, 0, bytes.length);
         }
 
         @Override
         public void readFully(byte[] bytes, int start, int len) throws IOException {
-            file.readFully(bytes, start, len);
+            readFully(ByteBuffer.wrap(bytes, start, len));
         }
 
         @Override
         public int read(ByteBuffer byteBuffer) throws IOException {
-            int bytesToRead = getBytesToRead(byteBuffer);
-            int totalBytesReaded = 0;
-            int readedBytes;
-
-            while ((readedBytes = file.read(copyBuffer, 0, bytesToRead)) == COPY_SIZE) {
-                totalBytesReaded += readedBytes;
-                byteBuffer.put(copyBuffer);
-                bytesToRead = getBytesToRead(byteBuffer);
-            }
-
-            if (readedBytes < 0) {
-                return totalBytesReaded == 0 ? -1 : totalBytesReaded;
-            }
-            byteBuffer.put(copyBuffer, 0, readedBytes);
-            return totalBytesReaded + readedBytes;
+            return channel.read(byteBuffer);
         }
 
         @Override
         public void readFully(ByteBuffer byteBuffer) throws IOException {
-            int bytesToRead = getBytesToRead(byteBuffer);
-            int readedBytes = 0;
-
-            while (bytesToRead > 0 && (readedBytes = file.read(copyBuffer, 0, bytesToRead)) >= 0) {
-                byteBuffer.put(copyBuffer, 0, readedBytes);
-                bytesToRead = getBytesToRead(byteBuffer);
+            while (byteBuffer.hasRemaining()) {
+                int bytesRead = channel.read(byteBuffer);
+                if (bytesRead == -1) {
+                    throw new IOException("Missing " + byteBuffer.remaining() + " bytes left to read from File");
+                }
             }
-            if (readedBytes < 0 && byteBuffer.remaining() > 0) {
-                throw new IOException("Missing " + byteBuffer.remaining() + " bytes left to read from File");
-            }
-        }
-
-        private int getBytesToRead(ByteBuffer byteBufr) {
-            return Math.min(byteBufr.remaining(), COPY_SIZE);
         }
     }
 }
