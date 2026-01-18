@@ -19,6 +19,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import org.apache.parquet.io.InputFile;
 import org.apache.parquet.io.SeekableInputStream;
@@ -39,7 +41,7 @@ import org.apache.parquet.io.SeekableInputStream;
 
 public class FileSystemInputFile implements InputFile {
 
-    private final File file;
+    private final Path path;
 
     /**
      *
@@ -48,7 +50,17 @@ public class FileSystemInputFile implements InputFile {
      * @param file the file to read from
      */
     public FileSystemInputFile(File file) {
-        this.file = file;
+        this.path = file.toPath();
+    }
+
+    /**
+     *
+     * Constructs a FileSystemInputFile with the specified Path.
+     *
+     * @param path the path to read from
+     */
+    public FileSystemInputFile(Path path) {
+        this.path = path;
     }
 
     /**
@@ -60,7 +72,7 @@ public class FileSystemInputFile implements InputFile {
      */
     @Override
     public long getLength() throws IOException {
-        return file.length();
+        return Files.size(path);
     }
 
     /**
@@ -72,7 +84,7 @@ public class FileSystemInputFile implements InputFile {
      */
     @Override
     public SeekableInputStream newStream() throws IOException {
-        return new SeekableFileInputStream(file);
+        return new SeekableFileInputStream(path);
     }
 
     private static class SeekableFileInputStream extends SeekableInputStream {
@@ -82,8 +94,8 @@ public class FileSystemInputFile implements InputFile {
         private final byte[] copyBuffer = new byte[COPY_SIZE];
         private long markedPos = 0;
 
-        SeekableFileInputStream(File file) throws IOException {
-            this.file = new RandomAccessFile(file, "r");
+        SeekableFileInputStream(Path path) throws IOException {
+            this.file = new RandomAccessFile(path.toFile(), "r");
         }
 
         public long getLength() throws IOException {
