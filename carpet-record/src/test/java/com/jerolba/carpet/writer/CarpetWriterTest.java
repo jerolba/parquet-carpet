@@ -2100,6 +2100,24 @@ class CarpetWriterTest {
 
     }
 
+    @Test
+    void classWithRecordFieldsAreNotSupported() throws IOException {
+
+        record ChildRecord(String id, int value) {
+        }
+
+        record ClassWithRecordField(String name, Record childRecord) {
+        }
+
+        var rec1 = new ClassWithRecordField("Apple", new ChildRecord("A", 1));
+        var rec2 = new ClassWithRecordField("Google", new ChildRecord("B", 2));
+        var writerTest = new ParquetWriterTest<>(ClassWithRecordField.class);
+        var exception = assertThrows(RecordTypeConversionException.class, () -> writerTest.write(rec1, rec2));
+        assertEquals(
+                "Field 'childRecord' not supported because it is declared as java.lang.Record and must be a concrete Record type",
+                exception.getMessage());
+    }
+
     @Nested
     class CompositedClasses {
 
