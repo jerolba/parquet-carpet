@@ -21,6 +21,7 @@ import static com.jerolba.carpet.model.FieldTypes.LIST;
 import static com.jerolba.carpet.model.FieldTypes.MAP;
 import static com.jerolba.carpet.model.FieldTypes.writeRecordModel;
 
+import java.lang.reflect.RecordComponent;
 import java.lang.reflect.TypeVariable;
 import java.util.HashSet;
 import java.util.Set;
@@ -90,10 +91,7 @@ public class JavaRecord2WriteModel {
             Set<Class<?>> visited) {
         FieldIdMapper fieldIdMapper = new FieldIdMapper();
         for (var attr : recordClass.getRecordComponents()) {
-            java.lang.reflect.Type genericType = attr.getGenericType();
-            if (genericType instanceof TypeVariable<?>) {
-                throw new RecordTypeConversionException(genericType.toString() + " generic types not supported");
-            }
+            reviewNotSupportedTypes(attr);
             String parquetFieldName = fieldToColumnMapper.getColumnName(attr);
             Class<?> type = attr.getType();
             var javaType = new JavaType(type, attr.getDeclaredAnnotations());
@@ -326,5 +324,16 @@ public class JavaRecord2WriteModel {
             return app;
         }
 
+    }
+
+    private static void reviewNotSupportedTypes(RecordComponent attr) {
+        java.lang.reflect.Type genericType = attr.getGenericType();
+        if (genericType instanceof TypeVariable<?>) {
+            throw new RecordTypeConversionException(genericType.toString() + " generic types not supported");
+        }
+        if (attr.getType() == java.lang.Record.class) {
+            throw new RecordTypeConversionException("Field '" + attr.getName()
+                    + "' not supported because it is declared as java.lang.Record and must be a concrete Record type");
+        }
     }
 }

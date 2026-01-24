@@ -1128,6 +1128,18 @@ class JavaRecord2SchemaTest {
             assertThrows(RecordTypeConversionException.class, () -> schemaFactory.createSchema(WithGeneric.class));
         }
 
+        @Test
+        void recordIsNotAllowed() {
+            record WithRecord(String name, Record child) {
+            }
+
+            var exception = assertThrows(RecordTypeConversionException.class,
+                    () -> schemaFactory.createSchema(WithRecord.class));
+            assertEquals(
+                    "Field 'child' not supported because it is declared as java.lang.Record and must be a concrete Record type",
+                    exception.getMessage());
+        }
+
     }
 
     @Nested

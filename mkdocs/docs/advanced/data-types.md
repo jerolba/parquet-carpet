@@ -240,6 +240,18 @@ If generic type is used, `RecordTypeConversionException` will be thrown.
 
 Collections and Maps with concrete types don't have this issue because Carpet knows their concrete type information at compile time.
 
+### java.lang.Record type
+
+The type `java.lang.Record` is not supported because it's also *generic*, and Carpet can not infer type information to create the Parquet schema. Potentially can be any record, and each entry can have different structure.
+
+```java
+record Child(long id, String value) { }
+// This will NOT work
+record WithParentRecord(String name, Record child) { }
+```
+
+If `java.lang.Record` type is used, `RecordTypeConversionException` will be thrown.
+
 ### Recursive Types
 
 Records cannot have direct or indirect recursive references:
