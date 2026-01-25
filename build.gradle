@@ -5,7 +5,7 @@ plugins {
 allprojects {
     apply plugin: 'license'
     license {
-        header rootProject.file("config/HEADER")
+        header = rootProject.file("config/HEADER")
         exclude "**/*.properties"
         exclude "**/*.txt"
         exclude "**/*.parquet"
