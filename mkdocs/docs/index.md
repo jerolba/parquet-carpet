@@ -1,3 +1,4 @@
+<img align="left" src="CarpetLogo200px.png" style="height: 100px;">
 # Carpet: Parquet Serialization and Deserialization Library for Java
 
 [![Build Status](https://github.com/jerolba/parquet-carpet/actions/workflows/build-gradle-project.yml/badge.svg)](https://github.com/jerolba/parquet-carpet/actions)

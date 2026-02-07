@@ -6,6 +6,7 @@ repo_url: https://github.com/jerolba/parquet-carpet
 theme:
   name: material
   custom_dir: overrides
+  logo: CarpetLogo50px.png
   features:
     #- navigation.tabs
     - navigation.sections
@@ -17,13 +18,13 @@ theme:
     - search.highlight
   palette:
     - scheme: default
-      primary: green
+      primary: lime
       accent: green
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
     - scheme: slate
-      primary: green
+      primary: indigo
       accent: green
       toggle:
         icon: material/brightness-4
