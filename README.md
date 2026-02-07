@@ -5,7 +5,7 @@
 [![codecov](https://codecov.io/gh/jerolba/parquet-carpet/graph/badge.svg?token=zE0Xqe7fky)](https://codecov.io/gh/jerolba/parquet-carpet)
 
 # Carpet: Parquet Serialization and Deserialization Library for Java
-
+<img align="right" src="./mkdocs/docs/CarpetLogo200px.png" style="height: 100px;">
 A Java library for serializing and deserializing Parquet files efficiently using Java records. This library provides a simple and user-friendly API for working with Parquet files, making it easy to read and write data in the Parquet format in your Java applications.
 
 **For comprehensive documentation, please visit our [full documentation site](https://carpet.jerolba.com/).**
@@ -31,6 +31,7 @@ A Java library for serializing and deserializing Parquet files efficiently using
 - [Contribute](#contribute)
 - [Build](#build)
 - [License](#license)
+- [Credits](#credits)
 
 ## Installation
 
@@ -137,5 +138,8 @@ Any contributor and maintainer of this project follows the [Contributor Covenant
 
 ## License
 [Apache 2](https://github.com/jerolba/parquet-carpet/blob/master/LICENSE.txt) © Jerónimo López
+
+## Credits
+Logo designed by [Hugo Tobio](https://hugotobio.com/).
 
 
