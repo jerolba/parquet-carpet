@@ -16,8 +16,9 @@
 package com.jerolba.carpet.io;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import org.apache.parquet.io.OutputFile;
 import org.apache.parquet.io.PositionOutputStream;
@@ -30,7 +31,7 @@ import org.apache.parquet.io.PositionOutputStream;
  */
 public class FileSystemOutputFile implements OutputFile {
 
-    private final File file;
+    private final Path path;
 
     /**
      *
@@ -39,7 +40,17 @@ public class FileSystemOutputFile implements OutputFile {
      * @param file the file to write to
      */
     public FileSystemOutputFile(File file) {
-        this.file = file;
+        this.path = file.toPath();
+    }
+
+    /**
+     *
+     * Constructs a FileSystemOutputFile with the specified Path.
+     *
+     * @param path the Path to write to
+     */
+    public FileSystemOutputFile(Path path) {
+        this.path = path;
     }
 
     /**
@@ -53,8 +64,8 @@ public class FileSystemOutputFile implements OutputFile {
      */
     @Override
     public PositionOutputStream create(long blockSizeHint) throws IOException {
-        if (file.exists()) {
-            throw new IllegalArgumentException("File already exists: " + file);
+        if (Files.exists(path)) {
+            throw new IllegalArgumentException("Path already exists: " + path);
         }
         return createOrOverwrite(blockSizeHint);
     }
@@ -69,7 +80,7 @@ public class FileSystemOutputFile implements OutputFile {
      */
     @Override
     public PositionOutputStream createOrOverwrite(long blockSizeHint) throws IOException {
-        return new CountedPositionOutputStream(new FileOutputStream(file));
+        return new CountedPositionOutputStream(Files.newOutputStream(path));
     }
 
     /**
@@ -93,6 +104,14 @@ public class FileSystemOutputFile implements OutputFile {
     @Override
     public long defaultBlockSize() {
         return 0;
+    }
+
+    /**
+     * @return the path of the file, as a {@link String}.
+     */
+    @Override
+    public String getPath() {
+        return path.toString();
     }
 
 }
