@@ -94,7 +94,7 @@ dependencies {
         exclude group: 'jakarta.activation', module: 'jakarta.activation-api'
     }
 
-    testImplementation "org.apache.avro:avro:1.11.4"
+    testImplementation "org.apache.avro:avro:1.11.5"
 
     testImplementation 'org.apache.commons:commons-lang3:3.12.0'
     testImplementation "org.apache.parquet:parquet-avro:${parquetVersion}"
