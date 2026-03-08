@@ -1,4 +1,5 @@
 rootProject.name = 'parquet-carpet'
 
 include 'carpet-record'
+include 'carpet-s3'
 include 'carpet-samples'
