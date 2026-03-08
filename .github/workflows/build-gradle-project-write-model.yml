@@ -24,6 +24,11 @@ jobs:
     - name: Setup Gradle
       uses: gradle/gradle-build-action@v2
 
+    - name: Start Docker
+      run: |
+        sudo systemctl start docker
+        docker info
+
     - name: Run tests with Write Model
       run: ./gradlew build -Dparquet.carpet.useJavaRecord2WriteModel=true
       continue-on-error: true
