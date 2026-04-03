@@ -168,7 +168,6 @@ configurations.all {
 }
 
 test {
-    maxHeapSize = "4g"
     useJUnitPlatform()
     systemProperties = System.properties as Map
 }
