@@ -11,7 +11,7 @@ java {
         languageVersion = JavaLanguageVersion.of(17)
     }
     sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17    
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 repositories {
@@ -51,7 +51,7 @@ mavenPublishing {
 
   pom {
     name = "Carpet S3"
-    description = "Carpet S3 implements a Parquet reader that can read Parquet files directly from S3, without the need to download them first."
+    description = "Carpet S3 implements a Parquet reader and writer that can work with Parquet files directly from S3."
     inceptionYear = "2026"
     url = "https://github.com/jerolba/parquet-carpet/"
     licenses {
