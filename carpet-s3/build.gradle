@@ -1,0 +1,78 @@
+plugins {
+    id 'java'
+    id 'java-library'
+    id 'jacoco'
+    id 'signing'
+    id "com.vanniktech.maven.publish" version "0.34.0"
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+dependencies {
+    api "org.apache.parquet:parquet-common:${parquetVersion}"
+    api "software.amazon.awssdk:s3:2.42.6"
+
+    testImplementation project(':carpet-record')
+    testImplementation 'org.slf4j:slf4j-simple:1.7.36'
+    testImplementation "org.testcontainers:testcontainers-localstack:2.0.3"
+    testImplementation "org.junit.jupiter:junit-jupiter:${junitVersion}"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+}
+
+test {
+    maxHeapSize = "2g"
+    useJUnitPlatform()
+}
+
+jacocoTestReport {
+    reports {
+         xml.required = true
+         html.required = true
+     }
+}
+
+
+javadoc {
+    options.addStringOption('Xdoclint:none', '-quiet')
+}
+
+mavenPublishing {
+  coordinates("com.jerolba", "carpet-s3", version)
+
+  pom {
+    name = "Carpet S3"
+    description = "Carpet S3 implements a Parquet reader and writer that can work with Parquet files directly from S3."
+    inceptionYear = "2026"
+    url = "https://github.com/jerolba/parquet-carpet/"
+    licenses {
+      license {
+        name = "The Apache License, Version 2.0"
+        url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+        distribution = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    }
+    developers {
+      developer {
+        id = "jerolba"
+        name = "Jerónimo López"
+        url = "https://github.com/jerolba/"
+      }
+    }
+    scm {
+      url = "https://github.com/jerolba/parquet-carpet/"
+      connection = "scm:git:git://github.com/jerolba/parquet-carpet.git"
+      developerConnection = "scm:git:ssh://git@github.com/jerolba/parquet-carpet.git"
+    }
+  }
+}
