@@ -4,9 +4,11 @@ permissions:
 
 on:
   push:
-    branches: [ master, 'gh-*/**' ]
+    branches:
+      - master
   pull_request:
-    branches: [ master ]
+    branches:
+      - master
 
 jobs:
   build:
