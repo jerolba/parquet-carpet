@@ -37,8 +37,11 @@ import software.amazon.awssdk.services.s3.S3Client;
  * If no Client is provided, a default S3Client will be created using the
  * default AWS credentials provider chain and region provider chain.
  *
- * Data is buffered in a local temporary file and uploaded to S3 when the output
- * stream is closed.
+ * Data is buffered in a local temporary buffer and uploaded to S3 when the
+ * buffer is full or the output stream is closed. Uploads is performed in
+ * parallel using multipart uploads, and the concurrency level can be configured
+ * via the builder or configuring a custom Executor. By default, a virtual
+ * thread executor is used for parallel uploads.
  *
  * If the path provided to the builder is detected as a local file path (i.e. it
  * does not start with s3:// or s3a:// and points to a valid writable location),
