@@ -21,7 +21,7 @@ repositories {
 
 dependencies {
     api "org.apache.parquet:parquet-common:${parquetVersion}"
-    api "software.amazon.awssdk:s3:2.42.6"
+    api "software.amazon.awssdk:s3:${awsSdkVersion}"
 
     testImplementation project(':carpet-record')
     testImplementation 'org.slf4j:slf4j-simple:1.7.36'

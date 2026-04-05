@@ -15,6 +15,10 @@
  */
 package com.jerolba.carpet.io.s3;
 
+import static com.jerolba.carpet.io.s3.S3ContainerHelper.BUCKET_NAME;
+import static com.jerolba.carpet.io.s3.S3ContainerHelper.createS3ClientWithBucket;
+import static com.jerolba.carpet.io.s3.S3ContainerHelper.createS3LocalStackContainer;
+import static com.jerolba.carpet.io.s3.S3ContainerHelper.stopLocalStack;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -29,49 +33,27 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.localstack.LocalStackContainer;
-import org.testcontainers.utility.DockerImageName;
 
 import com.jerolba.carpet.CarpetReader;
 import com.jerolba.carpet.CarpetWriter;
 
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 class S3OutputFileTest {
 
-    private static final String BUCKET_NAME = "test-bucket";
-
     private static LocalStackContainer localStack;
 
     @BeforeAll
     static void setUp() {
-        localStack = new LocalStackContainer(DockerImageName.parse(
-                "localstack/localstack:s3-community-archive:b14111811a1071ff8e05ea2d89fac68dc3aa115bcb0b053f5502a1dfffba4ff8"))
-                        .withServices("s3");
-        localStack.start();
-        System.setProperty("aws.endpointUrl", localStack.getEndpoint().toString());
-        System.setProperty("aws.accessKeyId", localStack.getAccessKey());
-        System.setProperty("aws.secretAccessKey", localStack.getSecretKey());
-        System.setProperty("aws.region", localStack.getRegion());
-
-        try (S3Client s3Client = S3Client.create()) {
-            s3Client.createBucket(CreateBucketRequest.builder()
-                    .bucket(BUCKET_NAME)
-                    .build());
-        }
+        localStack = createS3LocalStackContainer();
+        createS3ClientWithBucket(localStack);
     }
 
     @AfterAll
     static void tearDown() {
-        if (localStack != null) {
-            localStack.stop();
-        }
-        System.clearProperty("aws.endpointUrl");
-        System.clearProperty("aws.accessKeyId");
-        System.clearProperty("aws.secretAccessKey");
-        System.clearProperty("aws.region");
+        stopLocalStack(localStack);
     }
 
     record SimpleRecord(long id, String name, double value) {

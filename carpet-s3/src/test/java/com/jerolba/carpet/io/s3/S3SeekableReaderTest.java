@@ -15,6 +15,10 @@
  */
 package com.jerolba.carpet.io.s3;
 
+import static com.jerolba.carpet.io.s3.S3ContainerHelper.BUCKET_NAME;
+import static com.jerolba.carpet.io.s3.S3ContainerHelper.createS3ClientWithBucket;
+import static com.jerolba.carpet.io.s3.S3ContainerHelper.createS3LocalStackContainer;
+import static com.jerolba.carpet.io.s3.S3ContainerHelper.stopLocalStack;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -30,19 +34,13 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.localstack.LocalStackContainer;
-import org.testcontainers.utility.DockerImageName;
 
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.sync.RequestBody;
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 class S3SeekableReaderTest {
 
-    private static final String BUCKET_NAME = "test-bucket";
     private static final String OBJECT_KEY = "test-object.parquet";
 
     private static LocalStackContainer localStack;
@@ -51,22 +49,8 @@ class S3SeekableReaderTest {
 
     @BeforeAll
     static void setUp() {
-        localStack = new LocalStackContainer(DockerImageName.parse(
-                "localstack/localstack:s3-community-archive:b14111811a1071ff8e05ea2d89fac68dc3aa115bcb0b053f5502a1dfffba4ff8"))
-                        .withServices("s3");
-        localStack.start();
-
-        s3Client = S3Client.builder()
-                .endpointOverride(localStack.getEndpoint())
-                .credentialsProvider(
-                        StaticCredentialsProvider.create(
-                                AwsBasicCredentials.create(localStack.getAccessKey(), localStack.getSecretKey())))
-                .region(Region.of(localStack.getRegion()))
-                .build();
-
-        s3Client.createBucket(CreateBucketRequest.builder()
-                .bucket(BUCKET_NAME)
-                .build());
+        localStack = createS3LocalStackContainer();
+        s3Client = createS3ClientWithBucket(localStack);
 
         // Create test data with sequential bytes
         testData = new byte[1024];
@@ -79,12 +63,7 @@ class S3SeekableReaderTest {
 
     @AfterAll
     static void tearDown() {
-        if (s3Client != null) {
-            s3Client.close();
-        }
-        if (localStack != null) {
-            localStack.stop();
-        }
+        stopLocalStack(localStack);
     }
 
     @Test
