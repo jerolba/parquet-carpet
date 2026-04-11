@@ -119,8 +119,8 @@ class SeekableCachedFooterReader extends SeekableInputStream {
     }
 
     @Override
-    public boolean readVectoredAvailable(final ByteBufferAllocator allocator) {
-        return true;
+    public boolean readVectoredAvailable(ByteBufferAllocator allocator) {
+        return !allocator.isDirect();
     }
 
     private void checkOpen() throws IOException {

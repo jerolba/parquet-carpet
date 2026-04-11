@@ -15,6 +15,10 @@
  */
 package com.jerolba.carpet.io.s3;
 
+import static com.jerolba.carpet.io.s3.S3ContainerHelper.BUCKET_NAME;
+import static com.jerolba.carpet.io.s3.S3ContainerHelper.createS3ClientWithBucket;
+import static com.jerolba.carpet.io.s3.S3ContainerHelper.createS3LocalStackContainer;
+import static com.jerolba.carpet.io.s3.S3ContainerHelper.stopLocalStack;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
@@ -23,11 +27,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.IntStream;
 
+import org.apache.parquet.bytes.ByteBufferAllocator;
+import org.apache.parquet.bytes.DirectByteBufferAllocator;
+import org.apache.parquet.bytes.HeapByteBufferAllocator;
 import org.apache.parquet.io.SeekableInputStream;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -35,7 +43,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.testcontainers.localstack.LocalStackContainer;
-import org.testcontainers.utility.DockerImageName;
 
 import com.jerolba.carpet.CarpetReader;
 import com.jerolba.carpet.CarpetWriter;
@@ -43,42 +50,21 @@ import com.jerolba.carpet.io.FileSystemOutputFile;
 
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 class S3InputFileTest {
-
-    private static final String BUCKET_NAME = "test-bucket";
 
     private static LocalStackContainer localStack;
 
     @BeforeAll
     static void setUp() {
-        localStack = new LocalStackContainer(DockerImageName.parse(
-                "localstack/localstack:s3-community-archive:b14111811a1071ff8e05ea2d89fac68dc3aa115bcb0b053f5502a1dfffba4ff8"))
-                        .withServices("s3");
-        localStack.start();
-        System.setProperty("aws.endpointUrl", localStack.getEndpoint().toString());
-        System.setProperty("aws.accessKeyId", localStack.getAccessKey());
-        System.setProperty("aws.secretAccessKey", localStack.getSecretKey());
-        System.setProperty("aws.region", localStack.getRegion());
-
-        try (S3Client s3Client = S3Client.create()) {
-            s3Client.createBucket(CreateBucketRequest.builder()
-                    .bucket(BUCKET_NAME)
-                    .build());
-        }
+        localStack = createS3LocalStackContainer();
+        createS3ClientWithBucket(localStack);
     }
 
     @AfterAll
     static void tearDown() {
-        if (localStack != null) {
-            localStack.stop();
-        }
-        System.clearProperty("aws.endpointUrl");
-        System.clearProperty("aws.accessKeyId");
-        System.clearProperty("aws.secretAccessKey");
-        System.clearProperty("aws.region");
+        stopLocalStack(localStack);
     }
 
     private static <T> byte[] writeParquetBytes(Class<T> recordClass, List<T> records) throws IOException {
@@ -127,29 +113,23 @@ class S3InputFileTest {
             String url = "s3://test-bucket/get-length-correct.parquet";
             uploadToS3(url, parquetBytes);
 
-            try (var s3Client = S3Client.create()) {
-                var inputFile = S3InputFile.of(url);
-                assertEquals(parquetBytes.length, inputFile.getLength());
-            }
+            var inputFile = S3InputFile.of(url);
+            assertEquals(parquetBytes.length, inputFile.getLength());
         }
 
         @Test
         void getLengthThrowsForNonExistentKey() throws IOException {
-            try (var s3Client = S3Client.create()) {
-                var inputFile = S3InputFile.builder("s3://test-bucket/non-existent-key.parquet").build();
-                var ex = assertThrows(IOException.class, inputFile::getLength);
-                assertTrue(ex.getMessage().contains("non-existent-key.parquet"));
-            }
+            var inputFile = S3InputFile.builder("s3://test-bucket/non-existent-key.parquet").build();
+            var ex = assertThrows(IOException.class, inputFile::getLength);
+            assertTrue(ex.getMessage().contains("non-existent-key.parquet"));
         }
 
         @Test
         void getLengthThrowsForNonExistentBucket() throws IOException {
-            try (var s3Client = S3Client.create()) {
-                var inputFile = S3InputFile.builder().s3Client(s3Client).bucket("non-existent-bucket")
-                        .key("some-key.parquet").build();
-                var ex = assertThrows(IOException.class, inputFile::getLength);
-                assertTrue(ex.getMessage().contains("non-existent-bucket"));
-            }
+            var inputFile = S3InputFile.builder().bucket("non-existent-bucket")
+                    .key("some-key.parquet").build();
+            var ex = assertThrows(IOException.class, inputFile::getLength);
+            assertTrue(ex.getMessage().contains("non-existent-bucket"));
         }
     }
 
@@ -163,12 +143,10 @@ class S3InputFileTest {
             String url = "s3://test-bucket/new-stream-valid.parquet";
             uploadToS3(url, parquetBytes);
 
-            try (var s3Client = S3Client.create()) {
-                var inputFile = S3InputFile.of(url);
-                try (SeekableInputStream stream = inputFile.newStream()) {
-                    assertNotNull(stream);
-                    assertEquals(0, stream.getPos());
-                }
+            var inputFile = S3InputFile.of(url);
+            try (SeekableInputStream stream = inputFile.newStream()) {
+                assertNotNull(stream);
+                assertEquals(0, stream.getPos());
             }
         }
 
@@ -179,15 +157,13 @@ class S3InputFileTest {
             String url = "s3://test-bucket/new-stream-independent.parquet";
             uploadToS3(url, parquetBytes);
 
-            try (var s3Client = S3Client.create()) {
-                var inputFile = S3InputFile.of(url);
-                try (SeekableInputStream stream1 = inputFile.newStream();
-                        SeekableInputStream stream2 = inputFile.newStream()) {
-                    assertNotSame(stream1, stream2);
-                    stream1.seek(10);
-                    assertEquals(10, stream1.getPos());
-                    assertEquals(0, stream2.getPos());
-                }
+            var inputFile = S3InputFile.of(url);
+            try (SeekableInputStream stream1 = inputFile.newStream();
+                    SeekableInputStream stream2 = inputFile.newStream()) {
+                assertNotSame(stream1, stream2);
+                stream1.seek(10);
+                assertEquals(10, stream1.getPos());
+                assertEquals(0, stream2.getPos());
             }
         }
     }
@@ -204,11 +180,9 @@ class S3InputFileTest {
             String url = "s3://test-bucket/read-simple.parquet";
             uploadToS3(url, parquetBytes);
 
-            try (var s3Client = S3Client.create()) {
-                var inputFile = S3InputFile.of(url);
-                List<SimpleRecord> actual = new CarpetReader<>(inputFile, SimpleRecord.class).toList();
-                assertEquals(expected, actual);
-            }
+            var inputFile = S3InputFile.of(url);
+            List<SimpleRecord> actual = new CarpetReader<>(inputFile, SimpleRecord.class).toList();
+            assertEquals(expected, actual);
         }
 
         @Test
@@ -220,11 +194,9 @@ class S3InputFileTest {
             String url = "s3://test-bucket/read-multiple.parquet";
             uploadToS3(url, parquetBytes);
 
-            try (var s3Client = S3Client.create()) {
-                var inputFile = S3InputFile.of(url);
-                List<SimpleRecord> actual = new CarpetReader<>(inputFile, SimpleRecord.class).toList();
-                assertEquals(expected, actual);
-            }
+            var inputFile = S3InputFile.of(url);
+            List<SimpleRecord> actual = new CarpetReader<>(inputFile, SimpleRecord.class).toList();
+            assertEquals(expected, actual);
         }
 
         @Test
@@ -236,16 +208,14 @@ class S3InputFileTest {
             String url = "s3://test-bucket/read-stream-api.parquet";
             uploadToS3(url, parquetBytes);
 
-            try (var s3Client = S3Client.create()) {
-                var inputFile = S3InputFile.of(url);
-                try (var stream = new CarpetReader<>(inputFile, SimpleRecord.class).stream()) {
-                    List<SimpleRecord> filtered = stream
-                            .filter(r -> r.id() >= 10 && r.id() < 20)
-                            .toList();
-                    assertEquals(10, filtered.size());
-                    assertEquals(10, filtered.get(0).id());
-                    assertEquals(19, filtered.get(9).id());
-                }
+            var inputFile = S3InputFile.of(url);
+            try (var stream = new CarpetReader<>(inputFile, SimpleRecord.class).stream()) {
+                List<SimpleRecord> filtered = stream
+                        .filter(r -> r.id() >= 10 && r.id() < 20)
+                        .toList();
+                assertEquals(10, filtered.size());
+                assertEquals(10, filtered.get(0).id());
+                assertEquals(19, filtered.get(9).id());
             }
         }
 
@@ -255,11 +225,9 @@ class S3InputFileTest {
             String url = "s3://test-bucket/read-empty.parquet";
             uploadToS3(url, parquetBytes);
 
-            try (var s3Client = S3Client.create()) {
-                var inputFile = S3InputFile.of(url);
-                List<SimpleRecord> actual = new CarpetReader<>(inputFile, SimpleRecord.class).toList();
-                assertTrue(actual.isEmpty());
-            }
+            var inputFile = S3InputFile.of(url);
+            List<SimpleRecord> actual = new CarpetReader<>(inputFile, SimpleRecord.class).toList();
+            assertTrue(actual.isEmpty());
         }
 
         @Test
@@ -271,13 +239,11 @@ class S3InputFileTest {
             String url = "s3://test-bucket/read-projection.parquet";
             uploadToS3(url, parquetBytes);
 
-            try (var s3Client = S3Client.create()) {
-                var inputFile = S3InputFile.of(url);
-                List<NarrowRecord> actual = new CarpetReader<>(inputFile, NarrowRecord.class).toList();
-                assertEquals(2, actual.size());
-                assertEquals(new NarrowRecord(1, "Alice"), actual.get(0));
-                assertEquals(new NarrowRecord(2, "Bob"), actual.get(1));
-            }
+            var inputFile = S3InputFile.of(url);
+            List<NarrowRecord> actual = new CarpetReader<>(inputFile, NarrowRecord.class).toList();
+            assertEquals(2, actual.size());
+            assertEquals(new NarrowRecord(1, "Alice"), actual.get(0));
+            assertEquals(new NarrowRecord(2, "Bob"), actual.get(1));
         }
 
         @Test
@@ -289,14 +255,12 @@ class S3InputFileTest {
             String url = "s3://test-bucket/read-large.parquet";
             uploadToS3(url, parquetBytes);
 
-            try (var s3Client = S3Client.create()) {
-                var inputFile = S3InputFile.of(url);
-                List<SimpleRecord> actual = new CarpetReader<>(inputFile, SimpleRecord.class).toList();
-                assertEquals(expected.size(), actual.size());
-                assertEquals(expected.get(0), actual.get(0));
-                assertEquals(expected.get(expected.size() - 1), actual.get(actual.size() - 1));
-                assertEquals(expected, actual);
-            }
+            var inputFile = S3InputFile.of(url);
+            List<SimpleRecord> actual = new CarpetReader<>(inputFile, SimpleRecord.class).toList();
+            assertEquals(expected.size(), actual.size());
+            assertEquals(expected.get(0), actual.get(0));
+            assertEquals(expected.get(expected.size() - 1), actual.get(actual.size() - 1));
+            assertEquals(expected, actual);
         }
     }
 
@@ -312,11 +276,9 @@ class S3InputFileTest {
             String url = "s3://test-bucket/read-concurrency-one.parquet";
             uploadToS3(url, parquetBytes);
 
-            try (var s3Client = S3Client.create()) {
-                var inputFile = S3InputFile.of(url);
-                List<SimpleRecord> actual = new CarpetReader<>(inputFile, SimpleRecord.class).toList();
-                assertEquals(expected, actual);
-            }
+            var inputFile = S3InputFile.of(url);
+            List<SimpleRecord> actual = new CarpetReader<>(inputFile, SimpleRecord.class).toList();
+            assertEquals(expected, actual);
         }
 
         @Test
@@ -328,11 +290,9 @@ class S3InputFileTest {
             String url = "s3://test-bucket/read-concurrency-multi.parquet";
             uploadToS3(url, parquetBytes);
 
-            try (var s3Client = S3Client.create()) {
-                var inputFile = S3InputFile.builder(url).s3Client(s3Client).concurrency(4).build();
-                List<SimpleRecord> actual = new CarpetReader<>(inputFile, SimpleRecord.class).toList();
-                assertEquals(expected, actual);
-            }
+            var inputFile = S3InputFile.builder(url).concurrency(4).build();
+            List<SimpleRecord> actual = new CarpetReader<>(inputFile, SimpleRecord.class).toList();
+            assertEquals(expected, actual);
         }
 
         @Test
@@ -344,16 +304,14 @@ class S3InputFileTest {
             String url = "s3://test-bucket/read-concurrency-both.parquet";
             uploadToS3(url, parquetBytes);
 
-            try (var s3Client = S3Client.create()) {
-                var sequential = S3InputFile.builder(url).concurrency(1).build();
-                var parallel = S3InputFile.builder(url).concurrency(4).build();
+            var sequential = S3InputFile.builder(url).concurrency(1).build();
+            var parallel = S3InputFile.builder(url).concurrency(4).build();
 
-                List<SimpleRecord> seqResult = new CarpetReader<>(sequential, SimpleRecord.class).toList();
-                List<SimpleRecord> parResult = new CarpetReader<>(parallel, SimpleRecord.class).toList();
+            List<SimpleRecord> seqResult = new CarpetReader<>(sequential, SimpleRecord.class).toList();
+            List<SimpleRecord> parResult = new CarpetReader<>(parallel, SimpleRecord.class).toList();
 
-                assertEquals(seqResult, parResult);
-                assertEquals(expected, seqResult);
-            }
+            assertEquals(seqResult, parResult);
+            assertEquals(expected, seqResult);
         }
     }
 
@@ -362,18 +320,14 @@ class S3InputFileTest {
 
         @Test
         void readFromNonExistentKeyThrows() throws IOException {
-            try (var s3Client = S3Client.create()) {
-                var inputFile = S3InputFile.builder("s3://test-bucket/does-not-exist.parquet").build();
-                assertThrows(Exception.class, () -> new CarpetReader<>(inputFile, SimpleRecord.class).toList());
-            }
+            var inputFile = S3InputFile.builder("s3://test-bucket/does-not-exist.parquet").build();
+            assertThrows(Exception.class, () -> new CarpetReader<>(inputFile, SimpleRecord.class).toList());
         }
 
         @Test
         void readFromNonExistentBucketThrows() throws IOException {
-            try (var s3Client = S3Client.create()) {
-                var inputFile = S3InputFile.builder("s3://no-such-bucket/some-key.parquet").build();
-                assertThrows(Exception.class, () -> new CarpetReader<>(inputFile, SimpleRecord.class).toList());
-            }
+            var inputFile = S3InputFile.builder("s3://no-such-bucket/some-key.parquet").build();
+            assertThrows(Exception.class, () -> new CarpetReader<>(inputFile, SimpleRecord.class).toList());
         }
     }
 
@@ -389,11 +343,9 @@ class S3InputFileTest {
             String url = "s3://test-bucket/read-small.parquet";
             uploadToS3(url, parquetBytes);
 
-            try (var s3Client = S3Client.create()) {
-                var inputFile = S3InputFile.of(url);
-                List<SimpleRecord> actual = new CarpetReader<>(inputFile, SimpleRecord.class).toList();
-                assertEquals(expected, actual);
-            }
+            var inputFile = S3InputFile.of(url);
+            List<SimpleRecord> actual = new CarpetReader<>(inputFile, SimpleRecord.class).toList();
+            assertEquals(expected, actual);
         }
 
         @Test
@@ -405,11 +357,9 @@ class S3InputFileTest {
             String url = "s3://test-bucket/read-small-concurrent.parquet";
             uploadToS3(url, parquetBytes);
 
-            try (var s3Client = S3Client.create()) {
-                var inputFile = S3InputFile.builder(url).s3Client(s3Client).concurrency(4).build();
-                List<SimpleRecord> actual = new CarpetReader<>(inputFile, SimpleRecord.class).toList();
-                assertEquals(expected, actual);
-            }
+            var inputFile = S3InputFile.builder(url).concurrency(4).build();
+            List<SimpleRecord> actual = new CarpetReader<>(inputFile, SimpleRecord.class).toList();
+            assertEquals(expected, actual);
         }
     }
 
@@ -419,12 +369,17 @@ class S3InputFileTest {
 
         private static final int RECORD_COUNT = 400_000;
         private static final String LARGE_FILE_KEY = "large-file.parquet";
+        private static final String LARGE_FILE_URL = "s3://test-bucket/" + LARGE_FILE_KEY;
 
         record HeavyRecord(long id, long value, String payload) {
         }
 
-        private HeavyRecord firstRecord;
-        private HeavyRecord lastRecord;
+        record ProjectionRecord(long id, String payload) {
+        }
+
+        private final HeavyRecord firstRecord = new HeavyRecord(0, 0, makePayload(0));
+        private final HeavyRecord lastRecord = new HeavyRecord(RECORD_COUNT - 1, (RECORD_COUNT - 1) * 2,
+                makePayload(RECORD_COUNT - 1));
         private long uploadedSize;
 
         /**
@@ -444,16 +399,12 @@ class S3InputFileTest {
 
         @BeforeAll
         void setUpLargeFile() throws IOException {
-            firstRecord = new HeavyRecord(0, 0, makePayload(0));
-            lastRecord = new HeavyRecord(RECORD_COUNT - 1, (RECORD_COUNT - 1) * 2, makePayload(RECORD_COUNT - 1));
-
             // Write to a temp file with small row groups to avoid a 128 MiB row-group
             // buffer in heap. Rows are generated lazily and flushed to disk every 8 MiB.
             // createTempFile gives a unique path; delete the empty placeholder so
             // FileSystemOutputFile.create() (which requires a non-existing path) can work.
             Path tempFile = Files.createTempFile("large-parquet-test", ".parquet");
             Files.delete(tempFile);
-            String url = "s3://test-bucket/" + LARGE_FILE_KEY;
             try {
                 var outputFile = new FileSystemOutputFile(tempFile.toFile());
                 try (var writer = new CarpetWriter.Builder<>(outputFile, HeavyRecord.class)
@@ -466,7 +417,7 @@ class S3InputFileTest {
                 uploadedSize = Files.size(tempFile);
                 assertTrue(uploadedSize > 100L * 1024 * 1024,
                         "Expected parquet file > 100 MiB but was " + uploadedSize + " bytes");
-                uploadToS3(url, Files.readAllBytes(tempFile));
+                uploadToS3(LARGE_FILE_URL, Files.readAllBytes(tempFile));
             } finally {
                 Files.deleteIfExists(tempFile);
             }
@@ -474,67 +425,107 @@ class S3InputFileTest {
 
         @Test
         void getLengthReturnsCorrectSizeForLargeFile() throws IOException {
-            String url = "s3://test-bucket/large-file.parquet";
-            try (var s3Client = S3Client.create()) {
-                var inputFile = S3InputFile.of(url);
-                assertEquals(uploadedSize, inputFile.getLength());
-            }
+            var inputFile = S3InputFile.of(LARGE_FILE_URL);
+            assertEquals(uploadedSize, inputFile.getLength());
         }
 
         @Test
         void readLargeFileWithSequentialReader() throws IOException {
-            String url = "s3://test-bucket/large-file.parquet";
-            try (var s3Client = S3Client.create()) {
-                var inputFile = S3InputFile.builder(url).concurrency(1).build();
-                List<HeavyRecord> actual = new CarpetReader<>(inputFile, HeavyRecord.class).toList();
-                assertEquals(RECORD_COUNT, actual.size());
-                assertEquals(firstRecord, actual.get(0));
-                assertEquals(lastRecord, actual.get(RECORD_COUNT - 1));
-            }
+            var inputFile = S3InputFile.builder(LARGE_FILE_URL).concurrency(1).build();
+            List<HeavyRecord> actual = new CarpetReader<>(inputFile, HeavyRecord.class).toList();
+            assertEquals(RECORD_COUNT, actual.size());
+            assertEquals(firstRecord, actual.get(0));
+            assertEquals(lastRecord, actual.get(RECORD_COUNT - 1));
         }
 
         @Test
         void readLargeFileWithConcurrentReader() throws IOException {
-            String url = "s3://test-bucket/large-file.parquet";
-            try (var s3Client = S3Client.create()) {
-                var inputFile = S3InputFile.builder(url).s3Client(s3Client).concurrency(4).build();
-                List<HeavyRecord> actual = new CarpetReader<>(inputFile, HeavyRecord.class).toList();
-                assertEquals(RECORD_COUNT, actual.size());
-                assertEquals(firstRecord, actual.get(0));
-                assertEquals(lastRecord, actual.get(RECORD_COUNT - 1));
-            }
-        }
-
-        @Test
-        void bothReadersReturnTheSameData() throws IOException {
-            String url = "s3://test-bucket/large-file.parquet";
-            try (var s3Client = S3Client.create()) {
-                var sequential = S3InputFile.builder(url).concurrency(1).build();
-                var concurrent = S3InputFile.builder(url).concurrency(4).build();
-
-                List<HeavyRecord> seqResult = new CarpetReader<>(sequential, HeavyRecord.class).toList();
-                List<HeavyRecord> parResult = new CarpetReader<>(concurrent, HeavyRecord.class).toList();
-
-                assertEquals(seqResult.size(), parResult.size());
-                assertEquals(seqResult.get(0), parResult.get(0));
-                assertEquals(seqResult.get(seqResult.size() - 1), parResult.get(parResult.size() - 1));
-            }
+            var inputFile = S3InputFile.builder(LARGE_FILE_URL).concurrency(4).build();
+            List<HeavyRecord> actual = new CarpetReader<>(inputFile, HeavyRecord.class).toList();
+            assertEquals(RECORD_COUNT, actual.size());
+            assertEquals(firstRecord, actual.get(0));
+            assertEquals(lastRecord, actual.get(RECORD_COUNT - 1));
         }
 
         @Test
         void readLargeFileWithProjection() throws IOException {
-            record ProjectionRecord(long id, String payload) {
+            var inputFile = S3InputFile.builder(LARGE_FILE_URL).concurrency(4).build();
+            List<ProjectionRecord> actual = new CarpetReader<>(inputFile, ProjectionRecord.class).toList();
+            assertEquals(RECORD_COUNT, actual.size());
+            assertEquals(firstRecord.id, actual.get(0).id);
+            assertEquals(firstRecord.payload, actual.get(0).payload);
+            assertEquals(lastRecord.id, actual.get(RECORD_COUNT - 1).id);
+            assertEquals(lastRecord.payload, actual.get(RECORD_COUNT - 1).payload);
+        }
+
+        @Test
+        void heapAllocatorConfigured() throws IOException {
+            var inputFile = S3InputFile.of(LARGE_FILE_URL);
+            var allocator = new ByteBufferAllocatorWrapper(HeapByteBufferAllocator.getInstance());
+            List<ProjectionRecord> actual = new CarpetReader.Builder<>(inputFile, ProjectionRecord.class)
+                    .withAllocator(allocator)
+                    .build()
+                    .toList();
+            assertEquals(RECORD_COUNT, actual.size());
+            assertEquals(firstRecord.id, actual.get(0).id);
+            assertEquals(firstRecord.payload, actual.get(0).payload);
+            assertEquals(lastRecord.id, actual.get(RECORD_COUNT - 1).id);
+            assertEquals(lastRecord.payload, actual.get(RECORD_COUNT - 1).payload);
+            assertEquals(22, allocator.allocationCount(),
+                    "Expected 22 ByteBuffer allocations for large file read with heap allocator");
+        }
+
+        @Test
+        void offHeapAllocatorConfigured() throws IOException {
+            var inputFile = S3InputFile.of(LARGE_FILE_URL);
+            var allocator = new ByteBufferAllocatorWrapper(DirectByteBufferAllocator.getInstance());
+            List<ProjectionRecord> actual = new CarpetReader.Builder<>(inputFile, ProjectionRecord.class)
+                    .withAllocator(allocator)
+                    .build()
+                    .toList();
+            assertEquals(RECORD_COUNT, actual.size());
+            assertEquals(firstRecord.id, actual.get(0).id);
+            assertEquals(firstRecord.payload, actual.get(0).payload);
+            assertEquals(lastRecord.id, actual.get(RECORD_COUNT - 1).id);
+            assertEquals(lastRecord.payload, actual.get(RECORD_COUNT - 1).payload);
+            // Off-heap allocator can not use vectorized reads, and fall backs to per page
+            // reads, resulting in more allocations. The exact number may vary based on
+            // parquet file structure and reader implementation details, but should be
+            // significantly higher than the heap allocator case.
+            assertEquals(63, allocator.allocationCount(),
+                    "Expected 63 ByteBuffer allocations for large file read with off-heap allocator");
+        }
+
+        private static class ByteBufferAllocatorWrapper implements ByteBufferAllocator {
+
+            private final ByteBufferAllocator delegate;
+            private long allocations = 0;
+
+            public ByteBufferAllocatorWrapper(ByteBufferAllocator delegate) {
+                this.delegate = delegate;
             }
-            String url = "s3://test-bucket/large-file.parquet";
-            try (var s3Client = S3Client.create()) {
-                var inputFile = S3InputFile.builder(url).s3Client(s3Client).concurrency(4).build();
-                List<ProjectionRecord> actual = new CarpetReader<>(inputFile, ProjectionRecord.class).toList();
-                assertEquals(RECORD_COUNT, actual.size());
-                assertEquals(firstRecord.id, actual.get(0).id);
-                assertEquals(firstRecord.payload, actual.get(0).payload);
-                assertEquals(lastRecord.id, actual.get(RECORD_COUNT - 1).id);
-                assertEquals(lastRecord.payload, actual.get(RECORD_COUNT - 1).payload);
+
+            @Override
+            public ByteBuffer allocate(int size) {
+                allocations++;
+                return delegate.allocate(size);
             }
+
+            @Override
+            public void release(ByteBuffer b) {
+                delegate.release(b);
+            }
+
+            @Override
+            public boolean isDirect() {
+                return delegate.isDirect();
+            }
+
+            public long allocationCount() {
+                return allocations;
+            }
+
         }
     }
+
 }

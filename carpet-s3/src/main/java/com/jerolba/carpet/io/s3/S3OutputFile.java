@@ -17,62 +17,48 @@ package com.jerolba.carpet.io.s3;
 
 import static com.jerolba.carpet.io.s3.CustomExecutor.createCustomExecutor;
 import static com.jerolba.carpet.io.s3.CustomExecutor.createVirtualThreadExecutorWithCommonPoolFallback;
-import static com.jerolba.carpet.io.s3.S3UrlParsing.detectLocalFilePathForReading;
+import static com.jerolba.carpet.io.s3.S3UrlParsing.detectLocalFilePathForWriting;
 import static com.jerolba.carpet.io.s3.S3UrlParsing.parses3Url;
 
 import java.nio.file.Path;
 import java.util.concurrent.Executor;
 
-import org.apache.parquet.io.InputFile;
+import org.apache.parquet.io.OutputFile;
 
 import com.jerolba.carpet.io.s3.S3UrlParsing.S3Path;
 
 import software.amazon.awssdk.services.s3.S3Client;
 
 /**
- * An extension of Parquet's {@link InputFile} interface that reads from an S3
- * object.The builder pattern is used to allow flexible configuration of the S3
- * client, bucket, key, and concurrency settings.
+ * An extension of Parquet's {@link OutputFile} interface that writes to an S3
+ * object. The builder pattern is used to allow flexible configuration of the S3
+ * client, bucket, and key.
  *
  * If no Client is provided, a default S3Client will be created using the
  * default AWS credentials provider chain and region provider chain.
  *
- * For large files data is read using parallel ranged requests to S3, with the
- * concurrency level configurable via the {@link Builder#concurrency(int)}
- * method or by providing a custom {@link Executor} via the
- * {@link Builder#executor(Executor)} method. By default, a virtual thread
- * executor with a common pool fallback is used to allow for efficient
- * concurrent reads without blocking platform threads.
+ * Data is buffered in a local temporary buffer and uploaded to S3 when the
+ * buffer is full or the output stream is closed. Uploads is performed in
+ * parallel using multipart uploads, and the concurrency level can be configured
+ * via the builder or configuring a custom Executor. By default, a virtual
+ * thread executor is used for parallel uploads.
  *
- * If the S3 path provided to the builder is detected as a local file path (i.e.
- * it does not start with s3:// or s3a:// and points to an existing file), the
- * builder will automatically create a {@link LocalInputFile} instance that can
- * be used to read from the local file system instead of S3. This allows for
+ * If the path provided to the builder is detected as a local file path (i.e. it
+ * does not start with s3:// or s3a:// and points to a valid writable location),
+ * the builder will automatically create a {@link LocalOutputFile} instance that
+ * writes to the local file system instead of S3. "Valid" means the path is
+ * syntactically correct and its parent directory exists. This allows for
  * seamless testing and development with local files without changing the code
  * that uses the builder.
- *
- * If system property {@code carpet.s3.predownload.file} is set to true, the
- * entire S3 file will be pre-downloaded to a local temporary file before
- * reading. This can improve performance for small files or when the S3 object
- * is accessed multiple times in development, but it may not be suitable for
- * large files or production use due to of local disk usage.
- *
  */
-public interface S3InputFile extends InputFile {
+public interface S3OutputFile extends OutputFile {
 
-    /**
-     * Configuration property to enable pre-downloading the entire S3 file to a
-     * local temporary file before reading. This can improve performance for small
-     * files or when the S3 object is accessed multiple times in development.
-     */
-    public static final String CARPET_S3_PREDOWNLOAD_FILE = "carpet.s3.predownload.file";
-
-    public static S3InputFile of(String s3Path) {
+    public static S3OutputFile of(String s3Path) {
         return new Builder().s3Path(s3Path).build();
     }
 
     /**
-     * Returns a new builder for {@link S3InputFile}.
+     * Returns a new builder for {@link S3OutputFile}.
      *
      * @return a new builder
      */
@@ -81,7 +67,7 @@ public interface S3InputFile extends InputFile {
     }
 
     /**
-     * Returns a new builder for {@link S3InputFile}.
+     * Returns a new builder for {@link S3OutputFile}.
      *
      * @param s3Url the S3 URL in the format s3://bucket/key or s3a://bucket/key
      *
@@ -92,7 +78,7 @@ public interface S3InputFile extends InputFile {
     }
 
     /**
-     * Returns a new builder for {@link S3InputFile} with the specified bucket and
+     * Returns a new builder for {@link S3OutputFile} with the specified bucket and
      * key.
      *
      * @param bucket the S3 bucket name
@@ -106,8 +92,8 @@ public interface S3InputFile extends InputFile {
     public static class Builder {
 
         /**
-         * Default concurrency level for vectored read operations when using the virtual
-         * thread executor.
+         * Default concurrency level for part uploads when using the virtual thread
+         * executor.
          */
         private static final int DEFAULT_CONCURRENCY = 4;
 
@@ -121,9 +107,7 @@ public interface S3InputFile extends InputFile {
         /**
          * Configures the S3 client to use for operations. If not set, a default
          * S3Client will be created using the default AWS credentials provider chain and
-         * region provider chain. Providing a custom client allows for advanced
-         * configurations such as custom retry policies, timeouts, or using a specific
-         * AWS region.
+         * region provider chain.
          *
          * @param client the S3 client to use for operations
          * @return this builder
@@ -134,7 +118,7 @@ public interface S3InputFile extends InputFile {
         }
 
         /**
-         * Configures the S3 bucket name to read from.
+         * Configures the S3 bucket name to write to.
          *
          * @param bucket the S3 bucket name
          * @return this builder
@@ -145,7 +129,7 @@ public interface S3InputFile extends InputFile {
         }
 
         /**
-         * Configures the S3 object key to read from.
+         * Configures the S3 object key to write to.
          *
          * @param key the S3 object key
          * @return this builder
@@ -156,33 +140,11 @@ public interface S3InputFile extends InputFile {
         }
 
         /**
-         * Configures the S3 bucket and key by parsing a single S3 path string. The path
-         * should be in the format s3://bucket/key or s3a://bucket/key. This is a
-         * convenient method for setting both the bucket and key in one step, and it
-         * includes validation to ensure the path is well-formed.
+         * Configures the concurrency level for parallel part uploads. A value of 1
+         * means sequential uploads, while values greater than 1 enable concurrent
+         * uploads. Mutually exclusive with {@link #executor(Executor)}.
          *
-         * @param s3Path the S3 path string to parse for bucket and key
-         * @return this builder
-         */
-        public Builder s3Path(String s3Path) {
-            Path local = detectLocalFilePathForReading(s3Path);
-            if (local != null) {
-                this.localFilePath = local;
-            } else {
-                S3Path s3PathObj = parses3Url(s3Path);
-                this.bucket = s3PathObj.bucket();
-                this.key = s3PathObj.key();
-            }
-            return this;
-        }
-
-        /**
-         * Configures the concurrency level for vectored read operations. A value of 1
-         * means sequential reads, while values greater than 1 enable concurrent reads.
-         * Mutually exclusive with {@link #executor(Executor)}.
-         *
-         * @param concurrency the concurrency level for vectored read operations, must
-         *                    be > 0
+         * @param concurrency the concurrency level, must be > 0
          * @return this builder
          */
         public Builder concurrency(int concurrency) {
@@ -194,7 +156,7 @@ public interface S3InputFile extends InputFile {
         }
 
         /**
-         * Sets a custom executor for vectored read operations. Mutually exclusive with
+         * Sets a custom executor for parallel part uploads. Mutually exclusive with
          * {@link #concurrency(int)}.
          *
          * @param executor the executor to use
@@ -209,13 +171,39 @@ public interface S3InputFile extends InputFile {
         }
 
         /**
-         * Builds the {@link S3InputFile} instance based on the configured properties.
+         * Configures the S3 bucket and key by parsing a single S3 path string. The path
+         * should be in the format s3://bucket/key or s3a://bucket/key. This is a
+         * convenient method for setting both the bucket and key in one step, and it
+         * includes validation to ensure the path is well-formed.
          *
-         * @return the configured {@link S3InputFile} instance
+         * If the path is not an S3 URL but is a valid local file system path (its
+         * parent directory exists), the builder will fall back to creating a
+         * {@link LocalOutputFile}.
+         *
+         * @param s3Path the S3 path string to parse for bucket and key, or a local file
+         *               system path
+         * @return this builder
          */
-        public S3InputFile build() {
+        public Builder s3Path(String s3Path) {
+            Path local = detectLocalFilePathForWriting(s3Path);
+            if (local != null) {
+                this.localFilePath = local;
+            } else {
+                S3Path s3PathObj = parses3Url(s3Path);
+                this.bucket = s3PathObj.bucket();
+                this.key = s3PathObj.key();
+            }
+            return this;
+        }
+
+        /**
+         * Builds the {@link S3OutputFile} instance based on the configured properties.
+         *
+         * @return the configured {@link S3OutputFile} instance
+         */
+        public S3OutputFile build() {
             if (localFilePath != null) {
-                return new LocalInputFile(localFilePath);
+                return new LocalOutputFile(localFilePath);
             }
             if (bucket == null || bucket.isEmpty()) {
                 throw new IllegalStateException("bucket must be configured");
@@ -230,15 +218,15 @@ public interface S3InputFile extends InputFile {
             if (actualClient == null) {
                 actualClient = S3Client.create();
             }
-            Executor executor = this.executor;
+            Executor actualExecutor = this.executor;
             if (concurrency != null && concurrency > 1) {
-                executor = createCustomExecutor(concurrency);
+                actualExecutor = createCustomExecutor(concurrency);
             } else if (concurrency != null && concurrency == 1) {
-                executor = null; // Use sequential reads
+                actualExecutor = Runnable::run; // sequential: run in calling thread
             } else {
-                executor = createVirtualThreadExecutorWithCommonPoolFallback(DEFAULT_CONCURRENCY);
+                actualExecutor = createVirtualThreadExecutorWithCommonPoolFallback(DEFAULT_CONCURRENCY);
             }
-            return new S3InputFileImpl(actualClient, bucket, key, executor);
+            return new S3OutputFileImpl(actualClient, bucket, key, actualExecutor);
         }
 
     }
