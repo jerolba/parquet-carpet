@@ -125,6 +125,21 @@ class CachedFooterProxyReaderTest {
                 assertTrue(footer.isCached(0));
             }
         }
+
+        @Test
+        void systemPropertyOverridesDefaultFooterSize() throws IOException {
+            System.setProperty(CachedFooterProxyReader.CARPET_FOOTER_CACHE_SIZE, "512");
+            try {
+                byte[] data = sequentialBytes(1000);
+                // footerPosition = 1000 - 512 = 488
+                try (var footer = new CachedFooterProxyReader(readerOf(data))) {
+                    assertFalse(footer.isCached(487));
+                    assertTrue(footer.isCached(488));
+                }
+            } finally {
+                System.clearProperty(CachedFooterProxyReader.CARPET_FOOTER_CACHE_SIZE);
+            }
+        }
     }
 
     // -------------------------------------------------------------------------

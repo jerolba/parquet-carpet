@@ -61,7 +61,7 @@ class S3InputFileImpl implements S3InputFile {
      */
     @Override
     public SeekableInputStream newStream() throws IOException {
-        if ("true".equalsIgnoreCase(System.getProperty(CARPET_S3_PREDOWNLOAD_FILE))) {
+        if (Boolean.getBoolean(CARPET_S3_PREDOWNLOAD_FILE)) {
             Path localFile = s3SeekableReader.downloadToLocalFile();
             return new LocalFileInputStream(localFile);
         }

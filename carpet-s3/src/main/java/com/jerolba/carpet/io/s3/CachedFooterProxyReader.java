@@ -27,6 +27,12 @@ import java.nio.ByteBuffer;
  */
 class CachedFooterProxyReader implements SeekableReader {
 
+    /**
+     * Configuration property to set the size of the footer cache in bytes. If not
+     * set, a default size of 8 MiB will be used.
+     */
+    public static final String CARPET_FOOTER_CACHE_SIZE = "carpet.footer.cache.size";
+
     private static final int DEFAULT_FOOTER_SIZE = 8 * 1024 * 1024; // 8 MiB footer size
 
     private final SeekableReader reader;
@@ -48,7 +54,7 @@ class CachedFooterProxyReader implements SeekableReader {
     }
 
     public CachedFooterProxyReader(SeekableReader reader) throws IOException {
-        this(reader, DEFAULT_FOOTER_SIZE);
+        this(reader, Integer.getInteger(CARPET_FOOTER_CACHE_SIZE, DEFAULT_FOOTER_SIZE));
     }
 
     @Override
