@@ -54,9 +54,7 @@ class CachedFooterProxyReader implements SeekableReader {
     }
 
     public CachedFooterProxyReader(SeekableReader reader) throws IOException {
-        this(reader, System.getProperty(CARPET_FOOTER_CACHE_SIZE) != null
-                ? Integer.parseInt(System.getProperty(CARPET_FOOTER_CACHE_SIZE))
-                : DEFAULT_FOOTER_SIZE);
+        this(reader, Integer.getInteger(CARPET_FOOTER_CACHE_SIZE, DEFAULT_FOOTER_SIZE));
     }
 
     @Override
