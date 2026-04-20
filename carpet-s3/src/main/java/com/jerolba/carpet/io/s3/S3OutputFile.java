@@ -144,6 +144,12 @@ public interface S3OutputFile extends OutputFile {
          * means sequential uploads, while values greater than 1 enable concurrent
          * uploads. Mutually exclusive with {@link #executor(Executor)}.
          *
+         * Depending on the availability of virtual threads (Java 19+), a virtual thread
+         * executor will be used to allow for efficient concurrent reads without
+         * blocking platform threads. If virtual threads are not available, a fixed
+         * thread pool will be used as a fallback. Setting concurrency to 1 will disable
+         * parallel uploads and perform all uploads sequentially in the calling thread.
+         *
          * @param concurrency the concurrency level, must be > 0
          * @return this builder
          */

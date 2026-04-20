@@ -25,7 +25,7 @@ import java.nio.file.StandardOpenOption;
 import org.apache.parquet.io.SeekableInputStream;
 
 /**
- * Reader for local files downaloaded from S3 when carpet.s3.predownload.file is
+ * Reader for local files downloaded from S3 when carpet.s3.predownload.file is
  * set to true. It's a copy of
  * com.jerolba.carpet.io.FileSystemInputFile.SeekableFileInputStream to avoid
  * depending on Carpet and make carpet-s3 module independent of carpet-core.

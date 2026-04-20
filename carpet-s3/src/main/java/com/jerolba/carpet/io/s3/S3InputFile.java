@@ -31,7 +31,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 /**
  * An extension of Parquet's {@link InputFile} interface that reads from an S3
- * object.The builder pattern is used to allow flexible configuration of the S3
+ * object. The builder pattern is used to allow flexible configuration of the S3
  * client, bucket, key, and concurrency settings.
  *
  * If no Client is provided, a default S3Client will be created using the
@@ -42,7 +42,8 @@ import software.amazon.awssdk.services.s3.S3Client;
  * method or by providing a custom {@link Executor} via the
  * {@link Builder#executor(Executor)} method. By default, a virtual thread
  * executor with a common pool fallback is used to allow for efficient
- * concurrent reads without blocking platform threads.
+ * concurrent reads without blocking platform threads (if Java version supports
+ * virtual threads).
  *
  * If the S3 path provided to the builder is detected as a local file path (i.e.
  * it does not start with s3:// or s3a:// and points to an existing file), the
@@ -180,6 +181,12 @@ public interface S3InputFile extends InputFile {
          * Configures the concurrency level for vectored read operations. A value of 1
          * means sequential reads, while values greater than 1 enable concurrent reads.
          * Mutually exclusive with {@link #executor(Executor)}.
+         *
+         * Depending on the availability of virtual threads (Java 19+), a virtual thread
+         * executor will be used to allow for efficient concurrent reads without
+         * blocking platform threads. If virtual threads are not available, a fixed
+         * thread pool will be used as a fallback. Setting concurrency to 1 will disable
+         * concurrent reads and use sequential reads instead.
          *
          * @param concurrency the concurrency level for vectored read operations, must
          *                    be > 0
