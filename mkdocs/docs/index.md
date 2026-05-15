@@ -30,14 +30,14 @@ Add the dependency to your project:
     <dependency>
         <groupId>com.jerolba</groupId>
         <artifactId>carpet-record</artifactId>
-        <version>0.7.0</version>
+        <version>0.7.1</version>
     </dependency>
     ```
 
 === "Gradle"
 
     ```xml
-    implementation 'com.jerolba:carpet-record:0.7.0'
+    implementation 'com.jerolba:carpet-record:0.7.1'
     ```
 
 Write and read your data:
