@@ -59,6 +59,11 @@ class LocalOutputFile implements S3OutputFile {
         return path.toString();
     }
 
+    @Override
+    public String toString() {
+        return getPath();
+    }
+
     private static class CountedPositionOutputStream extends PositionOutputStream {
 
         private final BufferedOutputStream bos;

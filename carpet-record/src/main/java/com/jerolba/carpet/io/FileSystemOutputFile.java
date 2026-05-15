@@ -114,4 +114,9 @@ public class FileSystemOutputFile implements OutputFile {
         return path.toString();
     }
 
+    @Override
+    public String toString() {
+        return getPath();
+    }
+
 }

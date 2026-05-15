@@ -406,4 +406,12 @@ class S3SeekableReaderTest {
                         .build(),
                 RequestBody.fromBytes(data));
     }
+
+    @Test
+    void testToString() throws IOException {
+        try (var reader = new S3SeekableReader(s3Client, BUCKET_NAME, OBJECT_KEY)) {
+            assertEquals("s3://" + BUCKET_NAME + "/" + OBJECT_KEY, reader.toString());
+        }
+    }
+
 }
