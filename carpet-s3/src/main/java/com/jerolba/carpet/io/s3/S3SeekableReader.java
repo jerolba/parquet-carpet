@@ -69,6 +69,11 @@ class S3SeekableReader implements SeekableReader {
     }
 
     @Override
+    public String toString() {
+        return "s3://" + bucket + "/" + key;
+    }
+
+    @Override
     public int readFully(long pos, byte[] b, int off, int len) throws IOException {
         byte[] data = fetchRangeFromS3(pos, len);
         System.arraycopy(data, 0, b, off, len);

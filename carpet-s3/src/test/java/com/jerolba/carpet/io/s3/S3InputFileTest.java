@@ -528,4 +528,12 @@ class S3InputFileTest {
         }
     }
 
+    @Test
+    void testToString() throws IOException {
+        String key = "toString.parquet";
+        S3Client s3Client = createS3ClientWithBucket(localStack);
+        S3InputFile inputFile = S3InputFile.builder(BUCKET_NAME, key).s3Client(s3Client).build();
+        assertEquals("s3://" + BUCKET_NAME + "/" + key, inputFile.toString());
+    }
+
 }

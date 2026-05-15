@@ -78,4 +78,13 @@ class S3InputFileLocalTest {
         // IllegalArgumentException
         assertThrows(IllegalArgumentException.class, () -> S3InputFile.of(nonExistent));
     }
+
+    @Test
+    void testToString() throws IOException {
+        Path file = tempDir.resolve("test.parquet");
+        Files.write(file, new byte[] { 1, 2, 3 });
+        var inputFile = S3InputFile.of(file.toString());
+        assertEquals(file.toString(), inputFile.toString());
+    }
+
 }

@@ -603,4 +603,10 @@ class FileSystemInputFileTest {
             assertEquals(offset + size, stream.getPos());
         }
     }
+
+    @Test
+    void testToString() {
+        FileSystemInputFile inputFile = new FileSystemInputFile(testFile);
+        assertEquals(testFile.toString(), inputFile.toString());
+    }
 }

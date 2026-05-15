@@ -291,4 +291,13 @@ class S3OutputFileTest {
             }
         }
     }
+
+    @Test
+    void testToString() {
+        String key = "toString.parquet";
+        S3Client s3Client = createS3ClientWithBucket(localStack);
+        S3OutputFile outputFile = S3OutputFile.builder(BUCKET_NAME, key).s3Client(s3Client).build();
+        assertEquals("s3://" + BUCKET_NAME + "/" + key, outputFile.toString());
+    }
+
 }

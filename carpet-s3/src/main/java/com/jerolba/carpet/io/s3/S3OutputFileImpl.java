@@ -85,6 +85,11 @@ class S3OutputFileImpl implements S3OutputFile {
         return "s3://" + bucket + "/" + key;
     }
 
+    @Override
+    public String toString() {
+        return getPath();
+    }
+
     private boolean objectExists() throws IOException {
         try {
             client.headObject(HeadObjectRequest.builder().bucket(bucket).key(key).build());

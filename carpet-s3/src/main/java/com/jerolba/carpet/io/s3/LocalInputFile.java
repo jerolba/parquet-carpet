@@ -39,4 +39,9 @@ class LocalInputFile implements S3InputFile {
         return new LocalFileInputStream(localPath);
     }
 
+    @Override
+    public String toString() {
+        return localPath.toString();
+    }
+
 }

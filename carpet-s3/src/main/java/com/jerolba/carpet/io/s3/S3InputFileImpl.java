@@ -53,6 +53,11 @@ class S3InputFileImpl implements S3InputFile {
         return s3SeekableReader.getLength();
     }
 
+    @Override
+    public String toString() {
+        return s3SeekableReader.toString();
+    }
+
     /**
      * Creates a new stream for reading from the S3 object.
      *

@@ -151,4 +151,12 @@ class S3OutputFileLocalTest {
             assertEquals(151, out.getPos());
         }
     }
+
+    @Test
+    void testToString() {
+        Path file = tempDir.resolve("output.parquet");
+        var outputFile = S3OutputFile.of(file.toString());
+        assertEquals(file.toString(), outputFile.toString());
+    }
+
 }

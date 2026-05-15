@@ -378,4 +378,12 @@ class FileSystemOutputFileTest {
 
         Files.deleteIfExists(testStreamFile);
     }
+
+    @Test
+    void testToString() {
+        Path path = tempDir.resolve("toString.parquet");
+        FileSystemOutputFile outputFile = new FileSystemOutputFile(path);
+        assertEquals(path.toString(), outputFile.toString());
+    }
+
 }

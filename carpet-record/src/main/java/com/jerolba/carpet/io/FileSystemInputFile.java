@@ -88,6 +88,11 @@ public class FileSystemInputFile implements InputFile {
         return new SeekableFileInputStream(path);
     }
 
+    @Override
+    public String toString() {
+        return path.toString();
+    }
+
     private static class SeekableFileInputStream extends SeekableInputStream {
 
         private final SeekableByteChannel channel;
