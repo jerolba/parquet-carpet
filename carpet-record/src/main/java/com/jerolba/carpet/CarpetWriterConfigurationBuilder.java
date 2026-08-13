@@ -134,6 +134,31 @@ public abstract class CarpetWriterConfigurationBuilder<T, SELF extends CarpetWri
     }
 
     /**
+     * Set the {@link CompressionCodecName compression codec} used by the
+     * constructed writer for the specified column.
+     *
+     * @param columnPath the path of the column (dot-string)
+     * @param codecName  a {@code CompressionCodecName}
+     * @return this builder for method chaining.
+     */
+    public SELF withCompressionCodec(String columnPath, CompressionCodecName codecName) {
+        builder.withCompressionCodec(columnPath, codecName);
+        return self();
+    }
+
+    /**
+     * Set the compression level for the specified column.
+     *
+     * @param columnPath the path of the column (dot-string)
+     * @param level      the compression level
+     * @return this builder for method chaining.
+     */
+    public SELF withCompressionLevel(String columnPath, Integer level) {
+        builder.withCompressionLevel(columnPath, level);
+        return self();
+    }
+
+    /**
      * Set the {@link CompressionCodecFactory codec factory} used by the constructed
      * writer.
      *
