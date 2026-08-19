@@ -18,6 +18,7 @@ package com.jerolba.carpet.io.s3;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -192,23 +193,27 @@ class S3OutputFileImpl implements S3OutputFile {
 
         private void flushPartIfNeeded() {
             if (partBuffer.size() >= MIN_PART_SIZE) {
-                uploadPart();
+                uploadPart(partBuffer, MIN_PART_SIZE);
             }
         }
 
         private void flushFinalPart() {
             if (partBuffer.size() > 0) {
-                uploadPart();
+                uploadPart(partBuffer, partBuffer.size());
             }
         }
 
-        private void uploadPart() {
+        private void uploadPart(ByteArrayOutputStream buffer, int lengthToUpload) {
             int partNumber = futures.size() + 1;
-            byte[] data = partBuffer.toByteArray();
-            partBuffer.reset();
-            long partStartPos = pos - data.length;
+            byte[] allData = buffer.toByteArray();
+            buffer.reset();
+            byte[] toUploadData = Arrays.copyOf(allData, lengthToUpload);
+            if (allData.length > lengthToUpload) {
+                buffer.write(allData, lengthToUpload, allData.length - lengthToUpload);
+            }
+            long partStartPos = pos - allData.length;
             CompletableFuture<CompletedPart> future = CompletableFuture.supplyAsync(
-                    () -> uploadPartS3(partNumber, partStartPos, data), executor);
+                    () -> uploadPartS3(partNumber, partStartPos, toUploadData), executor);
             futures.add(future);
         }
 

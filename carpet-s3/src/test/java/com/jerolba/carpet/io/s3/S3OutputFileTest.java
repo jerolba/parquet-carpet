@@ -24,7 +24,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.lang.reflect.Proxy;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.IntStream;
 
 import org.apache.parquet.io.PositionOutputStream;
@@ -229,6 +231,48 @@ class S3OutputFileTest {
         }
 
         record HeavyRecord(long id, long value, String payload) {
+        }
+
+        @Test
+        void intermediatePartsAreExactlyMinPartSize() throws IOException {
+            var partSizes = new CopyOnWriteArrayList<Long>();
+            S3Client realClient = S3Client.create();
+            S3Client capturingClient = (S3Client) Proxy.newProxyInstance(
+                    S3Client.class.getClassLoader(),
+                    new Class<?>[] { S3Client.class },
+                    (proxy, method, args) -> {
+                        if ("uploadPart".equals(method.getName()) && args.length == 2) {
+                            var requestBody = (software.amazon.awssdk.core.sync.RequestBody) args[1];
+                            partSizes.add(requestBody.optionalContentLength().orElseThrow());
+                        }
+                        return method.invoke(realClient, args);
+                    });
+
+            int recordCount = 40_000;
+            String key = "part-size-test.parquet";
+
+            var expected = IntStream.range(0, recordCount)
+                    .mapToObj(i -> new HeavyRecord(i, i * 2L, makePayload(i)))
+                    .toList();
+
+            try (CarpetWriter<HeavyRecord> writer = new CarpetWriter<>(
+                    S3OutputFile.builder(BUCKET_NAME, key).s3Client(capturingClient).build(), HeavyRecord.class)) {
+                writer.write(expected);
+            }
+
+            assertTrue(partSizes.size() >= 3,
+                    "Expected at least 3 parts, got: " + partSizes.size());
+            assertEquals(S3OutputFileImpl.MIN_PART_SIZE, partSizes.get(0).longValue(),
+                    "First part should be exactly MIN_PART_SIZE");
+            assertEquals(S3OutputFileImpl.MIN_PART_SIZE, partSizes.get(1).longValue(),
+                    "Second part should be exactly MIN_PART_SIZE");
+
+            List<HeavyRecord> actual = new CarpetReader<>(S3InputFile.builder(BUCKET_NAME, key).build(),
+                    HeavyRecord.class).toList();
+            assertEquals(recordCount, actual.size());
+            assertEquals(expected, actual);
+
+            realClient.close();
         }
 
         @Test
