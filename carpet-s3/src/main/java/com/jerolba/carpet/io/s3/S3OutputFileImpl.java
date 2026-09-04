@@ -45,17 +45,24 @@ class S3OutputFileImpl implements S3OutputFile {
     private static final Logger logger = LoggerFactory.getLogger(S3OutputFileImpl.class);
 
     static final int MIN_PART_SIZE = 5 * 1024 * 1024;
+    static final int MAX_PART_SIZE = 5 * 1024 * 1024 * 1024;
 
     private final S3Client client;
     private final String bucket;
     private final String key;
     private final Executor executor;
+    private final int partSize;
 
     S3OutputFileImpl(S3Client client, String bucket, String key, Executor executor) {
+        this(client, bucket, key, executor, MIN_PART_SIZE);
+    }
+
+    S3OutputFileImpl(S3Client client, String bucket, String key, Executor executor, int partSize) {
         this.client = client;
         this.bucket = bucket;
         this.key = key;
         this.executor = executor;
+        this.partSize = partSize;
     }
 
     @Override
@@ -68,7 +75,7 @@ class S3OutputFileImpl implements S3OutputFile {
 
     @Override
     public PositionOutputStream createOrOverwrite(long blockSizeHint) throws IOException {
-        return new S3MultipartPositionOutputStream(bucket, key, client, executor);
+        return new S3MultipartPositionOutputStream(bucket, key, client, executor, partSize);
     }
 
     @Override
@@ -109,17 +116,20 @@ class S3OutputFileImpl implements S3OutputFile {
         private final S3Client client;
         private final Executor executor;
         private final String uploadId;
+        private final int partSize;
         private final List<CompletableFuture<CompletedPart>> futures = new ArrayList<>();
-        private ByteArrayOutputStream partBuffer = new ByteArrayOutputStream(MIN_PART_SIZE);
+        private ByteArrayOutputStream partBuffer;
         private long pos = 0;
         private boolean closed = false;
 
-        S3MultipartPositionOutputStream(String bucket, String key, S3Client client, Executor executor)
+        S3MultipartPositionOutputStream(String bucket, String key, S3Client client, Executor executor, int partSize)
                 throws IOException {
             this.bucket = bucket;
             this.key = key;
             this.client = client;
             this.executor = executor;
+            this.partSize = partSize;
+            this.partBuffer = new ByteArrayOutputStream(partSize);
             try {
                 this.uploadId = client.createMultipartUpload(
                         CreateMultipartUploadRequest.builder().bucket(bucket).key(key).build())
@@ -192,8 +202,8 @@ class S3OutputFileImpl implements S3OutputFile {
         }
 
         private void flushPartIfNeeded() {
-            if (partBuffer.size() >= MIN_PART_SIZE) {
-                uploadPart(partBuffer, MIN_PART_SIZE);
+            if (partBuffer.size() >= partSize) {
+                uploadPart(partBuffer, partSize);
             }
         }
 
