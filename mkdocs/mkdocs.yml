@@ -33,7 +33,9 @@ markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.inlinehilite
-  - pymdownx.snippets
+  - pymdownx.snippets:
+      base_path: snippets
+      check_paths: true
   - pymdownx.superfences
   - pymdownx.tabbed:
       alternate_style: true
@@ -55,5 +57,6 @@ nav:
     - Nullability: advanced/nullability.md
     - Input and Output Files: advanced/input-output-files.md
     - Advanced Configuration: advanced/configuration.md
+    - S3 Files: advanced/s3-files.md
     - Low Level Parquet Classes: advanced/low-level-parquet.md
     - Write Model: advanced/write-model.md
