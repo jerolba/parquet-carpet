@@ -46,18 +46,15 @@ class S3OutputFileImpl implements S3OutputFile {
 
     static final int MIN_PART_SIZE = 5 * 1024 * 1024;
     static final int MAX_PART_SIZE = 5 * 1024 * 1024 * 1024;
+    static final int PARTS_BY_ROWGROUP = 8;
 
     private final S3Client client;
     private final String bucket;
     private final String key;
     private final Executor executor;
-    private final int partSize;
+    private final Integer partSize;
 
-    S3OutputFileImpl(S3Client client, String bucket, String key, Executor executor) {
-        this(client, bucket, key, executor, MIN_PART_SIZE);
-    }
-
-    S3OutputFileImpl(S3Client client, String bucket, String key, Executor executor, int partSize) {
+    S3OutputFileImpl(S3Client client, String bucket, String key, Executor executor, Integer partSize) {
         this.client = client;
         this.bucket = bucket;
         this.key = key;
@@ -75,7 +72,9 @@ class S3OutputFileImpl implements S3OutputFile {
 
     @Override
     public PositionOutputStream createOrOverwrite(long blockSizeHint) throws IOException {
-        return new S3MultipartPositionOutputStream(bucket, key, client, executor, partSize);
+        int finalPartSize = partSize == null ? Math.max((int) blockSizeHint / PARTS_BY_ROWGROUP, MIN_PART_SIZE)
+                : partSize;
+        return new S3MultipartPositionOutputStream(bucket, key, client, executor, finalPartSize);
     }
 
     @Override

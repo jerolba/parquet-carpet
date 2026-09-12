@@ -103,7 +103,7 @@ public interface S3OutputFile extends OutputFile {
         private Integer concurrency = null;
         private Executor executor = null;
         private Path localFilePath = null;
-        private int partSize = S3OutputFileImpl.MIN_PART_SIZE;
+        private Integer partSize;
 
         /**
          * Configures the S3 client to use for operations. If not set, a default
@@ -178,8 +178,8 @@ public interface S3OutputFile extends OutputFile {
         }
 
         /**
-         * Configures the part size in bytes for multipart uploads. Each part (except the
-         * last) must be at least 5 MB and at most 5 GB according to AWS S3 limits.
+         * Configures the part size in bytes for multipart uploads. Each part (except
+         * the last) must be at least 5 MB and at most 5 GB according to AWS S3 limits.
          *
          * @param partSize the part size in bytes, must be between
          *                 {@link S3OutputFileImpl#MIN_PART_SIZE} (5 MB) and
