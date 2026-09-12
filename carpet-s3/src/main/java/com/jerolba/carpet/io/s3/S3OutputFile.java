@@ -103,6 +103,7 @@ public interface S3OutputFile extends OutputFile {
         private Integer concurrency = null;
         private Executor executor = null;
         private Path localFilePath = null;
+        private Integer partSize;
 
         /**
          * Configures the S3 client to use for operations. If not set, a default
@@ -177,6 +178,28 @@ public interface S3OutputFile extends OutputFile {
         }
 
         /**
+         * Configures the part size in bytes for multipart uploads. Each part (except
+         * the last) must be at least 5 MB and at most 5 GB according to AWS S3 limits.
+         *
+         * @param partSize the part size in bytes, must be between
+         *                 {@link S3OutputFileImpl#MIN_PART_SIZE} (5 MB) and
+         *                 {@link S3OutputFileImpl#MAX_PART_SIZE} (5 GB)
+         * @return this builder
+         */
+        public Builder partSize(int partSize) {
+            if (partSize < S3OutputFileImpl.MIN_PART_SIZE) {
+                throw new IllegalArgumentException("partSize must be >= " + S3OutputFileImpl.MIN_PART_SIZE
+                        + " (5 MB), got: " + partSize);
+            }
+            if (partSize > S3OutputFileImpl.MAX_PART_SIZE) {
+                throw new IllegalArgumentException("partSize must be <= " + S3OutputFileImpl.MAX_PART_SIZE
+                        + " (5 GB), got: " + partSize);
+            }
+            this.partSize = partSize;
+            return this;
+        }
+
+        /**
          * Configures the S3 bucket and key by parsing a single S3 path string. The path
          * should be in the format s3://bucket/key or s3a://bucket/key. This is a
          * convenient method for setting both the bucket and key in one step, and it
@@ -232,7 +255,7 @@ public interface S3OutputFile extends OutputFile {
             } else {
                 actualExecutor = createVirtualThreadExecutorWithCommonPoolFallback(DEFAULT_CONCURRENCY);
             }
-            return new S3OutputFileImpl(actualClient, bucket, key, actualExecutor);
+            return new S3OutputFileImpl(actualClient, bucket, key, actualExecutor, partSize);
         }
 
     }

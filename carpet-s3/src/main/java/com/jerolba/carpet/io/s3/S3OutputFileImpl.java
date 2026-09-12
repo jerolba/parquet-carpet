@@ -18,6 +18,7 @@ package com.jerolba.carpet.io.s3;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -44,17 +45,21 @@ class S3OutputFileImpl implements S3OutputFile {
     private static final Logger logger = LoggerFactory.getLogger(S3OutputFileImpl.class);
 
     static final int MIN_PART_SIZE = 5 * 1024 * 1024;
+    static final int MAX_PART_SIZE = 5 * 1024 * 1024 * 1024;
+    static final int PARTS_BY_ROWGROUP = 8;
 
     private final S3Client client;
     private final String bucket;
     private final String key;
     private final Executor executor;
+    private final Integer partSize;
 
-    S3OutputFileImpl(S3Client client, String bucket, String key, Executor executor) {
+    S3OutputFileImpl(S3Client client, String bucket, String key, Executor executor, Integer partSize) {
         this.client = client;
         this.bucket = bucket;
         this.key = key;
         this.executor = executor;
+        this.partSize = partSize;
     }
 
     @Override
@@ -67,7 +72,9 @@ class S3OutputFileImpl implements S3OutputFile {
 
     @Override
     public PositionOutputStream createOrOverwrite(long blockSizeHint) throws IOException {
-        return new S3MultipartPositionOutputStream(bucket, key, client, executor);
+        int finalPartSize = partSize == null ? Math.max((int) blockSizeHint / PARTS_BY_ROWGROUP, MIN_PART_SIZE)
+                : partSize;
+        return new S3MultipartPositionOutputStream(bucket, key, client, executor, finalPartSize);
     }
 
     @Override
@@ -108,17 +115,20 @@ class S3OutputFileImpl implements S3OutputFile {
         private final S3Client client;
         private final Executor executor;
         private final String uploadId;
+        private final int partSize;
         private final List<CompletableFuture<CompletedPart>> futures = new ArrayList<>();
-        private ByteArrayOutputStream partBuffer = new ByteArrayOutputStream(MIN_PART_SIZE);
+        private ByteArrayOutputStream partBuffer;
         private long pos = 0;
         private boolean closed = false;
 
-        S3MultipartPositionOutputStream(String bucket, String key, S3Client client, Executor executor)
+        S3MultipartPositionOutputStream(String bucket, String key, S3Client client, Executor executor, int partSize)
                 throws IOException {
             this.bucket = bucket;
             this.key = key;
             this.client = client;
             this.executor = executor;
+            this.partSize = partSize;
+            this.partBuffer = new ByteArrayOutputStream(partSize);
             try {
                 this.uploadId = client.createMultipartUpload(
                         CreateMultipartUploadRequest.builder().bucket(bucket).key(key).build())
@@ -191,24 +201,28 @@ class S3OutputFileImpl implements S3OutputFile {
         }
 
         private void flushPartIfNeeded() {
-            if (partBuffer.size() >= MIN_PART_SIZE) {
-                uploadPart();
+            if (partBuffer.size() >= partSize) {
+                uploadPart(partBuffer, partSize);
             }
         }
 
         private void flushFinalPart() {
             if (partBuffer.size() > 0) {
-                uploadPart();
+                uploadPart(partBuffer, partBuffer.size());
             }
         }
 
-        private void uploadPart() {
+        private void uploadPart(ByteArrayOutputStream buffer, int lengthToUpload) {
             int partNumber = futures.size() + 1;
-            byte[] data = partBuffer.toByteArray();
-            partBuffer.reset();
-            long partStartPos = pos - data.length;
+            byte[] allData = buffer.toByteArray();
+            buffer.reset();
+            byte[] toUploadData = Arrays.copyOf(allData, lengthToUpload);
+            if (allData.length > lengthToUpload) {
+                buffer.write(allData, lengthToUpload, allData.length - lengthToUpload);
+            }
+            long partStartPos = pos - allData.length;
             CompletableFuture<CompletedPart> future = CompletableFuture.supplyAsync(
-                    () -> uploadPartS3(partNumber, partStartPos, data), executor);
+                    () -> uploadPartS3(partNumber, partStartPos, toUploadData), executor);
             futures.add(future);
         }
 
