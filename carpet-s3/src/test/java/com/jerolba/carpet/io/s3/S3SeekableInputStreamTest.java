@@ -19,6 +19,8 @@ import static com.jerolba.carpet.io.s3.SeekableReaderHelper.heapAllocator;
 import static com.jerolba.carpet.io.s3.SeekableReaderHelper.largeVirtualReader;
 import static com.jerolba.carpet.io.s3.SeekableReaderHelper.readerOf;
 import static com.jerolba.carpet.io.s3.SeekableReaderHelper.sequentialBytes;
+import static com.jerolba.carpet.io.s3.SeekableReaderHelper.sequentialStream;
+import static com.jerolba.carpet.io.s3.SeekableReaderHelper.vectorStream;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -37,7 +39,7 @@ import org.apache.parquet.io.ParquetFileRange;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-class SeekableCachedFooterReaderTest {
+class S3SeekableInputStreamTest {
 
     // The default footer window hard-coded in CachedFooter
     private static final int DEFAULT_FOOTER_SIZE = 8 * 1024 * 1024; // 8 MiB
@@ -46,8 +48,8 @@ class SeekableCachedFooterReaderTest {
     // getPos and seek
     // -------------------------------------------------------------------------
 
-    private SeekableCachedFooterReader readerFor(byte[] data) throws IOException {
-        return new SeekableCachedFooterReader(readerOf(data), null);
+    private S3SeekableInputStream readerFor(byte[] data) throws IOException {
+        return sequentialStream(readerOf(data));
     }
 
     @Nested
@@ -55,14 +57,14 @@ class SeekableCachedFooterReaderTest {
 
         @Test
         void initialPositionIsZero() throws IOException {
-            try (SeekableCachedFooterReader reader = readerFor(sequentialBytes(100))) {
+            try (S3SeekableInputStream reader = readerFor(sequentialBytes(100))) {
                 assertEquals(0, reader.getPos());
             }
         }
 
         @Test
         void seekUpdatesPosition() throws IOException {
-            try (SeekableCachedFooterReader reader = readerFor(sequentialBytes(100))) {
+            try (S3SeekableInputStream reader = readerFor(sequentialBytes(100))) {
                 reader.seek(50);
                 assertEquals(50, reader.getPos());
             }
@@ -70,7 +72,7 @@ class SeekableCachedFooterReaderTest {
 
         @Test
         void seekBackward() throws IOException {
-            try (SeekableCachedFooterReader reader = readerFor(sequentialBytes(100))) {
+            try (S3SeekableInputStream reader = readerFor(sequentialBytes(100))) {
                 reader.seek(80);
                 reader.seek(20);
                 assertEquals(20, reader.getPos());
@@ -79,7 +81,7 @@ class SeekableCachedFooterReaderTest {
 
         @Test
         void seekToZero() throws IOException {
-            try (SeekableCachedFooterReader reader = readerFor(sequentialBytes(100))) {
+            try (S3SeekableInputStream reader = readerFor(sequentialBytes(100))) {
                 reader.seek(50);
                 reader.seek(0);
                 assertEquals(0, reader.getPos());
@@ -88,7 +90,7 @@ class SeekableCachedFooterReaderTest {
 
         @Test
         void seekToEndOfFile() throws IOException {
-            try (SeekableCachedFooterReader reader = readerFor(sequentialBytes(100))) {
+            try (S3SeekableInputStream reader = readerFor(sequentialBytes(100))) {
                 reader.seek(99);
                 assertEquals(99, reader.getPos());
             }
@@ -96,7 +98,7 @@ class SeekableCachedFooterReaderTest {
 
         @Test
         void seekToNegativePositionThrowsIOException() throws IOException {
-            try (SeekableCachedFooterReader reader = readerFor(sequentialBytes(100))) {
+            try (S3SeekableInputStream reader = readerFor(sequentialBytes(100))) {
                 assertThrows(IOException.class, () -> reader.seek(-1));
             }
         }
@@ -112,7 +114,7 @@ class SeekableCachedFooterReaderTest {
         @Test
         void readFromCachedPositionReturnsByte() throws IOException {
             byte[] data = sequentialBytes(100);
-            try (SeekableCachedFooterReader reader = readerFor(data)) {
+            try (S3SeekableInputStream reader = readerFor(data)) {
                 reader.seek(5);
                 assertEquals(5, reader.read());
             }
@@ -121,7 +123,7 @@ class SeekableCachedFooterReaderTest {
         @Test
         void readReturnsUnsignedByte() throws IOException {
             byte[] data = new byte[] { (byte) 0xFF, (byte) 0x80 };
-            try (SeekableCachedFooterReader reader = readerFor(data)) {
+            try (S3SeekableInputStream reader = readerFor(data)) {
                 assertEquals(255, reader.read()); // position 0
                 assertEquals(128, reader.read()); // position 1
             }
@@ -129,7 +131,7 @@ class SeekableCachedFooterReaderTest {
 
         @Test
         void readAdvancesPositionByOne() throws IOException {
-            try (SeekableCachedFooterReader reader = readerFor(sequentialBytes(100))) {
+            try (S3SeekableInputStream reader = readerFor(sequentialBytes(100))) {
                 reader.seek(10);
                 reader.read();
                 assertEquals(11, reader.getPos());
@@ -139,7 +141,7 @@ class SeekableCachedFooterReaderTest {
         @Test
         void consecutiveReadsAdvancePosition() throws IOException {
             byte[] data = sequentialBytes(10);
-            try (SeekableCachedFooterReader reader = readerFor(data)) {
+            try (S3SeekableInputStream reader = readerFor(data)) {
                 for (int i = 0; i < 5; i++) {
                     assertEquals(i, reader.read());
                 }
@@ -152,7 +154,7 @@ class SeekableCachedFooterReaderTest {
             // File larger than 8 MiB: position 0 falls outside the cached footer window.
             // largeVirtualReader: value at position p is (byte)(p % 256).
             long largeSize = (long) DEFAULT_FOOTER_SIZE + 1024;
-            try (var reader = new SeekableCachedFooterReader(largeVirtualReader(largeSize), null)) {
+            try (var reader = sequentialStream(largeVirtualReader(largeSize))) {
                 // pos = 0 is not cached → should delegate to seekableReader
                 assertEquals(0, reader.read());
                 assertEquals(1, reader.getPos());
@@ -170,7 +172,7 @@ class SeekableCachedFooterReaderTest {
         @Test
         void readFromCachedPositionFillsArray() throws IOException {
             byte[] data = sequentialBytes(100);
-            try (SeekableCachedFooterReader reader = readerFor(data)) {
+            try (S3SeekableInputStream reader = readerFor(data)) {
                 byte[] dest = new byte[10];
                 int bytesRead = reader.read(dest, 0, 10);
                 assertEquals(10, bytesRead);
@@ -181,7 +183,7 @@ class SeekableCachedFooterReaderTest {
         @Test
         void readFromCachedPositionWithStartOffset() throws IOException {
             byte[] data = sequentialBytes(100);
-            try (SeekableCachedFooterReader reader = readerFor(data)) {
+            try (S3SeekableInputStream reader = readerFor(data)) {
                 reader.seek(5);
                 byte[] dest = new byte[20];
                 reader.read(dest, 10, 5);
@@ -195,7 +197,7 @@ class SeekableCachedFooterReaderTest {
 
         @Test
         void readFromCachedPositionAdvancesPosition() throws IOException {
-            try (SeekableCachedFooterReader reader = readerFor(sequentialBytes(100))) {
+            try (S3SeekableInputStream reader = readerFor(sequentialBytes(100))) {
                 reader.seek(20);
                 byte[] dest = new byte[10];
                 reader.read(dest, 0, 10);
@@ -207,7 +209,7 @@ class SeekableCachedFooterReaderTest {
         void readFromNonCachedPositionDelegatesToUnderlyingReader() throws IOException {
             // largeVirtualReader: value at position p is (byte)(p % 256)
             long largeSize = (long) DEFAULT_FOOTER_SIZE + 1024;
-            try (var reader = new SeekableCachedFooterReader(largeVirtualReader(largeSize), null)) {
+            try (var reader = sequentialStream(largeVirtualReader(largeSize))) {
                 // pos = 0 is NOT in the last-8-MiB window
                 byte[] dest = new byte[10];
                 int bytesRead = reader.read(dest, 0, 10);
@@ -221,7 +223,7 @@ class SeekableCachedFooterReaderTest {
         @Test
         void readFromNonCachedPositionAdvancesPosition() throws IOException {
             long largeSize = (long) DEFAULT_FOOTER_SIZE + 1024;
-            try (var reader = new SeekableCachedFooterReader(largeVirtualReader(largeSize), null)) {
+            try (var reader = sequentialStream(largeVirtualReader(largeSize))) {
                 byte[] dest = new byte[10];
                 reader.read(dest, 0, 10);
                 assertEquals(10, reader.getPos());
@@ -239,7 +241,7 @@ class SeekableCachedFooterReaderTest {
         @Test
         void readFromCachedPositionFillsBuffer() throws IOException {
             byte[] data = sequentialBytes(100);
-            try (SeekableCachedFooterReader reader = readerFor(data)) {
+            try (S3SeekableInputStream reader = readerFor(data)) {
                 ByteBuffer buf = ByteBuffer.allocate(10);
                 reader.read(buf);
                 buf.flip();
@@ -251,7 +253,7 @@ class SeekableCachedFooterReaderTest {
 
         @Test
         void readFromCachedPositionAdvancesPosition() throws IOException {
-            try (SeekableCachedFooterReader reader = readerFor(sequentialBytes(100))) {
+            try (S3SeekableInputStream reader = readerFor(sequentialBytes(100))) {
                 reader.seek(10);
                 ByteBuffer buf = ByteBuffer.allocate(5);
                 reader.read(buf);
@@ -261,7 +263,7 @@ class SeekableCachedFooterReaderTest {
 
         @Test
         void readFromCachedPositionReturnsLen() throws IOException {
-            try (SeekableCachedFooterReader reader = readerFor(sequentialBytes(100))) {
+            try (S3SeekableInputStream reader = readerFor(sequentialBytes(100))) {
                 ByteBuffer buf = ByteBuffer.allocate(7);
                 int result = reader.read(buf);
                 assertEquals(7, result);
@@ -271,7 +273,7 @@ class SeekableCachedFooterReaderTest {
         @Test
         void readFromNonCachedPositionDelegatesToUnderlyingReader() throws IOException {
             long largeSize = (long) DEFAULT_FOOTER_SIZE + 1024;
-            try (var reader = new SeekableCachedFooterReader(largeVirtualReader(largeSize), null)) {
+            try (var reader = sequentialStream(largeVirtualReader(largeSize))) {
                 // pos = 0 is NOT cached
                 ByteBuffer buf = ByteBuffer.allocate(5);
                 reader.read(buf);
@@ -285,7 +287,7 @@ class SeekableCachedFooterReaderTest {
         @Test
         void readFromNonCachedPositionAdvancesPosition() throws IOException {
             long largeSize = (long) DEFAULT_FOOTER_SIZE + 1024;
-            try (var reader = new SeekableCachedFooterReader(largeVirtualReader(largeSize), null)) {
+            try (var reader = sequentialStream(largeVirtualReader(largeSize))) {
                 ByteBuffer buf = ByteBuffer.allocate(5);
                 reader.read(buf);
                 assertEquals(5, reader.getPos());
@@ -295,7 +297,7 @@ class SeekableCachedFooterReaderTest {
         @Test
         void readIntoDirectByteBuffer() throws IOException {
             byte[] data = sequentialBytes(100);
-            try (SeekableCachedFooterReader reader = readerFor(data)) {
+            try (S3SeekableInputStream reader = readerFor(data)) {
                 reader.seek(5);
                 ByteBuffer buf = ByteBuffer.allocateDirect(5);
                 reader.read(buf);
@@ -316,7 +318,7 @@ class SeekableCachedFooterReaderTest {
         @Test
         void readFullyByteArrayReadsFromPosition() throws IOException {
             byte[] data = sequentialBytes(100);
-            try (SeekableCachedFooterReader reader = readerFor(data)) {
+            try (S3SeekableInputStream reader = readerFor(data)) {
                 reader.seek(0);
                 byte[] dest = new byte[10];
                 reader.readFully(dest);
@@ -326,7 +328,7 @@ class SeekableCachedFooterReaderTest {
 
         @Test
         void readFullyByteArrayAdvancesPosition() throws IOException {
-            try (SeekableCachedFooterReader reader = readerFor(sequentialBytes(100))) {
+            try (S3SeekableInputStream reader = readerFor(sequentialBytes(100))) {
                 reader.readFully(new byte[15]);
                 assertEquals(15, reader.getPos());
             }
@@ -335,7 +337,7 @@ class SeekableCachedFooterReaderTest {
         @Test
         void readFullyByteArrayWithStartAndLen() throws IOException {
             byte[] data = sequentialBytes(100);
-            try (SeekableCachedFooterReader reader = readerFor(data)) {
+            try (S3SeekableInputStream reader = readerFor(data)) {
                 reader.seek(5);
                 byte[] dest = new byte[10];
                 reader.readFully(dest, 2, 5);
@@ -350,7 +352,7 @@ class SeekableCachedFooterReaderTest {
         @Test
         void readFullyByteBufferReadsFromPosition() throws IOException {
             byte[] data = sequentialBytes(100);
-            try (SeekableCachedFooterReader reader = readerFor(data)) {
+            try (S3SeekableInputStream reader = readerFor(data)) {
                 reader.seek(0);
                 ByteBuffer buf = ByteBuffer.allocate(10);
                 reader.readFully(buf);
@@ -363,7 +365,7 @@ class SeekableCachedFooterReaderTest {
 
         @Test
         void readFullyByteBufferAdvancesPosition() throws IOException {
-            try (SeekableCachedFooterReader reader = readerFor(sequentialBytes(100))) {
+            try (S3SeekableInputStream reader = readerFor(sequentialBytes(100))) {
                 reader.readFully(ByteBuffer.allocate(12));
                 assertEquals(12, reader.getPos());
             }
@@ -379,7 +381,7 @@ class SeekableCachedFooterReaderTest {
 
         @Test
         void readVectoredAvailableAlwaysReturnsTrue() throws IOException {
-            try (SeekableCachedFooterReader reader = readerFor(sequentialBytes(100))) {
+            try (S3SeekableInputStream reader = readerFor(sequentialBytes(100))) {
                 assertTrue(reader.readVectoredAvailable(heapAllocator()));
             }
         }
@@ -387,7 +389,7 @@ class SeekableCachedFooterReaderTest {
         @Test
         void readVectoredSingleRange() throws IOException, ExecutionException, InterruptedException {
             byte[] data = sequentialBytes(100);
-            try (SeekableCachedFooterReader reader = readerFor(data)) {
+            try (S3SeekableInputStream reader = readerFor(data)) {
                 ParquetFileRange range = new ParquetFileRange(10, 5);
 
                 reader.readVectored(List.of(range), heapAllocator());
@@ -402,7 +404,7 @@ class SeekableCachedFooterReaderTest {
         @Test
         void readVectoredMultipleRanges() throws IOException, ExecutionException, InterruptedException {
             byte[] data = sequentialBytes(100);
-            try (SeekableCachedFooterReader reader = readerFor(data)) {
+            try (S3SeekableInputStream reader = readerFor(data)) {
                 ParquetFileRange range1 = new ParquetFileRange(0, 3);
                 ParquetFileRange range2 = new ParquetFileRange(50, 4);
 
@@ -423,7 +425,7 @@ class SeekableCachedFooterReaderTest {
         @Test
         void readVectoredFutureIsAlreadyCompleted() throws IOException {
             byte[] data = sequentialBytes(100);
-            try (SeekableCachedFooterReader reader = readerFor(data)) {
+            try (S3SeekableInputStream reader = readerFor(data)) {
                 ParquetFileRange range = new ParquetFileRange(0, 5);
 
                 reader.readVectored(List.of(range), heapAllocator());
@@ -435,18 +437,21 @@ class SeekableCachedFooterReaderTest {
 
         @Test
         void readVectoredEmptyRangeList() throws IOException {
-            try (SeekableCachedFooterReader reader = readerFor(sequentialBytes(100))) {
+            try (S3SeekableInputStream reader = readerFor(sequentialBytes(100))) {
                 assertDoesNotThrow(() -> reader.readVectored(List.of(), heapAllocator()));
             }
         }
 
         @Test
-        void readVectoredPositionAfterLastRange() throws IOException {
+        void readVectoredDoesNotMoveThePosition() throws IOException {
             byte[] data = sequentialBytes(100);
-            try (SeekableCachedFooterReader reader = readerFor(data)) {
+            try (S3SeekableInputStream reader = readerFor(data)) {
+                reader.seek(5);
                 ParquetFileRange range = new ParquetFileRange(20, 10);
 
                 reader.readVectored(List.of(range), heapAllocator());
+
+                assertEquals(5, reader.getPos());
             }
         }
 
@@ -455,7 +460,7 @@ class SeekableCachedFooterReaderTest {
             byte[] data = sequentialBytes(200);
             // Use 4 threads
             ExecutorService executor = Executors.newFixedThreadPool(4);
-            try (SeekableCachedFooterReader reader = new SeekableCachedFooterReader(readerOf(data), executor)) {
+            try (S3SeekableInputStream reader = vectorStream(readerOf(data), executor)) {
                 ParquetFileRange r1 = new ParquetFileRange(0, 10);
                 ParquetFileRange r2 = new ParquetFileRange(20, 10);
                 ParquetFileRange r3 = new ParquetFileRange(100, 50);
@@ -532,7 +537,7 @@ class SeekableCachedFooterReaderTest {
                 }
             };
 
-            SeekableCachedFooterReader reader = new SeekableCachedFooterReader(trackingReader, null);
+            S3SeekableInputStream reader = sequentialStream(trackingReader);
             reader.close();
 
             assertTrue(closed[0], "Underlying SeekableReader should have been closed");
@@ -564,7 +569,7 @@ class SeekableCachedFooterReaderTest {
                 }
             };
 
-            SeekableCachedFooterReader reader = new SeekableCachedFooterReader(trackingReader, null);
+            S3SeekableInputStream reader = sequentialStream(trackingReader);
             reader.close();
             reader.close(); // second close must be a no-op
 

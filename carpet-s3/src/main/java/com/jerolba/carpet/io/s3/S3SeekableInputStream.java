@@ -18,7 +18,6 @@ package com.jerolba.carpet.io.s3;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
-import java.util.concurrent.Executor;
 
 import org.apache.parquet.bytes.ByteBufferAllocator;
 import org.apache.parquet.io.ParquetFileRange;
@@ -26,22 +25,30 @@ import org.apache.parquet.io.SeekableInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class SeekableCachedFooterReader extends SeekableInputStream {
+/**
+ * The {@link SeekableInputStream} parquet-java reads an S3 object through: it
+ * keeps the stream position and sends positional reads to a
+ * {@link SeekableReader} and vectored reads to a {@link RangeReader}.
+ */
+class S3SeekableInputStream extends SeekableInputStream {
 
-    private static final Logger logger = LoggerFactory.getLogger(SeekableCachedFooterReader.class);
+    private static final Logger logger = LoggerFactory.getLogger(S3SeekableInputStream.class);
 
     private final SeekableReader seekableReader;
     private final RangeReader rangeReader;
     private boolean closed = false;
     private long pos = 0;
 
-    SeekableCachedFooterReader(SeekableReader seekableReader, Executor executor) throws IOException {
-        this.seekableReader = new CachedFooterProxyReader(seekableReader);
-        if (executor == null) {
-            this.rangeReader = new SequentialReader(this.seekableReader);
-        } else {
-            this.rangeReader = new VectorReader(this.seekableReader, executor);
-        }
+    /**
+     * @param seekableReader reader for positional reads, normally a
+     *                       {@link CachedFooterProxyReader} so the footer is served
+     *                       from memory
+     * @param rangeReader    reader for vectored reads over the same bytes, see
+     *                       {@link RangeReaderFactory}
+     */
+    S3SeekableInputStream(SeekableReader seekableReader, RangeReader rangeReader) {
+        this.seekableReader = seekableReader;
+        this.rangeReader = rangeReader;
     }
 
     @Override

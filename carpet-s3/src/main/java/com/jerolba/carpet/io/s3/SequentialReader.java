@@ -38,8 +38,11 @@ class SequentialReader extends RangeReader {
     }
 
     @Override
-    protected CompletableFuture<ByteBuffer> readSpan(ByteBufferAllocator allocator, long offset, int length)
-            throws IOException {
+    CompletableFuture<ByteBuffer> readSpan(ByteBufferAllocator allocator, long offset, int length,
+            Cancellation cancelled) throws IOException {
+        if (cancelled.isCancelled()) {
+            return CompletableFuture.failedFuture(Cancellation.cancellation());
+        }
         ByteBuffer buffer = allocator.allocate(length);
         try {
             seekableReader.readFully(offset, buffer);

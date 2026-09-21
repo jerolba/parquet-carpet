@@ -15,13 +15,13 @@
  */
 package com.jerolba.carpet.io.s3;
 
-import static com.jerolba.carpet.io.s3.CustomExecutor.createCustomExecutor;
-import static com.jerolba.carpet.io.s3.CustomExecutor.createVirtualThreadExecutorWithCommonPoolFallback;
+import static com.jerolba.carpet.io.s3.CustomExecutor.executorFactory;
 import static com.jerolba.carpet.io.s3.S3UrlParsing.detectLocalFilePathForReading;
 import static com.jerolba.carpet.io.s3.S3UrlParsing.parses3Url;
 
 import java.nio.file.Path;
 import java.util.concurrent.Executor;
+import java.util.function.Supplier;
 
 import org.apache.parquet.io.InputFile;
 
@@ -58,6 +58,32 @@ import software.amazon.awssdk.services.s3.S3Client;
  * is accessed multiple times in development, but it may not be suitable for
  * large files or production use due to of local disk usage.
  *
+ * <p>
+ * When reading with concurrency greater than 1, the next row group is
+ * speculatively prefetched while the current one is being decoded: once the
+ * data of a row group has been downloaded, the same columns of the following
+ * row group are requested in background so they are already in memory when the
+ * reader asks for them. The speculation holds at most
+ * {@link Builder#prefetchMaxBytes(long)} bytes (256 MiB by default) and is
+ * discarded, releasing its memory, if the reader requests something else. It
+ * can be disabled with {@link Builder#prefetch(boolean)} or with the system
+ * property {@code carpet.s3.prefetch.enabled}. Prefetch is not applied to
+ * files with encrypted footers, to local files, or when concurrency is 1.
+ * <p>
+ * Prefetch is optimistic: the following row group is always requested, even
+ * when the reader may skip it, for example because a filter excludes it by its
+ * statistics. In that case the speculative data is downloaded and discarded,
+ * costing bandwidth and S3 requests but never correctness.
+ * </p>
+ * <p>
+ * Memory: the limit applies to each open stream, and comes on top of the row
+ * group being decoded. A stream can therefore hold its current row group plus
+ * up to {@link Builder#prefetchMaxBytes(long)} of speculation, plus discarded
+ * speculative chunks still being downloaded. Reading several files at the same
+ * time multiplies this by the number of open streams, so size the heap, or
+ * lower the limit, accordingly.
+ * </p>
+ *
  */
 public interface S3InputFile extends InputFile {
 
@@ -66,7 +92,29 @@ public interface S3InputFile extends InputFile {
      * local temporary file before reading. This can improve performance for small
      * files or when the S3 object is accessed multiple times in development.
      */
-    public static final String CARPET_S3_PREDOWNLOAD_FILE = "carpet.s3.predownload.file";
+    String CARPET_S3_PREDOWNLOAD_FILE = "carpet.s3.predownload.file";
+
+    /**
+     * System property that enables or disables the speculative prefetch of the
+     * next row group when the builder does not configure it explicitly. Accepts
+     * {@code true} or {@code false}; enabled by default.
+     */
+    String CARPET_S3_PREFETCH_ENABLED = "carpet.s3.prefetch.enabled";
+
+    /**
+     * System property with the maximum number of bytes a speculative prefetch may
+     * hold in memory per stream, used when the builder does not configure it
+     * explicitly. Defaults to 256 MiB. The limit is per open stream and does not
+     * include the row group being decoded, see {@link Builder#prefetchMaxBytes(long)}.
+     */
+    String CARPET_S3_PREFETCH_MAX_BYTES = "carpet.s3.prefetch.max.bytes";
+
+    /**
+     * System property with the size in bytes of the footer cache of each stream:
+     * the tail of the file kept in memory so that the footer and its metadata are
+     * served without further requests. Defaults to 8 MiB.
+     */
+    String CARPET_FOOTER_CACHE_SIZE = "carpet.footer.cache.size";
 
     public static S3InputFile of(String s3Path) {
         return new Builder().s3Path(s3Path).build();
@@ -118,6 +166,8 @@ public interface S3InputFile extends InputFile {
         private Integer concurrency = null;
         private Executor executor = null;
         private Path localFilePath = null;
+        private Boolean prefetch = null;
+        private Long prefetchMaxBytes = null;
 
         /**
          * Configures the S3 client to use for operations. If not set, a default
@@ -188,6 +238,9 @@ public interface S3InputFile extends InputFile {
          * thread pool will be used as a fallback. Setting concurrency to 1 will disable
          * concurrent reads and use sequential reads instead.
          *
+         * The limit applies to each stream opened from the file: every stream gets
+         * its own executor, which is shut down when the stream is closed.
+         *
          * @param concurrency the concurrency level for vectored read operations, must
          *                    be > 0
          * @return this builder
@@ -202,7 +255,8 @@ public interface S3InputFile extends InputFile {
 
         /**
          * Sets a custom executor for vectored read operations. Mutually exclusive with
-         * {@link #concurrency(int)}.
+         * {@link #concurrency(int)}. The executor is shared by all streams opened from
+         * the file and is never shut down by Carpet: its lifecycle is up to the caller.
          *
          * @param executor the executor to use
          * @return this builder
@@ -212,6 +266,45 @@ public interface S3InputFile extends InputFile {
                 throw new IllegalArgumentException("executor must not be null");
             }
             this.executor = executor;
+            return this;
+        }
+
+        /**
+         * Enables or disables the speculative prefetch of the next row group while
+         * the current one is being decoded. Takes precedence over the system property
+         * {@link S3InputFile#CARPET_S3_PREFETCH_ENABLED}. Enabled by default. Has no
+         * effect when concurrency is 1.
+         *
+         * @param enabled whether to prefetch the next row group
+         * @return this builder
+         */
+        public Builder prefetch(boolean enabled) {
+            this.prefetch = enabled;
+            return this;
+        }
+
+        /**
+         * Configures the maximum number of bytes a speculative prefetch may hold in
+         * memory per stream. When the next row group is larger, only its first
+         * columns up to this limit are prefetched. Takes precedence over the system
+         * property {@link S3InputFile#CARPET_S3_PREFETCH_MAX_BYTES}. Defaults to 256
+         * MiB.
+         *
+         * The limit is per open stream, in addition to the row group being decoded:
+         * a stream may hold its current row group plus up to this many speculative
+         * bytes, and speculative chunks already being downloaded when a speculation
+         * is discarded are released only once their download finishes. With several
+         * files read at the same time, the total grows with the number of open
+         * streams.
+         *
+         * @param maxBytes maximum prefetched bytes, must be > 0
+         * @return this builder
+         */
+        public Builder prefetchMaxBytes(long maxBytes) {
+            if (maxBytes <= 0) {
+                throw new IllegalArgumentException("prefetchMaxBytes must be > 0, got: " + maxBytes);
+            }
+            this.prefetchMaxBytes = maxBytes;
             return this;
         }
 
@@ -237,15 +330,10 @@ public interface S3InputFile extends InputFile {
             if (actualClient == null) {
                 actualClient = S3Client.create();
             }
-            Executor executor = this.executor;
-            if (concurrency != null && concurrency > 1) {
-                executor = createCustomExecutor(concurrency);
-            } else if (concurrency != null && concurrency == 1) {
-                executor = null; // Use sequential reads
-            } else {
-                executor = createVirtualThreadExecutorWithCommonPoolFallback(DEFAULT_CONCURRENCY);
-            }
-            return new S3InputFileImpl(actualClient, bucket, key, executor);
+            // No executor for a concurrency of 1: reads run sequentially in the calling thread
+            Supplier<Executor> executorFactory = executorFactory(executor, concurrency, DEFAULT_CONCURRENCY, null);
+            PrefetchConfig prefetchConfig = PrefetchConfig.resolve(prefetch, prefetchMaxBytes);
+            return new S3InputFileImpl(actualClient, bucket, key, executorFactory, prefetchConfig);
         }
 
     }

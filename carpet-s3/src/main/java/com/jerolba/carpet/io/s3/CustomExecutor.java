@@ -17,12 +17,14 @@ package com.jerolba.carpet.io.s3;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,12 +52,40 @@ interface CustomExecutor extends Executor {
         }
     }
 
-    static Executor createVirtualThreadExecutorWithCommonPoolFallback(int concurrency) {
+    private static Executor createVirtualThreadExecutorWithCommonPoolFallback(int concurrency) {
         try {
             return new LimitedVirtualExecutor(concurrency);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
             return ForkJoinPool.commonPool();
         }
+    }
+
+    /**
+     * Supplies the executor of each new stream of a file, from the builder
+     * configuration. Each stream gets its own executor, shut down when the stream
+     * is closed; a user provided executor is shared and never shut down by Carpet.
+     *
+     * @param userExecutor       executor configured by the user, or null
+     * @param concurrency        concurrency configured by the user, or null
+     * @param defaultConcurrency concurrency when none is configured
+     * @param sequential         executor for a concurrency of 1, or null if the
+     *                           caller does not use an executor in that case
+     * @return the executor supplier, or null for a concurrency of 1 without a
+     *         sequential executor
+     */
+    static Supplier<Executor> executorFactory(Executor userExecutor, Integer concurrency, int defaultConcurrency,
+            Executor sequential) {
+        if (userExecutor != null) {
+            return () -> userExecutor;
+        }
+        if (concurrency == null) {
+            return () -> createVirtualThreadExecutorWithCommonPoolFallback(defaultConcurrency);
+        }
+        if (concurrency == 1) {
+            return sequential == null ? null : () -> sequential;
+        }
+        int streamConcurrency = concurrency;
+        return () -> createCustomExecutor(streamConcurrency);
     }
 
     /**
@@ -68,29 +98,61 @@ interface CustomExecutor extends Executor {
         private final ExecutorService delegate;
         private final Semaphore semaphore;
 
-        public LimitedVirtualExecutor(int maxConcurrency)
+        LimitedVirtualExecutor(int maxConcurrency)
                 throws NoSuchMethodException, IllegalAccessException, IllegalArgumentException,
                 InvocationTargetException {
-            Method factoryMethod = Executors.class.getMethod("newVirtualThreadPerTaskExecutor");
-            this.delegate = (ExecutorService) factoryMethod.invoke(null);
+            this(newVirtualThreadPerTaskExecutor(), maxConcurrency);
+        }
+
+        /**
+         * @param delegate       executor that runs each task in its own thread, so a
+         *                       task waiting for a permit does not block another one
+         * @param maxConcurrency maximum number of tasks running at the same time
+         */
+        LimitedVirtualExecutor(ExecutorService delegate, int maxConcurrency) {
+            this.delegate = delegate;
             this.semaphore = new Semaphore(maxConcurrency);
             logger.debug("Created LimitedVirtualExecutor with max concurrency: {}", maxConcurrency);
+        }
+
+        private static ExecutorService newVirtualThreadPerTaskExecutor()
+                throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+            Method factoryMethod = Executors.class.getMethod("newVirtualThreadPerTaskExecutor");
+            return (ExecutorService) factoryMethod.invoke(null);
         }
 
         @Override
         public void execute(Runnable command) {
             delegate.execute(() -> {
+                boolean permitted = acquirePermit();
                 try {
-                    semaphore.acquire();
-                    try {
-                        command.run();
-                    } finally {
+                    command.run();
+                } finally {
+                    if (permitted) {
                         semaphore.release();
                     }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
                 }
             });
+        }
+
+        /**
+         * Waits for a permit. The wait is only interrupted by a forced shutdown; the
+         * task then runs anyway, without a permit and with the interrupt flag set,
+         * instead of being dropped: a dropped task leaves its future incomplete
+         * forever, while a task run on an interrupted thread fails fast, because
+         * cancelled reads fail before starting and the S3 SDK aborts a request issued
+         * from an interrupted thread.
+         *
+         * @return whether a permit was acquired and must be released
+         */
+        private boolean acquirePermit() {
+            try {
+                semaphore.acquire();
+                return true;
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return false;
+            }
         }
 
         @Override
@@ -107,7 +169,7 @@ interface CustomExecutor extends Executor {
 
         private final ExecutorService executorService;
 
-        public FixedThreadPool(int concurrency) {
+        FixedThreadPool(int concurrency) {
             this.executorService = Executors.newFixedThreadPool(concurrency);
             logger.debug("Created FixedThreadPool with concurrency: {}", concurrency);
         }
@@ -128,11 +190,24 @@ interface CustomExecutor extends Executor {
         try {
             if (!delegate.awaitTermination(10, TimeUnit.SECONDS)) {
                 logger.warn("Executor did not terminate within timeout, forcing shutdown");
-                delegate.shutdownNow();
+                forceShutdown(delegate);
             }
         } catch (InterruptedException e) {
-            delegate.shutdownNow();
+            forceShutdown(delegate);
             Thread.currentThread().interrupt();
+        }
+    }
+
+    /**
+     * Interrupts the running tasks. Tasks still queued, which only a thread pool
+     * has, are dropped and their futures never complete: nothing waits on them
+     * once a stream is closed, but it is logged in case something does.
+     */
+    private static void forceShutdown(ExecutorService delegate) {
+        List<Runnable> dropped = delegate.shutdownNow();
+        if (!dropped.isEmpty()) {
+            logger.warn("{} queued tasks dropped on forced shutdown, their futures will not complete",
+                    dropped.size());
         }
     }
 

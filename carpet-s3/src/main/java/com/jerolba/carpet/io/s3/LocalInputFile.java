@@ -25,7 +25,7 @@ class LocalInputFile implements S3InputFile {
 
     private final Path localPath;
 
-    public LocalInputFile(Path localPath) {
+    LocalInputFile(Path localPath) {
         this.localPath = localPath;
     }
 

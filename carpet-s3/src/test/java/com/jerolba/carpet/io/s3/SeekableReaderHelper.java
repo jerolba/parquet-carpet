@@ -17,6 +17,7 @@ package com.jerolba.carpet.io.s3;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.concurrent.Executor;
 
 import org.apache.parquet.bytes.ByteBufferAllocator;
 import org.apache.parquet.bytes.HeapByteBufferAllocator;
@@ -98,5 +99,23 @@ class SeekableReaderHelper {
 
     static ByteBufferAllocator heapAllocator() {
         return HeapByteBufferAllocator.getInstance();
+    }
+
+    /**
+     * A stream over the reader that performs vectored reads sequentially in the
+     * calling thread, footer cached, no prefetch.
+     */
+    static S3SeekableInputStream sequentialStream(SeekableReader reader) throws IOException {
+        CachedFooterProxyReader cached = new CachedFooterProxyReader(reader);
+        return new S3SeekableInputStream(cached, new SequentialReader(cached));
+    }
+
+    /**
+     * A stream over the reader that performs vectored reads on the executor,
+     * footer cached, no prefetch.
+     */
+    static S3SeekableInputStream vectorStream(SeekableReader reader, Executor executor) throws IOException {
+        CachedFooterProxyReader cached = new CachedFooterProxyReader(reader);
+        return new S3SeekableInputStream(cached, new VectorReader(cached, executor));
     }
 }

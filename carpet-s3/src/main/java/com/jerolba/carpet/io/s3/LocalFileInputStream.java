@@ -36,12 +36,12 @@ class LocalFileInputStream extends SeekableInputStream {
     private final long fileLength;
     private long markedPos = 0;
 
-    public LocalFileInputStream(Path path) throws IOException {
+    LocalFileInputStream(Path path) throws IOException {
         this.channel = Files.newByteChannel(path, StandardOpenOption.READ);
         this.fileLength = channel.size();
     }
 
-    public long getLength() throws IOException {
+    private long getLength() {
         return fileLength;
     }
 
