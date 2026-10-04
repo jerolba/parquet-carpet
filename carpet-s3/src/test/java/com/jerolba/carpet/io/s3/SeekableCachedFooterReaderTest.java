@@ -19,6 +19,8 @@ import static com.jerolba.carpet.io.s3.SeekableReaderHelper.heapAllocator;
 import static com.jerolba.carpet.io.s3.SeekableReaderHelper.largeVirtualReader;
 import static com.jerolba.carpet.io.s3.SeekableReaderHelper.readerOf;
 import static com.jerolba.carpet.io.s3.SeekableReaderHelper.sequentialBytes;
+import static com.jerolba.carpet.io.s3.SeekableReaderHelper.sequentialStream;
+import static com.jerolba.carpet.io.s3.SeekableReaderHelper.vectorStream;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -47,7 +49,7 @@ class SeekableCachedFooterReaderTest {
     // -------------------------------------------------------------------------
 
     private SeekableCachedFooterReader readerFor(byte[] data) throws IOException {
-        return new SeekableCachedFooterReader(readerOf(data), null);
+        return sequentialStream(readerOf(data));
     }
 
     @Nested
@@ -152,7 +154,7 @@ class SeekableCachedFooterReaderTest {
             // File larger than 8 MiB: position 0 falls outside the cached footer window.
             // largeVirtualReader: value at position p is (byte)(p % 256).
             long largeSize = (long) DEFAULT_FOOTER_SIZE + 1024;
-            try (var reader = new SeekableCachedFooterReader(largeVirtualReader(largeSize), null)) {
+            try (var reader = sequentialStream(largeVirtualReader(largeSize))) {
                 // pos = 0 is not cached → should delegate to seekableReader
                 assertEquals(0, reader.read());
                 assertEquals(1, reader.getPos());
@@ -207,7 +209,7 @@ class SeekableCachedFooterReaderTest {
         void readFromNonCachedPositionDelegatesToUnderlyingReader() throws IOException {
             // largeVirtualReader: value at position p is (byte)(p % 256)
             long largeSize = (long) DEFAULT_FOOTER_SIZE + 1024;
-            try (var reader = new SeekableCachedFooterReader(largeVirtualReader(largeSize), null)) {
+            try (var reader = sequentialStream(largeVirtualReader(largeSize))) {
                 // pos = 0 is NOT in the last-8-MiB window
                 byte[] dest = new byte[10];
                 int bytesRead = reader.read(dest, 0, 10);
@@ -221,7 +223,7 @@ class SeekableCachedFooterReaderTest {
         @Test
         void readFromNonCachedPositionAdvancesPosition() throws IOException {
             long largeSize = (long) DEFAULT_FOOTER_SIZE + 1024;
-            try (var reader = new SeekableCachedFooterReader(largeVirtualReader(largeSize), null)) {
+            try (var reader = sequentialStream(largeVirtualReader(largeSize))) {
                 byte[] dest = new byte[10];
                 reader.read(dest, 0, 10);
                 assertEquals(10, reader.getPos());
@@ -271,7 +273,7 @@ class SeekableCachedFooterReaderTest {
         @Test
         void readFromNonCachedPositionDelegatesToUnderlyingReader() throws IOException {
             long largeSize = (long) DEFAULT_FOOTER_SIZE + 1024;
-            try (var reader = new SeekableCachedFooterReader(largeVirtualReader(largeSize), null)) {
+            try (var reader = sequentialStream(largeVirtualReader(largeSize))) {
                 // pos = 0 is NOT cached
                 ByteBuffer buf = ByteBuffer.allocate(5);
                 reader.read(buf);
@@ -285,7 +287,7 @@ class SeekableCachedFooterReaderTest {
         @Test
         void readFromNonCachedPositionAdvancesPosition() throws IOException {
             long largeSize = (long) DEFAULT_FOOTER_SIZE + 1024;
-            try (var reader = new SeekableCachedFooterReader(largeVirtualReader(largeSize), null)) {
+            try (var reader = sequentialStream(largeVirtualReader(largeSize))) {
                 ByteBuffer buf = ByteBuffer.allocate(5);
                 reader.read(buf);
                 assertEquals(5, reader.getPos());
@@ -455,7 +457,7 @@ class SeekableCachedFooterReaderTest {
             byte[] data = sequentialBytes(200);
             // Use 4 threads
             ExecutorService executor = Executors.newFixedThreadPool(4);
-            try (SeekableCachedFooterReader reader = new SeekableCachedFooterReader(readerOf(data), executor)) {
+            try (SeekableCachedFooterReader reader = vectorStream(readerOf(data), executor)) {
                 ParquetFileRange r1 = new ParquetFileRange(0, 10);
                 ParquetFileRange r2 = new ParquetFileRange(20, 10);
                 ParquetFileRange r3 = new ParquetFileRange(100, 50);
@@ -532,7 +534,7 @@ class SeekableCachedFooterReaderTest {
                 }
             };
 
-            SeekableCachedFooterReader reader = new SeekableCachedFooterReader(trackingReader, null);
+            SeekableCachedFooterReader reader = sequentialStream(trackingReader);
             reader.close();
 
             assertTrue(closed[0], "Underlying SeekableReader should have been closed");
@@ -564,7 +566,7 @@ class SeekableCachedFooterReaderTest {
                 }
             };
 
-            SeekableCachedFooterReader reader = new SeekableCachedFooterReader(trackingReader, null);
+            SeekableCachedFooterReader reader = sequentialStream(trackingReader);
             reader.close();
             reader.close(); // second close must be a no-op
 

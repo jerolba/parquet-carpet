@@ -36,12 +36,21 @@ import org.slf4j.LoggerFactory;
  * {@code RANGE_GAP} bytes) into a single contiguous read span, reducing the
  * number of S3 requests. Each subclass defines how a span is physically read.
  * </p>
+ * <p>
+ * Reads can be issued with a cooperative cancellation flag. Implementations
+ * check the flag before starting each physical request and skip work that is no
+ * longer wanted; a request already in flight is never interrupted.
+ * </p>
  */
 abstract class RangeReader implements AutoCloseable {
 
     private static final Logger logger = LoggerFactory.getLogger(RangeReader.class);
 
-    private static final int RANGE_GAP = 1024 * 1024; // 1 MB
+    /** Ranges closer than this many bytes are read as a single span. */
+    static final int RANGE_GAP = 1024 * 1024; // 1 MB
+
+    /** Cancellation flag that never cancels. */
+    static final Cancellation NEVER_CANCELLED = () -> false;
 
     /**
      * Read the specified ranges from the Parquet file, using vectored I/O to
@@ -58,6 +67,22 @@ abstract class RangeReader implements AutoCloseable {
      * @throws IOException if an I/O error occurs during reading
      */
     public void readVectored(List<ParquetFileRange> ranges, ByteBufferAllocator allocator) throws IOException {
+        readVectored(ranges, allocator, NEVER_CANCELLED);
+    }
+
+    /**
+     * Same as {@link #readVectored(List, ByteBufferAllocator)} but with a
+     * cooperative cancellation flag. Physical reads not yet started when the flag
+     * becomes true are skipped and their futures complete exceptionally with a
+     * {@link java.util.concurrent.CancellationException}.
+     *
+     * @param ranges    the list of file ranges to read
+     * @param allocator the ByteBuffer allocator to use for reading data
+     * @param cancelled flag checked before each physical read starts
+     * @throws IOException if an I/O error occurs during reading
+     */
+    void readVectored(List<ParquetFileRange> ranges, ByteBufferAllocator allocator, Cancellation cancelled)
+            throws IOException {
         if (ranges.isEmpty()) {
             return;
         }
@@ -68,7 +93,8 @@ abstract class RangeReader implements AutoCloseable {
                         group.size(), group.startOffset(), group.totalLength());
             }
 
-            CompletableFuture<ByteBuffer> spanFuture = readSpan(allocator, group.startOffset(), group.totalLength());
+            CompletableFuture<ByteBuffer> spanFuture = readSpan(allocator, group.startOffset(), group.totalLength(),
+                    cancelled);
 
             for (ParquetFileRange range : group) {
                 int sliceOffset = group.sliceOffset(range);
@@ -107,8 +133,20 @@ abstract class RangeReader implements AutoCloseable {
         return groups;
     }
 
-    protected abstract CompletableFuture<ByteBuffer> readSpan(ByteBufferAllocator allocator, long offset, int length)
-            throws IOException;
+    /**
+     * Reads a contiguous span of the file into a newly allocated buffer.
+     *
+     * @param allocator allocator for the resulting buffer
+     * @param offset    file position of the first byte
+     * @param length    number of bytes to read
+     * @param cancelled cooperative cancellation flag, checked before each physical
+     *                  read starts
+     * @return a future completed with a buffer positioned at 0 and limited to
+     *         {@code length}
+     * @throws IOException if a synchronous implementation fails to read
+     */
+    protected abstract CompletableFuture<ByteBuffer> readSpan(ByteBufferAllocator allocator, long offset, int length,
+            Cancellation cancelled) throws IOException;
 
     @Override
     public abstract void close();

@@ -30,12 +30,16 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.IntStream;
 
 import org.apache.parquet.bytes.ByteBufferAllocator;
 import org.apache.parquet.bytes.DirectByteBufferAllocator;
 import org.apache.parquet.bytes.HeapByteBufferAllocator;
+import org.apache.parquet.io.InputFile;
 import org.apache.parquet.io.SeekableInputStream;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -47,6 +51,7 @@ import org.testcontainers.localstack.LocalStackContainer;
 import com.jerolba.carpet.CarpetReader;
 import com.jerolba.carpet.CarpetWriter;
 import com.jerolba.carpet.io.FileSystemOutputFile;
+import com.jerolba.carpet.io.s3.PrefetchTestSupport.TestRow;
 
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -536,4 +541,61 @@ class S3InputFileTest {
         assertEquals("s3://" + BUCKET_NAME + "/" + key, inputFile.toString());
     }
 
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    class Prefetch {
+
+        private static final int ROW_COUNT = 5000;
+        private static final String KEY = "prefetch-multi-rowgroup.parquet";
+        private final String url = "s3://" + BUCKET_NAME + "/" + KEY;
+        private int rowGroups;
+
+        @BeforeAll
+        void uploadMultiRowGroupFile() throws IOException {
+            byte[] data = PrefetchTestSupport.multiRowGroupParquet(ROW_COUNT, 16 * 1024);
+            rowGroups = PrefetchTestSupport.rowGroupsOf(data).size();
+            assertTrue(rowGroups >= 4, "Test file needs at least 4 row groups, got " + rowGroups);
+            uploadToS3(url, data);
+        }
+
+        @Test
+        void prefetchOnAndOffReadTheSameRecords() throws IOException {
+            List<TestRow> expected = PrefetchTestSupport.rows(ROW_COUNT);
+            var withPrefetch = S3InputFile.builder(url).concurrency(4).build();
+            var withoutPrefetch = S3InputFile.builder(url).concurrency(4).prefetch(false).build();
+
+            assertEquals(expected, new CarpetReader<>(withPrefetch, TestRow.class).toList());
+            assertEquals(expected, new CarpetReader<>(withoutPrefetch, TestRow.class).toList());
+        }
+
+        /**
+         * Same stack S3InputFileImpl assembles, over a real S3SeekableReader against
+         * localstack, but built here so the test keeps a reference to the prefetching
+         * reader and can check its counters.
+         */
+        @Test
+        void everyRowGroupAfterTheFirstIsServedFromTheSpeculation() throws IOException {
+            ExecutorService executor = Executors.newFixedThreadPool(4);
+            try (S3Client s3Client = S3Client.create()) {
+                S3SeekableReader s3Reader = new S3SeekableReader(s3Client, BUCKET_NAME, KEY);
+                List<PrefetchingRangeReader> prefetchers = new ArrayList<>();
+                InputFile file = PrefetchTestSupport.inputFileOf(s3Reader, s3Reader.getLength(), executor,
+                        new PrefetchConfig(true, null), prefetchers);
+
+                List<TestRow> read = new CarpetReader<>(file, TestRow.class).toList();
+
+                assertEquals(PrefetchTestSupport.rows(ROW_COUNT), read);
+                long served = 0;
+                long fetched = 0;
+                for (PrefetchingRangeReader prefetcher : prefetchers) {
+                    served += prefetcher.stats().rangesServed();
+                    fetched += prefetcher.stats().rangesFetched();
+                }
+                assertEquals(rowGroups - 1, served);
+                assertEquals(1, fetched);
+            } finally {
+                executor.shutdownNow();
+            }
+        }
+    }
 }

@@ -27,19 +27,23 @@ class S3InputFileImpl implements S3InputFile {
 
     private final S3SeekableReader s3SeekableReader;
     private final Executor executor;
+    private final PrefetchConfig prefetchConfig;
 
     /**
      * Constructs an S3InputFile with the specified S3 client, s3 bucket and key,
-     * and executor.
+     * executor and prefetch configuration.
      *
-     * @param client   the S3 client to use for operations
-     * @param bucket   the S3 bucket name
-     * @param key      the S3 object key
-     * @param executor the executor to use for vectored read operations, or null
+     * @param client         the S3 client to use for operations
+     * @param bucket         the S3 bucket name
+     * @param key            the S3 object key
+     * @param executor       the executor to use for vectored read operations, or
+     *                       null
+     * @param prefetchConfig speculative prefetch configuration
      */
-    S3InputFileImpl(S3Client client, String bucket, String key, Executor executor) {
+    S3InputFileImpl(S3Client client, String bucket, String key, Executor executor, PrefetchConfig prefetchConfig) {
         this.s3SeekableReader = new S3SeekableReader(client, bucket, key);
         this.executor = executor;
+        this.prefetchConfig = prefetchConfig;
     }
 
     /**
@@ -70,7 +74,16 @@ class S3InputFileImpl implements S3InputFile {
             Path localFile = s3SeekableReader.downloadToLocalFile();
             return new LocalFileInputStream(localFile);
         }
-        return new SeekableCachedFooterReader(s3SeekableReader, executor);
+        CachedFooterProxyReader cachedReader = new CachedFooterProxyReader(s3SeekableReader);
+        RangeReader rangeReader = prefetchConfig.create(cachedReader, executor);
+        return new SeekableCachedFooterReader(cachedReader, rangeReader);
+    }
+
+    /**
+     * The resolved prefetch configuration, exposed for tests.
+     */
+    PrefetchConfig prefetchConfig() {
+        return prefetchConfig;
     }
 
 }

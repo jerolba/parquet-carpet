@@ -15,6 +15,8 @@
  */
 package com.jerolba.carpet.io.s3;
 
+import static com.jerolba.carpet.io.s3.Cancellation.cancellation;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
@@ -38,8 +40,11 @@ class SequentialReader extends RangeReader {
     }
 
     @Override
-    protected CompletableFuture<ByteBuffer> readSpan(ByteBufferAllocator allocator, long offset, int length)
-            throws IOException {
+    protected CompletableFuture<ByteBuffer> readSpan(ByteBufferAllocator allocator, long offset, int length,
+            Cancellation cancellation) throws IOException {
+        if (cancellation.isCancelled()) {
+            return CompletableFuture.failedFuture(cancellation());
+        }
         ByteBuffer buffer = allocator.allocate(length);
         try {
             seekableReader.readFully(offset, buffer);

@@ -18,7 +18,6 @@ package com.jerolba.carpet.io.s3;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
-import java.util.concurrent.Executor;
 
 import org.apache.parquet.bytes.ByteBufferAllocator;
 import org.apache.parquet.io.ParquetFileRange;
@@ -35,13 +34,16 @@ class SeekableCachedFooterReader extends SeekableInputStream {
     private boolean closed = false;
     private long pos = 0;
 
-    SeekableCachedFooterReader(SeekableReader seekableReader, Executor executor) throws IOException {
-        this.seekableReader = new CachedFooterProxyReader(seekableReader);
-        if (executor == null) {
-            this.rangeReader = new SequentialReader(this.seekableReader);
-        } else {
-            this.rangeReader = new VectorReader(this.seekableReader, executor);
-        }
+    /**
+     * @param seekableReader reader for positional reads, normally a
+     *                       {@link CachedFooterProxyReader} so the footer is served
+     *                       from memory
+     * @param rangeReader    reader for vectored reads over the same bytes, see
+     *                       {@link RangeReaderFactory}
+     */
+    SeekableCachedFooterReader(SeekableReader seekableReader, RangeReader rangeReader) {
+        this.seekableReader = seekableReader;
+        this.rangeReader = rangeReader;
     }
 
     @Override
