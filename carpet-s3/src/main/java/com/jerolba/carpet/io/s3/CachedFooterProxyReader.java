@@ -27,20 +27,14 @@ import java.nio.ByteBuffer;
  */
 class CachedFooterProxyReader implements SeekableReader {
 
-    /**
-     * Configuration property to set the size of the footer cache in bytes. If not
-     * set, a default size of 8 MiB will be used.
-     */
-    public static final String CARPET_FOOTER_CACHE_SIZE = "carpet.footer.cache.size";
-
     private static final int DEFAULT_FOOTER_SIZE = 8 * 1024 * 1024; // 8 MiB footer size
 
     private final SeekableReader reader;
-    private long contentLength;
+    private final long contentLength;
     private final long footerPosition;
-    private byte[] footer;
+    private final byte[] footer;
 
-    public CachedFooterProxyReader(SeekableReader reader, int footerSize) throws IOException {
+    CachedFooterProxyReader(SeekableReader reader, int footerSize) throws IOException {
         this.reader = reader;
         this.contentLength = reader.getLength();
         if (contentLength > footerSize) {
@@ -53,8 +47,8 @@ class CachedFooterProxyReader implements SeekableReader {
         reader.readFully(footerPosition, footer, 0, footer.length);
     }
 
-    public CachedFooterProxyReader(SeekableReader reader) throws IOException {
-        this(reader, Integer.getInteger(CARPET_FOOTER_CACHE_SIZE, DEFAULT_FOOTER_SIZE));
+    CachedFooterProxyReader(SeekableReader reader) throws IOException {
+        this(reader, Integer.getInteger(S3InputFile.CARPET_FOOTER_CACHE_SIZE, DEFAULT_FOOTER_SIZE));
     }
 
     @Override
@@ -83,20 +77,7 @@ class CachedFooterProxyReader implements SeekableReader {
 
     @Override
     public void close() throws IOException {
-        footer = null;
-        contentLength = 0;
         reader.close();
-    }
-
-    /**
-     * Reads a byte from the cached footer at the given position.
-     *
-     * @param position the position to read from
-     * @return the byte value at the given position
-     * @throws UnsupportedOperationException if the position is not cached
-     */
-    int read(long position) {
-        return footer[footerOffset(position)] & 0xFF;
     }
 
     /**
@@ -110,7 +91,7 @@ class CachedFooterProxyReader implements SeekableReader {
      * @throws IndexOutOfBoundsException     if the requested length exceeds the
      *                                       available bytes in the footer
      */
-    void readBytesFromPos(long pos, byte[] toRead, int start, int len) {
+    private void readBytesFromPos(long pos, byte[] toRead, int start, int len) {
         int footerOffset = footerOffset(pos);
         int remainingInFooter = footer.length - footerOffset;
         if (len > remainingInFooter) {
@@ -133,7 +114,7 @@ class CachedFooterProxyReader implements SeekableReader {
      * @throws IndexOutOfBoundsException     if the requested length exceeds the
      *                                       available bytes in the footer
      */
-    void readBytesFromPos(long pos, ByteBuffer byteBuffer) {
+    private void readBytesFromPos(long pos, ByteBuffer byteBuffer) {
         int footerOffset = footerOffset(pos);
         int remainingInFooter = footer.length - footerOffset;
         int len = byteBuffer.remaining();
@@ -153,7 +134,7 @@ class CachedFooterProxyReader implements SeekableReader {
      * @return true if the range is within the cached footer range, false otherwise
      */
     boolean isCached(long fromPosition, int length) {
-        if (footer == null || fromPosition < 0 || fromPosition + length > contentLength) {
+        if (fromPosition < 0 || fromPosition + length > contentLength) {
             return false;
         }
         return fromPosition >= footerPosition;

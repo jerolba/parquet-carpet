@@ -15,6 +15,8 @@
  */
 package com.jerolba.carpet.io.s3;
 
+import static com.jerolba.carpet.io.s3.SeekableReaderHelper.readerOf;
+import static com.jerolba.carpet.io.s3.SeekableReaderHelper.sequentialBytes;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -27,59 +29,9 @@ import java.nio.ByteBuffer;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import com.jerolba.carpet.io.s3.PrefetchTestSupport.RecordingReader;
+
 class CachedFooterProxyReaderTest {
-
-    /**
-     * Mock-like in-memory SeekableReader backed by a byte array that tracks calls.
-     */
-    static class VerificationReader implements SeekableReader {
-
-        private final byte[] data;
-        int readCalls = 0;
-        int closeCalls = 0;
-
-        VerificationReader(byte[] data) {
-            this.data = data;
-        }
-
-        @Override
-        public long getLength() {
-            return data.length;
-        }
-
-        @Override
-        public int readFully(long pos, byte[] b, int off, int len) {
-            readCalls++;
-            System.arraycopy(data, (int) pos, b, off, len);
-            return len;
-        }
-
-        @Override
-        public int readFully(long pos, ByteBuffer byteBuffer) {
-            readCalls++;
-            int len = byteBuffer.remaining();
-            byteBuffer.put(data, (int) pos, len);
-            return len;
-        }
-
-        @Override
-        public void close() {
-            closeCalls++;
-        }
-
-    }
-
-    static SeekableReader readerOf(byte[] data) {
-        return new VerificationReader(data);
-    }
-
-    static byte[] sequentialBytes(int size) {
-        byte[] data = new byte[size];
-        for (int i = 0; i < size; i++) {
-            data[i] = (byte) (i % 256);
-        }
-        return data;
-    }
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -89,7 +41,7 @@ class CachedFooterProxyReaderTest {
     class ConstructorTests {
 
         @Test
-        void whenContentSmallerThanFooterSize_entireContentIsCached() throws IOException {
+        void contentSmallerThanFooterSizeIsCachedEntirely() throws IOException {
             byte[] data = sequentialBytes(100);
             try (var footer = new CachedFooterProxyReader(readerOf(data), 1024)) {
                 assertTrue(footer.isCached(0));
@@ -98,7 +50,7 @@ class CachedFooterProxyReaderTest {
         }
 
         @Test
-        void whenContentExactlyFooterSize_entireContentIsCached() throws IOException {
+        void contentExactlyFooterSizeIsCachedEntirely() throws IOException {
             byte[] data = sequentialBytes(1024);
             try (var footer = new CachedFooterProxyReader(readerOf(data), 1024)) {
                 assertTrue(footer.isCached(0));
@@ -107,7 +59,7 @@ class CachedFooterProxyReaderTest {
         }
 
         @Test
-        void whenContentLargerThanFooterSize_onlyTailIsCached() throws IOException {
+        void contentLargerThanFooterSizeCachesOnlyTheTail() throws IOException {
             byte[] data = sequentialBytes(2000);
             try (var footer = new CachedFooterProxyReader(readerOf(data), 1024)) {
                 assertFalse(footer.isCached(0));
@@ -128,7 +80,7 @@ class CachedFooterProxyReaderTest {
 
         @Test
         void systemPropertyOverridesDefaultFooterSize() throws IOException {
-            System.setProperty(CachedFooterProxyReader.CARPET_FOOTER_CACHE_SIZE, "512");
+            System.setProperty(S3InputFile.CARPET_FOOTER_CACHE_SIZE, "512");
             try {
                 byte[] data = sequentialBytes(1000);
                 // footerPosition = 1000 - 512 = 488
@@ -137,7 +89,7 @@ class CachedFooterProxyReaderTest {
                     assertTrue(footer.isCached(488));
                 }
             } finally {
-                System.clearProperty(CachedFooterProxyReader.CARPET_FOOTER_CACHE_SIZE);
+                System.clearProperty(S3InputFile.CARPET_FOOTER_CACHE_SIZE);
             }
         }
     }
@@ -176,66 +128,18 @@ class CachedFooterProxyReaderTest {
     }
 
     // -------------------------------------------------------------------------
-    // read(long position)
+    // readFully(long pos, byte[], int, int) served from the cache
     // -------------------------------------------------------------------------
 
     @Nested
-    class ReadByteTests {
-
-        @Test
-        void readSingleByteFromCachedPosition() throws IOException {
-            byte[] data = sequentialBytes(100);
-            try (var footer = new CachedFooterProxyReader(readerOf(data), 1024)) {
-                assertEquals(0, footer.read(0));
-                assertEquals(1, footer.read(1));
-                assertEquals(99, footer.read(99));
-            }
-        }
-
-        @Test
-        void readReturnsUnsignedByte() throws IOException {
-            byte[] data = new byte[] { (byte) 0xFF, (byte) 0x80 };
-            try (var footer = new CachedFooterProxyReader(readerOf(data), 1024)) {
-                assertEquals(255, footer.read(0));
-                assertEquals(128, footer.read(1));
-            }
-        }
-
-        @Test
-        void readFromNonCachedPositionThrows() throws IOException {
-            byte[] data = sequentialBytes(2000);
-            // footerPosition = 2000 - 1024 = 976; position 0 is not cached
-            assertThrows(UnsupportedOperationException.class, () -> {
-                try (var footer = new CachedFooterProxyReader(readerOf(data), 1024)) {
-                    footer.read(0);
-                }
-            });
-        }
-
-        @Test
-        void readFromNegativePositionThrows() throws IOException {
-            assertThrows(UnsupportedOperationException.class, () -> {
-                try (var footer = new CachedFooterProxyReader(readerOf(sequentialBytes(100)),
-                        1024)) {
-                    footer.read(-1);
-                }
-            });
-        }
-    }
-
-    // -------------------------------------------------------------------------
-    // readBytesFromPos(long pos, byte[], int, int)
-    // -------------------------------------------------------------------------
-
-    @Nested
-    class ReadBytesArrayTests {
+    class ReadFullyArrayFromCache {
 
         @Test
         void readBytesFromBeginningOfContent() throws IOException {
             byte[] data = sequentialBytes(100);
             try (var footer = new CachedFooterProxyReader(readerOf(data), 1024)) {
                 byte[] dest = new byte[10];
-                footer.readBytesFromPos(0, dest, 0, 10);
+                footer.readFully(0, dest, 0, 10);
 
                 assertArrayEquals(new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 }, dest);
             }
@@ -246,7 +150,7 @@ class CachedFooterProxyReaderTest {
             byte[] data = sequentialBytes(100);
             try (var footer = new CachedFooterProxyReader(readerOf(data), 1024)) {
                 byte[] dest = new byte[20];
-                footer.readBytesFromPos(5, dest, 10, 5);
+                footer.readFully(5, dest, 10, 5);
 
                 assertEquals(5, dest[10]);
                 assertEquals(9, dest[14]);
@@ -261,35 +165,12 @@ class CachedFooterProxyReaderTest {
             byte[] data = sequentialBytes(2000);
             try (var footer = new CachedFooterProxyReader(readerOf(data), 1024)) {
                 byte[] dest = new byte[1024];
-                footer.readBytesFromPos(976, dest, 0, 1024); // footerPosition = 976
+                footer.readFully(976, dest, 0, 1024); // footerPosition = 976
 
                 for (int i = 0; i < 1024; i++) {
                     assertEquals(data[976 + i], dest[i], "Mismatch at index " + i);
                 }
             }
-        }
-
-        @Test
-        void readMoreBytesThanAvailableInFooterThrows() throws IOException {
-            byte[] data = sequentialBytes(100);
-            try (var footer = new CachedFooterProxyReader(readerOf(data), 1024)) {
-                byte[] dest = new byte[200];
-                // Only 10 bytes remain from position 90 to end (99 inclusive)
-                assertThrows(IndexOutOfBoundsException.class,
-                        () -> footer.readBytesFromPos(90, dest, 0, 20));
-            }
-        }
-
-        @Test
-        void readFromNonCachedPositionThrows() throws IOException {
-            byte[] data = sequentialBytes(2000);
-            byte[] dest = new byte[10];
-            assertThrows(UnsupportedOperationException.class,
-                    () -> {
-                        try (var footer = new CachedFooterProxyReader(readerOf(data), 1024)) {
-                            footer.readBytesFromPos(0, dest, 0, 10);
-                        }
-                    });
         }
 
         @Test
@@ -299,24 +180,24 @@ class CachedFooterProxyReaderTest {
                 byte[] dest = new byte[10];
                 // start=8, len=5 → writes to dest[8..12] which is out of bounds
                 assertThrows(IndexOutOfBoundsException.class,
-                        () -> footer.readBytesFromPos(0, dest, 8, 5));
+                        () -> footer.readFully(0, dest, 8, 5));
             }
         }
     }
 
     // -------------------------------------------------------------------------
-    // readBytesFromPos(long pos, ByteBuffer)
+    // readFully(long pos, ByteBuffer) served from the cache
     // -------------------------------------------------------------------------
 
     @Nested
-    class ReadBytesBufferTests {
+    class ReadFullyBufferFromCache {
 
         @Test
         void readBytesIntoByteBuffer() throws IOException {
             byte[] data = sequentialBytes(100);
             try (var footer = new CachedFooterProxyReader(readerOf(data), 1024)) {
                 ByteBuffer buf = ByteBuffer.allocate(10);
-                footer.readBytesFromPos(0, buf);
+                footer.readFully(0, buf);
 
                 buf.flip();
                 for (int i = 0; i < 10; i++) {
@@ -330,7 +211,7 @@ class CachedFooterProxyReaderTest {
             byte[] data = sequentialBytes(100);
             try (var footer = new CachedFooterProxyReader(readerOf(data), 1024)) {
                 ByteBuffer buf = ByteBuffer.allocate(5);
-                footer.readBytesFromPos(10, buf);
+                footer.readFully(10, buf);
 
                 buf.flip();
                 assertEquals(10, buf.get() & 0xFF);
@@ -339,34 +220,11 @@ class CachedFooterProxyReaderTest {
         }
 
         @Test
-        void readMoreBytesThanAvailableInBufferThrows() throws IOException {
-            byte[] data = sequentialBytes(100);
-            try (var footer = new CachedFooterProxyReader(readerOf(data), 1024)) {
-                // Only 5 bytes remain from position 95, but buffer requests 10
-                ByteBuffer buf = ByteBuffer.allocate(10);
-                assertThrows(IndexOutOfBoundsException.class,
-                        () -> footer.readBytesFromPos(95, buf));
-            }
-        }
-
-        @Test
-        void readFromNonCachedPositionThrows() throws IOException {
-            byte[] data = sequentialBytes(2000);
-            ByteBuffer buf = ByteBuffer.allocate(10);
-            assertThrows(UnsupportedOperationException.class,
-                    () -> {
-                        try (var footer = new CachedFooterProxyReader(readerOf(data), 1024)) {
-                            footer.readBytesFromPos(0, buf);
-                        }
-                    });
-        }
-
-        @Test
         void readIntoDirectByteBuffer() throws IOException {
             byte[] data = sequentialBytes(100);
             try (var footer = new CachedFooterProxyReader(readerOf(data), 1024)) {
                 ByteBuffer buf = ByteBuffer.allocateDirect(10);
-                footer.readBytesFromPos(5, buf);
+                footer.readFully(5, buf);
 
                 buf.flip();
                 assertEquals(5, buf.get() & 0xFF);
@@ -385,74 +243,74 @@ class CachedFooterProxyReaderTest {
         @Test
         void getLengthDelegatesToReader() throws IOException {
             byte[] data = sequentialBytes(100);
-            VerificationReader reader = new VerificationReader(data);
+            RecordingReader reader = new RecordingReader(readerOf(data));
             try (var footer = new CachedFooterProxyReader(reader)) {
                 assertEquals(100, footer.getLength());
             }
         }
 
         @Test
-        void readFullyArray_WhenCached_DoesNotCallReader() throws IOException {
+        void readFullyArrayFromCachedRangeDoesNotCallReader() throws IOException {
             byte[] data = sequentialBytes(2000);
-            VerificationReader reader = new VerificationReader(data);
+            RecordingReader reader = new RecordingReader(readerOf(data));
             // Footer size 1024, footerPosition = 2000 - 1024 = 976
             try (var footer = new CachedFooterProxyReader(reader, 1024)) {
-                int initialCalls = reader.readCalls; // Should be 1 from constructor cache warming
+                int initialCalls = reader.reads().size(); // 1, the constructor filling the cache
 
                 byte[] dest = new byte[10];
                 int read = footer.readFully(1000, dest, 0, 10);
 
                 assertEquals(10, read);
-                assertEquals(initialCalls, reader.readCalls, "Should not have called reader for cached data");
+                assertEquals(initialCalls, reader.reads().size(), "Should not have called reader for cached data");
                 assertEquals(data[1000], dest[0]);
             }
         }
 
         @Test
-        void readFullyArray_WhenNotCached_DelegatesToReader() throws IOException {
+        void readFullyArrayOutsideCachedRangeDelegatesToReader() throws IOException {
             byte[] data = sequentialBytes(2000);
-            VerificationReader reader = new VerificationReader(data);
+            RecordingReader reader = new RecordingReader(readerOf(data));
             try (var footer = new CachedFooterProxyReader(reader, 1024)) {
-                int initialCalls = reader.readCalls;
+                int initialCalls = reader.reads().size();
 
                 byte[] dest = new byte[10];
                 int read = footer.readFully(0, dest, 0, 10);
 
                 assertEquals(10, read);
-                assertEquals(initialCalls + 1, reader.readCalls, "Should have called reader for non-cached data");
+                assertEquals(initialCalls + 1, reader.reads().size(), "Should have called reader for non-cached data");
                 assertEquals(data[0], dest[0]);
             }
         }
 
         @Test
-        void readFullyBuffer_WhenCached_DoesNotCallReader() throws IOException {
+        void readFullyBufferFromCachedRangeDoesNotCallReader() throws IOException {
             byte[] data = sequentialBytes(2000);
-            VerificationReader reader = new VerificationReader(data);
+            RecordingReader reader = new RecordingReader(readerOf(data));
             try (var footer = new CachedFooterProxyReader(reader, 1024)) {
-                int initialCalls = reader.readCalls;
+                int initialCalls = reader.reads().size();
 
                 ByteBuffer buf = ByteBuffer.allocate(10);
                 int read = footer.readFully(1000, buf);
 
                 assertEquals(10, read);
-                assertEquals(initialCalls, reader.readCalls, "Should not have called reader for cached data");
+                assertEquals(initialCalls, reader.reads().size(), "Should not have called reader for cached data");
                 buf.flip();
                 assertEquals(data[1000], buf.get());
             }
         }
 
         @Test
-        void readFullyBuffer_WhenNotCached_DelegatesToReader() throws IOException {
+        void readFullyBufferOutsideCachedRangeDelegatesToReader() throws IOException {
             byte[] data = sequentialBytes(2000);
-            VerificationReader reader = new VerificationReader(data);
+            RecordingReader reader = new RecordingReader(readerOf(data));
             try (var footer = new CachedFooterProxyReader(reader, 1024)) {
-                int initialCalls = reader.readCalls;
+                int initialCalls = reader.reads().size();
 
                 ByteBuffer buf = ByteBuffer.allocate(10);
                 int read = footer.readFully(0, buf);
 
                 assertEquals(10, read);
-                assertEquals(initialCalls + 1, reader.readCalls, "Should have called reader for non-cached data");
+                assertEquals(initialCalls + 1, reader.reads().size(), "Should have called reader for non-cached data");
                 buf.flip();
                 assertEquals(data[0], buf.get());
             }
@@ -460,10 +318,26 @@ class CachedFooterProxyReaderTest {
 
         @Test
         void closeClosesInjectedReader() throws IOException {
-            VerificationReader reader = new VerificationReader(sequentialBytes(2000));
+            RecordingReader reader = new RecordingReader(readerOf(sequentialBytes(2000)));
             var footer = new CachedFooterProxyReader(reader);
             footer.close();
-            assertEquals(1, reader.closeCalls, "Injected reader should be closed");
+            assertEquals(1, reader.closeCount(), "Injected reader should be closed");
+        }
+
+        /**
+         * Executor threads of a stream may still read the cache while the stream is
+         * being closed: closing must not invalidate it.
+         */
+        @Test
+        void cachedReadsStillWorkAfterClose() throws IOException {
+            byte[] data = sequentialBytes(2000);
+            var footer = new CachedFooterProxyReader(readerOf(data), 1024);
+            footer.close();
+
+            byte[] buf = new byte[10];
+            assertEquals(10, footer.readFully(1500, buf, 0, 10));
+            assertEquals(data[1500], buf[0]);
+            assertTrue(footer.isCached(1500, 10));
         }
     }
 }

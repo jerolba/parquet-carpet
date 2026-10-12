@@ -35,15 +35,18 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.parquet.io.ParquetFileRange;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import com.jerolba.carpet.io.s3.PrefetchTestSupport.TrackingAllocator;
+
 class VectorReaderTest {
 
-    private static final int CHUNK_SIZE = 16 * 1024 * 1024; // 16 MB
+    private static final int CHUNK_SIZE = ParallelReader.CHUNK_SIZE;
 
     // -------------------------------------------------------------------------
     // Read single range (< CHUNK_SIZE)
@@ -209,112 +212,12 @@ class VectorReaderTest {
     }
 
     // -------------------------------------------------------------------------
-    // Read large range in parallel chunks (> CHUNK_SIZE)
+    // Read large range through ParallelReader (> CHUNK_SIZE); chunking itself
+    // is covered by ParallelReaderTest
     // -------------------------------------------------------------------------
 
     @Nested
     class ReadLargeRangeInChunks {
-
-        @Test
-        void readRangeSlightlyAboveChunkSize() throws IOException, ExecutionException, InterruptedException {
-            int rangeLength = CHUNK_SIZE + 1;
-            SeekableReader virtualReader = largeVirtualReader(rangeLength * 2L);
-            ExecutorService executor = Executors.newFixedThreadPool(2);
-            try (VectorReader reader = new VectorReader(virtualReader, executor)) {
-                ParquetFileRange range = new ParquetFileRange(0, rangeLength);
-                reader.readVectored(List.of(range), heapAllocator());
-
-                ByteBuffer result = range.getDataReadFuture().get();
-                assertEquals(rangeLength, result.remaining());
-                assertEquals(0, result.position());
-
-                // Verify boundary bytes
-                assertEquals(0, result.get(0) & 0xFF);
-                assertEquals((CHUNK_SIZE - 1) % 256, result.get(CHUNK_SIZE - 1) & 0xFF);
-                assertEquals(CHUNK_SIZE % 256, result.get(CHUNK_SIZE) & 0xFF);
-            } finally {
-                executor.shutdown();
-            }
-        }
-
-        @Test
-        void readRangeSpanningThreeFullChunks() throws IOException, ExecutionException, InterruptedException {
-            int rangeLength = CHUNK_SIZE * 3;
-            SeekableReader virtualReader = largeVirtualReader(rangeLength * 2L);
-            ExecutorService executor = Executors.newFixedThreadPool(2);
-            try (VectorReader reader = new VectorReader(virtualReader, executor)) {
-                ParquetFileRange range = new ParquetFileRange(0, rangeLength);
-                reader.readVectored(List.of(range), heapAllocator());
-
-                ByteBuffer result = range.getDataReadFuture().get();
-                assertEquals(rangeLength, result.remaining());
-                assertEquals(0, result.position());
-
-                // Verify first byte of each chunk
-                assertEquals(0, result.get(0) & 0xFF);
-                assertEquals(0, result.get(CHUNK_SIZE) & 0xFF); // CHUNK_SIZE % 256 == 0
-                assertEquals(0, result.get(CHUNK_SIZE * 2) & 0xFF);
-
-                // Verify last byte of each chunk
-                assertEquals((CHUNK_SIZE - 1) % 256, result.get(CHUNK_SIZE - 1) & 0xFF);
-                assertEquals((CHUNK_SIZE * 2 - 1) % 256, result.get(CHUNK_SIZE * 2 - 1) & 0xFF);
-                assertEquals((CHUNK_SIZE * 3 - 1) % 256, result.get(CHUNK_SIZE * 3 - 1) & 0xFF);
-            } finally {
-                executor.shutdown();
-            }
-        }
-
-        @Test
-        void readRangeNotMultipleOfChunkSize() throws IOException, ExecutionException, InterruptedException {
-            // 2.5 chunks: 2 full + 1 partial (half chunk)
-            int rangeLength = CHUNK_SIZE * 2 + CHUNK_SIZE / 2;
-            SeekableReader virtualReader = largeVirtualReader(rangeLength * 2L);
-            ExecutorService executor = Executors.newFixedThreadPool(2);
-            try (VectorReader reader = new VectorReader(virtualReader, executor)) {
-                ParquetFileRange range = new ParquetFileRange(0, rangeLength);
-                reader.readVectored(List.of(range), heapAllocator());
-
-                ByteBuffer result = range.getDataReadFuture().get();
-                assertEquals(rangeLength, result.remaining());
-
-                // Verify last byte of partial chunk
-                assertEquals((rangeLength - 1) % 256, result.get(rangeLength - 1) & 0xFF);
-
-                // Verify bytes around chunk boundaries
-                assertEquals((CHUNK_SIZE - 1) % 256, result.get(CHUNK_SIZE - 1) & 0xFF);
-                assertEquals(CHUNK_SIZE % 256, result.get(CHUNK_SIZE) & 0xFF);
-            } finally {
-                executor.shutdown();
-            }
-        }
-
-        @Test
-        void readLargeRangeAtNonZeroOffset() throws IOException, ExecutionException, InterruptedException {
-            int rangeLength = CHUNK_SIZE + 100;
-            long offset = 1000;
-            SeekableReader virtualReader = largeVirtualReader(offset + rangeLength + 1000);
-            ExecutorService executor = Executors.newFixedThreadPool(2);
-            try (VectorReader reader = new VectorReader(virtualReader, executor)) {
-                ParquetFileRange range = new ParquetFileRange(offset, rangeLength);
-                reader.readVectored(List.of(range), heapAllocator());
-
-                ByteBuffer result = range.getDataReadFuture().get();
-                assertEquals(rangeLength, result.remaining());
-
-                // Verify first bytes match expected values at offset 1000
-                for (int i = 0; i < 100; i++) {
-                    assertEquals((int) ((offset + i) % 256), result.get(i) & 0xFF,
-                            "Mismatch at buffer index " + i);
-                }
-                // Verify bytes in the second chunk (past CHUNK_SIZE boundary)
-                for (int i = CHUNK_SIZE; i < CHUNK_SIZE + 100; i++) {
-                    assertEquals((int) ((offset + i) % 256), result.get(i) & 0xFF,
-                            "Mismatch at buffer index " + i);
-                }
-            } finally {
-                executor.shutdown();
-            }
-        }
 
         @Test
         void readMixOfLargeAndSmallRanges() throws IOException, ExecutionException, InterruptedException {
@@ -355,30 +258,6 @@ class VectorReaderTest {
     class DataIntegrity {
 
         @Test
-        void largeRangeAllBytesCorrect() throws IOException, ExecutionException, InterruptedException {
-            // Verify every byte in a multi-chunk range
-            int rangeLength = CHUNK_SIZE + 4096;
-            SeekableReader virtualReader = largeVirtualReader(rangeLength * 2L);
-            ExecutorService executor = Executors.newFixedThreadPool(2);
-            try (VectorReader reader = new VectorReader(virtualReader, executor)) {
-                ParquetFileRange range = new ParquetFileRange(0, rangeLength);
-                reader.readVectored(List.of(range), heapAllocator());
-
-                ByteBuffer result = range.getDataReadFuture().get();
-                assertEquals(0, result.position());
-                assertEquals(rangeLength, result.limit());
-
-                byte[] actual = new byte[rangeLength];
-                result.get(actual);
-                for (int i = 0; i < rangeLength; i++) {
-                    assertEquals((byte) (i % 256), actual[i], "Mismatch at index " + i);
-                }
-            } finally {
-                executor.shutdown();
-            }
-        }
-
-        @Test
         void smallRangeBufferIsFlipped() throws IOException, ExecutionException, InterruptedException {
             byte[] data = sequentialBytes(100);
             ExecutorService executor = Executors.newFixedThreadPool(2);
@@ -414,31 +293,6 @@ class VectorReaderTest {
             }
         }
 
-        @Test
-        void largeRangeAtOffsetAllBytesCorrect() throws IOException, ExecutionException, InterruptedException {
-            int rangeLength = CHUNK_SIZE * 2 + 1000;
-            long offset = 500;
-            SeekableReader virtualReader = largeVirtualReader(offset + rangeLength);
-            ExecutorService executor = Executors.newFixedThreadPool(2);
-            try (VectorReader reader = new VectorReader(virtualReader, executor)) {
-                ParquetFileRange range = new ParquetFileRange(offset, rangeLength);
-                reader.readVectored(List.of(range), heapAllocator());
-
-                ByteBuffer result = range.getDataReadFuture().get();
-                byte[] actual = new byte[rangeLength];
-                result.get(actual);
-
-                // Sample positions across all chunks
-                for (int i = 0; i < rangeLength; i += 1024) {
-                    assertEquals((byte) ((offset + i) % 256), actual[i],
-                            "Mismatch at index " + i);
-                }
-                // Also verify last byte
-                assertEquals((byte) ((offset + rangeLength - 1) % 256), actual[rangeLength - 1]);
-            } finally {
-                executor.shutdown();
-            }
-        }
     }
 
     // -------------------------------------------------------------------------
@@ -449,14 +303,14 @@ class VectorReaderTest {
     class ExecutorManagement {
 
         @Test
-        void closeShutdownsOwnedExecutor() throws IOException {
-            ExecutorService executor = Executors.newFixedThreadPool(2);
-            try {
-                VectorReader reader = new VectorReader(readerOf(sequentialBytes(10)), executor);
-                reader.close();
-            } finally {
-                executor.shutdown();
-            }
+        void closeShutsDownOwnedExecutor() throws IOException {
+            CustomExecutor owned = CustomExecutor.createCustomExecutor(2);
+            VectorReader reader = new VectorReader(readerOf(sequentialBytes(10)), owned);
+
+            reader.close();
+
+            assertThrows(RejectedExecutionException.class, () -> owned.execute(() -> {
+            }), "an executor created by Carpet is shut down with the reader");
         }
 
         @Test
@@ -566,7 +420,7 @@ class VectorReaderTest {
         }
 
         @Test
-        void ioExceptionInLargeRangePropagatesThroughFuture() throws IOException {
+        void ioExceptionInLargeRangeReleasesBufferAndFailsFuture() throws IOException {
             SeekableReader failingReader = new SeekableReader() {
                 @Override
                 public long getLength() {
@@ -588,19 +442,18 @@ class VectorReaderTest {
                 }
             };
 
+            TrackingAllocator allocator = new TrackingAllocator();
             ExecutorService executor = Executors.newFixedThreadPool(4);
             try (VectorReader reader = new VectorReader(failingReader, executor)) {
                 ParquetFileRange range = new ParquetFileRange(0, CHUNK_SIZE + 1);
-                reader.readVectored(List.of(range), heapAllocator());
+                reader.readVectored(List.of(range), allocator);
 
                 ExecutionException ex = assertThrows(ExecutionException.class,
                         () -> range.getDataReadFuture().get());
-                // The exception chain: ExecutionException -> RuntimeException -> IOException
-                Throwable cause = ex.getCause();
-                // CompletableFuture.allOf may wrap in CompletionException
-                assertTrue(
-                        cause instanceof RuntimeException || cause instanceof java.util.concurrent.CompletionException,
-                        "Expected RuntimeException or CompletionException but got " + cause.getClass());
+                assertInstanceOf(IOException.class, ex.getCause());
+                assertEquals(1, allocator.allocatedCount());
+                assertEquals(1, allocator.releasedCount(), "buffer of the failed span must be released");
+                assertEquals(List.of(), allocator.violations());
             } finally {
                 executor.shutdown();
             }
@@ -670,80 +523,6 @@ class VectorReaderTest {
                 assertTrue(anyFailed, "At least one range should have failed");
             } finally {
                 executor.shutdown();
-            }
-        }
-    }
-
-    // -------------------------------------------------------------------------
-    // Concurrency verification
-    // -------------------------------------------------------------------------
-
-    @Nested
-    class ConcurrencyVerification {
-
-        @Test
-        void largeRangeIsReadInParallelChunks() throws IOException, ExecutionException, InterruptedException {
-            // Track which threads perform reads to verify parallelism
-            AtomicInteger concurrentReads = new AtomicInteger(0);
-            AtomicInteger maxConcurrency = new AtomicInteger(0);
-
-            SeekableReader slowReader = new SeekableReader() {
-                @Override
-                public long getLength() {
-                    return CHUNK_SIZE * 4L;
-                }
-
-                @Override
-                public int readFully(long pos, byte[] b, int off, int len) throws IOException {
-                    int current = concurrentReads.incrementAndGet();
-                    maxConcurrency.updateAndGet(max -> Math.max(max, current));
-                    try {
-                        Thread.sleep(50);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    }
-                    for (int i = 0; i < len; i++) {
-                        b[off + i] = (byte) ((pos + i) % 256);
-                    }
-                    concurrentReads.decrementAndGet();
-                    return len;
-                }
-
-                @Override
-                public int readFully(long pos, ByteBuffer byteBuffer) throws IOException {
-                    int current = concurrentReads.incrementAndGet();
-                    maxConcurrency.updateAndGet(max -> Math.max(max, current));
-                    try {
-                        Thread.sleep(50);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    }
-                    int len = byteBuffer.remaining();
-                    for (int i = 0; i < len; i++) {
-                        byteBuffer.put((byte) ((pos + i) % 256));
-                    }
-                    concurrentReads.decrementAndGet();
-                    return len;
-                }
-
-                @Override
-                public void close() {
-                }
-            };
-
-            // 3 chunks means 3 parallel tasks with 4 threads available
-            int rangeLength = CHUNK_SIZE * 3;
-            ExecutorService executor = Executors.newFixedThreadPool(4);
-            try (VectorReader reader = new VectorReader(slowReader, executor)) {
-                ParquetFileRange range = new ParquetFileRange(0, rangeLength);
-                reader.readVectored(List.of(range), heapAllocator());
-
-                ByteBuffer result = range.getDataReadFuture().get();
-                assertEquals(rangeLength, result.remaining());
-
-                // With 4 threads and 3 chunks, we expect at least 2 concurrent reads
-                assertTrue(maxConcurrency.get() >= 2,
-                        "Expected parallel execution but max concurrency was " + maxConcurrency.get());
             }
         }
     }

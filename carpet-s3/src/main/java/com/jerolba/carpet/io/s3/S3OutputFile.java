@@ -15,13 +15,13 @@
  */
 package com.jerolba.carpet.io.s3;
 
-import static com.jerolba.carpet.io.s3.CustomExecutor.createCustomExecutor;
-import static com.jerolba.carpet.io.s3.CustomExecutor.createVirtualThreadExecutorWithCommonPoolFallback;
+import static com.jerolba.carpet.io.s3.CustomExecutor.executorFactory;
 import static com.jerolba.carpet.io.s3.S3UrlParsing.detectLocalFilePathForWriting;
 import static com.jerolba.carpet.io.s3.S3UrlParsing.parses3Url;
 
 import java.nio.file.Path;
 import java.util.concurrent.Executor;
+import java.util.function.Supplier;
 
 import org.apache.parquet.io.OutputFile;
 
@@ -43,6 +43,11 @@ import software.amazon.awssdk.services.s3.S3Client;
  * via the builder or configuring a custom Executor. By default, a virtual
  * thread executor is used for parallel uploads.
  *
+ * The number of parts waiting for or being uploaded is limited to twice the
+ * concurrency: a writer faster than the network blocks until a part finishes,
+ * so the memory held by pending uploads stays bounded instead of growing with
+ * the file.
+ *
  * If the path provided to the builder is detected as a local file path (i.e. it
  * does not start with s3:// or s3a:// and points to a valid writable location),
  * the builder will automatically create a {@link LocalOutputFile} instance that
@@ -53,7 +58,7 @@ import software.amazon.awssdk.services.s3.S3Client;
  */
 public interface S3OutputFile extends OutputFile {
 
-    public static S3OutputFile of(String s3Path) {
+    static S3OutputFile of(String s3Path) {
         return new Builder().s3Path(s3Path).build();
     }
 
@@ -151,6 +156,9 @@ public interface S3OutputFile extends OutputFile {
          * thread pool will be used as a fallback. Setting concurrency to 1 will disable
          * parallel uploads and perform all uploads sequentially in the calling thread.
          *
+         * The limit applies to each stream created from the file: every stream gets
+         * its own executor, which is shut down when the stream is closed.
+         *
          * @param concurrency the concurrency level, must be > 0
          * @return this builder
          */
@@ -164,7 +172,8 @@ public interface S3OutputFile extends OutputFile {
 
         /**
          * Sets a custom executor for parallel part uploads. Mutually exclusive with
-         * {@link #concurrency(int)}.
+         * {@link #concurrency(int)}. The executor is shared by all streams created from
+         * the file and is never shut down by Carpet: its lifecycle is up to the caller.
          *
          * @param executor the executor to use
          * @return this builder
@@ -247,15 +256,13 @@ public interface S3OutputFile extends OutputFile {
             if (actualClient == null) {
                 actualClient = S3Client.create();
             }
-            Executor actualExecutor = this.executor;
-            if (concurrency != null && concurrency > 1) {
-                actualExecutor = createCustomExecutor(concurrency);
-            } else if (concurrency != null && concurrency == 1) {
-                actualExecutor = Runnable::run; // sequential: run in calling thread
-            } else {
-                actualExecutor = createVirtualThreadExecutorWithCommonPoolFallback(DEFAULT_CONCURRENCY);
-            }
-            return new S3OutputFileImpl(actualClient, bucket, key, actualExecutor, partSize);
+            // A concurrency of 1 uploads the parts sequentially in the calling thread
+            Supplier<Executor> executorFactory = executorFactory(executor, concurrency, DEFAULT_CONCURRENCY,
+                    Runnable::run);
+            // Twice the upload concurrency keeps every upload busy while bounding the parts
+            // held in memory; the concurrency of a user executor is unknown, use the default
+            int maxPartsInFlight = 2 * (concurrency != null ? concurrency : DEFAULT_CONCURRENCY);
+            return new S3OutputFileImpl(actualClient, bucket, key, executorFactory, partSize, maxPartsInFlight);
         }
 
     }

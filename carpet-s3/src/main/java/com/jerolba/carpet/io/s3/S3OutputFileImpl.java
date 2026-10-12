@@ -17,12 +17,15 @@ package com.jerolba.carpet.io.s3;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Semaphore;
+import java.util.function.Supplier;
 
 import org.apache.parquet.io.PositionOutputStream;
 import org.slf4j.Logger;
@@ -51,15 +54,26 @@ class S3OutputFileImpl implements S3OutputFile {
     private final S3Client client;
     private final String bucket;
     private final String key;
-    private final Executor executor;
+    private final Supplier<Executor> executorFactory;
     private final Integer partSize;
+    private final int maxPartsInFlight;
 
-    S3OutputFileImpl(S3Client client, String bucket, String key, Executor executor, Integer partSize) {
+    /**
+     * @param executorFactory  supplies the executor of each new stream for part
+     *                         uploads; a {@link CustomExecutor} is shut down when
+     *                         its stream is closed
+     * @param maxPartsInFlight maximum number of parts of a stream waiting for or
+     *                         being uploaded; writing blocks when reached, which
+     *                         bounds the memory held by pending uploads
+     */
+    S3OutputFileImpl(S3Client client, String bucket, String key, Supplier<Executor> executorFactory,
+            Integer partSize, int maxPartsInFlight) {
         this.client = client;
         this.bucket = bucket;
         this.key = key;
-        this.executor = executor;
+        this.executorFactory = executorFactory;
         this.partSize = partSize;
+        this.maxPartsInFlight = maxPartsInFlight;
     }
 
     @Override
@@ -74,7 +88,8 @@ class S3OutputFileImpl implements S3OutputFile {
     public PositionOutputStream createOrOverwrite(long blockSizeHint) throws IOException {
         int finalPartSize = partSize == null ? Math.max((int) blockSizeHint / PARTS_BY_ROWGROUP, MIN_PART_SIZE)
                 : partSize;
-        return new S3MultipartPositionOutputStream(bucket, key, client, executor, finalPartSize);
+        return new S3MultipartPositionOutputStream(bucket, key, client, executorFactory.get(), finalPartSize,
+                maxPartsInFlight);
     }
 
     @Override
@@ -117,17 +132,20 @@ class S3OutputFileImpl implements S3OutputFile {
         private final String uploadId;
         private final int partSize;
         private final List<CompletableFuture<CompletedPart>> futures = new ArrayList<>();
+        /** Permits for parts waiting for or being uploaded: backpressure on the writer. */
+        private final Semaphore partsInFlight;
         private ByteArrayOutputStream partBuffer;
         private long pos = 0;
         private boolean closed = false;
 
-        S3MultipartPositionOutputStream(String bucket, String key, S3Client client, Executor executor, int partSize)
-                throws IOException {
+        S3MultipartPositionOutputStream(String bucket, String key, S3Client client, Executor executor, int partSize,
+                int maxPartsInFlight) throws IOException {
             this.bucket = bucket;
             this.key = key;
             this.client = client;
             this.executor = executor;
             this.partSize = partSize;
+            this.partsInFlight = new Semaphore(maxPartsInFlight);
             this.partBuffer = new ByteArrayOutputStream(partSize);
             try {
                 this.uploadId = client.createMultipartUpload(
@@ -200,19 +218,34 @@ class S3OutputFileImpl implements S3OutputFile {
             }
         }
 
-        private void flushPartIfNeeded() {
+        private void flushPartIfNeeded() throws IOException {
             if (partBuffer.size() >= partSize) {
                 uploadPart(partBuffer, partSize);
             }
         }
 
-        private void flushFinalPart() {
+        private void flushFinalPart() throws IOException {
             if (partBuffer.size() > 0) {
                 uploadPart(partBuffer, partBuffer.size());
             }
         }
 
-        private void uploadPart(ByteArrayOutputStream buffer, int lengthToUpload) {
+        /**
+         * Waits for a free upload slot. Without a limit, a writer faster than the
+         * upload would queue parts until running out of memory.
+         */
+        private void acquireUploadSlot() throws IOException {
+            try {
+                partsInFlight.acquire();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new InterruptedIOException("Interrupted while waiting to upload a part to s3://"
+                        + bucket + "/" + key);
+            }
+        }
+
+        private void uploadPart(ByteArrayOutputStream buffer, int lengthToUpload) throws IOException {
+            acquireUploadSlot();
             int partNumber = futures.size() + 1;
             byte[] allData = buffer.toByteArray();
             buffer.reset();
@@ -221,8 +254,15 @@ class S3OutputFileImpl implements S3OutputFile {
                 buffer.write(allData, lengthToUpload, allData.length - lengthToUpload);
             }
             long partStartPos = pos - allData.length;
-            CompletableFuture<CompletedPart> future = CompletableFuture.supplyAsync(
-                    () -> uploadPartS3(partNumber, partStartPos, toUploadData), executor);
+            CompletableFuture<CompletedPart> future;
+            try {
+                future = CompletableFuture.supplyAsync(
+                        () -> uploadPartS3(partNumber, partStartPos, toUploadData), executor);
+            } catch (RuntimeException e) {
+                partsInFlight.release();
+                throw e;
+            }
+            future.whenComplete((part, failure) -> partsInFlight.release());
             futures.add(future);
         }
 

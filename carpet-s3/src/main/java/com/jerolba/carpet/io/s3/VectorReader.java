@@ -15,10 +15,10 @@
  */
 package com.jerolba.carpet.io.s3;
 
+import static com.jerolba.carpet.io.s3.Cancellation.cancellation;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
@@ -29,10 +29,9 @@ import org.apache.parquet.bytes.ByteBufferAllocator;
  * A {@link RangeReader} that reads spans asynchronously using a provided
  * {@link Executor}.
  * <p>
- * For spans smaller than {@code CHUNK_SIZE} (16 MB), the read is issued as a
- * single async task. For larger spans, the range is split into parallel chunks
- * of up to {@code CHUNK_SIZE} bytes, each read concurrently and assembled into
- * a single {@link java.nio.ByteBuffer}.
+ * Spans up to {@link ParallelReader#CHUNK_SIZE} (8 MB) are read as a single
+ * async task. Larger spans are read into a single {@link java.nio.ByteBuffer}
+ * by a {@link ParallelReader}, which splits them into chunks read concurrently.
  * </p>
  * <p>
  * If the executor is an {@link CustomExecutor}, it will be shut down when this
@@ -41,27 +40,29 @@ import org.apache.parquet.bytes.ByteBufferAllocator;
  */
 class VectorReader extends RangeReader {
 
-    private static final int CHUNK_SIZE = 8 * 1024 * 1024; // 8 MB
-
     private final SeekableReader seekableReader;
     private final Executor executor;
+    private final ParallelReader parallelReader;
 
     VectorReader(SeekableReader seekableReader, Executor executor) {
         this.seekableReader = seekableReader;
         this.executor = executor;
+        this.parallelReader = new ParallelReader(seekableReader, executor);
     }
 
     @Override
-    protected CompletableFuture<ByteBuffer> readSpan(ByteBufferAllocator allocator, long startOffset, int totalLength) {
-        if (totalLength > CHUNK_SIZE) {
-            return readSpanInParallelChunks(allocator, startOffset, totalLength);
+    CompletableFuture<ByteBuffer> readSpan(ByteBufferAllocator allocator, long startOffset, int totalLength,
+            Cancellation cancelled) {
+        if (totalLength > ParallelReader.CHUNK_SIZE) {
+            return readSpanInParallelChunks(allocator, startOffset, totalLength, cancelled);
         }
-        return readSpanSequentially(allocator, startOffset, totalLength);
+        return readSpanSequentially(allocator, startOffset, totalLength, cancelled);
     }
 
     private CompletableFuture<ByteBuffer> readSpanSequentially(ByteBufferAllocator allocator,
-            long startOffset, int totalLength) {
+            long startOffset, int totalLength, Cancellation cancelled) {
         return CompletableFuture.supplyAsync(() -> {
+            cancelled.checkNotCancelled();
             ByteBuffer buffer = allocator.allocate(totalLength);
             try {
                 seekableReader.readFully(startOffset, buffer);
@@ -75,34 +76,20 @@ class VectorReader extends RangeReader {
     }
 
     private CompletableFuture<ByteBuffer> readSpanInParallelChunks(ByteBufferAllocator allocator,
-            long startOffset, int totalLength) {
-        int numChunks = (totalLength + CHUNK_SIZE - 1) / CHUNK_SIZE;
-        ByteBuffer buffer = allocator.allocate(totalLength);
-        List<CompletableFuture<Void>> subTasks = new ArrayList<>(numChunks);
-
-        for (int cursor = 0; cursor < totalLength; cursor += CHUNK_SIZE) {
-            int currentChunkSize = Math.min(CHUNK_SIZE, totalLength - cursor);
-            long physicalOffset = startOffset + cursor;
-            ByteBuffer chunkView = buffer.slice(cursor, currentChunkSize);
-
-            subTasks.add(CompletableFuture.runAsync(() -> {
-                try {
-                    seekableReader.readFully(physicalOffset, chunkView);
-                } catch (IOException e) {
-                    throw new CompletionException(e);
-                }
-            }, executor));
+            long startOffset, int totalLength, Cancellation cancelled) {
+        if (cancelled.isCancelled()) {
+            return CompletableFuture.failedFuture(cancellation());
         }
-
-        return CompletableFuture.allOf(subTasks.toArray(new CompletableFuture[0]))
+        ByteBuffer buffer = allocator.allocate(totalLength);
+        return parallelReader.readChunked(startOffset, buffer.slice(0, totalLength), cancelled)
                 .thenApply(v -> {
                     buffer.position(0);
                     buffer.limit(totalLength);
                     return buffer;
                 })
-                .exceptionally(t -> {
+                .exceptionally(failure -> {
                     allocator.release(buffer);
-                    throw new CompletionException(t);
+                    throw failure instanceof CompletionException ce ? ce : new CompletionException(failure);
                 });
     }
 

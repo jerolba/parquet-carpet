@@ -25,7 +25,10 @@ class S3UrlParsing {
     private static final String S3A = "s3a://";
     private static final String S3 = "s3://";
 
-    public record S3Path(String bucket, String key) {
+    private S3UrlParsing() {
+    }
+
+    record S3Path(String bucket, String key) {
     }
 
     /**
@@ -35,7 +38,7 @@ class S3UrlParsing {
      * @param s3Path the S3 URL to parse
      * @return an S3Path object containing the bucket and key
      */
-    public static S3Path parses3Url(String s3Path) {
+    static S3Path parses3Url(String s3Path) {
         if (s3Path == null || s3Path.isEmpty()) {
             throw new IllegalArgumentException("s3Path cannot be null or empty");
         }
@@ -74,7 +77,7 @@ class S3UrlParsing {
      * @return the Path object if the path is a valid local file path, null
      *         otherwise
      */
-    public static Path detectLocalFilePathForReading(String s3Path) {
+    static Path detectLocalFilePathForReading(String s3Path) {
         if (isS3OrEmpty(s3Path)) {
             return null;
         }
@@ -102,7 +105,7 @@ class S3UrlParsing {
      * @return the Path object if the path is a valid local file path that can be
      *         written to, null
      */
-    public static Path detectLocalFilePathForWriting(String path) {
+    static Path detectLocalFilePathForWriting(String path) {
         if (isS3OrEmpty(path)) {
             return null;
         }

@@ -16,11 +16,13 @@
 package com.jerolba.carpet.io.s3;
 
 import static com.jerolba.carpet.io.s3.S3ContainerHelper.BUCKET_NAME;
+import static com.jerolba.carpet.io.s3.S3ContainerHelper.clearLocalStackProperties;
 import static com.jerolba.carpet.io.s3.S3ContainerHelper.createS3ClientWithBucket;
-import static com.jerolba.carpet.io.s3.S3ContainerHelper.createS3LocalStackContainer;
-import static com.jerolba.carpet.io.s3.S3ContainerHelper.stopLocalStack;
+import static com.jerolba.carpet.io.s3.S3ContainerHelper.startSharedLocalStack;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -28,6 +30,8 @@ import java.io.IOException;
 import java.lang.reflect.Proxy;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 
 import org.apache.parquet.hadoop.ParquetWriter;
@@ -40,6 +44,7 @@ import org.testcontainers.localstack.LocalStackContainer;
 
 import com.jerolba.carpet.CarpetReader;
 import com.jerolba.carpet.CarpetWriter;
+import com.jerolba.carpet.io.s3.PrefetchTestSupport.ManualExecutor;
 
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
@@ -51,13 +56,13 @@ class S3OutputFileTest {
 
     @BeforeAll
     static void setUp() {
-        localStack = createS3LocalStackContainer();
+        localStack = startSharedLocalStack();
         createS3ClientWithBucket(localStack);
     }
 
     @AfterAll
     static void tearDown() {
-        stopLocalStack(localStack);
+        clearLocalStackProperties();
     }
 
     record SimpleRecord(long id, String name, double value) {
@@ -190,6 +195,34 @@ class S3OutputFileTest {
 
             // CarpetWriter uses OVERWRITE mode, which calls createOrOverwrite
             try (CarpetWriter<SimpleRecord> writer = new CarpetWriter<>(S3OutputFile.of(url), SimpleRecord.class)) {
+                writer.write(second);
+            }
+
+            List<SimpleRecord> actual = new CarpetReader<>(S3InputFile.of(url), SimpleRecord.class).toList();
+            assertEquals(second, actual);
+        }
+
+        @Test
+        void sameOutputFileCanBeWrittenTwiceWithConcurrency() throws IOException {
+            String url = "s3://test-bucket/write-twice-concurrency.parquet";
+            var outputFile = S3OutputFile.builder(url).concurrency(4).build();
+            assertSecondWriteReplacesTheFirst(url, outputFile);
+        }
+
+        @Test
+        void sameOutputFileCanBeWrittenTwiceWithDefaultExecutor() throws IOException {
+            String url = "s3://test-bucket/write-twice-default.parquet";
+            assertSecondWriteReplacesTheFirst(url, S3OutputFile.of(url));
+        }
+
+        private void assertSecondWriteReplacesTheFirst(String url, S3OutputFile outputFile) throws IOException {
+            var first = List.of(new SimpleRecord(1, "Alice", 1.0));
+            var second = List.of(new SimpleRecord(2, "Bob", 2.0), new SimpleRecord(3, "Carol", 3.0));
+
+            try (CarpetWriter<SimpleRecord> writer = new CarpetWriter<>(outputFile, SimpleRecord.class)) {
+                writer.write(first);
+            }
+            try (CarpetWriter<SimpleRecord> writer = new CarpetWriter<>(outputFile, SimpleRecord.class)) {
                 writer.write(second);
             }
 
@@ -448,6 +481,57 @@ class S3OutputFileTest {
     }
 
     @Nested
+    class Backpressure {
+
+        @Test
+        void writerBlocksWhileTooManyPartsArePending() throws Exception {
+            int partSize = S3OutputFileImpl.MIN_PART_SIZE;
+            ManualExecutor executor = new ManualExecutor();
+            try (S3Client s3Client = S3Client.create()) {
+                var outputFile = new S3OutputFileImpl(s3Client, BUCKET_NAME, "backpressure.parquet",
+                        () -> executor, partSize, 2);
+                PositionOutputStream out = outputFile.createOrOverwrite(0);
+                AtomicReference<Throwable> writerFailure = new AtomicReference<>();
+                Thread writer = new Thread(() -> {
+                    try {
+                        for (int i = 0; i < 3; i++) {
+                            out.write(new byte[partSize]);
+                        }
+                    } catch (Throwable e) {
+                        writerFailure.set(e);
+                    }
+                });
+                writer.start();
+
+                awaitState(writer, Thread.State.WAITING);
+                assertEquals(2, executor.pending(), "third part waits for a free slot");
+
+                executor.runNext();
+                writer.join(10_000);
+                assertFalse(writer.isAlive(), "a finished upload unblocks the writer");
+                assertNull(writerFailure.get());
+                assertEquals(2, executor.pending());
+
+                executor.runAll();
+                out.close();
+                long length = s3Client.headObject(HeadObjectRequest.builder()
+                        .bucket(BUCKET_NAME)
+                        .key("backpressure.parquet")
+                        .build()).contentLength();
+                assertEquals(3L * partSize, length);
+            }
+        }
+
+        private void awaitState(Thread thread, Thread.State state) throws InterruptedException {
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+            while (thread.getState() != state) {
+                assertTrue(System.nanoTime() < deadline, "thread did not reach " + state + ": " + thread.getState());
+                Thread.sleep(10);
+            }
+        }
+    }
+
+    @Nested
     class AbortOnError {
 
         @Test
@@ -456,9 +540,9 @@ class S3OutputFileTest {
                 // Force failure after multipart upload has been created but before any part can
                 // be completed, so close() must abort the multipart upload.
                 var outputFile = new S3OutputFileImpl(s3Client, BUCKET_NAME, "abort-test.parquet",
-                        runnable -> {
+                        () -> runnable -> {
                             throw new java.util.concurrent.RejectedExecutionException("forced test failure");
-                        }, null);
+                        }, null, 8);
                 assertThrows(Exception.class, () -> {
                     try (PositionOutputStream out = outputFile.createOrOverwrite(0)) {
                         // write enough to trigger a part upload (> 5 MiB)
@@ -491,7 +575,7 @@ class S3OutputFileTest {
     }
 
     @Test
-    void testToString() {
+    void toStringIsTheS3Url() {
         String key = "toString.parquet";
         S3Client s3Client = createS3ClientWithBucket(localStack);
         S3OutputFile outputFile = S3OutputFile.builder(BUCKET_NAME, key).s3Client(s3Client).build();

@@ -18,6 +18,7 @@ package com.jerolba.carpet.io.s3;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.concurrent.Executor;
+import java.util.function.Supplier;
 
 import org.apache.parquet.io.SeekableInputStream;
 
@@ -26,20 +27,25 @@ import software.amazon.awssdk.services.s3.S3Client;
 class S3InputFileImpl implements S3InputFile {
 
     private final S3SeekableReader s3SeekableReader;
-    private final Executor executor;
+    private final Supplier<Executor> executorFactory;
+    private final PrefetchConfig prefetchConfig;
 
     /**
      * Constructs an S3InputFile with the specified S3 client, s3 bucket and key,
-     * and executor.
+     * executor factory and prefetch configuration.
      *
-     * @param client   the S3 client to use for operations
-     * @param bucket   the S3 bucket name
-     * @param key      the S3 object key
-     * @param executor the executor to use for vectored read operations, or null
+     * @param client          the S3 client to use for operations
+     * @param bucket          the S3 bucket name
+     * @param key             the S3 object key
+     * @param executorFactory supplies the executor of each new stream for vectored
+     *                        read operations, or null for sequential reads
+     * @param prefetchConfig  speculative prefetch configuration
      */
-    S3InputFileImpl(S3Client client, String bucket, String key, Executor executor) {
+    S3InputFileImpl(S3Client client, String bucket, String key, Supplier<Executor> executorFactory,
+            PrefetchConfig prefetchConfig) {
         this.s3SeekableReader = new S3SeekableReader(client, bucket, key);
-        this.executor = executor;
+        this.executorFactory = executorFactory;
+        this.prefetchConfig = prefetchConfig;
     }
 
     /**
@@ -70,7 +76,16 @@ class S3InputFileImpl implements S3InputFile {
             Path localFile = s3SeekableReader.downloadToLocalFile();
             return new LocalFileInputStream(localFile);
         }
-        return new SeekableCachedFooterReader(s3SeekableReader, executor);
+        CachedFooterProxyReader cachedReader = new CachedFooterProxyReader(s3SeekableReader);
+        RangeReader rangeReader = RangeReaderFactory.create(cachedReader, executorFactory, prefetchConfig);
+        return new S3SeekableInputStream(cachedReader, rangeReader);
+    }
+
+    /**
+     * The resolved prefetch configuration, exposed for tests.
+     */
+    PrefetchConfig prefetchConfig() {
+        return prefetchConfig;
     }
 
 }

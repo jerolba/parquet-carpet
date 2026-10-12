@@ -16,28 +16,43 @@
 package com.jerolba.carpet.io.s3;
 
 import static com.jerolba.carpet.io.s3.S3ContainerHelper.BUCKET_NAME;
+import static com.jerolba.carpet.io.s3.S3ContainerHelper.clearLocalStackProperties;
 import static com.jerolba.carpet.io.s3.S3ContainerHelper.createS3ClientWithBucket;
-import static com.jerolba.carpet.io.s3.S3ContainerHelper.createS3LocalStackContainer;
-import static com.jerolba.carpet.io.s3.S3ContainerHelper.stopLocalStack;
+import static com.jerolba.carpet.io.s3.S3ContainerHelper.startSharedLocalStack;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.lang.reflect.Proxy;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.Function;
 
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.localstack.LocalStackContainer;
 
+import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
 class S3SeekableReaderTest {
 
@@ -49,7 +64,7 @@ class S3SeekableReaderTest {
 
     @BeforeAll
     static void setUp() {
-        localStack = createS3LocalStackContainer();
+        localStack = startSharedLocalStack();
         s3Client = createS3ClientWithBucket(localStack);
 
         // Create test data with sequential bytes
@@ -63,7 +78,7 @@ class S3SeekableReaderTest {
 
     @AfterAll
     static void tearDown() {
-        stopLocalStack(localStack);
+        clearLocalStackProperties();
     }
 
     @Test
@@ -284,14 +299,16 @@ class S3SeekableReaderTest {
     }
 
     @Nested
-    class ReadFromNonExistentObject {
+    class ReadFailures {
 
         @Test
         void readFromNonExistentKeyThrowsIOException() {
             var reader = new S3SeekableReader(s3Client, BUCKET_NAME, "non-existent-key");
             byte[] buffer = new byte[10];
 
-            assertThrows(IOException.class, () -> reader.readFully(0, buffer, 0, 10));
+            // The HEAD resolving the length and ETag is what fails for a missing key
+            IOException e = assertThrows(IOException.class, () -> reader.readFully(0, buffer, 0, 10));
+            assertTrue(e.getMessage().startsWith("Failed to get length"), e.getMessage());
         }
 
         @Test
@@ -299,8 +316,104 @@ class S3SeekableReaderTest {
             var reader = new S3SeekableReader(s3Client, BUCKET_NAME, "non-existent-key");
             ByteBuffer byteBuffer = ByteBuffer.allocate(10);
 
-            assertThrows(IOException.class, () -> reader.readFully(0, byteBuffer));
+            IOException e = assertThrows(IOException.class, () -> reader.readFully(0, byteBuffer));
+            assertTrue(e.getMessage().startsWith("Failed to get length"), e.getMessage());
         }
+
+        @Test
+        void failedGetIsReportedWithItsRange() {
+            S3Client client = fakeClient("\"abc\"", new ArrayList<>(), range -> {
+                throw S3Exception.builder().statusCode(500).message("internal error").build();
+            });
+            var reader = new S3SeekableReader(client, BUCKET_NAME, OBJECT_KEY);
+
+            IOException e = assertThrows(IOException.class, () -> reader.readFully(10, new byte[20], 0, 20));
+            assertTrue(e.getMessage().contains("at position 10 for 20 bytes"), e.getMessage());
+            assertInstanceOf(S3Exception.class, e.getCause());
+        }
+    }
+
+    @Nested
+    class ObjectVersion {
+
+        @Test
+        void readFailsIfObjectIsOverwrittenAfterTheFirstHead() throws IOException {
+            String key = "overwritten-while-reading.parquet";
+            putObject(key, testData);
+            try (var reader = new S3SeekableReader(s3Client, BUCKET_NAME, key)) {
+                assertEquals(testData.length, reader.getLength());
+
+                byte[] changed = testData.clone();
+                changed[0] = (byte) (changed[0] + 1);
+                putObject(key, changed);
+
+                IOException e = assertThrows(IOException.class, () -> reader.readFully(0, new byte[10], 0, 10));
+                assertTrue(e.getMessage().contains("changed while being read"), e.getMessage());
+            }
+        }
+
+        @Test
+        void rangedReadsAreConditionedOnTheEtag() throws IOException {
+            List<GetObjectRequest> requests = new ArrayList<>();
+            S3Client client = fakeClient("\"abc\"", requests, range -> slice(range));
+            try (var reader = new S3SeekableReader(client, BUCKET_NAME, OBJECT_KEY)) {
+                reader.readFully(10, new byte[20], 0, 20);
+            }
+            assertEquals("\"abc\"", requests.get(0).ifMatch());
+        }
+
+        @Test
+        void objectWithoutEtagIsReadWithoutCondition() throws IOException {
+            List<GetObjectRequest> requests = new ArrayList<>();
+            S3Client client = fakeClient(null, requests, range -> slice(range));
+            try (var reader = new S3SeekableReader(client, BUCKET_NAME, OBJECT_KEY)) {
+                byte[] buffer = new byte[20];
+                reader.readFully(10, buffer, 0, 20);
+                assertArrayEquals(Arrays.copyOfRange(testData, 10, 30), buffer);
+            }
+            assertNull(requests.get(0).ifMatch());
+        }
+
+        @Test
+        void responseIgnoringTheRangeFails() {
+            S3Client client = fakeClient("\"abc\"", new ArrayList<>(), range -> testData);
+            var reader = new S3SeekableReader(client, BUCKET_NAME, OBJECT_KEY);
+
+            IOException e = assertThrows(IOException.class, () -> reader.readFully(10, ByteBuffer.allocate(20)));
+            assertTrue(e.getMessage().contains("Expected 20 bytes"), e.getMessage());
+        }
+    }
+
+    /** Slice of the test data for a {@code bytes=start-end} header. */
+    private static byte[] slice(String range) {
+        String[] bounds = range.substring("bytes=".length()).split("-");
+        return Arrays.copyOfRange(testData, Integer.parseInt(bounds[0]), Integer.parseInt(bounds[1]) + 1);
+    }
+
+    /**
+     * A client that answers HEAD with the test data length and the given ETag, and
+     * GET with the bytes the function returns for the requested range, or fails
+     * with what the function throws.
+     */
+    private static S3Client fakeClient(String eTag, List<GetObjectRequest> requests,
+            Function<String, byte[]> content) {
+        return (S3Client) Proxy.newProxyInstance(
+                S3Client.class.getClassLoader(),
+                new Class<?>[] { S3Client.class },
+                (proxy, method, args) -> switch (method.getName()) {
+                case "headObject" -> HeadObjectResponse.builder()
+                        .contentLength((long) testData.length)
+                        .eTag(eTag)
+                        .build();
+                case "getObjectAsBytes" -> {
+                    GetObjectRequest request = (GetObjectRequest) args[0];
+                    requests.add(request);
+                    yield ResponseBytes.fromByteArray(GetObjectResponse.builder().build(),
+                            content.apply(request.range()));
+                }
+                case "close" -> null;
+                default -> throw new UnsupportedOperationException(method.getName());
+                });
     }
 
     @Test
@@ -312,11 +425,31 @@ class S3SeekableReaderTest {
     @Nested
     class DownloadToLocalFile {
 
+        /**
+         * Downloads go to a fresh directory: a file left in the shared temp directory
+         * by a previous run would be reused and the download never exercised.
+         */
+        @TempDir
+        Path downloadDir;
+        private String previousTmpDir;
+
+        @BeforeEach
+        void downloadToFreshDirectory() {
+            previousTmpDir = System.getProperty("java.io.tmpdir");
+            System.setProperty("java.io.tmpdir", downloadDir.toString());
+        }
+
+        @AfterEach
+        void restoreTmpDir() {
+            System.setProperty("java.io.tmpdir", previousTmpDir);
+        }
+
         @Test
         void downloadsObjectToTempDirectory() throws IOException {
             try (var reader = new S3SeekableReader(s3Client, BUCKET_NAME, OBJECT_KEY)) {
                 Path localPath = reader.downloadToLocalFile();
 
+                assertEquals(downloadDir, localPath.getParent());
                 assertTrue(Files.exists(localPath));
                 assertEquals(testData.length, Files.size(localPath));
                 assertArrayEquals(testData, Files.readAllBytes(localPath));
@@ -408,7 +541,7 @@ class S3SeekableReaderTest {
     }
 
     @Test
-    void testToString() throws IOException {
+    void toStringIsTheS3Url() throws IOException {
         try (var reader = new S3SeekableReader(s3Client, BUCKET_NAME, OBJECT_KEY)) {
             assertEquals("s3://" + BUCKET_NAME + "/" + OBJECT_KEY, reader.toString());
         }

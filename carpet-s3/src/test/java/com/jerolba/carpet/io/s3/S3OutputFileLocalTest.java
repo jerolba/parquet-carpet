@@ -153,7 +153,7 @@ class S3OutputFileLocalTest {
     }
 
     @Test
-    void testToString() {
+    void toStringIsTheLocalPath() {
         Path file = tempDir.resolve("output.parquet");
         var outputFile = S3OutputFile.of(file.toString());
         assertEquals(file.toString(), outputFile.toString());
