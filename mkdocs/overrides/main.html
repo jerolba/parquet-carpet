@@ -4,3 +4,8 @@
   {{ super() }}
   <script defer src="https://cdn.overtracking.com/t/tLBkLowOdbv6zpXyk/"></script>
 {% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "e0141a051db3489e8b8a4c759a58ab0a"}'></script><!-- End Cloudflare Web Analytics -->
+{% endblock %}
